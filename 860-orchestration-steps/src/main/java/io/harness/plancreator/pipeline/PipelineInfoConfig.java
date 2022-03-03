@@ -20,6 +20,7 @@ import io.harness.plancreator.stages.StageElementWrapperConfig;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.template.yaml.TemplateLinkConfig;
 import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
@@ -91,6 +92,8 @@ public class PipelineInfoConfig {
   @Pattern(regexp = NGRegexValidatorConstants.TIMEOUT_PATTERN)
   @VariableExpression(skipVariableExpression = true)
   ParameterField<Timeout> timeout;
+
+  TemplateLinkConfig template;
 
   @VariableExpression(skipVariableExpression = true) boolean allowStageExecutions;
 
