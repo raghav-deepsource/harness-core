@@ -40,13 +40,13 @@ public class PipelineTemplateYamlConversionHandler implements YamlConversionHand
     if (rootYamlField == null) {
       throw new NGTemplateException("yamlNode provided doesn not have root yaml field: " + rootYamlFieldName);
     }
-    YamlField typeYamlField = rootYamlField.getNode().getField(STAGES);
-    if (typeYamlField == null) {
+    YamlField stagesYamlField = rootYamlField.getNode().getField(STAGES);
+    if (stagesYamlField == null) {
       throw new NGTemplateException("yamlNode provided doesn not have type yaml field");
     }
     TemplateYamlConversionRecord conversionRecord = TemplateYamlParallelConversionRecord.builder()
                                                         .fieldsToAdd(fieldsToAdd)
-                                                        .path(typeYamlField.getYamlPath())
+                                                        .path(stagesYamlField.getYamlPath())
                                                         .build();
     return TemplateYamlConversionData.builder()
         .templateYamlConversionRecordList(Collections.singletonList(conversionRecord))
