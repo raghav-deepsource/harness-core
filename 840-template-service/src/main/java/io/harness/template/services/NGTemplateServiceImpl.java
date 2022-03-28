@@ -199,7 +199,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
             templateEntity.getIdentifier(), templateEntity.getVersionLabel(), templateEntity.getProjectIdentifier(),
             templateEntity.getOrgIdentifier(), oldTemplateEntity.getTemplateEntityType()));
       }
-      if (!oldTemplateEntity.getChildType().equals(templateEntity.getChildType())) {
+      if (!((oldTemplateEntity.getChildType() == null && templateEntity.getChildType() == null)
+              || oldTemplateEntity.getChildType().equals(templateEntity.getChildType()))) {
         throw new InvalidRequestException(format(
             "Template with identifier [%s] and versionLabel [%s] under Project[%s], Organization [%s] cannot update the internal template type, type is [%s].",
             templateEntity.getIdentifier(), templateEntity.getVersionLabel(), templateEntity.getProjectIdentifier(),

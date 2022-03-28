@@ -52,6 +52,7 @@ import io.harness.serializer.TemplateServiceModuleRegistrars;
 import io.harness.service.DelegateServiceDriverModule;
 import io.harness.template.events.TemplateOutboxEventHandler;
 import io.harness.template.eventsframework.TemplateEventsFrameworkModule;
+import io.harness.template.handler.PipelineTemplateYamlConversionHandler;
 import io.harness.template.handler.TemplateYamlConversionHandler;
 import io.harness.template.handler.TemplateYamlConversionHandlerRegistry;
 import io.harness.template.mappers.TemplateFilterPropertiesMapper;
@@ -237,7 +238,8 @@ public class TemplateServiceModule extends AbstractModule {
         new TemplateYamlConversionHandlerRegistry();
     templateYamlConversionHandlerRegistry.register(STEP, injector.getInstance(TemplateYamlConversionHandler.class));
     templateYamlConversionHandlerRegistry.register(STAGE, injector.getInstance(TemplateYamlConversionHandler.class));
-    templateYamlConversionHandlerRegistry.register(PIPELINE, injector.getInstance(TemplateYamlConversionHandler.class));
+    templateYamlConversionHandlerRegistry.register(
+        PIPELINE, injector.getInstance(PipelineTemplateYamlConversionHandler.class));
     return templateYamlConversionHandlerRegistry;
   }
 
