@@ -111,7 +111,7 @@ public class BusinessMappingResourceTest extends CategoryTest {
     assertThat(response.getResource()).isEqualTo("Successfully deleted the Business Mapping");
   }
 
-  static class BusinessMappingHelper {
+  static final class BusinessMappingHelper {
     public static final String TEST_ID = UUID.randomUUID().toString();
     public static final String TEST_ACCOUNT_ID = "TEST_ACCOUNT_ID";
     public static final String TEST_NAME_1 = "TEST_NAME_1";

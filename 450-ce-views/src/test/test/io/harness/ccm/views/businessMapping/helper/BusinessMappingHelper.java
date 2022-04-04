@@ -7,6 +7,8 @@
 
 package io.harness.ccm.views.businessMapping.helper;
 
+import static io.harness.ccm.views.businessMapping.entities.UnallocatedCost.UnallocatedCostBuilder;
+
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessMapping.entities.CostTarget;
 import io.harness.ccm.views.businessMapping.entities.SharedCost;
@@ -87,7 +89,7 @@ public final class BusinessMappingHelper {
   }
 
   public static UnallocatedCost getUnallocatedCost(final UnallocatedCostStrategy unallocatedCostStrategy) {
-    UnallocatedCost.UnallocatedCostBuilder unallocatedCostBuilder = UnallocatedCost.builder();
+    final UnallocatedCostBuilder unallocatedCostBuilder = UnallocatedCost.builder();
     switch (unallocatedCostStrategy) {
       case DISPLAY_NAME:
         unallocatedCostBuilder.label("TEST_LABEL");
