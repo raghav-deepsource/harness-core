@@ -114,7 +114,8 @@ public class BusinessMappingResourceTest extends CategoryTest {
   static class BusinessMappingHelper {
     public static final String TEST_ID = UUID.randomUUID().toString();
     public static final String TEST_ACCOUNT_ID = "TEST_ACCOUNT_ID";
-    public static final String TEST_NAME = "TEST_NAME";
+    public static final String TEST_NAME_1 = "TEST_NAME_1";
+    public static final String TEST_NAME_2 = "TEST_NAME_2";
 
     private BusinessMappingHelper() {}
 
@@ -122,38 +123,40 @@ public class BusinessMappingResourceTest extends CategoryTest {
       return BusinessMapping.builder()
           .uuid(uuid)
           .accountId(TEST_ACCOUNT_ID)
-          .name(TEST_NAME)
+          .name(TEST_NAME_1)
           .costTargets(getCostTargets())
           .sharedCosts(getSharedCosts())
           .build();
     }
 
-    public static CostTarget getCostTarget(final String name, final List<ViewRule> rules) {
+    private static CostTarget getCostTarget(final String name, final List<ViewRule> rules) {
       return CostTarget.builder().name(name).rules(rules).build();
     }
 
     @NotNull
-    public static List<CostTarget> getCostTargets() {
+    private static List<CostTarget> getCostTargets() {
       final List<ViewRule> rules = getRules();
-      return Stream.of(getCostTarget(TEST_NAME, rules), getCostTarget(TEST_NAME, rules)).collect(Collectors.toList());
+      return Stream.of(getCostTarget(TEST_NAME_1, rules), getCostTarget(TEST_NAME_2, rules))
+          .collect(Collectors.toList());
     }
 
-    public static SharedCost getSharedCost(final String name, final List<ViewRule> rules,
+    private static SharedCost getSharedCost(final String name, final List<ViewRule> rules,
         final SharingStrategy strategy, final List<SharedCostSplit> splits) {
       return SharedCost.builder().name(name).rules(rules).strategy(strategy).splits(splits).build();
     }
 
     @NotNull
-    public static List<SharedCost> getSharedCosts() {
+    private static List<SharedCost> getSharedCosts() {
       final List<ViewRule> rules = getRules();
       final List<SharedCostSplit> splits = getSharedCostSplits();
       return Stream
-          .of(getSharedCost(TEST_NAME, rules, SharingStrategy.FIXED, splits),
-              getSharedCost(TEST_NAME, rules, SharingStrategy.PROPORTIONAL, splits))
+          .of(getSharedCost(TEST_NAME_1, rules, SharingStrategy.FIXED, splits),
+              getSharedCost(TEST_NAME_2, rules, SharingStrategy.PROPORTIONAL, splits))
           .collect(Collectors.toList());
     }
 
-    public static SharedCostSplit getSharedCostSplit(final String costTargetName, final double percentageContribution) {
+    private static SharedCostSplit getSharedCostSplit(
+        final String costTargetName, final double percentageContribution) {
       return SharedCostSplit.builder()
           .costTargetName(costTargetName)
           .percentageContribution(percentageContribution)
@@ -161,13 +164,13 @@ public class BusinessMappingResourceTest extends CategoryTest {
     }
 
     @NotNull
-    public static List<SharedCostSplit> getSharedCostSplits() {
-      return Stream.of(getSharedCostSplit(TEST_NAME, 10.0), getSharedCostSplit(TEST_NAME, 90.0))
+    private static List<SharedCostSplit> getSharedCostSplits() {
+      return Stream.of(getSharedCostSplit(TEST_NAME_1, 10.0), getSharedCostSplit(TEST_NAME_2, 90.0))
           .collect(Collectors.toList());
     }
 
     @NotNull
-    public static List<ViewRule> getRules() {
+    private static List<ViewRule> getRules() {
       final List<ViewCondition> viewConditions = Collections.singletonList(ViewIdCondition.builder().build());
       return Collections.singletonList(ViewRule.builder().viewConditions(viewConditions).build());
     }
