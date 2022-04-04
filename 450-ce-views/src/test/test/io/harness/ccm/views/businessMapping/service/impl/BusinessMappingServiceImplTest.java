@@ -16,9 +16,9 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
-import io.harness.ccm.helper.BusinessMappingHelper;
 import io.harness.ccm.views.businessMapping.dao.BusinessMappingDao;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessMapping.helper.BusinessMappingHelper;
 import io.harness.ccm.views.entities.ViewField;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.rule.Owner;
