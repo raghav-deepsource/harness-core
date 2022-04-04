@@ -25,6 +25,7 @@ public enum ResourceType {
   TEMPLATE(ResourceTypeConstants.TEMPLATE),
   INPUT_SET(ResourceTypeConstants.INPUT_SET),
   DELEGATE_CONFIGURATION(ResourceTypeConstants.DELEGATE_CONFIGURATION),
+  DELEGATE_GROUPS(ResourceTypeConstants.DELEGATE_GROUPS),
   SERVICE(ResourceTypeConstants.SERVICE),
   ENVIRONMENT(ResourceTypeConstants.ENVIRONMENT),
   DELEGATE(ResourceTypeConstants.DELEGATE),

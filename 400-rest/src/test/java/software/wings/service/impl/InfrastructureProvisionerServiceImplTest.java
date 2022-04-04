@@ -8,6 +8,7 @@
 package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.beans.FeatureName.VALIDATE_PROVISIONER_EXPRESSION;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.BOJANA;
@@ -138,6 +139,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mongodb.morphia.query.MorphiaIterator;
 import org.mongodb.morphia.query.Query;
 
@@ -163,6 +165,7 @@ public class InfrastructureProvisionerServiceImplTest extends WingsBaseTest {
   @Mock DelegateService delegateService;
   @Mock WorkflowExecutionService workflowExecutionService;
   @Mock SecretManager secretManager;
+  @Mock FeatureFlagService featureFlagService;
   @Inject @InjectMocks InfrastructureProvisionerService infrastructureProvisionerService;
   @Inject @InjectMocks InfrastructureProvisionerServiceImpl infrastructureProvisionerServiceImpl;
   @Inject private HPersistence persistence;
@@ -1122,5 +1125,34 @@ public class InfrastructureProvisionerServiceImplTest extends WingsBaseTest {
     properties.add(property);
     infrastructureProvisionerServiceImpl.addProvisionerKeys(properties, infrastructureProvisioner);
     assertThat(property.getValue()).isEqualTo("${shellScriptProvisioner.test}");
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void testAreExpressionsValid() {
+    doReturn(true).when(featureFlagService).isEnabled(eq(VALIDATE_PROVISIONER_EXPRESSION), any());
+    InfrastructureProvisioner provisioner = Mockito.mock(InfrastructureProvisioner.class);
+    String variableKey = TerraformInfrastructureProvisioner.VARIABLE_KEY;
+    doReturn(variableKey).when(provisioner).variableKey();
+    assertThat(infrastructureProvisionerServiceImpl.areExpressionsValid(provisioner, null)).isTrue();
+    Map<String, Object> expressions = new HashMap<>();
+    assertThat(infrastructureProvisionerServiceImpl.areExpressionsValid(provisioner, expressions)).isTrue();
+    expressions.put("Key1", variableKey);
+    expressions.put("Key2", provisioner);
+    assertThat(infrastructureProvisionerServiceImpl.areExpressionsValid(provisioner, expressions)).isTrue();
+    expressions.put("Key3", "${" + variableKey);
+    assertThat(infrastructureProvisionerServiceImpl.areExpressionsValid(provisioner, expressions)).isTrue();
+    expressions.put("Key4", "${" + variableKey + ".hello");
+    assertThat(infrastructureProvisionerServiceImpl.areExpressionsValid(provisioner, expressions)).isTrue();
+    expressions.put("Key5", "RANDOM-${" + variableKey + ".hello}");
+    assertThat(infrastructureProvisionerServiceImpl.areExpressionsValid(provisioner, expressions)).isFalse();
+    expressions.clear();
+    expressions.put("Key5", "RANDOM-${ABC.hello");
+    assertThat(infrastructureProvisionerServiceImpl.areExpressionsValid(provisioner, expressions)).isTrue();
+    expressions.put("Key5", "RANDOM-${ABC.hello}");
+    assertThat(infrastructureProvisionerServiceImpl.areExpressionsValid(provisioner, expressions)).isFalse();
+    doReturn(false).when(featureFlagService).isEnabled(eq(VALIDATE_PROVISIONER_EXPRESSION), any());
+    assertThat(infrastructureProvisionerServiceImpl.areExpressionsValid(provisioner, expressions)).isTrue();
   }
 }

@@ -33,6 +33,7 @@ public class ResourceTypeConstants {
   public static final String ENVIRONMENT = "ENVIRONMENT";
   public static final String ENVIRONMENT_GROUP = "ENVIRONMENT_GROUP";
   public static final String DELEGATE = "DELEGATE";
+  public static final String DELEGATE_GROUPS = "DELEGATE_GROUPS";
   public static final String SERVICE_ACCOUNT = "SERVICE_ACCOUNT";
   public static final String CONNECTOR = "CONNECTOR";
   public static final String API_KEY = "API_KEY";

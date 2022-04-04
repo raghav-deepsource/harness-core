@@ -213,14 +213,7 @@ public class MonitoredServiceResource {
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
   public ResponseDTO<MonitoredServiceResponse> get(
       @NotNull @PathParam("identifier") @ResourceIdentifier String identifier,
-      @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
+      @NotNull @Valid @BeanParam ProjectParams projectParams) {
     return ResponseDTO.newResponse(monitoredServiceService.get(projectParams, identifier));
   }
 

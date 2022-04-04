@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.Action;
+import io.harness.audit.StaticAuditFilter;
 import io.harness.audit.beans.Environment;
 import io.harness.audit.beans.Principal;
 import io.harness.audit.beans.ResourceDTO;
@@ -44,6 +45,8 @@ public class AuditFilterProperties extends FilterProperties {
   List<Action> actions;
   List<Environment> environments;
   List<Principal> principals;
+
+  StaticAuditFilter staticFilter;
 
   Long startTime;
   Long endTime;

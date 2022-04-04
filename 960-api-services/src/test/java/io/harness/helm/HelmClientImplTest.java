@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.IVAN;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static java.util.Arrays.asList;
@@ -36,6 +37,7 @@ import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.rule.Owner;
 
 import java.io.IOException;
@@ -418,5 +420,43 @@ public class HelmClientImplTest extends CategoryTest {
   @FunctionalInterface
   public interface ConsumerWrapper<T> {
     void accept(T t) throws Exception;
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testSegregationOfOutputAndError() throws Exception {
+    String errorMsg = "Unexpected Error";
+    HelmClientImpl.LogErrorStream errorStream1 = new HelmClientImpl.LogErrorStream();
+    errorStream1.processLine(errorMsg);
+    HelmClientImpl.ErrorActivityOutputStream errorStream2 =
+        new HelmClientImpl.ErrorActivityOutputStream(getLogCallback());
+    errorStream2.processLine(errorMsg);
+    String expectedYamlMessage = "Some Yaml File\n";
+    String command = "echo 'Some Yaml File'";
+    String combinedOutput = errorMsg + " " + expectedYamlMessage;
+    doCallRealMethod().when(helmClient).executeHelmCLICommand(command, 1000000, errorStream1);
+    doCallRealMethod().when(helmClient).executeHelmCLICommand(command, 1000000, errorStream2);
+    HelmCliResponse helmCliResponse1 = helmClient.executeHelmCLICommand(command, 1000000, errorStream1);
+    HelmCliResponse helmCliResponse2 = helmClient.executeHelmCLICommand(command, 1000000, errorStream2);
+    assertThat(helmCliResponse1.getOutput().equals(expectedYamlMessage));
+    assertThat(helmCliResponse1.getErrorStreamOutput().equals(errorMsg));
+    assertThat(helmCliResponse1.getOutputWithErrorStream().equals(combinedOutput));
+    assertThat(helmCliResponse2.getOutput().equals(expectedYamlMessage));
+    assertThat(helmCliResponse2.getErrorStreamOutput().equals(errorMsg));
+    assertThat(helmCliResponse2.getOutputWithErrorStream().equals(combinedOutput));
+  }
+
+  private LogCallback getLogCallback() {
+    return new LogCallback() {
+      @Override
+      public void saveExecutionLog(String line) {}
+
+      @Override
+      public void saveExecutionLog(String line, LogLevel logLevel) {}
+
+      @Override
+      public void saveExecutionLog(String line, LogLevel logLevel, CommandExecutionStatus commandExecutionStatus) {}
+    };
   }
 }

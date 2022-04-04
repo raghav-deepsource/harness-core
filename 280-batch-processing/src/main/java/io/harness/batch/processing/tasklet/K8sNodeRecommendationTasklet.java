@@ -149,6 +149,9 @@ public class K8sNodeRecommendationTasklet implements Tasklet {
         if ("could not recommend cluster with the requested resources".equals(errorResponse.getDetail())) {
           throw new InvalidRequestException(errorResponse.getDetail());
         }
+        if ("400 Bad Request".equals(errorResponse.getDetail())) {
+          throw new InvalidRequestException(errorResponse.getDetail());
+        }
       }
 
       throw new ConnectException(exMessage);

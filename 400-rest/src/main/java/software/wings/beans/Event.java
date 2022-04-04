@@ -278,6 +278,10 @@ public class Event {
      */
     DELEGATE_REGISTRATION,
     /**
+     * for new Delegate Group.
+     */
+    DELEGATE_GROUP,
+    /**
      * for non-whitelisted users login attempt
      */
     NON_WHITELISTED,

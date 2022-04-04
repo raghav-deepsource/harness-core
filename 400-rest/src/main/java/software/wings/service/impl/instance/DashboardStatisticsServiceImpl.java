@@ -219,6 +219,23 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
       instanceSummaryMap.put(groupByEntityType, entitySummaryStatsList);
     }
 
+    List<EntitySummaryStats> updatedServiceDetails = instanceSummaryMap.get(EntityType.SERVICE.name());
+    Set<String> serviceIds = new HashSet<>();
+    for (EntitySummaryStats serviceSummary : updatedServiceDetails) {
+      serviceIds.add(serviceSummary.getEntitySummary().getId());
+    }
+    Map<String, String> serviceIdNameMapping =
+        serviceResourceService.getServiceNamesWithAccountId(accountId, serviceIds);
+    for (EntitySummaryStats serviceSummary : updatedServiceDetails) {
+      String serviceId = serviceSummary.getEntitySummary().getId();
+      String serviceType = serviceSummary.getEntitySummary().getType();
+      String serviceName = serviceSummary.getEntitySummary().getName();
+      String serviceNameUpdated =
+          serviceIdNameMapping.containsKey(serviceId) ? serviceIdNameMapping.get(serviceId) : serviceName;
+      serviceSummary.setEntitySummary(new EntitySummary(serviceId, serviceNameUpdated, serviceType));
+    }
+    instanceSummaryMap.replace(EntityType.SERVICE.name(), updatedServiceDetails);
+
     return InstanceSummaryStats.Builder.anInstanceSummaryStats()
         .countMap(instanceSummaryMap)
         .totalCount(instanceCount)
@@ -531,6 +548,21 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     final Iterator<ServiceInstanceCount> aggregate =
         HPersistence.retry(() -> aggregationPipeline.aggregate(ServiceInstanceCount.class));
     aggregate.forEachRemaining(instanceInfoList::add);
+
+    Set<String> serviceIds = new HashSet<>();
+    for (ServiceInstanceCount serviceInstanceCount : instanceInfoList) {
+      serviceIds.add(serviceInstanceCount.getServiceInfo().getId());
+    }
+    Map<String, String> serviceIdNameMapping =
+        serviceResourceService.getServiceNamesWithAccountId(accountId, serviceIds);
+    for (ServiceInstanceCount serviceInstanceCount : instanceInfoList) {
+      String serviceId = serviceInstanceCount.getServiceInfo().getId();
+      String serviceType = serviceInstanceCount.getServiceInfo().getType();
+      String serviceName = serviceInstanceCount.getServiceInfo().getName();
+      String serviceNameUpdated =
+          serviceIdNameMapping.containsKey(serviceId) ? serviceIdNameMapping.get(serviceId) : serviceName;
+      serviceInstanceCount.setServiceInfo(new EntitySummary(serviceId, serviceNameUpdated, serviceType));
+    }
     return constructInstanceSummaryStatsByService(instanceInfoList, offset, limit);
   }
 

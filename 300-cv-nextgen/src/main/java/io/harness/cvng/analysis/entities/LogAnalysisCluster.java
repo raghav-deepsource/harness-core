@@ -118,9 +118,15 @@ public final class LogAnalysisCluster implements PersistentEntity, UuidAware, Cr
     @Override
     public <TDocument> BsonDocument toBsonDocument(Class<TDocument> aClass, CodecRegistry codecRegistry) {
       BsonDocument bsonDocument = new BsonDocument();
-      bsonDocument.append(FrequencyKeys.count, new BsonInt64(count));
-      bsonDocument.append(FrequencyKeys.timestamp, new BsonInt64(timestamp));
-      bsonDocument.append(FrequencyKeys.riskScore, new BsonDouble(riskScore));
+      if (count != null) {
+        bsonDocument.append(FrequencyKeys.count, new BsonInt64(count));
+      }
+      if (timestamp != null) {
+        bsonDocument.append(FrequencyKeys.timestamp, new BsonInt64(timestamp));
+      }
+      if (riskScore != null) {
+        bsonDocument.append(FrequencyKeys.riskScore, new BsonDouble(riskScore));
+      }
       return bsonDocument;
     }
   }

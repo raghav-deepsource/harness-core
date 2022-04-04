@@ -7,6 +7,7 @@
 
 package io.harness.cdng.pipeline.resources;
 
+import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,9 +19,11 @@ import io.harness.beans.ExecutionStrategyType;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.pipeline.helpers.CDNGPipelineConfigurationHelper;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.ng.core.Status;
 import io.harness.rule.Owner;
 
 import io.fabric8.utils.Lists;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +36,7 @@ import org.mockito.MockitoAnnotations;
 public class CDNGPipelineConfigurationResourceTest extends CategoryTest {
   @Mock CDNGPipelineConfigurationHelper pipelineService;
   CDNGPipelineConfigurationResource cdngPipelineConfigurationResource;
+
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
@@ -84,5 +88,19 @@ public class CDNGPipelineConfigurationResourceTest extends CategoryTest {
 
     assertThat(serviceDefinitionTypes).isNotNull();
     assertThat(serviceDefinitionTypes.size()).isEqualTo(4);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetFailureStrategiesYaml() throws IOException {
+    String data = "failureStrategies:\n"
+        + "  - onFailure:\n"
+        + "      errors:\n"
+        + "        - AllErrors\n"
+        + "      action:\n"
+        + "        type: StageRollback";
+    assertThat(cdngPipelineConfigurationResource.getFailureStrategiesYaml().getStatus().equals(Status.SUCCESS));
+    assertThat(cdngPipelineConfigurationResource.getFailureStrategiesYaml().getData().equals(data));
   }
 }

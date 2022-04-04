@@ -160,6 +160,15 @@ public interface ServiceResourceService extends OwnedByApplication {
   String getName(@NotEmpty String appId, @NotEmpty String serviceId);
 
   /**
+   * Gets map of Service id and Service name.
+   *
+   * @param accountId
+   * @param serviceIds
+   * @return Map of Service id and Service names
+   */
+  Map<String, String> getServiceNamesWithAccountId(String accountId, @Nonnull Set<String> serviceIds);
+
+  /**
    * Gets service by name.
    *
    * @param appId       the app id

@@ -8,6 +8,9 @@
 package io.harness.audit.api.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.audit.Action.LOGIN;
+import static io.harness.audit.Action.LOGIN2FA;
+import static io.harness.audit.Action.UNSUCCESSFUL_LOGIN;
 import static io.harness.audit.mapper.AuditEventMapper.fromDTO;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
@@ -16,12 +19,14 @@ import static io.harness.utils.PageUtils.getPageRequest;
 import static java.lang.System.currentTimeMillis;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.audit.StaticAuditFilter;
 import io.harness.audit.api.AuditService;
 import io.harness.audit.api.AuditYamlService;
 import io.harness.audit.beans.AuditEventDTO;
 import io.harness.audit.beans.AuditFilterPropertiesDTO;
 import io.harness.audit.beans.Environment;
 import io.harness.audit.beans.Principal;
+import io.harness.audit.beans.PrincipalType;
 import io.harness.audit.beans.Resource;
 import io.harness.audit.beans.ResourceDTO;
 import io.harness.audit.beans.ResourceScope;
@@ -177,7 +182,20 @@ public class AuditServiceImpl implements AuditService {
                          .lte(Instant.ofEpochMilli(auditFilterPropertiesDTO.getEndTime() == null
                                  ? currentTimeMillis()
                                  : auditFilterPropertiesDTO.getEndTime())));
-    return new Criteria().andOperator(criteriaList.toArray(new Criteria[0]));
+    Criteria staticFilterCriteria = getStaticFilterCriteria(auditFilterPropertiesDTO.getStaticFilter());
+    return new Criteria().andOperator(
+        new Criteria().andOperator(criteriaList.toArray(new Criteria[0])), staticFilterCriteria);
+  }
+
+  private Criteria getStaticFilterCriteria(StaticAuditFilter staticFilter) {
+    if (staticFilter == StaticAuditFilter.EXCLUDE_LOGIN_EVENTS) {
+      return new Criteria().norOperator(Criteria.where(AuditEventKeys.action).is(LOGIN),
+          Criteria.where(AuditEventKeys.action).is(LOGIN2FA),
+          Criteria.where(AuditEventKeys.action).is(UNSUCCESSFUL_LOGIN));
+    } else if (staticFilter == StaticAuditFilter.EXCLUDE_SYSTEM_EVENTS) {
+      return new Criteria().norOperator(Criteria.where(AuditEventKeys.PRINCIPAL_TYPE_KEY).is(PrincipalType.SYSTEM));
+    }
+    return new Criteria();
   }
 
   private Criteria getBaseScopeCriteria(String accountIdentifier) {

@@ -34,6 +34,7 @@ import io.harness.ccm.commons.entities.k8s.K8sYaml;
 import io.harness.ccm.commons.entities.k8s.recommendation.K8sNodeRecommendation;
 import io.harness.ccm.commons.entities.k8s.recommendation.K8sWorkloadRecommendation;
 import io.harness.ccm.commons.entities.k8s.recommendation.PartialRecommendationHistogram;
+import io.harness.ccm.commons.entities.notifications.CCMNotificationSetting;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
 
@@ -77,6 +78,9 @@ public class CECommonsMorphiaRegistrar implements MorphiaRegistrar {
 
     // ecs
     set.add(ECSService.class);
+
+    // commons
+    set.add(CCMNotificationSetting.class);
   }
   @Override
   public void registerImplementationClasses(MorphiaRegistrarHelperPut h, MorphiaRegistrarHelperPut w) {

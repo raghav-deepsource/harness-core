@@ -7,7 +7,12 @@
 
 package io.harness.audit.api.impl;
 
+import static io.harness.audit.Action.LOGIN;
+import static io.harness.audit.Action.LOGIN2FA;
+import static io.harness.audit.Action.UNSUCCESSFUL_LOGIN;
+import static io.harness.audit.beans.PrincipalType.SYSTEM;
 import static io.harness.rule.OwnerRule.KARAN;
+import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.utils.PageTestUtils.getPage;
 
 import static java.util.Collections.emptyList;
@@ -28,6 +33,7 @@ import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.Action;
+import io.harness.audit.StaticAuditFilter;
 import io.harness.audit.api.AuditService;
 import io.harness.audit.api.AuditYamlService;
 import io.harness.audit.beans.AuditFilterPropertiesDTO;
@@ -112,7 +118,8 @@ public class AuditServiceImplTest extends CategoryTest {
     Criteria criteria = criteriaArgumentCaptor.getValue();
     assertNotNull(auditEvents);
     assertNotNull(criteria);
-    BasicDBList andList = (BasicDBList) criteria.getCriteriaObject().get("$and");
+    List<Document> docList = (List<Document>) criteria.getCriteriaObject().get("$and");
+    BasicDBList andList = (BasicDBList) docList.get(0).get("$and");
     assertNotNull(andList);
     assertEquals(4, andList.size());
     Document accountDocument = (Document) andList.get(0);
@@ -145,7 +152,8 @@ public class AuditServiceImplTest extends CategoryTest {
     Criteria criteria = criteriaArgumentCaptor.getValue();
     assertNotNull(auditEvents);
     assertNotNull(criteria);
-    BasicDBList andList = (BasicDBList) criteria.getCriteriaObject().get("$and");
+    List<Document> docList = (List<Document>) criteria.getCriteriaObject().get("$and");
+    BasicDBList andList = (BasicDBList) docList.get(0).get("$and");
     assertNotNull(andList);
     assertEquals(4, andList.size());
     Document accountDocument = (Document) andList.get(0);
@@ -178,7 +186,8 @@ public class AuditServiceImplTest extends CategoryTest {
     Criteria criteria = criteriaArgumentCaptor.getValue();
     assertNotNull(auditEvents);
     assertNotNull(criteria);
-    BasicDBList andList = (BasicDBList) criteria.getCriteriaObject().get("$and");
+    List<Document> docList = (List<Document>) criteria.getCriteriaObject().get("$and");
+    BasicDBList andList = (BasicDBList) docList.get(0).get("$and");
     assertNotNull(andList);
     assertEquals(4, andList.size());
     Document accountDocument = (Document) andList.get(0);
@@ -206,7 +215,8 @@ public class AuditServiceImplTest extends CategoryTest {
     Criteria criteria = criteriaArgumentCaptor.getValue();
     assertNotNull(auditEvents);
     assertNotNull(criteria);
-    BasicDBList andList = (BasicDBList) criteria.getCriteriaObject().get("$and");
+    List<Document> docList = (List<Document>) criteria.getCriteriaObject().get("$and");
+    BasicDBList andList = (BasicDBList) docList.get(0).get("$and");
     assertNotNull(andList);
     assertEquals(3, andList.size());
     Document accountDocument = (Document) andList.get(0);
@@ -245,7 +255,8 @@ public class AuditServiceImplTest extends CategoryTest {
     Criteria criteria = criteriaArgumentCaptor.getValue();
     assertNotNull(auditEvents);
     assertNotNull(criteria);
-    BasicDBList andList = (BasicDBList) criteria.getCriteriaObject().get("$and");
+    List<Document> docList = (List<Document>) criteria.getCriteriaObject().get("$and");
+    BasicDBList andList = (BasicDBList) docList.get(0).get("$and");
     assertNotNull(andList);
     assertEquals(6, andList.size());
     Document accountDocument = (Document) andList.get(0);
@@ -274,5 +285,61 @@ public class AuditServiceImplTest extends CategoryTest {
     assertNotNull(environmentIdentifierDocument);
     assertEquals(
         environmentIdentifier, environmentIdentifierDocument.getString(AuditEventKeys.ENVIRONMENT_IDENTIFIER_KEY));
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testStaticFilter_excludeLoginEvents() {
+    String accountIdentifier = randomAlphabetic(10);
+    ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    when(auditRepository.findAll(any(Criteria.class), any(Pageable.class))).thenReturn(getPage(emptyList(), 0));
+    AuditFilterPropertiesDTO correctFilter =
+        AuditFilterPropertiesDTO.builder()
+            .scopes(singletonList(ResourceScopeDTO.builder().accountIdentifier(accountIdentifier).build()))
+            .staticFilter(StaticAuditFilter.EXCLUDE_LOGIN_EVENTS)
+            .build();
+    Page<AuditEvent> auditEvents = auditService.list(accountIdentifier, samplePageRequest, correctFilter);
+    verify(auditRepository, times(1)).findAll(criteriaArgumentCaptor.capture(), any(Pageable.class));
+    Criteria criteria = criteriaArgumentCaptor.getValue();
+    assertNotNull(auditEvents);
+    assertNotNull(criteria);
+    List<Document> docList = (List<Document>) criteria.getCriteriaObject().get("$and");
+    BasicDBList andList = (BasicDBList) docList.get(1).get("$nor");
+    assertNotNull(andList);
+    assertEquals(3, andList.size());
+    Document loginDocument = (Document) andList.get(0);
+    assertEquals(LOGIN, loginDocument.get("action"));
+
+    Document login2FADocument = (Document) andList.get(1);
+    assertEquals(LOGIN2FA, login2FADocument.get("action"));
+
+    Document unsuccessfulLoginDocument = (Document) andList.get(2);
+    assertEquals(UNSUCCESSFUL_LOGIN, unsuccessfulLoginDocument.get("action"));
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testStaticFilter_excludeSystemEvents() {
+    String accountIdentifier = randomAlphabetic(10);
+    ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    when(auditRepository.findAll(any(Criteria.class), any(Pageable.class))).thenReturn(getPage(emptyList(), 0));
+    AuditFilterPropertiesDTO correctFilter =
+        AuditFilterPropertiesDTO.builder()
+            .scopes(singletonList(ResourceScopeDTO.builder().accountIdentifier(accountIdentifier).build()))
+            .staticFilter(StaticAuditFilter.EXCLUDE_SYSTEM_EVENTS)
+            .build();
+    Page<AuditEvent> auditEvents = auditService.list(accountIdentifier, samplePageRequest, correctFilter);
+    verify(auditRepository, times(1)).findAll(criteriaArgumentCaptor.capture(), any(Pageable.class));
+    Criteria criteria = criteriaArgumentCaptor.getValue();
+    assertNotNull(auditEvents);
+    assertNotNull(criteria);
+    List<Document> docList = (List<Document>) criteria.getCriteriaObject().get("$and");
+    BasicDBList andList = (BasicDBList) docList.get(1).get("$nor");
+    assertNotNull(andList);
+    assertEquals(1, andList.size());
+    Document principalTypeDocument = (Document) andList.get(0);
+    assertEquals(SYSTEM, principalTypeDocument.get(AuditEventKeys.PRINCIPAL_TYPE_KEY));
   }
 }

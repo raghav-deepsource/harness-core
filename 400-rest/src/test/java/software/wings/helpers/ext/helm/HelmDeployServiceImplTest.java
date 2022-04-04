@@ -1431,7 +1431,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     String chartLocation = "/chart";
     String output = "cli failed";
     List<String> valueOverrides = emptyList();
-    doReturn(HelmCliResponse.builder().commandExecutionStatus(FAILURE).output(output).build())
+    doReturn(HelmCliResponse.builder().commandExecutionStatus(FAILURE).errorStreamOutput(output).build())
         .when(helmClient)
         .renderChart(HelmCommandDataMapper.getHelmCommandData(helmInstallCommandRequest), chartLocation, namespace,
             valueOverrides, false);

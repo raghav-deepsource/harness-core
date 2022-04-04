@@ -1,0 +1,50 @@
+[
+  {
+    "label": 2,
+    "message": "clusterTwo",
+    "risk": "UNHEALTHY",
+    "radius": 2.664038103272266,
+    "angle": 0.0,
+    "clusterType": "UNKNOWN_EVENT"
+  },
+  {
+    "label": 3,
+    "message": "clusterThree",
+    "risk": "UNHEALTHY",
+    "radius": 2.4569517859052064,
+    "angle": 90.0,
+    "clusterType": "UNKNOWN_EVENT"
+  },
+  {
+    "label": 1,
+    "message": "clusterOne",
+    "risk": "UNHEALTHY",
+    "radius": 1.3905064793914041,
+    "angle": 180.0,
+    "baseline": {
+      "label": 1,
+      "message": "clusterOne",
+      "risk": "NO_ANALYSIS",
+      "radius": 0.9466705801001936,
+      "angle": 180.0,
+      "clusterType": "BASELINE"
+    },
+    "clusterType": "UNEXPECTED_FREQUENCY"
+  },
+  {
+    "label": 0,
+    "message": "clusterZero",
+    "risk": "HEALTHY",
+    "radius": 1.7496417080015458,
+    "angle": 270.0,
+    "baseline": {
+      "label": 0,
+      "message": "clusterZero",
+      "risk": "NO_ANALYSIS",
+      "radius": 0.6797414011533414,
+      "angle": 270.0,
+      "clusterType": "BASELINE"
+    },
+    "clusterType": "KNOWN_EVENT"
+  }
+]

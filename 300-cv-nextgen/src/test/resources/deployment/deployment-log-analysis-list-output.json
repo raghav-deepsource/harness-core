@@ -1,0 +1,108 @@
+{
+  "totalClusters": 4,
+  "eventCounts": [
+    {
+      "clusterType": "KNOWN_EVENT",
+      "count": 1
+    },
+    {
+      "clusterType": "UNKNOWN_EVENT",
+      "count": 2
+    },
+    {
+      "clusterType": "UNEXPECTED_FREQUENCY",
+      "count": 1
+    }
+  ],
+  "logAnalysisRadarCharts": {
+    "totalPages": 1,
+    "totalItems": 4,
+    "pageItemCount": 4,
+    "pageSize": 20,
+    "content": [
+      {
+        "message": "clusterTwo",
+        "label": 2,
+        "risk": "UNHEALTHY",
+        "radius": 2.664038103272266,
+        "angle": 0.0,
+        "clusterType": "UNKNOWN_EVENT",
+        "count": 25,
+        "frequencyData": [
+          12.0,
+          13.0
+        ]
+      },
+      {
+        "message": "clusterThree",
+        "label": 3,
+        "risk": "UNHEALTHY",
+        "radius": 2.4569517859052064,
+        "angle": 90.0,
+        "clusterType": "UNKNOWN_EVENT",
+        "count": 39,
+        "frequencyData": [
+          12.0,
+          13.0,
+          14.0
+        ]
+      },
+      {
+        "message": "clusterOne",
+        "label": 1,
+        "risk": "UNHEALTHY",
+        "radius": 1.3905064793914041,
+        "angle": 180.0,
+        "clusterType": "UNEXPECTED_FREQUENCY",
+        "count": 1,
+        "frequencyData": [
+          1100.0
+        ],
+        "baseline": {
+          "message": "clusterOne",
+          "label": 1,
+          "risk": "NO_ANALYSIS",
+          "radius": 0.9466705801001936,
+          "angle": 180.0,
+          "clusterType": "BASELINE",
+          "count": 0,
+          "frequencyData": [
+            1.0,
+            2.0,
+            1.0
+          ]
+        }
+      },
+      {
+        "message": "clusterZero",
+        "label": 0,
+        "risk": "HEALTHY",
+        "radius": 1.7496417080015458,
+        "angle": 270.0,
+        "clusterType": "KNOWN_EVENT",
+        "count": 152,
+        "frequencyData": [
+          152.0
+        ],
+        "baseline": {
+          "message": "clusterZero",
+          "label": 0,
+          "risk": "NO_ANALYSIS",
+          "radius": 0.6797414011533414,
+          "angle": 270.0,
+          "clusterType": "BASELINE",
+          "count": 0,
+          "frequencyData": [
+            101.0,
+            122.0,
+            155.0,
+            185.0,
+            166.0
+          ]
+        }
+      }
+    ],
+    "pageIndex": 0,
+    "empty": false
+  }
+}

@@ -1313,17 +1313,16 @@ public class AuthServiceImpl implements AuthService {
     }
     if (!envPipelineDeployPermissions.containsKey(executableElementInfo)) {
       log.error("User not authorized for executable element {}", executableElementInfo);
-      throw new InvalidRequestException(String.format("User not authorized to deploy %s : %s",
-                                            executableElementInfo.getEntityType(), executableElementInfo.getEntityId()),
+      throw new AccessDeniedException(String.format("User not authorized to deploy %s : %s",
+                                          executableElementInfo.getEntityType(), executableElementInfo.getEntityId()),
           USER);
     }
     final Set<String> envDeployPerms = envPipelineDeployPermissions.get(executableElementInfo);
     envIds.forEach(envId -> {
       if (!envDeployPerms.contains(envId)) {
         log.error("User not authorized for envId {}", envId);
-        throw new InvalidRequestException(
-            String.format("User not authorized to deploy %s : %s to environment %s",
-                executableElementInfo.getEntityType(), executableElementInfo.getEntityId(), envId),
+        throw new InvalidRequestException(String.format("User not authorized to deploy %s to given environment",
+                                              executableElementInfo.getEntityType()),
             USER);
       }
     });

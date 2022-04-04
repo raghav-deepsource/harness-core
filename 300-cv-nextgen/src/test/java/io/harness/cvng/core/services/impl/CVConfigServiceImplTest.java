@@ -11,6 +11,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KANHAIYA;
+import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 import static io.harness.rule.OwnerRule.VUK;
 
@@ -21,10 +22,17 @@ import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.beans.CVMonitoringCategory;
+import io.harness.cvng.beans.TimeSeriesMetricType;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.MetricResponseMapping;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
+import io.harness.cvng.core.entities.AppDynamicsCVConfig.MetricInfo;
 import io.harness.cvng.core.entities.CVConfig;
+import io.harness.cvng.core.entities.DynatraceCVConfig;
+import io.harness.cvng.core.entities.DynatraceCVConfig.DynatraceMetricInfo;
 import io.harness.cvng.core.entities.MetricPack;
+import io.harness.cvng.core.entities.NewRelicCVConfig;
+import io.harness.cvng.core.entities.NewRelicCVConfig.NewRelicMetricInfo;
 import io.harness.cvng.core.entities.SplunkCVConfig;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.models.VerificationType;
@@ -148,11 +156,67 @@ public class CVConfigServiceImplTest extends CvNextGenTestBase {
     AppDynamicsCVConfig updated = (AppDynamicsCVConfig) cvConfigService.get(appDynamicsCVConfig.getUuid());
     updated.setTierName("updated-tier-name");
     updated.setApplicationName("updated-application-name");
+    MetricInfo metricInfo = MetricInfo.builder()
+                                .baseFolder("baseFolder")
+                                .metricPath("metricPath")
+                                .metricType(TimeSeriesMetricType.ERROR)
+                                .build();
+    updated.setMetricInfos(Arrays.asList(metricInfo));
     cvConfigService.update(updated);
     AppDynamicsCVConfig updateStored = (AppDynamicsCVConfig) cvConfigService.get(updated.getUuid());
     assertCommons(updated, updateStored);
     assertThat(updateStored.getApplicationName()).isEqualTo("updated-application-name");
     assertThat(updateStored.getTierName()).isEqualTo("updated-tier-name");
+    assertThat(updateStored.getMetricInfos()).isEqualTo(Arrays.asList(metricInfo));
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testUpdate_NewRelicCVConfig() {
+    NewRelicCVConfig newRelicCVConfig = createNewRelicCVConfig();
+    save(newRelicCVConfig);
+    NewRelicCVConfig updated = (NewRelicCVConfig) cvConfigService.get(newRelicCVConfig.getUuid());
+    updated.setApplicationId(54321);
+    updated.setApplicationName("updated-application-name");
+    NewRelicMetricInfo metricInfo = NewRelicMetricInfo.builder()
+                                        .nrql("nrql")
+                                        .metricType(TimeSeriesMetricType.ERROR)
+                                        .responseMapping(MetricResponseMapping.builder()
+                                                             .metricValueJsonPath("metricValueJsonPath")
+                                                             .timestampJsonPath("timestampJsonPath")
+                                                             .build())
+                                        .build();
+    updated.setMetricInfos(Arrays.asList(metricInfo));
+    cvConfigService.update(updated);
+    NewRelicCVConfig updateStored = (NewRelicCVConfig) cvConfigService.get(updated.getUuid());
+    assertCommons(updated, updateStored);
+    assertThat(updateStored.getApplicationName()).isEqualTo("updated-application-name");
+    assertThat(updateStored.getApplicationId()).isEqualTo(54321);
+    assertThat(updateStored.getMetricInfos()).isEqualTo(Arrays.asList(metricInfo));
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testUpdate_DynatraceCVConfig() {
+    DynatraceCVConfig dynatraceCVConfig = createDynatraceCVConfig();
+    save(dynatraceCVConfig);
+    DynatraceCVConfig updated = (DynatraceCVConfig) cvConfigService.get(dynatraceCVConfig.getUuid());
+    updated.setDynatraceServiceName("updated-dynatrace-service-name");
+    updated.setDynatraceServiceId("54321");
+    DynatraceMetricInfo metricInfo = DynatraceMetricInfo.builder()
+                                         .metricType(TimeSeriesMetricType.ERROR)
+                                         .metricSelector("metricSelector")
+                                         .isManualQuery(true)
+                                         .build();
+    updated.setMetricInfos(Arrays.asList(metricInfo));
+    cvConfigService.update(updated);
+    DynatraceCVConfig updateStored = (DynatraceCVConfig) cvConfigService.get(updated.getUuid());
+    assertCommons(updated, updateStored);
+    assertThat(updateStored.getDynatraceServiceName()).isEqualTo("updated-dynatrace-service-name");
+    assertThat(updateStored.getDynatraceServiceId()).isEqualTo("54321");
+    assertThat(updateStored.getMetricInfos()).isEqualTo(Arrays.asList(metricInfo));
   }
 
   @Test
@@ -359,7 +423,28 @@ public class CVConfigServiceImplTest extends CvNextGenTestBase {
     appDynamicsCVConfig.setApplicationName("application-name");
     appDynamicsCVConfig.setTierName("tier-name");
     appDynamicsCVConfig.setMetricPack(MetricPack.builder().build());
+    appDynamicsCVConfig.setMetricInfos(Arrays.asList(MetricInfo.builder().build()));
     return appDynamicsCVConfig;
+  }
+
+  private NewRelicCVConfig createNewRelicCVConfig() {
+    NewRelicCVConfig newRelicCVConfig = new NewRelicCVConfig();
+    fillCommon(newRelicCVConfig);
+    newRelicCVConfig.setApplicationName("application-name");
+    newRelicCVConfig.setApplicationId(12345);
+    newRelicCVConfig.setMetricPack(MetricPack.builder().build());
+    newRelicCVConfig.setMetricInfos(Arrays.asList(NewRelicMetricInfo.builder().build()));
+    return newRelicCVConfig;
+  }
+
+  private DynatraceCVConfig createDynatraceCVConfig() {
+    DynatraceCVConfig dynatraceCVConfig = new DynatraceCVConfig();
+    fillCommon(dynatraceCVConfig);
+    dynatraceCVConfig.setDynatraceServiceName("dynatrace-service-name");
+    dynatraceCVConfig.setDynatraceServiceId("12345");
+    dynatraceCVConfig.setMetricPack(MetricPack.builder().build());
+    dynatraceCVConfig.setMetricInfos(Arrays.asList(DynatraceMetricInfo.builder().build()));
+    return dynatraceCVConfig;
   }
 
   private void fillCommon(CVConfig cvConfig) {

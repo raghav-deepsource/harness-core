@@ -76,9 +76,7 @@ public class ArtifactoryRegistryArtifactConfig implements ArtifactConfig, Visita
   /**
    * repo server hostname.
    */
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH, name = "repositoryUrl")
-  @Wither
-  ParameterField<String> artifactRepositoryUrl;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> repositoryUrl;
   /**
    * Tag refers to exact tag number.
    */
@@ -116,8 +114,14 @@ public class ArtifactoryRegistryArtifactConfig implements ArtifactConfig, Visita
     if (!ParameterField.isNull(artifactoryRegistryArtifactConfig.getConnectorRef())) {
       resultantConfig = resultantConfig.withConnectorRef(artifactoryRegistryArtifactConfig.getConnectorRef());
     }
+    if (!ParameterField.isNull(artifactoryRegistryArtifactConfig.getRepository())) {
+      resultantConfig = resultantConfig.withArtifactPath(artifactoryRegistryArtifactConfig.getRepository());
+    }
     if (!ParameterField.isNull(artifactoryRegistryArtifactConfig.getArtifactPath())) {
       resultantConfig = resultantConfig.withArtifactPath(artifactoryRegistryArtifactConfig.getArtifactPath());
+    }
+    if (!ParameterField.isNull(artifactoryRegistryArtifactConfig.getRepositoryUrl())) {
+      resultantConfig = resultantConfig.withArtifactPath(artifactoryRegistryArtifactConfig.getRepositoryUrl());
     }
     if (!ParameterField.isNull(artifactoryRegistryArtifactConfig.getTag())) {
       resultantConfig = resultantConfig.withTag(artifactoryRegistryArtifactConfig.getTag());

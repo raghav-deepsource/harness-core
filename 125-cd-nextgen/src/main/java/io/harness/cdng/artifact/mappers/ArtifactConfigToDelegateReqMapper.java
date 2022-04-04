@@ -102,7 +102,7 @@ public class ArtifactConfigToDelegateReqMapper {
     }
 
     String artifactRepositoryUrl =
-        artifactConfig.getArtifactRepositoryUrl() != null ? artifactConfig.getArtifactRepositoryUrl().getValue() : null;
+        artifactConfig.getRepositoryUrl() != null ? artifactConfig.getRepositoryUrl().getValue() : null;
 
     return ArtifactDelegateRequestUtils.getArtifactoryArtifactDelegateRequest(artifactConfig.getRepository().getValue(),
         artifactConfig.getArtifactPath().getValue(), artifactConfig.getRepositoryFormat().getValue(),

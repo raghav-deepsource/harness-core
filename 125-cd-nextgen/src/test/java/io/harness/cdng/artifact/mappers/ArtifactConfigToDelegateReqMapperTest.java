@@ -128,7 +128,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
         ArtifactoryRegistryArtifactConfig.builder()
             .repository(ParameterField.createValueField("TEST_REPO"))
             .repositoryFormat(ParameterField.createValueField(RepositoryFormat.docker.name()))
-            .artifactRepositoryUrl(ParameterField.createValueField("harness-repo.jfrog.io"))
+            .repositoryUrl(ParameterField.createValueField("harness-repo.jfrog.io"))
             .artifactPath(ParameterField.createValueField("IMAGE"))
             .build();
     ArtifactoryConnectorDTO connectorDTO = ArtifactoryConnectorDTO.builder().build();
@@ -141,8 +141,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(delegateRequest.getArtifactoryConnectorDTO()).isEqualTo(connectorDTO);
     assertThat(delegateRequest.getRepositoryName()).isEqualTo(artifactConfig.getRepository().getValue());
     assertThat(delegateRequest.getRepositoryFormat()).isEqualTo(RepositoryFormat.docker.name());
-    assertThat(delegateRequest.getArtifactRepositoryUrl())
-        .isEqualTo(artifactConfig.getArtifactRepositoryUrl().getValue());
+    assertThat(delegateRequest.getArtifactRepositoryUrl()).isEqualTo(artifactConfig.getRepositoryUrl().getValue());
     assertThat(delegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
     assertThat(delegateRequest.getArtifactPath()).isEqualTo(artifactConfig.getArtifactPath().getValue());
     assertThat(delegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.ARTIFACTORY_REGISTRY);

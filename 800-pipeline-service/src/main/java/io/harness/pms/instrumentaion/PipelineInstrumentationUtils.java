@@ -81,7 +81,7 @@ public class PipelineInstrumentationUtils {
 
   public String extractExceptionMessage(PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity) {
     if (pipelineExecutionSummaryEntity.getFailureInfo() == null) {
-      return null;
+      return "";
     }
     return pipelineExecutionSummaryEntity.getFailureInfo()
         .getResponseMessages()

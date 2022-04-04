@@ -89,7 +89,7 @@ public class VMPricingServiceImpl implements VMPricingService {
         log.info("Cache size {}", vmPricingInfoCache.asMap().size());
         log.debug("Pricing response {} {}", pricingInfo.toString(), pricingInfo.body().getProducts());
       } else {
-        log.info("Null response for params {} {} {}", region, serviceName, cloudProvider);
+        log.error("Null response from cloudinfo service for params {} {} {}", region, serviceName, cloudProvider);
       }
     } catch (IOException e) {
       log.error("Exception in pricing service ", e);

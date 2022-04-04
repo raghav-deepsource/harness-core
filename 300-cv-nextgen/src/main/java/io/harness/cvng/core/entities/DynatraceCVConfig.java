@@ -147,6 +147,9 @@ public class DynatraceCVConfig extends MetricCVConfig<DynatraceMetricInfo> {
       setCommonOperations(updateOperations, dynatraceCVConfig);
       updateOperations.set(DynatraceCVConfigKeys.dynatraceServiceName, dynatraceCVConfig.getDynatraceServiceName())
           .set(DynatraceCVConfigKeys.dynatraceServiceId, dynatraceCVConfig.getDynatraceServiceId());
+      if (dynatraceCVConfig.getMetricInfos() != null) {
+        updateOperations.set(DynatraceCVConfigKeys.metricInfos, dynatraceCVConfig.getMetricInfos());
+      }
     }
   }
 

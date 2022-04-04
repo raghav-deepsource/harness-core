@@ -115,21 +115,24 @@ public class CEMetaDataRecordUpdateService {
         bigQueryHelperService.updateCloudProviderMetaData(accountId, ceMetadataRecordBuilder);
       }
 
-      CEMetadataRecord currentCEMetadataRecord = metadataRecordDao.getByAccountId(accountId);
-      Boolean isSegmentDataReadyEventSent = currentCEMetadataRecord.getSegmentDataReadyEventSent();
-      if (isSegmentDataReadyEventSent == null || !isSegmentDataReadyEventSent) {
-        HashMap<String, Object> properties = new HashMap<>();
-        properties.put(ACCOUNT_ID, accountId);
-        properties.put(DATA_GENERATED, "CLOUD");
-        telemetryReporter.sendTrackEvent(
-            CCM_DATA_GENERATED, properties, Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-        ceMetadataRecordBuilder.segmentDataReadyEventSent(true);
-      }
-
       CEMetadataRecord ceMetadataRecord = ceMetadataRecordBuilder.awsConnectorConfigured(isAwsConnectorPresent)
                                               .gcpConnectorConfigured(isGCPConnectorPresent)
                                               .azureConnectorConfigured(isAzureConnectorPresent)
                                               .build();
+
+      if (ceMetadataRecord.getAwsDataPresent() || ceMetadataRecord.getAzureDataPresent()
+          || ceMetadataRecord.getGcpDataPresent()) {
+        CEMetadataRecord currentCEMetadataRecord = metadataRecordDao.getByAccountId(accountId);
+        Boolean isSegmentDataReadyEventSent = currentCEMetadataRecord.getSegmentDataReadyEventSent();
+        if (isSegmentDataReadyEventSent == null || !isSegmentDataReadyEventSent) {
+          HashMap<String, Object> properties = new HashMap<>();
+          properties.put(ACCOUNT_ID, accountId);
+          properties.put(DATA_GENERATED, "CLOUD");
+          telemetryReporter.sendTrackEvent(
+              CCM_DATA_GENERATED, properties, Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+          ceMetadataRecord.setSegmentDataReadyEventSent(true);
+        }
+      }
 
       cloudToHarnessMappingService.upsertCEMetaDataRecord(ceMetadataRecord);
 

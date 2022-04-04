@@ -332,12 +332,12 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @VisibleForTesting
   @Override
   public void convertToExecutionCapability(DelegateTask task) {
-    Set<ExecutionCapability> selectorCapabilities = new HashSet<>();
+    Set<ExecutionCapability> executionCapabilities = new HashSet<>();
 
     if (isNotEmpty(task.getTags())) {
       SelectorCapability selectorCapability =
           SelectorCapability.builder().selectors(new HashSet<>(task.getTags())).selectorOrigin(TASK_SELECTORS).build();
-      selectorCapabilities.add(selectorCapability);
+      executionCapabilities.add(selectorCapability);
     }
 
     boolean isTaskNg =
@@ -351,19 +351,19 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
                                                     .selectors(mapFromTaskType.getSelectors())
                                                     .selectorOrigin(TASK_CATEGORY_MAP)
                                                     .build();
-        selectorCapabilities.add(selectorCapability);
+        executionCapabilities.add(selectorCapability);
       }
     }
 
     if (task.getExecutionCapabilities() == null) {
-      task.setExecutionCapabilities(new ArrayList<>(selectorCapabilities));
-      if (task.getData() != null && isNotEmpty(selectorCapabilities)) {
+      task.setExecutionCapabilities(new ArrayList<>(executionCapabilities));
+      if (task.getData() != null && isNotEmpty(executionCapabilities)) {
         addToTaskActivityLog(task,
             CapabilityHelper.generateLogStringWithSelectionCapabilitiesGenerated(
                 task.getData().getTaskType(), task.getExecutionCapabilities()));
       }
     } else {
-      task.getExecutionCapabilities().addAll(selectorCapabilities);
+      task.getExecutionCapabilities().addAll(executionCapabilities);
     }
   }
 
@@ -438,7 +438,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         convertToExecutionCapability(task);
 
         List<String> eligibleListOfDelegates = assignDelegateService.getEligibleDelegatesToExecuteTask(task);
-
+        delegateSelectionLogsService.logDelegateTaskInfo(task);
         if (eligibleListOfDelegates.isEmpty()) {
           addToTaskActivityLog(task, NO_ELIGIBLE_DELEGATES);
           delegateSelectionLogsService.logNoEligibleDelegatesToExecuteTask(task);

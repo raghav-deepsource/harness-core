@@ -1150,8 +1150,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void unregisterDelegate() {
-    final DelegateUnregisterRequest request =
-        new DelegateUnregisterRequest(delegateId, HOST_NAME, delegateNg, DELEGATE_TYPE, getLocalHostAddress());
+    final DelegateUnregisterRequest request = new DelegateUnregisterRequest(delegateId, HOST_NAME, delegateNg,
+        DELEGATE_TYPE, getLocalHostAddress(), delegateOrgIdentifier, delegateProjectIdentifier);
     try {
       log.info("Unregistering delegate {}", delegateId);
       executeRestCall(delegateAgentManagerClient.unregisterDelegate(accountId, request));
@@ -1586,6 +1586,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         statusData.put(DELEGATE_UPGRADE_STARTED, upgradeStartedAt);
       }
       if (!acquireTasks.get()) {
+        if (stoppedAcquiringAt == 0) {
+          stoppedAcquiringAt = clock.millis();
+        }
         statusData.put(DELEGATE_SHUTDOWN_STARTED, stoppedAcquiringAt);
       }
       if (isNotBlank(migrateTo)) {

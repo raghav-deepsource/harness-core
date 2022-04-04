@@ -13,6 +13,7 @@ import static io.harness.filter.FilterConstants.AUDIT_FILTER;
 import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.Action;
+import io.harness.audit.StaticAuditFilter;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterPropertiesDTO;
 
@@ -50,6 +51,8 @@ public class AuditFilterPropertiesDTO extends FilterPropertiesDTO {
   @Schema(description = "List of Actions") List<Action> actions;
   @Schema(description = "List of Environments") List<Environment> environments;
   @Schema(description = "List of Principals") List<Principal> principals;
+
+  @Schema(description = "Pre-defined Filter") StaticAuditFilter staticFilter;
 
   @Schema(description =
               "Used to specify a start time for retrieving Audit events that occurred at or after the time indicated.")

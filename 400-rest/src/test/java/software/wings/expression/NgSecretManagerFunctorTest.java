@@ -84,7 +84,6 @@ public class NgSecretManagerFunctorTest extends WingsBaseTest {
 
   private List<EncryptedDataDetail> generateEncryptedDataDetails() {
     VaultConfig vaultConfig = VaultConfig.builder().build();
-    vaultConfig.setUuid(UUIDGenerator.generateUuid());
 
     EncryptedData encryptedData = EncryptedData.builder().accountId(ACCOUNT_ID).build();
     encryptedData.setUuid(UUIDGenerator.generateUuid());
@@ -117,6 +116,27 @@ public class NgSecretManagerFunctorTest extends WingsBaseTest {
     decryptedValue = (String) ngSecretManagerFunctor.obtain(secretName, token);
     assertDelegateDecryptedValue(secretName, ngSecretManagerFunctor, decryptedValue);
     verify(ngSecretService, times(1)).getEncryptionDetails(any(BaseNGAccess.class), any(SecretVariableDTO.class));
+  }
+
+  @Test
+  @Owner(developers = ANSHUL)
+  @Category(UnitTests.class)
+  public void testMultipleEncryptionConfigs() {
+    String[] sampleSecretNames = new String[] {"secret1", "secret2"};
+    int token = HashGenerator.generateIntegerHash();
+    NgSecretManagerFunctor ngSecretManagerFunctor = buildFunctor(token);
+    assertFunctor(ngSecretManagerFunctor);
+
+    List<EncryptedDataDetail> encryptedDataDetails = generateEncryptedDataDetails();
+    when(ngSecretService.getEncryptionDetails(any(BaseNGAccess.class), any(SecretVariableDTO.class)))
+        .thenReturn(encryptedDataDetails);
+
+    for (String secretName : sampleSecretNames) {
+      String decryptedValue = (String) ngSecretManagerFunctor.obtain(secretName, token);
+      assertDelegateDecryptedValue(secretName, ngSecretManagerFunctor, decryptedValue);
+    }
+
+    assertThat(ngSecretManagerFunctor.getEncryptionConfigs().size()).isEqualTo(sampleSecretNames.length);
   }
 
   @Test

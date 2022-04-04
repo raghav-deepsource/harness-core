@@ -8,6 +8,7 @@
 package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
@@ -26,6 +27,7 @@ import io.harness.selection.log.DelegateSelectionLog.DelegateSelectionLogKeys;
 import io.harness.selection.log.DelegateSelectionLogTaskMetadata;
 import io.harness.service.intfc.DelegateCache;
 
+import software.wings.delegatetasks.delegatecapability.CapabilityHelper;
 import software.wings.service.intfc.DelegateSelectionLogsService;
 import software.wings.service.intfc.DelegateService;
 
@@ -280,6 +282,25 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
       return Optional.empty();
     }
     return Optional.ofNullable(buildSelectionLogParams(delegateSelectionLog));
+  }
+
+  @Override
+  public void logDelegateTaskInfo(DelegateTask delegateTask) {
+    if (!delegateTask.isSelectionLogsTrackingEnabled()) {
+      return;
+    }
+    String delegateSelectorReceived =
+        CapabilityHelper.generateSelectionLogForSelectors(delegateTask.getExecutionCapabilities());
+    if (isEmpty(delegateSelectorReceived)) {
+      return;
+    }
+    save(DelegateSelectionLog.builder()
+             .accountId(delegateTask.getAccountId())
+             .taskId(delegateTask.getUuid())
+             .conclusion(INFO)
+             .message(delegateSelectorReceived)
+             .eventTimestamp(System.currentTimeMillis())
+             .build());
   }
 
   private DelegateSelectionLogParams buildSelectionLogParams(DelegateSelectionLog selectionLog) {

@@ -31,7 +31,7 @@ public class AnomalyUtils {
   }
 
   public static Double getAnomalyTrend(Double actualCost, Double expectedCost) {
-    return expectedCost != 0 ? Math.round(((actualCost - expectedCost) / expectedCost) * 100D) / 100D : 0;
+    return expectedCost != 0 ? Math.round(((actualCost - expectedCost) / expectedCost) * 10000D) / 100D : 0;
   }
 
   public static String getResourceName(Anomalies anomaly) {

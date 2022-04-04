@@ -163,7 +163,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       HelmCliResponse helmCliResponse =
           helmClient.releaseHistory(HelmCommandDataMapperNG.getHelmCmdDataNG(commandRequest), true);
 
-      logCallback.saveExecutionLog(helmCliResponse.getOutput());
+      logCallback.saveExecutionLog(helmCliResponse.getOutputWithErrorStream());
 
       prevVersion = getPrevReleaseVersion(helmCliResponse);
 
@@ -309,7 +309,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
       HelmCliResponse deleteResponse =
           helmClient.deleteHelmRelease(HelmCommandDataMapperNG.getHelmCmdDataNG(commandRequest), true);
-      logCallback.saveExecutionLog(deleteResponse.getOutput());
+      logCallback.saveExecutionLog(deleteResponse.getOutputWithErrorStream());
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       String exceptionMessage = ExceptionUtils.getMessage(sanitizedException);
@@ -531,7 +531,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
             HelmCliResponse cliResponse = helmClient.getClientAndServerVersion(
                 HelmCommandDataMapperNG.getHelmCmdDataNG(helmCommandRequest), true);
             if (cliResponse.getCommandExecutionStatus() == CommandExecutionStatus.FAILURE) {
-              throw new InvalidRequestException(cliResponse.getOutput());
+              throw new InvalidRequestException(cliResponse.getOutputWithErrorStream());
             }
 
             if (isHelm3(cliResponse.getOutput())) {
@@ -541,7 +541,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
                       + helmClient.getHelmPath(helmCommandRequest.getHelmVersion())));
             }
 
-            return new HelmCommandResponseNG(CommandExecutionStatus.SUCCESS, cliResponse.getOutput());
+            return new HelmCommandResponseNG(CommandExecutionStatus.SUCCESS, cliResponse.getOutputWithErrorStream());
           });
     } catch (UncheckedTimeoutException e) {
       String msg = "Timed out while finding helm client and server version";
@@ -562,7 +562,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
           parseHelmReleaseCommandOutput(helmCliResponse.getOutput(), HelmCommandRequestNG.HelmCommandType.LIST_RELEASE);
       return HelmListReleaseResponseNG.builder()
           .commandExecutionStatus(helmCliResponse.getCommandExecutionStatus())
-          .output(helmCliResponse.getOutput())
+          .output(helmCliResponse.getOutputWithErrorStream())
           .releaseInfoList(releaseInfoList)
           .build();
     } catch (HelmClientRuntimeException e) {

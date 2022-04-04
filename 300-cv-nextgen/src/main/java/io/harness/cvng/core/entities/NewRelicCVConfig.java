@@ -118,6 +118,9 @@ public class NewRelicCVConfig extends MetricCVConfig<NewRelicMetricInfo> {
       setCommonOperations(updateOperations, newRelicCVConfig);
       updateOperations.set(NewRelicCVConfigKeys.applicationName, newRelicCVConfig.getApplicationName())
           .set(NewRelicCVConfigKeys.applicationId, newRelicCVConfig.getApplicationId());
+      if (newRelicCVConfig.getMetricInfos() != null) {
+        updateOperations.set(NewRelicCVConfigKeys.metricInfos, newRelicCVConfig.getMetricInfos());
+      }
     }
   }
 
