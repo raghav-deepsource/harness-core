@@ -193,19 +193,29 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     if (message.isPresent()) {
       throw new InvalidRequestException(message.get(), USER);
     }
-    if (SecretText.equals(dto.getType())) {
-      NGEncryptedData encryptedData = encryptedDataService.createSecretText(accountIdentifier, dto);
-      if (Optional.ofNullable(encryptedData).isPresent()) {
+
+    NGEncryptedData encryptedData;
+
+    switch (dto.getType()) {
+      case SecretText:
+        encryptedData = encryptedDataService.createSecretText(accountIdentifier, dto);
+        if (Optional.ofNullable(encryptedData).isPresent()) {
+          return createSecretInternal(accountIdentifier, dto, true);
+        }
+        break;
+      case SecretFile:
+        encryptedData = encryptedDataService.createSecretFile(accountIdentifier, dto, null);
+        if (Optional.ofNullable(encryptedData).isPresent()) {
+          return createSecretInternal(accountIdentifier, dto, true);
+        }
+        break;
+      case SSHKey:
+      case WinRmCredentials:
         return createSecretInternal(accountIdentifier, dto, true);
-      }
-    } else if (SecretFile.equals(dto.getType())) {
-      NGEncryptedData encryptedData = encryptedDataService.createSecretFile(accountIdentifier, dto, null);
-      if (Optional.ofNullable(encryptedData).isPresent()) {
-        return createSecretInternal(accountIdentifier, dto, true);
-      }
-    } else if (SSHKey.equals(dto.getType())) {
-      return createSecretInternal(accountIdentifier, dto, true);
+      default:
+        throw new IllegalArgumentException("Invalid secret type provided: " + dto.getType());
     }
+
     throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unable to create secret remotely.", USER);
   }
 
