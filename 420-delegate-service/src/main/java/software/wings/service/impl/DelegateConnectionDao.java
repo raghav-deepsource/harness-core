@@ -21,6 +21,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateConnectionDetails;
 import io.harness.persistence.HPersistence;
 
+import org.jooq.tools.StringUtils;
 import software.wings.beans.DelegateConnection;
 import software.wings.beans.DelegateConnection.DelegateConnectionKeys;
 
@@ -51,14 +52,26 @@ public class DelegateConnectionDao {
     persistence.update(query, updateOperations);
   }
 
-  public long numberOfActiveDelegateConnectionsPerVersion(String version) {
+  public long numberOfActiveDelegateConnectionsPerVersion(String version, String accountId) {
+    if(StringUtils.isEmpty(accountId)) {
+      return createQueryForAllActiveDelegateConnections(version).count();
+    }
+    return createQueryForAllActiveDelegateConnections(version).filter(DelegateConnectionKeys.accountId, accountId).count();
+  }
+
+  private Query<DelegateConnection> createQueryForAllActiveDelegateConnections(String version) {
     return persistence.createQuery(DelegateConnection.class, excludeAuthority)
         .field(DelegateConnectionKeys.disconnected)
         .notEqual(Boolean.TRUE)
         .field(DelegateConnectionKeys.lastHeartbeat)
         .greaterThan(currentTimeMillis() - EXPIRY_TIME.toMillis())
+        .filter(DelegateConnectionKeys.version, version);
+  }
+
+  public long numberOfDelegatePerVersion(String version, String accountId) {
+    return persistence.createQuery(DelegateConnection.class, excludeAuthority)
         .filter(DelegateConnectionKeys.version, version)
-        .count();
+        .filter(DelegateConnectionKeys.accountId, accountId).count();
   }
 
   public Map<String, List<String>> obtainActiveDelegatesPerAccount(String version) {

@@ -71,7 +71,9 @@ public interface DelegateService extends OwnedByAccount {
 
   List<String> getAvailableVersions(String accountId);
 
-  Double getConnectedRatioWithPrimary(String targetVersion);
+  Double getConnectedRatioWithPrimary(String targetVersion, String accountId);
+
+  Double getConnectedDelegatesRatio(String version, String accountId);
 
   Map<String, List<String>> getActiveDelegatesPerAccount(String targetVersion);
 
