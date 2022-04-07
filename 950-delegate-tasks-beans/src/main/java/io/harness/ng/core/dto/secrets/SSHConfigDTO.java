@@ -18,12 +18,10 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-//@EqualsAndHashCode(callSuper = true)
 @JsonTypeName("SSH")
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(name = "SSHConfig", description = "This is the SSH configuration details defined in Harness.")

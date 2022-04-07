@@ -20,12 +20,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-//@EqualsAndHashCode(callSuper = true)
 @JsonTypeName("NTLM")
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(name = "NTLMConfig", description = "This is the NTLM configuration details defined in Harness.")

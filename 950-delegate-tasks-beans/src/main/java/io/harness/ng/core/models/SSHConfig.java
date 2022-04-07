@@ -15,11 +15,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 @Data
 @Builder
-//@EqualsAndHashCode(callSuper = true)
 @JsonTypeName("SSH")
 public class SSHConfig implements BaseSSHSpec {
   private SSHCredentialType credentialType;
