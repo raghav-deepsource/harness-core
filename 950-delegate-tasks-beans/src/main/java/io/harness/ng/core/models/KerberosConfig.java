@@ -21,9 +21,9 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-@EqualsAndHashCode(callSuper = true)
+//@EqualsAndHashCode(callSuper = true)
 @JsonTypeName("Kerberos")
-public class KerberosConfig extends BaseSSHSpec {
+public class KerberosConfig implements BaseSSHSpec {
   private String principal;
   private String realm;
   private TGTGenerationMethod tgtGenerationMethod;

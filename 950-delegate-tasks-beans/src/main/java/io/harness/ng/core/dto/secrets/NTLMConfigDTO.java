@@ -25,11 +25,11 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-@EqualsAndHashCode(callSuper = true)
+//@EqualsAndHashCode(callSuper = true)
 @JsonTypeName("NTLM")
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(name = "NTLMConfig", description = "This is the NTLM configuration details defined in Harness.")
-public class NTLMConfigDTO extends BaseWinRmSpecDTO implements DecryptableEntity {
+public class NTLMConfigDTO implements BaseWinRmSpecDTO, DecryptableEntity {
   @Schema(description = "This is the NTLM domain name.") @NotNull private String domain;
 
   @Schema(description = "This is the NTLM user name.") @NotNull private String username;

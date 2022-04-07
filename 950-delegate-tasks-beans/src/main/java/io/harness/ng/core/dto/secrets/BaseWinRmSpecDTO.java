@@ -18,9 +18,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @JsonSubTypes(value =
     {
       @JsonSubTypes.Type(value = NTLMConfigDTO.class, name = "NTLM")
-      , @JsonSubTypes.Type(value = KerberosConfigDTO.class, name = "Kerberos"),
+      , @JsonSubTypes.Type(value = KerberosWinRmConfigDTO.class, name = "Kerberos"),
     })
 @Schema(name = "BaseWinRmSpec", description = "This is the WinRm specification details as defined in Harness.")
-public abstract class BaseWinRmSpecDTO {
-  public abstract BaseWinRmSpec toEntity();
+public interface BaseWinRmSpecDTO {
+  BaseWinRmSpec toEntity();
 }

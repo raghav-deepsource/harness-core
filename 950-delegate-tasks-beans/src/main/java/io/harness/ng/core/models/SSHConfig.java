@@ -19,9 +19,9 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @Builder
-@EqualsAndHashCode(callSuper = true)
+//@EqualsAndHashCode(callSuper = true)
 @JsonTypeName("SSH")
-public class SSHConfig extends BaseSSHSpec {
+public class SSHConfig implements BaseSSHSpec {
   private SSHCredentialType credentialType;
 
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXTERNAL_PROPERTY, property = "credentialType",

@@ -23,11 +23,11 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-@EqualsAndHashCode(callSuper = true)
+//@EqualsAndHashCode(callSuper = true)
 @JsonTypeName("SSH")
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(name = "SSHConfig", description = "This is the SSH configuration details defined in Harness.")
-public class SSHConfigDTO extends BaseSSHSpecDTO {
+public class SSHConfigDTO implements BaseSSHSpecDTO {
   @Schema(description = "This specifies SSH credential type as Password, KeyPath or KeyReference")
   @NotNull
   SSHCredentialType credentialType;
