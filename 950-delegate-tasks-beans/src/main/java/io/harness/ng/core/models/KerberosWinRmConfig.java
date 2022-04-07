@@ -7,34 +7,40 @@
 
 package io.harness.ng.core.models;
 
-import io.harness.encryption.SecretRefData;
 import io.harness.ng.core.dto.secrets.BaseWinRmSpecDTO;
-import io.harness.ng.core.dto.secrets.NTLMConfigDTO;
+import io.harness.ng.core.dto.secrets.KerberosWinRmConfigDTO;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import lombok.Builder;
+import java.util.Optional;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Data
-@Builder
-@JsonTypeName("NTLM")
-public class NTLMConfig implements BaseWinRmSpec {
+@NoArgsConstructor
+@SuperBuilder
+@EqualsAndHashCode(callSuper = true)
+@JsonTypeName("Kerberos")
+public class KerberosWinRmConfig extends KerberosConfig implements BaseWinRmSpec {
   private String domain;
   private String username;
   private boolean useSSL;
   private boolean skipCertChecks;
   private boolean useNoProfile;
-  private SecretRefData password;
 
   @Override
   public BaseWinRmSpecDTO toDTO() {
-    return NTLMConfigDTO.builder()
+    return KerberosWinRmConfigDTO.builder()
         .domain(domain)
         .username(username)
-        .password(password)
         .useSSL(useSSL)
         .skipCertChecks(skipCertChecks)
         .useNoProfile(useNoProfile)
+        .principal(getPrincipal())
+        .realm(getRealm())
+        .tgtGenerationMethod(getTgtGenerationMethod())
+        .spec(Optional.ofNullable(getSpec()).map(TGTGenerationSpec::toDTO).orElse(null))
         .build();
   }
 }

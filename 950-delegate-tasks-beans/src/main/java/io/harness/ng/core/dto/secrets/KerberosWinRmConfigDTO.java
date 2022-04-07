@@ -7,9 +7,8 @@
 
 package io.harness.ng.core.dto.secrets;
 
-import io.harness.ng.core.models.BaseSSHSpec;
 import io.harness.ng.core.models.BaseWinRmSpec;
-import io.harness.ng.core.models.KerberosConfig;
+import io.harness.ng.core.models.KerberosWinRmConfig;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -17,40 +16,43 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Optional;
-import lombok.Builder;
+import javax.validation.constraints.NotNull;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Data
 @NoArgsConstructor
-//@EqualsAndHashCode(callSuper = true)
+@SuperBuilder
+@EqualsAndHashCode(callSuper = true)
 @JsonTypeName("Kerberos")
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(Include.NON_NULL)
-@Schema(name = "KerberosConfig", description = "This is the Kerberos configuration details, defined in Harness.")
-public class KerberosWinRmConfigDTO extends KerberosBaseConfigDTO implements BaseWinRmSpecDTO {
-  //  @Schema(description = "This is the authorization role, the user/service has in the realm.")
-  //  @NotNull
-  //  protected String principal;
-  //  @Schema(description = "Name of the Realm.") @NotNull protected String realm;
-  //  @JsonTypeId protected TGTGenerationMethod tgtGenerationMethod;
-  //
-  //  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXTERNAL_PROPERTY,
-  //      property = "tgtGenerationMethod", visible = true)
-  //  @Valid
-  //  protected TGTGenerationSpecDTO spec;
+public class KerberosWinRmConfigDTO extends KerberosConfigDTO implements BaseWinRmSpecDTO {
+  @Schema(description = "This is the Kerberos domain name.") @NotNull private String domain;
+
+  @Schema(description = "This is the Kerberos user name.") @NotNull private String username;
+
+  @Schema(description = "This is the Kerberos either to use SSL/https .") private boolean useSSL = true;
+
+  @Schema(description = "This is the Kerberos either to skip certificate checks .")
+  private boolean skipCertChecks = true;
+
+  @Schema(description = "This is the Kerberos powershell runs without loading profile .") private boolean useNoProfile;
 
   @Override
   public BaseWinRmSpec toEntity() {
-    return null;
-  }
-
-  @Builder
-  public KerberosWinRmConfigDTO(
-      String principal, String realm, TGTGenerationMethod tgtGenerationMethod, TGTGenerationSpecDTO spec) {
-    this.principal = principal;
-    this.realm = realm;
-    this.tgtGenerationMethod = tgtGenerationMethod;
-    this.spec = spec;
+    return KerberosWinRmConfig.builder()
+        .domain(domain)
+        .username(username)
+        .useSSL(useSSL)
+        .skipCertChecks(skipCertChecks)
+        .useNoProfile(useNoProfile)
+        .principal(getPrincipal())
+        .realm(getRealm())
+        .tgtGenerationMethod(getTgtGenerationMethod())
+        .spec(Optional.ofNullable(getSpec()).map(TGTGenerationSpecDTO::toEntity).orElse(null))
+        .build();
   }
 }

@@ -7,47 +7,22 @@
 
 package io.harness.ng.core.models;
 
-import io.harness.ng.core.dto.secrets.BaseSSHSpecDTO;
-import io.harness.ng.core.dto.secrets.KerberosConfigDTO;
 import io.harness.ng.core.dto.secrets.TGTGenerationMethod;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.JsonTypeName;
-import java.util.Optional;
-import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Data
 @NoArgsConstructor
-//@EqualsAndHashCode(callSuper = true)
-@JsonTypeName("Kerberos")
-public class KerberosConfig implements BaseSSHSpec {
-  private String principal;
-  private String realm;
-  private TGTGenerationMethod tgtGenerationMethod;
+@SuperBuilder
+public class KerberosConfig {
+  protected String principal;
+  protected String realm;
+  protected TGTGenerationMethod tgtGenerationMethod;
 
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXTERNAL_PROPERTY,
       property = "tgtGenerationMethod", visible = true)
-  private TGTGenerationSpec spec;
-
-  @Override
-  public BaseSSHSpecDTO toDTO() {
-    return KerberosConfigDTO.builder()
-        .principal(getPrincipal())
-        .realm(getRealm())
-        .tgtGenerationMethod(getTgtGenerationMethod())
-        .spec(Optional.ofNullable(getSpec()).map(TGTGenerationSpec::toDTO).orElse(null))
-        .build();
-  }
-
-  @Builder
-  public KerberosConfig(
-      String principal, String realm, TGTGenerationMethod tgtGenerationMethod, TGTGenerationSpec spec) {
-    this.principal = principal;
-    this.realm = realm;
-    this.tgtGenerationMethod = tgtGenerationMethod;
-    this.spec = spec;
-  }
+  protected TGTGenerationSpec spec;
 }
