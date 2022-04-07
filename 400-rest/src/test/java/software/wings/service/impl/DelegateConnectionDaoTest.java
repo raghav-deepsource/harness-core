@@ -8,6 +8,8 @@
 package software.wings.service.impl;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+
+import static io.harness.rule.OwnerRule.ANUPAM;
 import static io.harness.rule.OwnerRule.ARPIT;
 import static io.harness.rule.OwnerRule.BRETT;
 import static io.harness.rule.OwnerRule.GEORGE;
@@ -51,6 +53,7 @@ public class DelegateConnectionDaoTest extends WingsBaseTest {
   private String delegateId = "DELEGATE_ID";
   private String delegateId2 = "DELEGATE_ID2";
   private String accountId = "ACCOUNT_ID";
+  private static final String VERSION = "1.0.0";
   private Delegate delegate;
 
   @Inject private DelegateConnectionDao delegateConnectionDao;
@@ -153,4 +156,37 @@ public class DelegateConnectionDaoTest extends WingsBaseTest {
     assertThat(delegateConnectionDao.checkAnyDelegateIsConnected(accountId, Arrays.asList(delegateId2, "DELEGATE_ID3")))
         .isFalse();
   }
+
+  @Test
+  @Owner(developers = ANUPAM)
+  @Category(UnitTests.class)
+  public void testNumberOfActiveDelegateConnectionsPerVersionWithNoAccountID() {
+    persistence.save(DelegateConnection.builder()
+            .accountId(accountId)
+            .uuid(generateUuid())
+            .delegateId(delegateId)
+            .disconnected(false)
+            .lastHeartbeat(System.currentTimeMillis())
+            .version(VERSION)
+            .build());
+
+    assertThat(delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(VERSION, null)).isEqualTo(1L);
+  }
+
+  @Test
+  @Owner(developers = ANUPAM)
+  @Category(UnitTests.class)
+  public void testNumberOfActiveDelegateConnectionsPerVersion() {
+    persistence.save(DelegateConnection.builder()
+            .accountId(accountId)
+            .uuid(generateUuid())
+            .delegateId(delegateId)
+            .disconnected(false)
+            .lastHeartbeat(System.currentTimeMillis())
+            .version(VERSION)
+            .build());
+
+    assertThat(delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(VERSION, accountId)).isEqualTo(1L);
+  }
+
 }

@@ -585,13 +585,14 @@ public class DelegateServiceImpl implements DelegateService {
     targetVersion = Arrays.stream(targetVersion.split("-")).findFirst().get();
 
     String primaryDelegateForAccount = StringUtils.isEmpty(accountId) ? Account.GLOBAL_ACCOUNT_ID : accountId;
-    List<String> allDelegateVersions = accountService.getDelegateConfiguration(primaryDelegateForAccount).getDelegateVersions();
+
+    DelegateConfiguration delegateConfiguration = accountService.getDelegateConfiguration(primaryDelegateForAccount);
 
     // This is a case when no prior delegate version is available for specific account_id
-    if(CollectionUtil.isEmpty(allDelegateVersions)) {
+    if(delegateConfiguration == null || CollectionUtil.isEmpty(delegateConfiguration.getDelegateVersions())) {
       return 1.0;
     }
-    String primaryVersion = allDelegateVersions.get(0).split("-")[0];
+    String primaryVersion = delegateConfiguration.getDelegateVersions().get(0).split("-")[0];
     long primary = delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(primaryVersion, accountId);
 
     // If we do not have any delegates in the primary version, lets unblock the deployment,
@@ -606,7 +607,7 @@ public class DelegateServiceImpl implements DelegateService {
 
   @Override
   public Double getConnectedDelegatesRatio(String version, String accountId) {
-    long totalDelegatesWithVersion = delegateConnectionDao.numberOfDelegatePerVersion(version, accountId);
+    long totalDelegatesWithVersion = delegateConnectionDao.numberOfDelegateConnectionsPerVersion(version, accountId);
     if(totalDelegatesWithVersion == 0) {
       return 0.0;
     }

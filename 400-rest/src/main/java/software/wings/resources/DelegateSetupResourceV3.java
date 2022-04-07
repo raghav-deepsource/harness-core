@@ -217,7 +217,7 @@ public class DelegateSetupResourceV3 {
   @ExceptionMetered
   @PublicApi
   @Operation(operationId = "getConnectedDelegatesRatio",
-    summary = "Calculates ratio of connected Delegates with version vs total delegates of that version.",
+    summary = "Calculates ratio of connected Delegates with specific version.",
     responses =
     {
         @io.swagger.v3.oas.annotations.responses.

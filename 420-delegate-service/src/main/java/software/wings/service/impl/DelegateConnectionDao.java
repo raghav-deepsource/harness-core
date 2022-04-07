@@ -68,10 +68,13 @@ public class DelegateConnectionDao {
         .filter(DelegateConnectionKeys.version, version);
   }
 
-  public long numberOfDelegatePerVersion(String version, String accountId) {
-    return persistence.createQuery(DelegateConnection.class, excludeAuthority)
-        .filter(DelegateConnectionKeys.version, version)
-        .filter(DelegateConnectionKeys.accountId, accountId).count();
+  public long numberOfDelegateConnectionsPerVersion(String version, String accountId) {
+    Query<DelegateConnection> query =  persistence.createQuery(DelegateConnection.class, excludeAuthority)
+        .filter(DelegateConnectionKeys.version, version);
+    if(StringUtils.isEmpty(accountId)) {
+      return query.count();
+    }
+    return query.filter(DelegateConnectionKeys.accountId, accountId).count();
   }
 
   public Map<String, List<String>> obtainActiveDelegatesPerAccount(String version) {

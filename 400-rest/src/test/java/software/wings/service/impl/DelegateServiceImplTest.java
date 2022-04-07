@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
 import static io.harness.rule.OwnerRule.ADWAIT;
+import static io.harness.rule.OwnerRule.ANUPAM;
 import static io.harness.rule.OwnerRule.ARPIT;
 import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.BRETT;
@@ -62,6 +63,7 @@ import io.harness.delegate.NoEligibleDelegatesInAccountException;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateBuilder;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
+import io.harness.delegate.beans.DelegateConfiguration;
 import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateInitializationDetails;
@@ -135,7 +137,10 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import io.serializer.HObjectMapper;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -172,6 +177,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   private static final String SECRET_URL = "http://google.com/?q=${secretManager.obtain(\"test\", 1234)}";
 
   private static final String VERSION = "1.0.0";
+  private static final String TARGET_VERSION = "1.0.1";
   private static final String TEST_DELEGATE_PROFILE_ID = generateUuid();
   private static final long TEST_PROFILE_EXECUTION_TIME = System.currentTimeMillis();
 
@@ -192,6 +198,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Mock private DelegateCache delegateCache;
   @Mock private FeatureFlagService featureFlagService;
   @Mock private LicenseService licenseService;
+  @Mock private DelegateConnectionDao delegateConnectionDao;
   @Inject @Spy private MainConfiguration mainConfiguration;
   @InjectMocks @Inject private DelegateServiceImpl delegateService;
   @InjectMocks @Inject private DelegateTaskServiceClassicImpl delegateTaskServiceClassic;
@@ -1444,6 +1451,57 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   public void shouldValidateDelegateProfileIdEmpty() {
     setUpDelegatesForInitializationTest();
     delegateService.validateDelegateProfileId(ACCOUNT_ID, null);
+  }
+
+  @Test
+  @Owner(developers = ANUPAM)
+  @Category(UnitTests.class)
+  public void testGetConnectedRatioWithPrimary() {
+    DelegateConfiguration delegateConfiguration = DelegateConfiguration.builder()
+            .delegateVersions(Arrays.asList(VERSION))
+            .build();
+    when(accountService.getDelegateConfiguration(ACCOUNT_ID)).thenReturn(delegateConfiguration);
+    when(delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(VERSION, ACCOUNT_ID)).thenReturn(5L);
+    when(delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(TARGET_VERSION, ACCOUNT_ID)).thenReturn(1L);
+    Double ratio = delegateService.getConnectedRatioWithPrimary(TARGET_VERSION, ACCOUNT_ID);
+    Double expectedRatio = BigDecimal.valueOf((double) 1L / (double) 5L).setScale(3, RoundingMode.HALF_UP).doubleValue();
+    assertThat(ratio).isEqualTo(expectedRatio);
+  }
+
+  @Test
+  @Owner(developers = ANUPAM)
+  @Category(UnitTests.class)
+  public void testGetConnectedRatioWithPrimaryWithNoAccountID() {
+    DelegateConfiguration delegateConfiguration = DelegateConfiguration.builder()
+            .delegateVersions(Arrays.asList(VERSION))
+            .build();
+    when(accountService.getDelegateConfiguration(Account.GLOBAL_ACCOUNT_ID)).thenReturn(delegateConfiguration);
+    when(delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(VERSION, null)).thenReturn(5L);
+    when(delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(TARGET_VERSION, null)).thenReturn(1L);
+    Double ratio = delegateService.getConnectedRatioWithPrimary(TARGET_VERSION, null);
+    Double expectedRatio = BigDecimal.valueOf((double) 1L / (double) 5L).setScale(3, RoundingMode.HALF_UP).doubleValue();
+    assertThat(ratio).isEqualTo(expectedRatio);
+  }
+
+  @Test
+  @Owner(developers = ANUPAM)
+  @Category(UnitTests.class)
+  public void testGetConnectedRatioWithPrimaryWithNoDelegateConfiguration() {
+    when(accountService.getDelegateConfiguration(ACCOUNT_ID)).thenReturn(null);
+    when(delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(VERSION, ACCOUNT_ID)).thenReturn(5L);
+    when(delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(TARGET_VERSION, ACCOUNT_ID)).thenReturn(1L);
+    Double ratio = delegateService.getConnectedRatioWithPrimary(TARGET_VERSION, ACCOUNT_ID);
+    assertThat(ratio).isEqualTo(1.0);
+  }
+
+  @Test
+  @Owner(developers = ANUPAM)
+  @Category(UnitTests.class)
+  public void testGetConnectedDelegatesRatio() {
+    when(delegateConnectionDao.numberOfDelegateConnectionsPerVersion(VERSION, ACCOUNT_ID)).thenReturn(5L);
+    when(delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(VERSION, ACCOUNT_ID)).thenReturn(1L);
+    Double ratio = delegateService.getConnectedDelegatesRatio(VERSION, ACCOUNT_ID);
+    assertThat(ratio).isEqualTo(0.2);
   }
 
   private List<String> setUpDelegatesForInitializationTest() {
