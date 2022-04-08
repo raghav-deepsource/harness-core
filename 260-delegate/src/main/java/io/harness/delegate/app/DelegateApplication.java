@@ -39,7 +39,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.ning.http.client.AsyncHttpClient;
 import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
@@ -51,6 +50,7 @@ import java.util.logging.Level;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
@@ -160,7 +160,7 @@ public class DelegateApplication {
         injector.getInstance(EventPublisher.class).shutdown();
         log.info("Executor services have been shut down.");
 
-        injector.getInstance(AsyncHttpClient.class).close();
+        injector.getInstance(DefaultAsyncHttpClient.class).close();
         log.info("Async HTTP client has been closed.");
         log.info("Delegate Shutdown completed successfully");
         ILoggerFactory loggerFactory = LoggerFactory.getILoggerFactory();

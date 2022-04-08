@@ -194,7 +194,6 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import com.ning.http.client.AsyncHttpClient;
 import com.sun.management.OperatingSystemMXBean;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -251,6 +250,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.math3.util.Precision;
 import org.apache.http.client.utils.URIBuilder;
+import org.asynchttpclient.AsyncHttpClient;
 import org.atmosphere.wasync.Client;
 import org.atmosphere.wasync.Encoder;
 import org.atmosphere.wasync.Event;
@@ -598,7 +598,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
         RequestBuilder requestBuilder = prepareRequestBuilder();
 
-        Options clientOptions = client.newOptionsBuilder().runtime(asyncHttpClient, true).reconnect(false).build();
+        Options clientOptions = client.newOptionsBuilder().runtime(asyncHttpClient, true).reconnect(true).build();
         socket = client.create(clientOptions);
         socket
             .on(Event.MESSAGE,
@@ -622,10 +622,17 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                     handleOpen(o);
                   }
                 })
-            .on(Event.CLOSE, new Function<Object>() { // Do not change this, wasync doesn't like lambdas
+            .on(Event.CLOSE,
+                new Function<Object>() { // Do not change this, wasync doesn't like lambdas
+                  @Override
+                  public void on(Object o) {
+                    handleClose(o);
+                  }
+                })
+            .on(new Function<IOException>() {
               @Override
-              public void on(Object o) {
-                handleClose(o);
+              public void on(IOException ioe) {
+                log.error("Error occured while starting Delegate", ioe);
               }
             });
 
