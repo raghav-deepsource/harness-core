@@ -66,6 +66,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.ExecutionStatus;
@@ -251,11 +252,12 @@ public class CloudFormationStateTest extends WingsBaseTest {
                                 .name(SERVICE_NAME)
                                 .artifactStreamIds(singletonList(ARTIFACT_STREAM_ID))
                                 .build();
-  private Artifact artifact = anArtifact()
-                                  .withArtifactSourceName("source")
-                                  .withMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "bn"))
-                                  .withArtifactStreamId(ARTIFACT_STREAM_ID)
-                                  .build();
+  private Artifact artifact =
+      anArtifact()
+          .withArtifactSourceName("source")
+          .withMetadata(new ArtifactMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "bn")))
+          .withArtifactStreamId(ARTIFACT_STREAM_ID)
+          .build();
   private ArtifactStream artifactStream =
       JenkinsArtifactStream.builder().appId(APP_ID).sourceName("").jobname("").artifactPaths(null).build();
 

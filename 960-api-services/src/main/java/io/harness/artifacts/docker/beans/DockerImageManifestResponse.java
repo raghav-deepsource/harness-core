@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ArtifactMetaInfo;
+import io.harness.beans.ArtifactMetaInfo.ArtifactMetaInfoBuilder;
 import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -70,7 +71,7 @@ public class DockerImageManifestResponse {
   }
 
   public ArtifactMetaInfo fetchArtifactMetaInfo(Response<DockerImageManifestResponse> response) {
-    ArtifactMetaInfo.ArtifactMetaInfoBuilder metaInfoBuilder = ArtifactMetaInfo.builder();
+    ArtifactMetaInfoBuilder metaInfoBuilder = ArtifactMetaInfo.builder();
     Headers headers = response.headers();
     if (headers != null) {
       metaInfoBuilder.sha(headers.get("docker-content-digest"));

@@ -91,6 +91,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.ExecutionStatus;
@@ -268,9 +269,9 @@ public class PcfSetupStateTest extends WingsBaseTest {
                                 .build();
   private Artifact artifact = anArtifact()
                                   .withArtifactSourceName("source")
-                                  .withMetadata(new HashMap<String, String>() {
+                                  .withMetadata(new ArtifactMetadata(new HashMap<String, String>() {
                                     { put(ArtifactMetadataKeys.buildNo, "bn"); }
-                                  })
+                                  }))
                                   .withArtifactStreamId(ARTIFACT_STREAM_ID)
                                   .build();
   private ArtifactStream artifactStream =

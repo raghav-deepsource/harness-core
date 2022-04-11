@@ -55,6 +55,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.FeatureName;
 import io.harness.beans.SweepingOutput;
 import io.harness.beans.SweepingOutputInstance;
@@ -603,7 +604,7 @@ public class ExecutionContextImplTest extends WingsBaseTest {
 
     Artifact artifact = Artifact.Builder.anArtifact()
                             .withArtifactStreamId(ARTIFACT_STREAM_ID)
-                            .withMetadata(Maps.newHashMap("buildNo", "123-SNAPSHOT"))
+                            .withMetadata(new ArtifactMetadata(Maps.newHashMap("buildNo", "123-SNAPSHOT")))
                             .build();
 
     programServiceTemplateService(context, artifact);
@@ -630,7 +631,9 @@ public class ExecutionContextImplTest extends WingsBaseTest {
     stateExecutionInstance.setDisplayName("http");
     ExecutionContextImpl context = prepareContext(stateExecutionInstance);
 
-    Artifact artifact = Artifact.Builder.anArtifact().withMetadata(Maps.newHashMap("buildNo", "123-SNAPSHOT")).build();
+    Artifact artifact = Artifact.Builder.anArtifact()
+                            .withMetadata(new ArtifactMetadata(Maps.newHashMap("buildNo", "123-SNAPSHOT")))
+                            .build();
 
     programServiceTemplateService(context, artifact);
 
@@ -770,7 +773,7 @@ public class ExecutionContextImplTest extends WingsBaseTest {
 
     Artifact artifact = Artifact.Builder.anArtifact()
                             .withArtifactStreamId(ARTIFACT_STREAM_ID)
-                            .withMetadata(Maps.newHashMap("buildNo", "123-SNAPSHOT"))
+                            .withMetadata(new ArtifactMetadata(Maps.newHashMap("buildNo", "123-SNAPSHOT")))
                             .build();
     programServiceTemplateService(context, artifact);
 

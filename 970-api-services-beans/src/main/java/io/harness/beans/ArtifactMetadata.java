@@ -16,7 +16,7 @@ import java.util.Map;
 @OwnedBy(HarnessTeam.CDC)
 public class ArtifactMetadata extends HashMap<String, String> {
   public ArtifactMetadata() {
-    super();
+    super(new HashMap<>());
   }
 
   public ArtifactMetadata(Map<String, String> map) {

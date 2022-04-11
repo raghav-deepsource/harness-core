@@ -31,6 +31,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
@@ -147,7 +148,7 @@ public class ArtifactResourceTest extends CategoryTest {
                             .withAccountId(ACCOUNT_ID)
                             .withAppId(APP_ID)
                             .withArtifactStreamId(ARTIFACT_STREAM_ID)
-                            .withMetadata(ImmutableMap.of("BUILD_NO", "5"))
+                            .withMetadata(new ArtifactMetadata(ImmutableMap.of("BUILD_NO", "5")))
                             .build();
     when(ARTIFACT_STREAM_SERVICE.get(ARTIFACT_STREAM_ID).fetchArtifactDisplayName("5")).thenReturn("DISPLAY_NAME");
 
