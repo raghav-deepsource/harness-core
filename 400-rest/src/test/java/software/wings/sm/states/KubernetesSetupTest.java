@@ -63,6 +63,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.SweepingOutputInstance;
@@ -235,11 +236,12 @@ public class KubernetesSetupTest extends WingsBaseTest {
                                 .name(SERVICE_NAME)
                                 .artifactStreamIds(singletonList(ARTIFACT_STREAM_ID))
                                 .build();
-  private Artifact artifact = anArtifact()
-                                  .withArtifactSourceName("source")
-                                  .withMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "bn"))
-                                  .withArtifactStreamId(ARTIFACT_STREAM_ID)
-                                  .build();
+  private Artifact artifact =
+      anArtifact()
+          .withArtifactSourceName("source")
+          .withMetadata(new ArtifactMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "bn")))
+          .withArtifactStreamId(ARTIFACT_STREAM_ID)
+          .build();
   private ArtifactStream artifactStream = DockerArtifactStream.builder().appId(APP_ID).imageName("imageName").build();
 
   private SettingAttribute dockerConfig = aSettingAttribute()

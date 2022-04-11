@@ -56,6 +56,7 @@ import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.EnvironmentType;
@@ -253,7 +254,9 @@ public class HttpStateTest extends WingsBaseTest {
                         "{\"status\":{\"code\":\"SUCCESS\"},\"data\":{\"title\":\"Some server\",\"version\":\"2.31.0-MASTER-SNAPSHOT\",\"buildTimestamp\":1506086747259}}")));
 
     Map<String, Object> map = ImmutableMap.of(ARTIFACT,
-        anArtifact().withMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "2.31.0-MASTER-SNAPSHOT")).build());
+        anArtifact()
+            .withMetadata(new ArtifactMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "2.31.0-MASTER-SNAPSHOT")))
+            .build());
     when(workflowStandardParams.paramMap(context)).thenReturn(map);
 
     HttpState.Builder jsonHttpStateBuilder =
@@ -307,7 +310,9 @@ public class HttpStateTest extends WingsBaseTest {
                         "{\"status\":{\"code\":\"SUCCESS\"},\"data\":{\"title\":\"Some server\",\"version\":\"2.31.0-MASTER-SNAPSHOT\",\"buildTimestamp\":1506086747259}}")));
 
     Map<String, Object> map = ImmutableMap.of(ARTIFACT,
-        anArtifact().withMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "2.31.0-MASTER-SNAPSHOT")).build());
+        anArtifact()
+            .withMetadata(new ArtifactMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "2.31.0-MASTER-SNAPSHOT")))
+            .build());
     when(workflowStandardParams.paramMap(context)).thenReturn(map);
     List<Variable> templateVariables = asList(aVariable().name("url").value("localhost:8088/health/status").build(),
         aVariable().name("buildNo").value("2.31.0-MASTER-SNAPSHOT").build(),

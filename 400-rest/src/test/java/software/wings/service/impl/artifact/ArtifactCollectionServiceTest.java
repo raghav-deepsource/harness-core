@@ -45,6 +45,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
@@ -548,7 +549,7 @@ public class ArtifactCollectionServiceTest extends WingsBaseTest {
                             .withSettingId(SETTING_ID)
                             .withArtifactSourceName(ARTIFACT_SOURCE_NAME)
                             .withRevision("1.0")
-                            .withMetadata(metadata)
+                            .withMetadata(new ArtifactMetadata(metadata))
                             .build();
     DockerArtifactStream dockerArtifactStream = DockerArtifactStream.builder()
                                                     .uuid(ARTIFACT_STREAM_ID)
@@ -891,7 +892,7 @@ public class ArtifactCollectionServiceTest extends WingsBaseTest {
     when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);
     Map<String, String> map = new HashMap<>();
     map.put("buildNo", "10");
-    when(artifactIterator.next()).thenReturn(anArtifact().withMetadata(map).build());
+    when(artifactIterator.next()).thenReturn(anArtifact().withMetadata(new ArtifactMetadata(map)).build());
     BuildSourceParameters buildSourceParameters =
         artifactCollectionUtils.getBuildSourceParameters(jenkinsArtifactStream, settingAttribute, true, true);
     assertThat(buildSourceParameters).isNotNull();
@@ -906,7 +907,7 @@ public class ArtifactCollectionServiceTest extends WingsBaseTest {
     when(artifactService.prepareArtifactWithMetadataQuery(any())).thenReturn(query);
     when(query.fetch()).thenReturn(artifactIterator);
     when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);
-    when(artifactIterator.next()).thenReturn(anArtifact().withMetadata(map).build());
+    when(artifactIterator.next()).thenReturn(anArtifact().withMetadata(new ArtifactMetadata(map)).build());
     buildSourceParameters =
         artifactCollectionUtils.getBuildSourceParameters(jenkinsArtifactStream, settingAttribute, true, true);
     assertThat(buildSourceParameters).isNotNull();
@@ -966,7 +967,7 @@ public class ArtifactCollectionServiceTest extends WingsBaseTest {
     when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);
     Map<String, String> map = new HashMap<>();
     map.put("artifactPath", "myfolder/todolist.war");
-    when(artifactIterator.next()).thenReturn(anArtifact().withMetadata(map).build());
+    when(artifactIterator.next()).thenReturn(anArtifact().withMetadata(new ArtifactMetadata(map)).build());
     BuildSourceParameters buildSourceParameters =
         artifactCollectionUtils.getBuildSourceParameters(jenkinsArtifactStream, settingAttribute, true, true);
     assertThat(buildSourceParameters).isNotNull();

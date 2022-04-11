@@ -110,6 +110,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.ExecutionInterruptType;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
@@ -2588,7 +2589,8 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
         .thenReturn(BuildDetails.Builder.aBuildDetails().withNumber("1.0").build());
     Map<String, String> map = new HashMap<>();
     map.put("buildNo", "1.0");
-    Artifact artifact = Artifact.Builder.anArtifact().withMetadata(map).withUuid(ARTIFACT_ID).build();
+    Artifact artifact =
+        Artifact.Builder.anArtifact().withMetadata(new ArtifactMetadata(map)).withUuid(ARTIFACT_ID).build();
     when(artifactCollectionUtils.getArtifact(any(), any())).thenReturn(artifact);
     when(artifactService.create(artifact, nexusArtifactStream, false)).thenReturn(artifact);
     WorkflowExecution workflowExecution = WorkflowExecution.builder().accountId(ACCOUNT_ID).build();
@@ -2713,7 +2715,8 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
         .thenReturn(BuildDetails.Builder.aBuildDetails().withNumber("1.0").build());
     Map<String, String> map = new HashMap<>();
     map.put("buildNo", "1.0");
-    Artifact artifact = Artifact.Builder.anArtifact().withMetadata(map).withUuid(ARTIFACT_ID).build();
+    Artifact artifact =
+        Artifact.Builder.anArtifact().withMetadata(new ArtifactMetadata(map)).withUuid(ARTIFACT_ID).build();
     when(artifactCollectionUtils.getArtifact(any(), any())).thenReturn(artifact);
     when(artifactService.create(artifact, nexusArtifactStream, false)).thenReturn(artifact);
     WorkflowExecution workflowExecution =
@@ -3148,7 +3151,8 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
         .thenReturn(BuildDetails.Builder.aBuildDetails().withNumber("1.0").build());
     Map<String, String> map = new HashMap<>();
     map.put("buildNo", "1.0");
-    Artifact artifact = Artifact.Builder.anArtifact().withMetadata(map).withUuid(ARTIFACT_ID).build();
+    Artifact artifact =
+        Artifact.Builder.anArtifact().withMetadata(new ArtifactMetadata(map)).withUuid(ARTIFACT_ID).build();
     when(artifactCollectionUtils.getArtifact(any(), any())).thenReturn(artifact);
     when(artifactService.create(artifact, nexusArtifactStream, false)).thenReturn(artifact);
     WorkflowExecution workflowExecution =

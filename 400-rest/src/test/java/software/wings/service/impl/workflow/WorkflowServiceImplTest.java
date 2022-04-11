@@ -57,6 +57,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
@@ -166,7 +167,7 @@ public class WorkflowServiceImplTest extends WingsBaseTest {
                    .withUuid(ARTIFACT_ID)
                    .withArtifactSourceName(ARTIFACT_SOURCE_NAME)
                    .withArtifactStreamId(ARTIFACT_STREAM_ID)
-                   .withMetadata(Collections.singletonMap(ArtifactMetadataKeys.buildNo, BUILD_NO))
+                   .withMetadata(new ArtifactMetadata(Collections.singletonMap(ArtifactMetadataKeys.buildNo, BUILD_NO)))
                    .build());
 
     List<HelmChart> helmCharts = asList(HelmChart.builder()
@@ -257,7 +258,8 @@ public class WorkflowServiceImplTest extends WingsBaseTest {
             .artifacts(asList(anArtifact()
                                   .withArtifactSourceName(ARTIFACT_SOURCE_NAME)
                                   .withArtifactStreamId(ARTIFACT_STREAM_ID)
-                                  .withMetadata(Collections.singletonMap(ArtifactMetadataKeys.buildNo, BUILD_NO))
+                                  .withMetadata(new ArtifactMetadata(
+                                      Collections.singletonMap(ArtifactMetadataKeys.buildNo, BUILD_NO)))
                                   .build()))
             .status(ExecutionStatus.SUCCESS)
             .pipelineExecutionId(PIPELINE_EXECUTION_ID)
@@ -389,7 +391,7 @@ public class WorkflowServiceImplTest extends WingsBaseTest {
                    .withUuid(ARTIFACT_ID)
                    .withArtifactSourceName(ARTIFACT_SOURCE_NAME)
                    .withArtifactStreamId(ARTIFACT_STREAM_ID)
-                   .withMetadata(Collections.singletonMap(ArtifactMetadataKeys.buildNo, BUILD_NO))
+                   .withMetadata(new ArtifactMetadata(Collections.singletonMap(ArtifactMetadataKeys.buildNo, BUILD_NO)))
                    .build());
     List<HelmChart> helmCharts = asList(HelmChart.builder()
                                             .uuid(HELM_CHART_ID)
@@ -417,13 +419,13 @@ public class WorkflowServiceImplTest extends WingsBaseTest {
     when(query.order(any(Sort.class))).thenReturn(query);
     when(query.get()).thenReturn(workflowExecution);
     PageResponse<Artifact> pageResponse = new PageResponse<>();
-    pageResponse.setResponse(
-        asList(anArtifact()
-                   .withUuid(ARTIFACT_ID + 2)
-                   .withArtifactSourceName(ARTIFACT_SOURCE_NAME)
-                   .withArtifactStreamId(ARTIFACT_STREAM_ID)
-                   .withMetadata(Collections.singletonMap(ArtifactMetadataKeys.buildNo, BUILD_NO + 2))
-                   .build()));
+    pageResponse.setResponse(asList(
+        anArtifact()
+            .withUuid(ARTIFACT_ID + 2)
+            .withArtifactSourceName(ARTIFACT_SOURCE_NAME)
+            .withArtifactStreamId(ARTIFACT_STREAM_ID)
+            .withMetadata(new ArtifactMetadata(Collections.singletonMap(ArtifactMetadataKeys.buildNo, BUILD_NO + 2)))
+            .build()));
     when(artifactService.listArtifactsForService(APP_ID, SERVICE_ID, new PageRequest<>())).thenReturn(pageResponse);
     when(helmChartService.listHelmChartsForService(APP_ID, SERVICE_ID, null, new PageRequest<>(), true))
         .thenReturn(ImmutableMap.of(APP_MANIFEST_NAME,
@@ -703,7 +705,7 @@ public class WorkflowServiceImplTest extends WingsBaseTest {
                    .withUuid(ARTIFACT_ID)
                    .withArtifactSourceName(ARTIFACT_SOURCE_NAME)
                    .withArtifactStreamId(ARTIFACT_STREAM_ID)
-                   .withMetadata(Collections.singletonMap(ArtifactMetadataKeys.buildNo, BUILD_NO))
+                   .withMetadata(new ArtifactMetadata(Collections.singletonMap(ArtifactMetadataKeys.buildNo, BUILD_NO)))
                    .build());
 
     List<HelmChart> helmCharts = asList(HelmChart.builder()
