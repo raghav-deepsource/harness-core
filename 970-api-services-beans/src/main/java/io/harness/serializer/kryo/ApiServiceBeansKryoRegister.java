@@ -24,6 +24,8 @@ import io.harness.azure.model.AzureDeploymentMode;
 import io.harness.azure.model.AzureVMData;
 import io.harness.azure.model.SubscriptionData;
 import io.harness.azure.model.VirtualMachineScaleSetData;
+import io.harness.beans.ArtifactMetaInfo;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.NGInstanceUnitType;
 import io.harness.container.ContainerInfo;
 import io.harness.delegate.beans.artifact.ArtifactFileMetadata;
@@ -334,6 +336,8 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(HelmSubCommandType.class, 1448);
     kryo.register(CustomManifestSource.class, 1449);
     kryo.register(CustomSourceFile.class, 1450);
+    kryo.register(ArtifactMetadata.class, 1451);
+    kryo.register(ArtifactMetaInfo.class, 1452);
 
     kryo.register(AdditionalMetadata.class, 72101);
     kryo.register(AwsCrossAccountAttributes.class, 7203);

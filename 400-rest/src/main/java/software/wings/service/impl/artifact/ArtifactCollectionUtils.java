@@ -50,6 +50,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.artifact.ArtifactCollectionResponseHandler;
 import io.harness.artifact.ArtifactUtilities;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskBuilder;
@@ -212,9 +213,6 @@ public class ArtifactCollectionUtils {
     if (accountId != null) {
       builder.withAccountId(accountId);
     }
-    if (isNotEmpty(buildDetails.getLabels())) {
-      builder.withLabels(buildDetails.getLabels());
-    }
     return builder.build();
   }
 
@@ -233,10 +231,11 @@ public class ArtifactCollectionUtils {
     return artifactStream.fetchArtifactDisplayName(buildDetails.getNumber());
   }
 
-  private Map<String, String> getMetadata(ArtifactStream artifactStream, BuildDetails buildDetails) {
+  private ArtifactMetadata getMetadata(ArtifactStream artifactStream, BuildDetails buildDetails) {
     String artifactStreamType = artifactStream.getArtifactStreamType();
 
-    Map<String, String> metadata = buildDetails.getMetadata() == null ? new HashMap<>() : buildDetails.getMetadata();
+    ArtifactMetadata metadata =
+        buildDetails.getMetadata() == null ? new ArtifactMetadata() : new ArtifactMetadata(buildDetails.getMetadata());
     if (artifactStreamType.equals(ARTIFACTORY.name())) {
       if (buildDetails.getArtifactPath() != null) {
         metadata.put(ArtifactMetadataKeys.artifactPath, buildDetails.getArtifactPath());

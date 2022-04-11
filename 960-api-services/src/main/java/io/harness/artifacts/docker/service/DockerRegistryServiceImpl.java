@@ -22,6 +22,7 @@ import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
 import io.harness.artifacts.docker.DockerRegistryRestClient;
 import io.harness.artifacts.docker.beans.DockerInternalConfig;
 import io.harness.artifacts.docker.client.DockerRestClientFactory;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.context.MdcGlobalContextData;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
@@ -355,6 +356,18 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
       }
     }
     return true;
+  }
+
+  @Override
+  public ArtifactMetaInfo getArtifactMetaInfo(DockerInternalConfig dockerConfig, String imageName, String tag) {
+    if (!dockerConfig.hasCredentials()) {
+      return dockerPublicRegistryProcessor.getArtifactMetaInfo(dockerConfig, imageName, tag);
+    }
+    DockerRegistryRestClient registryRestClient = dockerRestClientFactory.getDockerRegistryRestClient(dockerConfig);
+    String authHeader = Credentials.basic(dockerConfig.getUsername(), dockerConfig.getPassword());
+    Function<Headers, String> getToken = headers -> getToken(dockerConfig, headers, registryRestClient);
+    return dockerRegistryUtils.getArtifactMetaInfo(
+        dockerConfig, registryRestClient, getToken, authHeader, imageName, tag);
   }
 
   private boolean handleValidateCredentialsEndingWithSlash(

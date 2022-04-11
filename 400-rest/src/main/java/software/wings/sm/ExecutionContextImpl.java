@@ -115,6 +115,7 @@ import software.wings.common.InfrastructureConstants;
 import software.wings.common.RancherK8sClusterProcessor;
 import software.wings.common.VariableProcessor;
 import software.wings.expression.ArtifactLabelEvaluator;
+import software.wings.expression.ArtifactMetadataEvaluator;
 import software.wings.expression.ManagerExpressionEvaluator;
 import software.wings.expression.SecretFunctor;
 import software.wings.expression.ShellScriptFunctor;
@@ -268,6 +269,9 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
                            .buildSourceService(buildSourceService)
                            .artifactStream(artifactStream)
                            .build();
+      ArtifactMetadataEvaluator metadataEvaluator = new ArtifactMetadataEvaluator(
+          artifact.getMetadata(), artifact.getBuildNo(), artifactStream, buildSourceService);
+      artifact.setMetadata(metadataEvaluator);
       map.put(rollbackArtifact ? ROLLBACK_ARTIFACT : ARTIFACT, artifact);
       String artifactFileName = null;
       if (isNotEmpty(artifact.getArtifactFiles())) {

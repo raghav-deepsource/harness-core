@@ -10,6 +10,7 @@ package software.wings.service.intfc;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.DockerConfig;
@@ -43,5 +44,10 @@ public interface DockerBuildService extends BuildService<DockerConfig> {
   @Override
   @DelegateTaskType(TaskType.DOCKER_GET_LABELS)
   List<Map<String, String>> getLabels(ArtifactStreamAttributes artifactStreamAttributes, List<String> buildNos,
+      DockerConfig dockerConfig, List<EncryptedDataDetail> encryptionDetails);
+
+  @Override
+  @DelegateTaskType(TaskType.DOCKER_GET_ARTIFACT_META_INFO)
+  ArtifactMetaInfo getArtifactMetaInfo(ArtifactStreamAttributes artifactStreamAttributes, String buildNo,
       DockerConfig dockerConfig, List<EncryptedDataDetail> encryptionDetails);
 }
