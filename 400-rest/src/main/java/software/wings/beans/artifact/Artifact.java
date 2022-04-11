@@ -124,7 +124,7 @@ public class Artifact extends Base {
   private String artifactStreamId;
   private String artifactSourceName;
   @Transient private String artifactStreamName;
-  private ArtifactMetadata metadata = null;
+  private ArtifactMetadata metadata;
   @Transient @JsonIgnore public ArtifactLabelEvaluator label;
   @NotEmpty private String displayName;
   private String revision;
@@ -360,7 +360,7 @@ public class Artifact extends Base {
     protected String appId;
     private String artifactStreamId;
     private String artifactSourceName;
-    private ArtifactMetadata metadata = null;
+    private ArtifactMetadata metadata;
     private ArtifactLabelEvaluator label;
     private String displayName;
     private String revision;

@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.Assertions.within;
 
+import io.harness.beans.ArtifactMetadata;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
@@ -74,14 +75,15 @@ public class ArtifactDataFetcherTest extends AbstractDataFetcherTestBase {
                                         .metadataOnly(true)
                                         .build();
     artifactStreamService.create(artifactStream);
-    Artifact artifact = anArtifact()
-                            .withAppId(APP1_ID_ACCOUNT1)
-                            .withUuid(ARTIFACT_ID)
-                            .withMetadata(Collections.singletonMap(ArtifactMetadataKeys.buildNo, "1"))
-                            .withArtifactStreamId(ARTIFACT_STREAM_ID_1)
-                            .withDisplayName("ARTIFACT")
-                            .withArtifactStreamType("BAMBOO")
-                            .build();
+    Artifact artifact =
+        anArtifact()
+            .withAppId(APP1_ID_ACCOUNT1)
+            .withUuid(ARTIFACT_ID)
+            .withMetadata(new ArtifactMetadata(Collections.singletonMap(ArtifactMetadataKeys.buildNo, "1")))
+            .withArtifactStreamId(ARTIFACT_STREAM_ID_1)
+            .withDisplayName("ARTIFACT")
+            .withArtifactStreamType("BAMBOO")
+            .build();
     artifactService.create(artifact);
 
     QLArtifact qlArtifact =

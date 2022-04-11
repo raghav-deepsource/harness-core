@@ -26,11 +26,11 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
-@Slf4j
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Slf4j
 public class ArtifactMetadataEvaluator extends ArtifactMetadata {
   private transient ArtifactMetaInfo metaInfo;
   private transient String buildNo;
