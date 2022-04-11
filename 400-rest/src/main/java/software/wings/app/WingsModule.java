@@ -220,8 +220,10 @@ import io.harness.service.EventConfigServiceImpl;
 import io.harness.service.EventHelper;
 import io.harness.service.EventService;
 import io.harness.service.EventServiceImpl;
+import io.harness.service.impl.DelegateMtlsEndpointServiceImpl;
 import io.harness.service.impl.DelegateNgTokenServiceImpl;
 import io.harness.service.impl.DelegateTokenServiceImpl;
+import io.harness.service.intfc.DelegateMtlsEndpointService;
 import io.harness.service.intfc.DelegateTokenService;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
@@ -1161,6 +1163,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(GcpBillingService.class).to(GcpBillingServiceImpl.class);
     bind(PreAggregateBillingService.class).to(PreAggregateBillingServiceImpl.class);
     bind(DelegateTokenService.class).to(DelegateTokenServiceImpl.class);
+    bind(DelegateMtlsEndpointService.class).to(DelegateMtlsEndpointServiceImpl.class);
     bind(InstanceDataService.class).to(InstanceDataServiceImpl.class);
     bind(EntityMetadataService.class).to(EntityMetadataServiceImpl.class);
 
