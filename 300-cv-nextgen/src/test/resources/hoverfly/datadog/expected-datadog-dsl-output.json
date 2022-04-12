@@ -1,0 +1,70 @@
+[{
+  "txnName" : "dashboardName",
+  "metricIdentifier" : "cpu",
+  "metricName" : "docker.cpu.usage",
+  "metricValue" : 1.6987111808483149,
+  "timestamp" : 1644833760000
+},
+ {
+   "txnName" : "dashboardName",
+   "metricIdentifier" : "cpu",
+   "metricName" : "docker.cpu.usage",
+   "metricValue" : 1.8775437266904416,
+   "timestamp" : 1644833820000
+ },
+ {
+   "txnName" : "dashboardName",
+   "metricIdentifier" : "cpu",
+   "metricName" : "docker.cpu.usage",
+   "metricValue" : 1.7110677460338342,
+   "timestamp" : 1644833880000
+ },
+ {
+   "txnName" : "dashboardName",
+   "metricIdentifier" : "cpu",
+   "metricName" : "docker.cpu.usage",
+   "metricValue" : 1.7182593996722506,
+   "timestamp" : 1644833940000
+ },
+ {
+   "txnName" : "dashboardName",
+   "metricIdentifier" : "cpu",
+   "metricName" : "docker.cpu.usage",
+   "metricValue" : 1.7091919608492865,
+   "timestamp" : 1644834000000
+ },
+ {
+   "txnName" : "dashboardName",
+   "metricIdentifier" : "memory",
+   "metricName" : "kubernetes.memory.usage",
+   "metricValue" : 4.494561408805031E8,
+   "timestamp" : 1644833760000
+ },
+ {
+   "txnName" : "dashboardName",
+   "metricIdentifier" : "memory",
+   "metricName" : "kubernetes.memory.usage",
+   "metricValue" : 4.495037214591195E8,
+   "timestamp" : 1644833820000
+ },
+ {
+   "txnName" : "dashboardName",
+   "metricIdentifier" : "memory",
+   "metricName" : "kubernetes.memory.usage",
+   "metricValue" : 4.496202900125786E8,
+   "timestamp" : 1644833880000
+ },
+ {
+   "txnName" : "dashboardName",
+   "metricIdentifier" : "memory",
+   "metricName" : "kubernetes.memory.usage",
+   "metricValue" : 4.495570338616352E8,
+   "timestamp" : 1644833940000
+ },
+ {
+   "txnName" : "dashboardName",
+   "metricIdentifier" : "memory",
+   "metricName" : "kubernetes.memory.usage",
+   "metricValue" : 4.496674068930818E8,
+   "timestamp" : 1644834000000
+ }]

@@ -7,6 +7,8 @@
 
 package io.harness.cvng.core.entities;
 
+import static io.harness.cvng.CVConstants.DATA_COLLECTION_TIME_RANGE_FOR_SLI;
+
 import io.harness.cvng.core.utils.DateTimeUtils;
 
 import com.google.common.collect.Lists;
@@ -21,10 +23,10 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 public class SLIDataCollectionTask extends DataCollectionTask {
-  public static final Duration SLI_MAX_DATA_COLLECTION_DURATION = Duration.ofHours(2);
+  public static final Duration SLI_MAX_DATA_COLLECTION_DURATION = DATA_COLLECTION_TIME_RANGE_FOR_SLI;
   private static final List<Duration> RETRY_WAIT_DURATIONS =
       Lists.newArrayList(Duration.ofSeconds(5), Duration.ofSeconds(10), Duration.ofSeconds(60), Duration.ofMinutes(5),
-          Duration.ofMinutes(15), Duration.ofHours(1), Duration.ofHours(10), Duration.ofDays(1));
+          Duration.ofMinutes(15), Duration.ofHours(1), Duration.ofHours(3));
   @Override
   public boolean shouldCreateNextTask() {
     return true;

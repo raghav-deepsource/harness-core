@@ -90,6 +90,7 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
 
     K8PodDetails k8PodDetails = K8PodDetails.builder()
                                     .stageID(stepParameters.getIdentifier())
+                                    .stageName(stepParameters.getName())
                                     .accountId(AmbianceUtils.getAccountId(ambiance))
                                     .build();
 

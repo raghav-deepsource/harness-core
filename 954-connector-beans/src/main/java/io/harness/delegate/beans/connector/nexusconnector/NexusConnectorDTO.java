@@ -36,7 +36,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("NexusConnector")
-@Schema(name = "NexusConnector", description = "This entity contains the details of the Nexus Connectors")
+@Schema(name = "NexusConnector", description = "Nexus Connector details.")
 public class NexusConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
   @NotNull @NotBlank String nexusServerUrl;
   @NotNull @NotBlank String version;

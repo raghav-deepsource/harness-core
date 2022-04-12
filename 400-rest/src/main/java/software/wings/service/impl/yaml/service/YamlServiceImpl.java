@@ -125,6 +125,7 @@ import software.wings.beans.Base;
 import software.wings.beans.User;
 import software.wings.beans.yaml.Change;
 import software.wings.beans.yaml.ChangeContext;
+import software.wings.beans.yaml.EntityInformation;
 import software.wings.beans.yaml.GitFileChange;
 import software.wings.beans.yaml.YamlConstants;
 import software.wings.beans.yaml.YamlType;
@@ -1135,6 +1136,36 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
       log.warn(format("Error while deleting yaml file paths(s) for account %s, error: %s", accountId, ex));
       return prepareFailedYAMLOperationResponse(
           ex.getMessage(), ex.getFailedYamlFileChangeMap(), ex.getChangeContextList(), ex.getChangeList());
+    }
+  }
+
+  @Override
+  public YamlOperationResponse deleteYAMLByPathsV2(
+      final String accountId, final List<EntityInformation> entityInformations) {
+    try {
+      List<Change> changeList = io.harness.data.structure.CollectionUtils.emptyIfNull(entityInformations)
+                                    .stream()
+                                    .map(entityInformation -> {
+                                      String fileContent;
+                                      if (isNotEmpty(entityInformation.getFileContent())) {
+                                        fileContent = entityInformation.getFileContent();
+                                      } else {
+                                        fileContent = DEFAULT_YAML;
+                                      }
+                                      return GitFileChange.Builder.aGitFileChange()
+                                          .withFileContent(fileContent)
+                                          .withFilePath(entityInformation.getFilePath())
+                                          .withAccountId(accountId)
+                                          .withChangeType(ChangeType.DELETE)
+                                          .build();
+                                    })
+                                    .collect(toList());
+      List<ChangeContext> processedChangesWithContext = processChangeSet(changeList);
+      return prepareSuccessfulYAMLOperationResponse(processedChangesWithContext, changeList);
+    } catch (YamlProcessingException ex) {
+      log.warn(format("Error while deleting yaml file paths(s) for account %s, error: %s", accountId, ex));
+      return prepareFailedYAMLOperationResponse(ExceptionUtils.getMessage(ex), ex.getFailedYamlFileChangeMap(),
+          ex.getChangeContextList(), ex.getChangeList());
     }
   }
 

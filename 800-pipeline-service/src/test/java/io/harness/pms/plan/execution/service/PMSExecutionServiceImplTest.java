@@ -21,6 +21,7 @@ import static org.mockito.Mockito.verify;
 import io.harness.PipelineServiceTestBase;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
@@ -186,8 +187,9 @@ public class PMSExecutionServiceImplTest extends PipelineServiceTestBase {
     assertThatThrownBy(()
                            -> pmsExecutionService.getPipelineExecutionSummaryEntity(ACCOUNT_ID, ORG_IDENTIFIER,
                                PROJ_IDENTIFIER, INVALID_PLAN_EXECUTION_ID, PIPELINE_DELETED))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Plan Execution Summary does not exist or has been deleted for given planExecutionId");
+        .isInstanceOf(EntityNotFoundException.class)
+        .hasMessage("Plan Execution Summary does not exist or has been deleted for planExecutionId: "
+            + INVALID_PLAN_EXECUTION_ID);
   }
 
   @Test

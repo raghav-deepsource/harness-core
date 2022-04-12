@@ -10,6 +10,7 @@ package software.wings.sm.states.pcf;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.IGNORE_PCF_CONNECTION_CONTEXT_CACHE;
 import static io.harness.beans.FeatureName.LIMIT_PCF_THREADS;
+import static io.harness.beans.FeatureName.SINGLE_MANIFEST_SUPPORT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.ListUtils.trimStrings;
@@ -31,6 +32,9 @@ import static io.harness.pcf.model.PcfConstants.CUSTOM_SOURCE_MANIFESTS;
 import static io.harness.pcf.model.PcfConstants.DEFAULT_PCF_TASK_TIMEOUT_MIN;
 import static io.harness.pcf.model.PcfConstants.INSTANCE_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.INSTANCE_PLACEHOLDER_TOKEN_DEPRECATED;
+import static io.harness.pcf.model.PcfConstants.INVALID_MANIFEST_MESSAGE;
+import static io.harness.pcf.model.PcfConstants.MULTIPLE_APPLICATION_MANIFEST_MESSAGE;
+import static io.harness.pcf.model.PcfConstants.MULTIPLE_AUTOSCALAR_MANIFEST_MESSAGE;
 import static io.harness.pcf.model.PcfConstants.NAME_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.NO_ROUTE_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.ROUTES_MANIFEST_YML_ELEMENT;
@@ -117,6 +121,7 @@ import software.wings.beans.Activity.ActivityBuilder;
 import software.wings.beans.Activity.Type;
 import software.wings.beans.Application;
 import software.wings.beans.Environment;
+import software.wings.beans.GitFetchFilesConfig;
 import software.wings.beans.GitFetchFilesTaskParams;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.Log;
@@ -177,6 +182,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -203,8 +209,6 @@ import org.apache.commons.lang3.tuple.Pair;
 public class PcfStateHelper {
   public static final String WORKFLOW_STANDARD_PARAMS = "workflowStandardParams";
   public static final String CURRENT_USER = "currentUser";
-  private static final String INVALID_MANIFEST_MESSAGE =
-      "Application Manifest cannot be blank or contain invalid characters";
   private static final Splitter lineSplitter = Splitter.onPattern("\\r?\\n").trimResults().omitEmptyStrings();
 
   @Inject private ApplicationManifestService applicationManifestService;
@@ -447,32 +451,114 @@ public class PcfStateHelper {
 
   public PcfManifestsPackage getFinalManifestFilesMap(Map<K8sValuesLocation, ApplicationManifest> appManifestMap,
       GitFetchFilesFromMultipleRepoResult fetchFilesResult,
-      Map<K8sValuesLocation, Collection<String>> manifestsFromCustomSource, LogCallback logCallback) {
+      Map<K8sValuesLocation, Collection<String>> manifestsFromCustomSource, LogCallback logCallback,
+      CFManifestDataInfo cfManifestDataInfo) {
     PcfManifestsPackage pcfManifestsPackage = PcfManifestsPackage.builder().build();
 
     ApplicationManifest applicationManifest = appManifestMap.get(K8sValuesLocation.Service);
     updatePcfManifestFilesMap(applicationManifest, fetchFilesResult, manifestsFromCustomSource,
-        K8sValuesLocation.Service, pcfManifestsPackage, logCallback);
+        K8sValuesLocation.Service, pcfManifestsPackage, logCallback, cfManifestDataInfo);
 
     applicationManifest = appManifestMap.get(ServiceOverride);
     updatePcfManifestFilesMap(applicationManifest, fetchFilesResult, manifestsFromCustomSource, ServiceOverride,
-        pcfManifestsPackage, logCallback);
+        pcfManifestsPackage, logCallback, cfManifestDataInfo);
 
     applicationManifest = appManifestMap.get(EnvironmentGlobal);
     updatePcfManifestFilesMap(applicationManifest, fetchFilesResult, manifestsFromCustomSource, EnvironmentGlobal,
-        pcfManifestsPackage, logCallback);
+        pcfManifestsPackage, logCallback, cfManifestDataInfo);
 
     applicationManifest = appManifestMap.get(K8sValuesLocation.Environment);
     updatePcfManifestFilesMap(applicationManifest, fetchFilesResult, manifestsFromCustomSource,
-        K8sValuesLocation.Environment, pcfManifestsPackage, logCallback);
+        K8sValuesLocation.Environment, pcfManifestsPackage, logCallback, cfManifestDataInfo);
 
     return pcfManifestsPackage;
+  }
+
+  public boolean validateSingleManifestAtGivenLevel(
+      K8sValuesLocation k8sValuesLocation, ManifestType manifestType, CFManifestDataInfo cfManifestDataInfo) {
+    boolean singleManifestFileFound = false;
+    Map<K8sValuesLocation, Map<ManifestType, List<String>>> manifestMap = cfManifestDataInfo.getManifestMap();
+    if (!isEmpty(manifestMap)) {
+      if (manifestMap.containsKey(k8sValuesLocation)) {
+        if (manifestMap.get(k8sValuesLocation).containsKey(manifestType)) {
+          int numManifests = manifestMap.get(k8sValuesLocation).get(manifestType).size();
+          if (numManifests > 1) {
+            throw new GeneralException("Multiple manifest files found");
+          } else if (numManifests == 1) {
+            singleManifestFileFound = true;
+          }
+        }
+      }
+    }
+    return singleManifestFileFound;
+  }
+
+  // if SINGLE_MANIFEST_SUPPORT FF is enabled, it checks if there is only a single application manifest present
+  // at the highest level. For example, if application manifest is present at Service level, EnvironmentGlobal
+  // level and Environment level, this function would check that there is only a single application manifest
+  // at the Environment level. Similarly, it checks for Autoscalar Manifest too.
+  public void validateManifest(PcfManifestsPackage pcfManifestsPackage, LogCallback logCallback, String accountId,
+      CFManifestDataInfo cfManifestDataInfo) {
+    validateSingleManifestPresent(logCallback, cfManifestDataInfo, accountId);
+
+    String manifestYml = pcfManifestsPackage.getManifestYml();
+    try {
+      notNullCheck(INVALID_MANIFEST_MESSAGE, manifestYml);
+    } catch (GeneralException ex) {
+      logCallback.saveExecutionLog(INVALID_MANIFEST_MESSAGE, ERROR, CommandExecutionStatus.FAILURE);
+      throw new InvalidRequestException(INVALID_MANIFEST_MESSAGE);
+    }
+  }
+
+  private void validateSingleManifestPresent(
+      LogCallback logCallback, CFManifestDataInfo cfManifestDataInfo, String accountId) {
+    boolean singleManifestSupportEnabled = featureFlagService.isEnabled(SINGLE_MANIFEST_SUPPORT, accountId);
+    if (!singleManifestSupportEnabled) {
+      return;
+    }
+    boolean applicationManifestFound = false;
+    boolean autoscalarManifestFound = false;
+
+    List<K8sValuesLocation> k8sValuesLocationsOrder = new ArrayList<K8sValuesLocation>() {
+      {
+        add(K8sValuesLocation.Environment);
+        add(K8sValuesLocation.EnvironmentGlobal);
+        add(K8sValuesLocation.ServiceOverride);
+        add(K8sValuesLocation.Service);
+      }
+    };
+
+    for (K8sValuesLocation k8sValuesLocation : k8sValuesLocationsOrder) {
+      if (!applicationManifestFound) {
+        try {
+          applicationManifestFound =
+              validateSingleManifestAtGivenLevel(k8sValuesLocation, APPLICATION_MANIFEST, cfManifestDataInfo);
+        } catch (GeneralException ex) {
+          logCallback.saveExecutionLog(String.format(MULTIPLE_APPLICATION_MANIFEST_MESSAGE, k8sValuesLocation.name()),
+              ERROR, CommandExecutionStatus.FAILURE);
+          throw new InvalidRequestException(
+              String.format(MULTIPLE_APPLICATION_MANIFEST_MESSAGE, k8sValuesLocation.name()));
+        }
+      }
+
+      if (!autoscalarManifestFound) {
+        try {
+          autoscalarManifestFound =
+              validateSingleManifestAtGivenLevel(k8sValuesLocation, AUTOSCALAR_MANIFEST, cfManifestDataInfo);
+        } catch (GeneralException ex) {
+          logCallback.saveExecutionLog(String.format(MULTIPLE_AUTOSCALAR_MANIFEST_MESSAGE, k8sValuesLocation.name()),
+              ERROR, CommandExecutionStatus.FAILURE);
+          throw new InvalidRequestException(
+              String.format(MULTIPLE_AUTOSCALAR_MANIFEST_MESSAGE, k8sValuesLocation.name()));
+        }
+      }
+    }
   }
 
   private void updatePcfManifestFilesMap(ApplicationManifest applicationManifest,
       GitFetchFilesFromMultipleRepoResult fetchFilesResult,
       Map<K8sValuesLocation, Collection<String>> manifestsFromCustomSource, K8sValuesLocation k8sValuesLocation,
-      PcfManifestsPackage pcfManifestsPackage, LogCallback logCallback) {
+      PcfManifestsPackage pcfManifestsPackage, LogCallback logCallback, CFManifestDataInfo cfManifestDataInfo) {
     if (applicationManifest == null) {
       return;
     }
@@ -480,10 +566,10 @@ public class PcfStateHelper {
     if (StoreType.Local == applicationManifest.getStoreType()) {
       List<ManifestFile> manifestFiles = applicationManifestService.getManifestFilesByAppManifestId(
           applicationManifest.getAppId(), applicationManifest.getUuid());
-
+      validateInlineFiles(manifestFiles, logCallback, k8sValuesLocation);
       for (ManifestFile manifestFile : manifestFiles) {
-        addToPcfManifestFilesMap(
-            manifestFile.getFileContent(), pcfManifestsPackage, manifestFile.getFileName(), logCallback);
+        addToPcfManifestFilesMap(manifestFile.getFileContent(), pcfManifestsPackage, manifestFile.getFileName(),
+            logCallback, k8sValuesLocation, cfManifestDataInfo);
       }
     } else if (StoreType.Remote == applicationManifest.getStoreType()) {
       if (fetchFilesResult == null || isEmpty(fetchFilesResult.getFilesFromMultipleRepo())) {
@@ -497,8 +583,10 @@ public class PcfStateHelper {
       }
 
       List<GitFile> files = gitFetchFilesResult.getFiles();
+      validateRemoteFiles(files, logCallback, fetchFilesResult, k8sValuesLocation);
       for (GitFile gitFile : files) {
-        addToPcfManifestFilesMap(gitFile.getFileContent(), pcfManifestsPackage, gitFile.getFilePath(), logCallback);
+        addToPcfManifestFilesMap(gitFile.getFileContent(), pcfManifestsPackage, gitFile.getFilePath(), logCallback,
+            k8sValuesLocation, cfManifestDataInfo);
       }
     } else if (StoreType.CUSTOM == applicationManifest.getStoreType()) {
       if (null == manifestsFromCustomSource || isEmpty(manifestsFromCustomSource.get(k8sValuesLocation))) {
@@ -506,28 +594,77 @@ public class PcfStateHelper {
       }
       Collection<String> files = manifestsFromCustomSource.get(k8sValuesLocation);
       for (String content : files) {
-        addToPcfManifestFilesMap(content, pcfManifestsPackage, null, logCallback);
+        addToPcfManifestFilesMap(
+            content, pcfManifestsPackage, null, logCallback, k8sValuesLocation, cfManifestDataInfo);
       }
     }
   }
 
+  // This function checks all the inline manifest files provided and only throws error if none of the given files
+  // is a valid manifest file (can be Application/Variable/Autoscalar Manifest)
+  private void validateInlineFiles(
+      List<ManifestFile> manifestFiles, LogCallback logCallback, K8sValuesLocation k8sValuesLocation) {
+    for (ManifestFile manifestFile : manifestFiles) {
+      ManifestType manifestType =
+          pcfFileTypeChecker.getManifestType(manifestFile.getFileContent(), manifestFile.getFileName(), logCallback);
+      if (manifestType != null) {
+        return;
+      }
+    }
+    throw new InvalidRequestException("No valid manifest files found at " + k8sValuesLocation.name() + " level");
+  }
+
+  // This function checks all the remote manifest files provided and only throws error if none of the given files
+  // is a valid manifest file (Application/Variable/Autoscalar)
+  private void validateRemoteFiles(List<GitFile> files, LogCallback logCallback,
+      GitFetchFilesFromMultipleRepoResult fetchFilesResult, K8sValuesLocation k8sValuesLocation) {
+    for (GitFile gitFile : files) {
+      ManifestType manifestType =
+          pcfFileTypeChecker.getManifestType(gitFile.getFileContent(), gitFile.getFilePath(), logCallback);
+      if (manifestType != null) {
+        return;
+      }
+    }
+    GitFetchFilesConfig gitFetchFilesConfig =
+        fetchFilesResult.getGitFetchFilesConfigMap().get(k8sValuesLocation.name());
+    throw new InvalidRequestException(
+        "No valid manifest files found " + gitFetchFilesConfig.getGitFileConfig().getFilePath());
+  }
+
   @VisibleForTesting
-  void addToPcfManifestFilesMap(
-      String fileContent, PcfManifestsPackage pcfManifestsPackage, @Nullable String fileName, LogCallback logCallback) {
+  void addToPcfManifestFilesMap(String fileContent, PcfManifestsPackage pcfManifestsPackage, @Nullable String fileName,
+      LogCallback logCallback, K8sValuesLocation k8sValuesLocation, CFManifestDataInfo cfManifestDataInfo) {
     ManifestType manifestType = pcfFileTypeChecker.getManifestType(fileContent, fileName, logCallback);
     if (manifestType == null) {
       return;
     }
 
     if (APPLICATION_MANIFEST == manifestType) {
+      initializeManifestMapEntry(k8sValuesLocation, cfManifestDataInfo, APPLICATION_MANIFEST);
       pcfManifestsPackage.setManifestYml(fileContent);
+      cfManifestDataInfo.getManifestMap().get(k8sValuesLocation).get(APPLICATION_MANIFEST).add(fileContent);
+      cfManifestDataInfo.setApplicationManifestFilePath(fileName);
     } else if (VARIABLE_MANIFEST == manifestType) {
       if (isEmpty(pcfManifestsPackage.getVariableYmls())) {
         pcfManifestsPackage.setVariableYmls(new ArrayList<>());
       }
       pcfManifestsPackage.getVariableYmls().add(fileContent);
     } else if (AUTOSCALAR_MANIFEST == manifestType) {
+      initializeManifestMapEntry(k8sValuesLocation, cfManifestDataInfo, AUTOSCALAR_MANIFEST);
       pcfManifestsPackage.setAutoscalarManifestYml(fileContent);
+      cfManifestDataInfo.getManifestMap().get(k8sValuesLocation).get(AUTOSCALAR_MANIFEST).add(fileContent);
+      cfManifestDataInfo.setAutoscalarManifestFilePath(fileName);
+    }
+  }
+
+  private void initializeManifestMapEntry(
+      K8sValuesLocation k8sValuesLocation, CFManifestDataInfo cfManifestDataInfo, ManifestType manifestType) {
+    if (isEmpty(cfManifestDataInfo.getManifestMap())) {
+      cfManifestDataInfo.setManifestMap(new HashMap<>());
+    }
+    cfManifestDataInfo.getManifestMap().computeIfAbsent(k8sValuesLocation, k -> new HashMap<>());
+    if (isEmpty(cfManifestDataInfo.getManifestMap().get(k8sValuesLocation).get(manifestType))) {
+      cfManifestDataInfo.getManifestMap().get(k8sValuesLocation).put(manifestType, new ArrayList<>());
     }
   }
 
@@ -582,7 +719,8 @@ public class PcfStateHelper {
   }
 
   public PcfManifestsPackage generateManifestMap(ExecutionContext context,
-      Map<K8sValuesLocation, ApplicationManifest> appManifestMap, ServiceElement serviceElement, String activityId) {
+      Map<K8sValuesLocation, ApplicationManifest> appManifestMap, ServiceElement serviceElement, String activityId,
+      String accountId) {
     String appId = context.getAppId();
     PcfManifestsPackage pcfManifestsPackage;
     LogCallback logCallback = getVerifyManifestLogCallback(activityId, appId);
@@ -617,14 +755,15 @@ public class PcfStateHelper {
       appManifestMap = pcfSetupStateExecutionData.getAppManifestMap();
     }
 
-    pcfManifestsPackage =
-        getFinalManifestFilesMap(appManifestMap, filesFromMultipleRepoResult, valuesFiles, logCallback);
-    String manifestYml = pcfManifestsPackage.getManifestYml();
-    try {
-      notNullCheck(INVALID_MANIFEST_MESSAGE, manifestYml);
-    } catch (GeneralException ex) {
-      logCallback.saveExecutionLog(INVALID_MANIFEST_MESSAGE, ERROR, CommandExecutionStatus.FAILURE);
-      throw ex;
+    CFManifestDataInfo cfManifestDataInfo = CFManifestDataInfo.builder().build();
+    pcfManifestsPackage = getFinalManifestFilesMap(
+        appManifestMap, filesFromMultipleRepoResult, valuesFiles, logCallback, cfManifestDataInfo);
+    validateManifest(pcfManifestsPackage, logCallback, accountId, cfManifestDataInfo);
+    logCallback.saveExecutionLog(
+        "Using application manifest with file path - " + cfManifestDataInfo.getApplicationManifestFilePath());
+    if (isNotEmpty(cfManifestDataInfo.getAutoscalarManifestFilePath())) {
+      logCallback.saveExecutionLog(
+          "Using autoscalar manifest with file path - " + cfManifestDataInfo.getAutoscalarManifestFilePath());
     }
     logCallback.saveExecutionLog("# Verification of manifests completed", INFO, CommandExecutionStatus.SUCCESS);
     evaluateExpressionsInManifestTypes(context, pcfManifestsPackage);

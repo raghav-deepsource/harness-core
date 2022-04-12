@@ -24,7 +24,10 @@ import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.dto.EnvironmentRequestDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
+import io.harness.ng.core.environment.mappers.NGEnvironmentEntityMapper;
 import io.harness.ng.core.environment.services.impl.EnvironmentServiceImpl;
+import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
+import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.rule.Owner;
 
@@ -55,12 +58,23 @@ public class EnvironmentResourceTest extends CategoryTest {
   EnvironmentResponseDTO environmentResponseDTO;
   Environment environmentEntity;
   List<NGTag> tags;
+  NGEnvironmentConfig ngEnvironmentConfig;
 
   @Before
   public void setUp() {
     tags = Arrays.asList(NGTag.builder().key("k1").value("v1").build());
     MockitoAnnotations.initMocks(this);
     environmentResource = new EnvironmentResource(environmentService);
+    ngEnvironmentConfig = NGEnvironmentConfig.builder()
+                              .ngEnvironmentInfoConfig(NGEnvironmentInfoConfig.builder()
+                                                           .name("ENV")
+                                                           .identifier("IDENTIFIER")
+                                                           .orgIdentifier("ORG_ID")
+                                                           .projectIdentifier("PROJECT_ID")
+                                                           .tags(singletonMap("k1", "v1"))
+                                                           .type(EnvironmentType.PreProduction)
+                                                           .build())
+                              .build();
     environmentRequestDTO = EnvironmentRequestDTO.builder()
                                 .identifier("IDENTIFIER")
                                 .orgIdentifier("ORG_ID")
@@ -79,6 +93,7 @@ public class EnvironmentResourceTest extends CategoryTest {
                                  .name("ENV")
                                  .type(EnvironmentType.PreProduction)
                                  .tags(singletonMap("k1", "v1"))
+                                 .yaml(NGEnvironmentEntityMapper.toYaml(ngEnvironmentConfig))
                                  .version(0L)
                                  .build();
 
@@ -92,6 +107,7 @@ public class EnvironmentResourceTest extends CategoryTest {
                             .type(EnvironmentType.PreProduction)
                             .tags(tags)
                             .version(0L)
+                            .yaml(NGEnvironmentEntityMapper.toYaml(ngEnvironmentConfig))
                             .build();
   }
 

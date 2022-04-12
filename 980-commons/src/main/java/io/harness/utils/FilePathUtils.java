@@ -61,4 +61,11 @@ public class FilePathUtils {
     path = path.replaceAll("/+$", "");
     return path;
   }
+
+  public static String addStartingSlashIfMissing(String path) {
+    if (path.charAt(0) != '/') {
+      return "/" + path;
+    }
+    return path;
+  }
 }

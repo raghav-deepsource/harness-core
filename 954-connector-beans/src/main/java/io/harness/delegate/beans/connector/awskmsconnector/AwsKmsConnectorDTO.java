@@ -50,15 +50,20 @@ import lombok.ToString;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(name = "AwsKmsConnector", description = "This has configuration details for the AWS KMS Secret Manager.")
 public class AwsKmsConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
-  @Valid AwsKmsConnectorCredentialDTO credential;
-  @Schema(description = "ARN for AWS KMS.")
+  @NotNull
+  @Valid
+  @Schema(description = SecretManagerDescriptionConstants.AWS_AUTH_CRED_KMS)
+  AwsKmsConnectorCredentialDTO credential;
+
+  @Schema(description = SecretManagerDescriptionConstants.AWS_ARN_KMS)
   @SecretReference
   @ApiModelProperty(dataType = "string")
   @NotNull
   SecretRefData kmsArn;
-  @Schema(description = "Region for AWS KMS.") private String region;
+
+  @NotNull @Schema(description = SecretManagerDescriptionConstants.AWS_REGION_KMS) private String region;
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
-  @JsonIgnore private boolean harnessManaged;
+  @Schema @JsonIgnore private boolean harnessManaged;
   @Schema(description = SecretManagerDescriptionConstants.DELEGATE_SELECTORS) private Set<String> delegateSelectors;
 
   @Builder

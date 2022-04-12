@@ -24,15 +24,12 @@ import com.google.common.collect.ImmutableList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.Singular;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
-import org.apache.commons.lang3.StringUtils;
 import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
 
@@ -47,11 +44,6 @@ public final class VerificationTask implements UuidAware, CreatedAtAware, Accoun
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder()
-                 .name("query_idx")
-                 .field(VerificationTaskKeys.verificationJobInstanceId)
-                 .field(VerificationTaskKeys.accountId)
-                 .build())
         .add(CompoundMongoIndex.builder()
                  .name("verification_job_instance_id_idx")
                  .field(VerificationTaskKeys.taskInfo + ".verificationJobInstanceId")
@@ -77,27 +69,11 @@ public final class VerificationTask implements UuidAware, CreatedAtAware, Accoun
 
   @Singular Map<String, String> tags;
   @Id private String uuid;
-  private String accountId;
+  @FdIndex private String accountId;
   @FdIndex private long createdAt;
-  @Getter(AccessLevel.PRIVATE) @FdIndex @Deprecated private String cvConfigId;
-  @Getter(AccessLevel.PRIVATE) @Deprecated private String verificationJobInstanceId;
   @FdTtlIndex private Date validUntil;
   // TODO: figure out a way to cleanup old/deleted mappings.
   private TaskInfo taskInfo;
-
-  public TaskInfo getTaskInfo() {
-    if (taskInfo == null) {
-      if (StringUtils.isNotEmpty(verificationJobInstanceId)) {
-        return DeploymentInfo.builder()
-            .verificationJobInstanceId(verificationJobInstanceId)
-            .cvConfigId(cvConfigId)
-            .build();
-      } else {
-        return LiveMonitoringInfo.builder().cvConfigId(cvConfigId).build();
-      }
-    }
-    return taskInfo;
-  }
 
   public abstract static class TaskInfo {
     public static final String TASK_TYPE_FIELD_NAME = "taskType";

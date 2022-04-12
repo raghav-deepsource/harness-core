@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.KeyValuePair;
 import io.harness.encryption.Scope;
 import io.harness.exception.ArtifactServerException;
+import io.harness.exception.ArtifactoryRegistryException;
 import io.harness.exception.ArtifactoryServerException;
 import io.harness.exception.AuthenticationException;
 import io.harness.exception.AuthorizationException;
@@ -39,6 +40,8 @@ import io.harness.exception.KubernetesApiTaskException;
 import io.harness.exception.KubernetesCliTaskRuntimeException;
 import io.harness.exception.KubernetesTaskException;
 import io.harness.exception.KubernetesYamlException;
+import io.harness.exception.NexusRegistryException;
+import io.harness.exception.NexusServerException;
 import io.harness.exception.SecretNotFoundException;
 import io.harness.exception.ServiceNowException;
 import io.harness.exception.ShellExecutionException;
@@ -77,6 +80,9 @@ public class CommonsKryoRegistrar implements KryoRegistrar {
 
     // Promoted Classes
     kryo.register(ArtifactoryServerException.class, 7214);
+    kryo.register(ArtifactoryRegistryException.class, 7217);
+    kryo.register(NexusServerException.class, 7218);
+    kryo.register(NexusRegistryException.class, 7246);
     kryo.register(ArtifactServerException.class, 7244);
     kryo.register(InvalidArtifactServerException.class, 7250);
     kryo.register(ShellExecutionException.class, 7473);

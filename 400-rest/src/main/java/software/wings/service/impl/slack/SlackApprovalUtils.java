@@ -153,6 +153,7 @@ public class SlackApprovalUtils {
     templateFillers.put(SlackApprovalMessageKeys.EXPIRES_DATE, slackApprovalParams.getExpiryTsSecs());
     templateFillers.put(SlackApprovalMessageKeys.VERB, slackApprovalParams.getVerb());
     templateFillers.put(SlackApprovalMessageKeys.ARTIFACTS, slackApprovalParams.getArtifactsInvolved());
+    templateFillers.put(SlackApprovalMessageKeys.TRIGGERED_BY, slackApprovalParams.getTriggeredByUser());
 
     return createMessageFromTemplate(url, templateFillers);
   }

@@ -300,7 +300,7 @@ public class EcsDelegateRegistrationTest extends WingsBaseTest {
 
     doReturn(null).when(delegateService).getDelegateUsingSequenceNum(anyString(), anyString(), anyString());
 
-    doNothing().when(delegateService).initDelegateWithConfigFromExistingDelegate(any(Delegate.class));
+    doNothing().when(delegateService).updateDelegateWithConfigFromGroup(any(Delegate.class));
 
     // firstArg is existingDelegate fetched from db
     // secondArg is delegate arg passed.
@@ -504,7 +504,7 @@ public class EcsDelegateRegistrationTest extends WingsBaseTest {
         .when(delegateService)
         .addNewDelegateSequenceConfigRecord(any(Delegate.class));
 
-    doNothing().when(delegateService).initDelegateWithConfigFromExistingDelegate(any(Delegate.class));
+    doNothing().when(delegateService).updateDelegateWithConfigFromGroup(any(Delegate.class));
 
     Delegate delegate = Delegate.builder().accountId(ACCOUNT_ID).hostName("hostname").build();
     delegate = delegateService.registerDelegateWithNewSequenceGeneration(delegate);

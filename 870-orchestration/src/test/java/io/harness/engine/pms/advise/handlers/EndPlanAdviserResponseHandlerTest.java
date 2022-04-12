@@ -12,19 +12,24 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ARCHIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.OrchestrationTestBase;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.interrupts.InterruptManager;
 import io.harness.engine.interrupts.InterruptPackage;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
+import io.harness.execution.PlanExecutionMetadata;
+import io.harness.plan.NodeType;
 import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.advisers.EndPlanAdvise;
@@ -42,6 +47,7 @@ import io.harness.serializer.ProtoUtils;
 
 import com.google.inject.Inject;
 import java.util.Collections;
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -54,7 +60,8 @@ public class EndPlanAdviserResponseHandlerTest extends OrchestrationTestBase {
   @InjectMocks @Inject private EndPlanAdviserResponseHandler endPlanAdviserResponseHandler;
 
   @Inject private PlanExecutionService planExecutionService;
-  @Inject private NodeExecutionService nodeExecutionService;
+  @Inject @InjectMocks private NodeExecutionService nodeExecutionService;
+  @Mock private PlanExecutionMetadataService planExecutionMetadataService;
 
   private static final String PLAN_EXECUTION_ID = generateUuid();
   private static final String NODE_EXECUTION_ID = generateUuid();
@@ -67,9 +74,15 @@ public class EndPlanAdviserResponseHandlerTest extends OrchestrationTestBase {
   public void setup() {
     Ambiance ambiance = Ambiance.newBuilder()
                             .setPlanExecutionId(PLAN_EXECUTION_ID)
-                            .addAllLevels(Collections.singletonList(
-                                Level.newBuilder().setRuntimeId(NODE_EXECUTION_ID).setSetupId(NODE_SETUP_ID).build()))
+                            .addAllLevels(Collections.singletonList(Level.newBuilder()
+                                                                        .setRuntimeId(NODE_EXECUTION_ID)
+                                                                        .setNodeType(NodeType.PLAN_NODE.name())
+                                                                        .setSetupId(NODE_SETUP_ID)
+                                                                        .build()))
                             .build();
+
+    when(planExecutionMetadataService.findByPlanExecutionId(any()))
+        .thenReturn(Optional.of(PlanExecutionMetadata.builder().build()));
 
     planExecutionService.save(PlanExecution.builder().uuid(PLAN_EXECUTION_ID).status(Status.RUNNING).build());
 

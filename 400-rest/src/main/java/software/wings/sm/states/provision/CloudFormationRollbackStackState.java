@@ -14,6 +14,8 @@ import static io.harness.context.ContextElementType.CLOUD_FORMATION_ROLLBACK;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
+import static io.harness.delegate.task.cloudformation.CloudformationBaseHelperImpl.CLOUDFORMATION_STACK_CREATE_BODY;
+import static io.harness.delegate.task.cloudformation.CloudformationBaseHelperImpl.CLOUDFORMATION_STACK_CREATE_URL;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
@@ -228,12 +230,12 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
       setAmazonClientSDKDefaultBackoffStrategyIfExists(context, awsConfig);
       String roleArnRendered = executionContext.renderExpression(configParameter.getCloudFormationRoleArn());
       CloudFormationCreateStackRequestBuilder builder = CloudFormationCreateStackRequest.builder().awsConfig(awsConfig);
-      if (CloudFormationCreateStackRequest.CLOUD_FORMATION_STACK_CREATE_URL.equals(configParameter.getCreateType())) {
-        builder.createType(CloudFormationCreateStackRequest.CLOUD_FORMATION_STACK_CREATE_URL);
+      if (CLOUDFORMATION_STACK_CREATE_URL.equals(configParameter.getCreateType())) {
+        builder.createType(CLOUDFORMATION_STACK_CREATE_URL);
         builder.data(configParameter.getUrl());
       } else {
         // This handles both the Git case and template body. We don't need to checkout again.
-        builder.createType(CloudFormationCreateStackRequest.CLOUD_FORMATION_STACK_CREATE_BODY);
+        builder.createType(CLOUDFORMATION_STACK_CREATE_BODY);
         builder.data(configParameter.getBody());
       }
 
@@ -352,8 +354,7 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
               .build();
     } else {
       CloudFormationCreateStackRequestBuilder builder = CloudFormationCreateStackRequest.builder();
-      builder.createType(CloudFormationCreateStackRequest.CLOUD_FORMATION_STACK_CREATE_BODY)
-          .data(stackElement.getOldStackBody());
+      builder.createType(CLOUDFORMATION_STACK_CREATE_BODY).data(stackElement.getOldStackBody());
       builder.stackNameSuffix(stackElement.getStackNameSuffix())
           .customStackName(stackElement.getCustomStackName())
           .region(stackElement.getRegion())

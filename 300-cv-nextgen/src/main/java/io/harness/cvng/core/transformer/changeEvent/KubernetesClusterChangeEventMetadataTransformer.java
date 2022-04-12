@@ -23,8 +23,6 @@ public class KubernetesClusterChangeEventMetadataTransformer
         .activityName("Kubernetes " + metadata.getResourceType() + " event.")
         .orgIdentifier(changeEventDTO.getOrgIdentifier())
         .projectIdentifier(changeEventDTO.getProjectIdentifier())
-        .serviceIdentifier(changeEventDTO.getServiceIdentifier())
-        .environmentIdentifier(changeEventDTO.getEnvIdentifier())
         .eventTime(Instant.ofEpochMilli(changeEventDTO.getEventTime()))
         .changeSourceIdentifier(changeEventDTO.getChangeSourceIdentifier())
         .monitoredServiceIdentifier(changeEventDTO.getMonitoredServiceIdentifier())

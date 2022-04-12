@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.jira.update.beans.TransitionTo;
@@ -36,5 +37,5 @@ public class JiraUpdateSpecParameters implements SpecParameters {
 
   TransitionTo transitionTo;
   Map<String, ParameterField<String>> fields;
-  ParameterField<List<String>> delegateSelectors;
+  ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 }

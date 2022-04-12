@@ -8,11 +8,16 @@
 package software.wings.sm.states;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
+import static io.harness.beans.FeatureName.DISABLE_ARTIFACT_COLLECTION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.validation.Validator.notNullCheck;
 
+import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
+import static software.wings.beans.artifact.ArtifactStreamType.CUSTOM;
 import static software.wings.sm.StateType.ARTIFACT_COLLECTION;
 
 import static java.lang.String.valueOf;
@@ -23,9 +28,14 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.Cd1SetupFields;
+import io.harness.beans.DelegateTask;
+import io.harness.beans.DelegateTask.DelegateTaskBuilder;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
 import io.harness.delay.DelayEventHelper;
+import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.TaskData;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -33,6 +43,7 @@ import io.harness.expression.ExpressionEvaluator;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.AutoLogContext.OverrideBehavior;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.tasks.ResponseData;
 
 import software.wings.api.AppManifestCollectionExecutionData;
@@ -40,13 +51,22 @@ import software.wings.api.ArtifactCollectionExecutionData;
 import software.wings.beans.BuildExecutionSummary;
 import software.wings.beans.CollectionEntityType;
 import software.wings.beans.EntityType;
+import software.wings.beans.SettingAttribute;
+import software.wings.beans.TaskType;
 import software.wings.beans.TemplateExpression;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.Artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStream;
+import software.wings.beans.artifact.ArtifactStreamAttributes;
+import software.wings.beans.artifact.CustomArtifactStream;
 import software.wings.common.TemplateExpressionProcessor;
+import software.wings.delegatetasks.buildsource.BuildCollectParameters;
+import software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse;
+import software.wings.delegatetasks.buildsource.BuildSourceParameters;
+import software.wings.delegatetasks.buildsource.BuildSourceParameters.BuildSourceRequestType;
+import software.wings.delegatetasks.buildsource.BuildSourceResponse;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.service.ArtifactStreamHelper;
 import software.wings.service.impl.WorkflowExecutionLogContext;
@@ -55,6 +75,8 @@ import software.wings.service.intfc.ApplicationManifestService;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.BuildSourceService;
+import software.wings.service.intfc.DelegateService;
+import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.applicationmanifest.HelmChartService;
 import software.wings.sm.ExecutionContext;
@@ -67,12 +89,14 @@ import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
+import org.mongodb.morphia.annotations.Transient;
 
 @OwnedBy(CDC)
 @Slf4j
@@ -105,6 +129,8 @@ public class ArtifactCollectionState extends State {
   @Inject private transient BuildSourceService buildSourceService;
   @Inject private transient ArtifactCollectionUtils artifactCollectionUtils;
   @Inject private transient TemplateExpressionProcessor templateExpressionProcessor;
+  @Inject private transient SettingsService settingsService;
+  @Inject @Transient private DelegateService delegateService;
 
   private static int DELAY_TIME_IN_SEC = 60;
   public static final long DEFAULT_ARTIFACT_COLLECTION_STATE_TIMEOUT_MILLIS = 5L * 60L * 1000L; // 5 minutes
@@ -152,7 +178,7 @@ public class ArtifactCollectionState extends State {
     }
 
     String evaluatedBuildNo;
-    Artifact lastCollectedArtifact;
+
     if (artifactStream.isArtifactStreamParameterized()) {
       if (isEmpty(runtimeValues)) {
         log.info("Artifact Source {} parameterized. However, runtime values not provided", artifactStream.getName());
@@ -168,11 +194,16 @@ public class ArtifactCollectionState extends State {
             .errorMessage("Artifact source parameterized. Please provide Build Number.")
             .build();
       }
+    }
+
+    if (shouldCollectArtifact(context)) {
+      return collectArtifact(context, artifactStream);
+    }
+
+    Artifact lastCollectedArtifact;
+    if (artifactStream.isArtifactStreamParameterized()) {
       evaluatedBuildNo = context.renderExpression(buildNo);
-      runtimeValues.put("buildNo", evaluatedBuildNo);
-      runtimeValues.replaceAll((k, v) -> context.renderExpression((String) runtimeValues.get(k)));
-      artifactStreamHelper.resolveArtifactStreamRuntimeValues(artifactStream, runtimeValues);
-      artifactStream.setSourceName(artifactStream.generateSourceName());
+      populateRuntimeValuesAndArtifactStreamParameters(context, artifactStream, evaluatedBuildNo);
       lastCollectedArtifact = fetchCollectedArtifactForParameterizedArtifactStream(artifactStream, evaluatedBuildNo);
       if (lastCollectedArtifact == null) {
         BuildDetails buildDetails = buildSourceService.getBuild(
@@ -194,25 +225,7 @@ public class ArtifactCollectionState extends State {
     }
 
     if (lastCollectedArtifact != null) {
-      ArtifactCollectionExecutionData artifactCollectionExecutionData =
-          ArtifactCollectionExecutionData.builder().artifactStreamId(artifactStreamId).build();
-      if (getTimeoutMillis() != null) {
-        artifactCollectionExecutionData.setTimeout(valueOf(getTimeoutMillis()));
-      }
-      artifactCollectionExecutionData.setArtifactSource(artifactStream.getSourceName());
-      artifactCollectionExecutionData.setRevision(lastCollectedArtifact.getRevision());
-      artifactCollectionExecutionData.setBuildNo(lastCollectedArtifact.getBuildNo());
-      artifactCollectionExecutionData.setMetadata(lastCollectedArtifact.getMetadata());
-      artifactCollectionExecutionData.setArtifactId(lastCollectedArtifact.getUuid());
-      updateArtifactCollectionExecutionData(context, artifactCollectionExecutionData);
-
-      addBuildExecutionSummary(context, artifactCollectionExecutionData, artifactStream);
-      return ExecutionResponse.builder()
-          .executionStatus(ExecutionStatus.SUCCESS)
-          .stateExecutionData(artifactCollectionExecutionData)
-          .errorMessage("Collected artifact [" + lastCollectedArtifact.getBuildNo() + "] for artifact source ["
-              + lastCollectedArtifact.getArtifactSourceName() + "]")
-          .build();
+      return prepareResponseForLastCollectedArtifact(context, artifactStream, lastCollectedArtifact);
     }
 
     ArtifactCollectionExecutionData artifactCollectionExecutionData =
@@ -231,6 +244,122 @@ public class ArtifactCollectionState extends State {
         .async(true)
         .correlationIds(singletonList(resumeId))
         .stateExecutionData(artifactCollectionExecutionData)
+        .build();
+  }
+
+  private void populateRuntimeValuesAndArtifactStreamParameters(
+      ExecutionContext context, ArtifactStream artifactStream, String evaluatedBuildNo) {
+    runtimeValues.put("buildNo", evaluatedBuildNo);
+    runtimeValues.replaceAll((k, v) -> context.renderExpression((String) runtimeValues.get(k)));
+    artifactStreamHelper.resolveArtifactStreamRuntimeValues(artifactStream, runtimeValues);
+    artifactStream.setSourceName(artifactStream.generateSourceName());
+  }
+
+  private ExecutionResponse prepareResponseForLastCollectedArtifact(
+      ExecutionContext context, ArtifactStream artifactStream, Artifact lastCollectedArtifact) {
+    ArtifactCollectionExecutionData artifactCollectionExecutionData =
+        ArtifactCollectionExecutionData.builder().artifactStreamId(artifactStreamId).build();
+    if (getTimeoutMillis() != null) {
+      artifactCollectionExecutionData.setTimeout(valueOf(getTimeoutMillis()));
+    }
+    artifactCollectionExecutionData.setArtifactSource(artifactStream.getSourceName());
+    artifactCollectionExecutionData.setRevision(lastCollectedArtifact.getRevision());
+    artifactCollectionExecutionData.setBuildNo(lastCollectedArtifact.getBuildNo());
+    artifactCollectionExecutionData.setMetadata(lastCollectedArtifact.getMetadata());
+    artifactCollectionExecutionData.setArtifactId(lastCollectedArtifact.getUuid());
+    updateArtifactCollectionExecutionData(context, artifactCollectionExecutionData);
+
+    addBuildExecutionSummary(context, artifactCollectionExecutionData, artifactStream);
+    return ExecutionResponse.builder()
+        .executionStatus(ExecutionStatus.SUCCESS)
+        .stateExecutionData(artifactCollectionExecutionData)
+        .errorMessage("Collected artifact [" + lastCollectedArtifact.getBuildNo() + "] for artifact source ["
+            + lastCollectedArtifact.getArtifactSourceName() + "]")
+        .build();
+  }
+
+  private boolean shouldCollectArtifact(ExecutionContext context) {
+    return featureFlagService.isEnabled(DISABLE_ARTIFACT_COLLECTION, context.getAccountId());
+  }
+
+  private ExecutionResponse collectArtifact(ExecutionContext context, ArtifactStream artifactStream) {
+    String evaluatedBuildNo = getEvaluatedBuildNo(context);
+    String waitId = generateUuid();
+
+    // if collection enabled and buildno is empty, get last collected artifact from db and return.
+    if (!Boolean.FALSE.equals(artifactStream.getCollectionEnabled()) && isBlank(evaluatedBuildNo)) {
+      Artifact lastCollectedArtifact =
+          artifactService.fetchLastCollectedApprovedArtifactForArtifactStream(artifactStream);
+      if (lastCollectedArtifact != null) {
+        return prepareResponseForLastCollectedArtifact(context, artifactStream, lastCollectedArtifact);
+      }
+    }
+
+    Integer timeout = getTimeoutMillis();
+    DelegateTaskBuilder delegateTaskBuilder;
+
+    if (CUSTOM.name().equals(artifactStream.getArtifactStreamType())) {
+      ArtifactStreamAttributes artifactStreamAttributes =
+          artifactCollectionUtils.renderCustomArtifactScriptString((CustomArtifactStream) artifactStream);
+      artifactStreamAttributes.setCustomScriptTimeout(valueOf(timeout));
+      delegateTaskBuilder = artifactCollectionUtils.fetchCustomDelegateTask(waitId, artifactStream,
+          artifactStreamAttributes, false, BuildSourceRequestType.GET_BUILD,
+          BuildCollectParameters.builder().buildNo(evaluatedBuildNo).isRegex(regex).build());
+    } else {
+      SettingAttribute settingAttribute = settingsService.get(artifactStream.getSettingId());
+      if (settingAttribute == null) {
+        return ExecutionResponse.builder()
+            .executionStatus(ExecutionStatus.FAILED)
+            .errorMessage("Artifact server was deleted for Artifact Source " + artifactStream.getName())
+            .build();
+      }
+
+      if (artifactStream.isArtifactStreamParameterized()) {
+        evaluatedBuildNo = context.renderExpression(buildNo);
+        populateRuntimeValuesAndArtifactStreamParameters(context, artifactStream, evaluatedBuildNo);
+      }
+
+      BuildSourceParameters buildSourceRequest =
+          artifactCollectionUtils.getBuildSourceParameters(artifactStream, settingAttribute, false, false);
+      buildSourceRequest.setBuildSourceRequestType(BuildSourceRequestType.GET_BUILD);
+      buildSourceRequest.setShouldFetchSecretFromCache(false);
+      buildSourceRequest.setBuildCollectParameters(
+          BuildCollectParameters.builder()
+              .buildNo(evaluatedBuildNo)
+              .isRegex(regex)
+              .delegateSelectors(new HashSet<>(settingsService.getDelegateSelectors(settingAttribute)))
+              .build());
+      delegateTaskBuilder = DelegateTask.builder()
+                                .accountId(settingAttribute.getAccountId())
+                                .waitId(waitId)
+                                .expiry(artifactCollectionUtils.getDelegateQueueTimeout(artifactStream.getAccountId()))
+                                .setupAbstraction(Cd1SetupFields.APP_ID_FIELD,
+                                    featureFlagService.isEnabled(
+                                        FeatureName.ARTIFACT_STREAM_DELEGATE_SCOPING, artifactStream.getAccountId())
+                                        ? artifactStream.getAppId()
+                                        : GLOBAL_APP_ID)
+                                .data(TaskData.builder()
+                                          .async(true)
+                                          .taskType(TaskType.BUILD_SOURCE_TASK.name())
+                                          .parameters(new Object[] {buildSourceRequest})
+                                          .timeout(timeout)
+                                          .build());
+    }
+
+    String delegateTaskId = delegateService.queueTask(delegateTaskBuilder.build());
+
+    ArtifactCollectionExecutionData artifactCollectionExecutionData =
+        ArtifactCollectionExecutionData.builder()
+            .timeout(valueOf(timeout))
+            .artifactSource(artifactStream.getSourceName())
+            .buildNo(evaluatedBuildNo)
+            .build();
+
+    return ExecutionResponse.builder()
+        .async(true)
+        .correlationIds(singletonList(waitId))
+        .stateExecutionData(artifactCollectionExecutionData)
+        .delegateTaskId(delegateTaskId)
         .build();
   }
 
@@ -328,6 +457,10 @@ public class ArtifactCollectionState extends State {
 
     String evaluatedBuildNo = getEvaluatedBuildNo(context);
 
+    if (shouldCollectArtifact(context)) {
+      return handleArtifactCollectionResponse(context, response, artifactStream, evaluatedBuildNo);
+    }
+
     Artifact lastCollectedArtifact = fetchCollectedArtifact(artifactStream, evaluatedBuildNo);
 
     ArtifactCollectionExecutionData artifactCollectionExecutionData =
@@ -363,6 +496,67 @@ public class ArtifactCollectionState extends State {
         .stateExecutionData(artifactCollectionExecutionData)
         .executionStatus(SUCCESS)
         .build();
+  }
+
+  private ExecutionResponse handleArtifactCollectionResponse(ExecutionContext context,
+      Map<String, ResponseData> response, ArtifactStream artifactStream, String evaluatedBuildNo) {
+    DelegateResponseData notifyResponseData = (DelegateResponseData) response.values().iterator().next();
+    if (notifyResponseData instanceof BuildSourceExecutionResponse) {
+      BuildSourceExecutionResponse buildSourceExecutionResponse = (BuildSourceExecutionResponse) notifyResponseData;
+      BuildSourceResponse buildSourceResponse = buildSourceExecutionResponse.getBuildSourceResponse();
+      if (CommandExecutionStatus.SUCCESS.equals(buildSourceExecutionResponse.getCommandExecutionStatus())
+          && buildSourceResponse != null && isNotEmpty(buildSourceResponse.getBuildDetails())) {
+        BuildDetails buildDetail = buildSourceResponse.getBuildDetails().get(0);
+        if (artifactStream.isArtifactStreamParameterized()) {
+          populateRuntimeValuesAndArtifactStreamParameters(context, artifactStream, evaluatedBuildNo);
+        }
+        Artifact artifact = artifactCollectionUtils.getArtifact(artifactStream, buildDetail);
+        Artifact savedArtifact = artifactService.create(artifact, artifactStream, false);
+        if (savedArtifact.isDuplicate()) {
+          if (shouldUpdateMetadata(artifact, savedArtifact)) {
+            artifactService.updateMetadataAndRevision(
+                savedArtifact.getUuid(), savedArtifact.getAccountId(), artifact.getMetadata(), artifact.getRevision());
+          }
+        }
+        ArtifactCollectionExecutionData artifactCollectionExecutionData =
+            ArtifactCollectionExecutionData.builder()
+                .artifactStreamId(artifactStreamId)
+                .buildNo(artifact.getBuildNo())
+                .metadata(artifact.getMetadata())
+                .artifactSource(artifactStream.getSourceName())
+                .revision(artifact.getRevision())
+                .artifactId(savedArtifact.getUuid())
+                .build();
+
+        addBuildExecutionSummary(context, artifactCollectionExecutionData, artifactStream);
+        return ExecutionResponse.builder()
+            .stateExecutionData(artifactCollectionExecutionData)
+            .executionStatus(SUCCESS)
+            .build();
+      } else {
+        String errorMessage = buildSourceExecutionResponse.getErrorMessage();
+        return ExecutionResponse.builder()
+            .executionStatus(FAILED)
+            .errorMessage(isEmpty(errorMessage)
+                    ? String.format("Failed to collect build version %s for artifact source %s", evaluatedBuildNo,
+                        artifactStream.getName())
+                    : errorMessage)
+            .build();
+      }
+    } else {
+      log.error("Unhandled DelegateResponseData class " + notifyResponseData.getClass().getCanonicalName(),
+          new Exception(""));
+    }
+    return ExecutionResponse.builder()
+        .executionStatus(FAILED)
+        .errorMessage(String.format(
+            "Failed to collect build version %s for artifact source %s", evaluatedBuildNo, artifactStream.getName()))
+        .build();
+  }
+
+  private boolean shouldUpdateMetadata(Artifact artifact, Artifact savedArtifact) {
+    return (savedArtifact.getMetadata() != null && !savedArtifact.getMetadata().equals(artifact.getMetadata()))
+        || (savedArtifact.getRevision() != null && !savedArtifact.getRevision().equals(artifact.getRevision()));
   }
 
   private ExecutionResponse handleAsyncResponseManifest(ExecutionContext context, Map<String, ResponseData> response) {

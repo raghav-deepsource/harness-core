@@ -9,6 +9,7 @@ package io.harness.delegate.beans.connector.scm.gitlab;
 
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretReference;
+import io.harness.validation.OneOfField;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
@@ -25,6 +26,7 @@ import lombok.experimental.FieldDefaults;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("GitlabUsernameToken")
+@OneOfField(fields = {"username", "usernameRef"})
 @Schema(name = "GitlabUsernameToken",
     description = "This contains details of the Gitlab credentials Specs such as references of username and token")
 public class GitlabUsernameTokenDTO implements GitlabHttpCredentialsSpecDTO {

@@ -214,16 +214,4 @@ public class ServiceGuardLogAnalysisStateExecutorTest extends CategoryTest {
     assertThat(logAnalysisState.getWorkerTaskId()).isNotNull();
     assertThat(logAnalysisState.getRetryCount()).isEqualTo(2);
   }
-
-  @Test
-  @Owner(developers = PRAVEEN)
-  @Category(UnitTests.class)
-  public void testHandleRetry_noMoreRetry() {
-    logAnalysisState.setRetryCount(2);
-
-    logAnalysisState =
-        (ServiceGuardLogAnalysisState) serviceGuardLogAnalysisStateExecutor.handleRetry(logAnalysisState);
-
-    assertThat(logAnalysisState.getStatus().name()).isEqualTo(AnalysisStatus.FAILED.name());
-  }
 }

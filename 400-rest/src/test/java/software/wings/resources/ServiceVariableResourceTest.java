@@ -101,7 +101,7 @@ public class ServiceVariableResourceTest extends CategoryTest {
     }
     SERVICE_VARIABLE.setUuid(WingsTestConstants.SERVICE_VARIABLE_ID);
     SERVICE_VARIABLE.setAppId(APP_ID);
-    when(AUTH_HANDLER.authorize(any(), any(), any())).thenReturn(true);
+    when(AUTH_HANDLER.authorize(any(), any(), anyString())).thenReturn(true);
   }
 
   /**

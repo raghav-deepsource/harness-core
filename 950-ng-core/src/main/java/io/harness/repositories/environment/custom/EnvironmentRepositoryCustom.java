@@ -22,4 +22,8 @@ public interface EnvironmentRepositoryCustom {
   UpdateResult delete(Criteria criteria);
 
   List<Environment> findAllRunTimeAccess(Criteria criteria);
+
+  List<String> fetchesNonDeletedEnvIdentifiersFromList(Criteria criteria);
+
+  List<Environment> fetchesNonDeletedEnvironmentFromListOfIdentifiers(Criteria criteria);
 }

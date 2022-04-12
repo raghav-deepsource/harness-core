@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.KARAN;
 import static io.harness.rule.OwnerRule.RAGHU;
+import static io.harness.rule.OwnerRule.SHUBHAM_MAHESHWARI;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
@@ -463,6 +464,35 @@ public class SettingsServiceHelperTest extends WingsBaseTest {
     settingValue = SmtpConfig.builder().build();
     assertFalse(settingServiceHelper.skipUsageRestrictionsValidation(
         true, aSettingAttribute().withValue(settingValue).build()));
+  }
+
+  @Test
+  @Owner(developers = SHUBHAM_MAHESHWARI)
+  @Category(UnitTests.class)
+  public void testUpdateReferencedSecretsWithSkipValidation() {
+    SettingAttribute settingAttribute = aSettingAttribute().withAccountId(ACCOUNT_ID).withCategory(CONNECTOR).build();
+    // Early return without exceptions.
+    settingServiceHelper.updateReferencedSecrets(settingAttribute);
+
+    String secret = "secret";
+    String password = "password";
+    String clientId = "clientId";
+    KubernetesClusterConfig kubernetesClusterConfig = KubernetesClusterConfig.builder()
+                                                          .authType(KubernetesClusterAuthType.OIDC)
+                                                          .encryptedOidcSecret(secret)
+                                                          .encryptedOidcPassword(password)
+                                                          .encryptedOidcClientId(clientId)
+                                                          .skipValidation(true)
+                                                          .build();
+    settingAttribute.setValue(kubernetesClusterConfig);
+    settingServiceHelper.updateReferencedSecrets(settingAttribute);
+    verify(managerDecryptionService, times(0)).decrypt(eq(kubernetesClusterConfig), any());
+    assertThat(kubernetesClusterConfig.isDecrypted()).isFalse();
+
+    kubernetesClusterConfig.setDecrypted(true);
+    settingServiceHelper.updateReferencedSecrets(settingAttribute);
+    verify(managerDecryptionService, times(0)).decrypt(eq(kubernetesClusterConfig), any());
+    assertThat(kubernetesClusterConfig.isDecrypted()).isTrue();
   }
 
   private SettingAttribute prepareSettingAttributeWithoutSecrets() {

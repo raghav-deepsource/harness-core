@@ -74,8 +74,12 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.CGConstants;
+import software.wings.beans.GcpConfig;
 import software.wings.beans.GitConfig;
+import software.wings.beans.KubernetesClusterConfig;
+import software.wings.beans.PcfConfig;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.config.ArtifactoryConfig;
 import software.wings.security.UsageRestrictions;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.UsageRestrictionsService;
@@ -90,6 +94,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -160,15 +165,32 @@ public class SettingServiceHelper {
     // The encrypted field contains the encrypted text id. Copy that value to the encrypted ref field and set encrypted
     // field to null.
     copyToEncryptedRefFields(object);
-    List<EncryptedDataDetail> encryptionDetails =
-        secretManager.getEncryptionDetails(object, settingAttribute.getAppId(), null);
-    managerDecryptionService.decrypt(object, encryptionDetails);
 
+    if (!skipValidation(settingAttribute)) {
+      List<EncryptedDataDetail> encryptionDetails =
+          secretManager.getEncryptionDetails(object, settingAttribute.getAppId(), null);
+      managerDecryptionService.decrypt(object, encryptionDetails);
+    }
     if (wasDecrypted) {
       // Set decrypted to true even if the call to decrypt did not and the setting value initially had decrypted set to
       // true.
       object.setDecrypted(true);
     }
+  }
+
+  private boolean skipValidation(SettingAttribute settingAttribute) {
+    if (Objects.nonNull(settingAttribute) && Objects.nonNull(settingAttribute.getValue())) {
+      return (settingAttribute.getValue() instanceof KubernetesClusterConfig
+                 && ((KubernetesClusterConfig) settingAttribute.getValue()).isSkipValidation())
+          || (settingAttribute.getValue() instanceof GcpConfig
+              && ((GcpConfig) settingAttribute.getValue()).isSkipValidation())
+          || (settingAttribute.getValue() instanceof PcfConfig
+              && ((PcfConfig) settingAttribute.getValue()).isSkipValidation())
+          || (settingAttribute.getValue() instanceof ArtifactoryConfig
+              && ((ArtifactoryConfig) settingAttribute.getValue()).isSkipValidation());
+    }
+
+    return false;
   }
 
   /**

@@ -12,6 +12,7 @@ import io.harness.cvng.core.entities.SideKick.SideKickData;
 import io.harness.cvng.core.entities.SideKick.SidekickKeys;
 import io.harness.cvng.core.entities.SideKick.Status;
 import io.harness.cvng.core.services.api.SideKickExecutor;
+import io.harness.cvng.core.services.api.SideKickExecutor.RetryData;
 import io.harness.cvng.core.services.api.SideKickService;
 import io.harness.persistence.HPersistence;
 
@@ -35,7 +36,8 @@ public class SideKickServiceImpl implements SideKickService {
   @Inject private Clock clock;
   @Override
   public void schedule(SideKickData sideKickData, Instant runAfter) {
-    hPersistence.save(SideKick.builder().status(Status.QUEUED).runAfter(runAfter).sideKickData(sideKickData).build());
+    hPersistence.save(
+        SideKick.builder().status(Status.QUEUED).runAfter(runAfter).retryCount(0).sideKickData(sideKickData).build());
     log.info("Saved sidekick: {} run after: ", sideKickData, runAfter);
   }
 
@@ -48,12 +50,13 @@ public class SideKickServiceImpl implements SideKickService {
       }
     }
   }
+
   private boolean processNextTask() {
     Query<SideKick> query = hPersistence.createQuery(SideKick.class)
                                 .filter(SidekickKeys.status, Status.QUEUED)
                                 .field(SidekickKeys.runAfter)
                                 .lessThan(clock.instant())
-                                .order(Sort.ascending(SidekickKeys.createdAt));
+                                .order(Sort.ascending(SidekickKeys.lastUpdatedAt));
     UpdateOperations<SideKick> updateOperations = hPersistence.createUpdateOperations(SideKick.class)
                                                       .set(SidekickKeys.status, Status.RUNNING)
                                                       .set(SidekickKeys.lastUpdatedAt, clock.millis());
@@ -80,8 +83,25 @@ public class SideKickServiceImpl implements SideKickService {
           statusUpdateOperations.set(SidekickKeys.stacktrace, stacktrace);
         }
         hPersistence.update(nextTask, statusUpdateOperations);
+
+        if (status == Status.FAILED) {
+          RetryData retryData =
+              typeSideKickExecutorMap.get(nextTask.getSideKickData().getType()).shouldRetry(nextTask.getRetryCount());
+          if (retryData.isShouldRetry()) {
+            shouldRetry(nextTask, retryData.getNextRetryTime());
+          }
+        }
       }
     }
     return nextTask != null;
+  }
+
+  private void shouldRetry(SideKick sideKick, Instant nextRunTime) {
+    UpdateOperations<SideKick> statusUpdateOperations = hPersistence.createUpdateOperations(SideKick.class)
+                                                            .set(SidekickKeys.status, Status.QUEUED)
+                                                            .inc(SidekickKeys.retryCount)
+                                                            .set(SidekickKeys.runAfter, nextRunTime);
+
+    hPersistence.update(sideKick, statusUpdateOperations);
   }
 }

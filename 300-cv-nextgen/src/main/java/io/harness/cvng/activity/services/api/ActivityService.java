@@ -9,24 +9,15 @@ package io.harness.cvng.activity.services.api;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cvng.activity.beans.ActivityVerificationResultDTO;
-import io.harness.cvng.activity.beans.DeploymentActivitySummaryDTO;
 import io.harness.cvng.activity.entities.Activity;
-import io.harness.cvng.activity.entities.DeploymentActivity;
 import io.harness.cvng.analysis.beans.LogAnalysisClusterChartDTO;
 import io.harness.cvng.analysis.beans.LogAnalysisClusterDTO;
-import io.harness.cvng.analysis.beans.TransactionMetricInfoSummaryPageDTO;
-import io.harness.cvng.beans.activity.ActivityDTO;
 import io.harness.cvng.beans.activity.ActivityStatusDTO;
-import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
-import io.harness.cvng.core.beans.DatasourceTypeDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceDTO;
+import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.PageParams;
-import io.harness.cvng.core.beans.params.ProjectParams;
-import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentLogAnalysisFilter;
-import io.harness.cvng.core.beans.params.filterParams.DeploymentTimeSeriesAnalysisFilter;
 import io.harness.ng.beans.PageResponse;
 
 import java.time.Instant;
@@ -38,34 +29,20 @@ import java.util.Set;
 public interface ActivityService {
   Activity get(String activityId);
   Activity getByVerificationJobInstanceId(String verificationJobInstanceId);
-  @Deprecated String register(String accountId, ActivityDTO activityDTO);
   @Deprecated String register(Activity activity);
 
   void updateActivityStatus(Activity activity);
 
   Optional<Activity> getAnyKubernetesEvent(
-      ServiceEnvironmentParams serviceEnvironmentParams, Instant startTime, Instant endTime);
-  Optional<Activity> getAnyDemoDeploymentEvent(ServiceEnvironmentParams dependencyServiceEnvParams, Instant startTime,
+      MonitoredServiceParams monitoredServiceParams, Instant startTime, Instant endTime);
+  Optional<Activity> getAnyDemoDeploymentEvent(MonitoredServiceParams monitoredServiceParams, Instant startTime,
       Instant endTime, ActivityVerificationStatus verificationStatus);
-  Activity getActivityFromDTO(ActivityDTO activityDTO);
 
   String getDeploymentTagFromActivity(String accountId, String verificationJobInstanceId);
 
   String createActivity(Activity activity);
 
-  List<ActivityVerificationResultDTO> getRecentActivityVerificationResults(
-      String accountId, String orgIdentifier, String projectIdentifier, int size);
-  ActivityVerificationResultDTO getActivityVerificationResult(String accountId, String activityId);
-
-  @Deprecated DeploymentActivitySummaryDTO getDeploymentSummary(String activityId);
-
   ActivityStatusDTO getActivityStatus(String accountId, String activityId);
-  List<String> createVerificationJobInstancesForActivity(Activity activity);
-
-  @Deprecated
-  TransactionMetricInfoSummaryPageDTO getDeploymentActivityTimeSeriesData(String accountId, String activityId,
-      DeploymentTimeSeriesAnalysisFilter deploymentTimeSeriesAnalysisFilter, PageParams pageParams);
-  Set<DatasourceTypeDTO> getDataSourcetypes(String accountId, String activityId);
 
   @Deprecated
   List<LogAnalysisClusterChartDTO> getDeploymentActivityLogAnalysisClusters(
@@ -80,11 +57,4 @@ public interface ActivityService {
   @Deprecated Set<HealthSourceDTO> healthSources(String accountId, String activityId);
 
   String upsert(Activity activity);
-
-  Long getCount(ServiceEnvironmentParams serviceEnvironmentParams, List<String> changeSourceIdentifiers,
-      Instant startTime, Instant endTime, List<ActivityType> activityTypes);
-
-  Long getCount(ProjectParams projectParams, List<String> serviceIdentifiers, List<String> environmentIdentifiers,
-      Instant startTime, Instant endTime, List<ActivityType> activityTypes);
-  @Deprecated String createActivityForDemo(DeploymentActivity activity, ActivityVerificationStatus verificationStatus);
 }

@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.heartbeat.ConnectorValidationParamsProvider;
@@ -26,7 +27,10 @@ import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.ngexception.ConnectorValidationException;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
@@ -47,6 +51,7 @@ public abstract class AbstractConnectorValidator implements ConnectionValidator 
   @Inject @Named("connectorDecoratorService") private ConnectorService connectorService;
   @Inject private Map<String, ConnectorValidationParamsProvider> connectorValidationParamsProviderMap;
   @Inject Map<String, ConnectorValidationHandler> connectorTypeToConnectorValidationHandlerMap;
+  @Inject ExceptionManager exceptionManager;
 
   public <T extends ConnectorConfigDTO> DelegateResponseData validateConnector(
       T connectorConfig, String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
@@ -56,7 +61,12 @@ public abstract class AbstractConnectorValidator implements ConnectionValidator 
     DelegateTaskRequest delegateTaskRequest = DelegateTaskHelper.buildDelegateTask(
         taskParameters, connectorConfig, getTaskType(), accountIdentifier, orgIdentifier, projectIdentifier);
 
-    DelegateResponseData responseData = delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    DelegateResponseData responseData;
+    try {
+      responseData = delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    } catch (DelegateServiceDriverException ex) {
+      throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
+    }
 
     if (responseData instanceof ErrorNotifyResponseData) {
       ErrorNotifyResponseData errorNotifyResponseData = (ErrorNotifyResponseData) responseData;
@@ -72,7 +82,7 @@ public abstract class AbstractConnectorValidator implements ConnectionValidator 
     return responseData;
   }
 
-  public ConnectorValidationResult validateConnectorViaManager(
+  public ConnectorValidationResult validateConnectorViaManager(ConnectorConfigDTO connectorConfigDTO,
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
     AtomicReference<ConnectorValidationHandler> connectorValidationHandler = new AtomicReference<>();
 
@@ -81,12 +91,14 @@ public abstract class AbstractConnectorValidator implements ConnectionValidator 
     final ConnectorValidationParams connectorValidationParams =
         connectorResponseDTO
             .map(connectorResponse -> {
-              ConnectorType connectorType = connectorResponse.getConnector().getConnectorType();
+              ConnectorInfoDTO connectorInfoDTO = connectorResponse.getConnector();
+              connectorInfoDTO.setConnectorConfig(connectorConfigDTO);
+              ConnectorType connectorType = connectorInfoDTO.getConnectorType();
               connectorValidationHandler.set(
                   connectorTypeToConnectorValidationHandlerMap.get(connectorType.getDisplayName()));
               return connectorValidationParamsProviderMap.get(connectorType.getDisplayName())
-                  .getConnectorValidationParams(connectorResponse.getConnector(),
-                      connectorResponse.getConnector().getName(), accountIdentifier, orgIdentifier, projectIdentifier);
+                  .getConnectorValidationParams(connectorInfoDTO, connectorInfoDTO.getName(), accountIdentifier,
+                      orgIdentifier, projectIdentifier);
             })
             .orElseThrow(()
                              -> new InvalidRequestException(String.format(

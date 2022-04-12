@@ -26,7 +26,7 @@ import software.wings.graphql.schema.type.aggregation.billing.QLBillingTrendStat
 import software.wings.service.intfc.ce.CeAccountExpirationChecker;
 
 import com.google.inject.Inject;
-import com.hazelcast.util.Preconditions;
+import com.hazelcast.internal.util.Preconditions;
 import graphql.schema.DataFetchingEnvironment;
 import java.math.BigDecimal;
 import java.util.Calendar;

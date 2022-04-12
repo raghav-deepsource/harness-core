@@ -11,6 +11,7 @@ import io.harness.annotations.ExposeInternalException;
 import io.harness.cvng.core.beans.TimeSeriesSampleDTO;
 import io.harness.cvng.core.beans.datadog.DatadogDashboardDTO;
 import io.harness.cvng.core.beans.datadog.DatadogDashboardDetail;
+import io.harness.cvng.core.beans.datadog.MetricTagResponseDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.DatadogService;
 import io.harness.ng.beans.PageResponse;
@@ -77,10 +78,11 @@ public class DatadogMetricsResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get datadog active metrics", nickname = "getDatadogActiveMetrics")
-  public ResponseDTO<List<String>> getDatadogMetricTagsList(@BeanParam ProjectParams projectParams,
-      @NotNull @QueryParam("connectorIdentifier") String connectorIdentifier,
+  public ResponseDTO<List<String>> getActiveMetrics(@BeanParam ProjectParams projectParams,
+      @NotNull @QueryParam("connectorIdentifier") String connectorIdentifier, @QueryParam("filter") String filter,
       @NotNull @QueryParam("tracingId") String tracingId) {
-    return ResponseDTO.newResponse(datadogService.getActiveMetrics(projectParams, connectorIdentifier, tracingId));
+    return ResponseDTO.newResponse(
+        datadogService.getActiveMetrics(projectParams, connectorIdentifier, filter, tracingId));
   }
 
   @GET
@@ -93,6 +95,19 @@ public class DatadogMetricsResource {
       @NotNull @QueryParam("metric") String metricName, @NotNull @QueryParam("tracingId") String tracingId) {
     return ResponseDTO.newResponse(
         datadogService.getMetricTagsList(projectParams, connectorIdentifier, metricName, tracingId));
+  }
+
+  @GET
+  @Path("/metric-tags-v2")
+  @Timed
+  @ExceptionMetered
+  @ApiOperation(value = "get datadog metric tag list", nickname = "getDatadogMetricTags")
+  public ResponseDTO<MetricTagResponseDTO> getDatadogMetricTags(@BeanParam ProjectParams projectParams,
+      @NotNull @QueryParam("connectorIdentifier") String connectorIdentifier,
+      @NotNull @QueryParam("metric") String metricName, @QueryParam("filter") String filter,
+      @NotNull @QueryParam("tracingId") String tracingId) {
+    return ResponseDTO.newResponse(
+        datadogService.getMetricTagsResponse(projectParams, connectorIdentifier, metricName, filter, tracingId));
   }
 
   @GET

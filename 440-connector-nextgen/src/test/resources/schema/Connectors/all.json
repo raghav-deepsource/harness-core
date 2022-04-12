@@ -485,7 +485,9 @@
         {
           "type": "object",
           "required": [
-            "kmsArn"
+            "credential",
+            "kmsArn",
+            "region"
           ],
           "properties": {
             "credential": {
@@ -806,6 +808,171 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AzureAuthCredentialDTO": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureAuthDTO": {
+      "type": "object",
+      "required": [
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "Secret",
+            "Certificate"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Certificate"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureClientKeyCertDTO"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Secret"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureClientSecretKeyDTO"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "AzureClientKeyCertDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AzureAuthCredentialDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "certificateRef"
+          ],
+          "properties": {
+            "certificateRef": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureClientSecretKeyDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AzureAuthCredentialDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "secretRef"
+          ],
+          "properties": {
+            "secretRef": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureConnector": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConnectorConfigDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "azureEnvironmentType",
+            "credential"
+          ],
+          "properties": {
+            "azureEnvironmentType": {
+              "type": "string",
+              "enum": [
+                "AZURE",
+                "AZURE_US_GOVERNMENT"
+              ]
+            },
+            "credential": {
+              "$ref": "#/definitions/AzureCredential"
+            },
+            "delegateSelectors": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureCredential": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "InheritFromDelegate",
+            "ManualConfig"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ManualConfig"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureManualDetails"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "AzureCredentialSpec": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AzureKeyVaultConnectorDTO": {
       "allOf": [
         {
@@ -854,6 +1021,290 @@
               "type": "string"
             }
           }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureManualDetails": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AzureCredentialSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "auth",
+            "clientId",
+            "tenantId"
+          ],
+          "properties": {
+            "auth": {
+              "readOnly": true,
+              "$ref": "#/definitions/AzureAuthDTO"
+            },
+            "clientId": {
+              "type": "string"
+            },
+            "tenantId": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureRepoApiAccess": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "Token"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Token"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureRepoTokenSpec"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "AzureRepoApiAccessSpecDTO": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureRepoAuthentication": {
+      "type": "object",
+      "required": [
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "Http",
+            "Ssh"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Http"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureRepoHttpCredentials"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Ssh"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureRepoSshCredentials"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "AzureRepoConnector": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConnectorConfigDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "authentication",
+            "type",
+            "url"
+          ],
+          "properties": {
+            "apiAccess": {
+              "$ref": "#/definitions/AzureRepoApiAccess"
+            },
+            "authentication": {
+              "$ref": "#/definitions/AzureRepoAuthentication"
+            },
+            "delegateSelectors": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "Organization",
+                "Repo"
+              ]
+            },
+            "url": {
+              "type": "string"
+            },
+            "validationRepo": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureRepoCredentialsDTO": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureRepoHttpCredentials": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AzureRepoCredentialsDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "spec",
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "UsernameToken"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "UsernameToken"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureRepoUsernameToken"
+              }
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureRepoHttpCredentialsSpecDTO": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureRepoSshCredentials": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AzureRepoCredentialsDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "sshKeyRef"
+          ],
+          "properties": {
+            "sshKeyRef": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureRepoTokenSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AzureRepoApiAccessSpecDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "tokenRef"
+          ],
+          "properties": {
+            "tokenRef": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureRepoUsernameToken": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AzureRepoHttpCredentialsSpecDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "tokenRef"
+          ],
+          "properties": {
+            "tokenRef": {
+              "type": "string"
+            },
+            "username": {
+              "type": "string"
+            },
+            "usernameRef": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "usernameRef"
+              ]
+            },
+            {
+              "required": [
+                "username"
+              ]
+            }
+          ]
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -1330,6 +1781,7 @@
             "AwsSecretManager",
             "Gcp",
             "Aws",
+            "Azure",
             "Artifactory",
             "Jira",
             "Nexus",
@@ -1348,7 +1800,9 @@
             "PagerDuty",
             "CustomHealth",
             "ServiceNow",
-            "ErrorTracking"
+            "ErrorTracking",
+            "Pdc",
+            "AzureRepo"
           ]
         }
       },
@@ -1438,6 +1892,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "Azure"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureConnector"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "AzureKeyVault"
               }
             }
@@ -1446,6 +1916,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AzureKeyVaultConnectorDTO"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AzureRepo"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureRepoConnector"
               }
             }
           }
@@ -1822,6 +2308,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "Pdc"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/PhysicalDataCenterConnectorDTO"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Prometheus"
               }
             }
@@ -2177,7 +2679,6 @@
           "type": "object",
           "required": [
             "apiKeyRef",
-            "sid",
             "url"
           ],
           "properties": {
@@ -2190,9 +2691,6 @@
               "items": {
                 "type": "string"
               }
-            },
-            "sid": {
-              "type": "string"
             },
             "url": {
               "type": "string"
@@ -2325,7 +2823,11 @@
         {
           "type": "object",
           "required": [
-            "credentials"
+            "credentials",
+            "keyName",
+            "keyRing",
+            "projectId",
+            "region"
           ],
           "properties": {
             "credentials": {
@@ -2865,6 +3367,20 @@
               "type": "string"
             }
           }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "usernameRef"
+              ]
+            },
+            {
+              "required": [
+                "username"
+              ]
+            }
+          ]
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -3199,8 +3715,40 @@
               "type": "string"
             }
           }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "usernameRef"
+              ]
+            },
+            {
+              "required": [
+                "username"
+              ]
+            }
+          ]
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "HostDTO": {
+      "type": "object",
+      "required": [
+        "hostname"
+      ],
+      "properties": {
+        "hostAttributes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "hostname": {
+          "type": "string"
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "HttpHelmAuthCredentialsDTO": {
@@ -3866,6 +4414,38 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "PhysicalDataCenterConnectorDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConnectorConfigDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "sshKeyRef"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            },
+            "hosts": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/HostDTO"
+              }
+            },
+            "sshKeyRef": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "PrometheusConnectorDTO": {
       "allOf": [
         {
@@ -4047,6 +4627,10 @@
         },
         {
           "type": "object",
+          "required": [
+            "renewalIntervalMinutes",
+            "vaultUrl"
+          ],
           "properties": {
             "accessType": {
               "type": "string",
@@ -4054,7 +4638,8 @@
                 "APP_ROLE",
                 "TOKEN",
                 "VAULT_AGENT",
-                "AWS_IAM"
+                "AWS_IAM",
+                "K8s_AUTH"
               ]
             },
             "appRoleId": {
@@ -4102,16 +4687,25 @@
             "secretId": {
               "type": "string"
             },
+            "serviceAccountTokenPath": {
+              "type": "string"
+            },
             "sinkPath": {
               "type": "string"
             },
             "useAwsIam": {
               "type": "boolean"
             },
+            "useK8sAuth": {
+              "type": "boolean"
+            },
             "useVaultAgent": {
               "type": "boolean"
             },
             "vaultAwsIamRole": {
+              "type": "string"
+            },
+            "vaultK8sAuthRole": {
               "type": "string"
             },
             "vaultUrl": {

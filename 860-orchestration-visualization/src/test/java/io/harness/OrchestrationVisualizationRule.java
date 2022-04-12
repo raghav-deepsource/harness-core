@@ -51,6 +51,7 @@ import io.harness.serializer.OrchestrationVisualizationModuleRegistrars;
 import io.harness.serializer.kryo.OrchestrationVisualizationTestKryoRegistrar;
 import io.harness.service.intfc.DelegateAsyncService;
 import io.harness.service.intfc.DelegateSyncService;
+import io.harness.springdata.HTransactionTemplate;
 import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
@@ -88,6 +89,8 @@ import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
 import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.mongodb.MongoTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -106,6 +109,12 @@ public class OrchestrationVisualizationRule implements MethodRule, InjectorRuleM
     modules.add(new ClosingFactoryModule(closingFactory));
     modules.add(KryoModule.getInstance());
     modules.add(new ProviderModule() {
+      @Provides
+      @Singleton
+      TransactionTemplate getTransactionTemplate(MongoTransactionManager mongoTransactionManager) {
+        return new HTransactionTemplate(mongoTransactionManager, false);
+      }
+
       @Provides
       @Singleton
       Set<Class<? extends KryoRegistrar>> registrars() {

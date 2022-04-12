@@ -7,17 +7,22 @@
 
 package io.harness.yaml.extended.ci.codebase;
 
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.yaml.YamlSchemaTypes;
+import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
 
@@ -26,14 +31,31 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @TypeAlias("io.harness.yaml.extended.ci.CodeBase")
 public class CodeBase {
-  @NotNull String connectorRef;
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> repoName;
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  String uuid;
+  @NotNull
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @VariableExpression
+  ParameterField<String> connectorRef;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @VariableExpression ParameterField<String> repoName;
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = "io.harness.yaml.extended.ci.codebase.Build")
   @NotNull
+  @VariableExpression(skipVariableExpression = true)
   ParameterField<Build> build;
-  Integer depth;
-  Boolean sslVerify;
-  PRCloneStrategy prCloneStrategy;
-  ContainerResource resources;
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = SwaggerConstants.INTEGER_CLASSPATH)
+  @VariableExpression
+  ParameterField<Integer> depth;
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @VariableExpression
+  ParameterField<Boolean> sslVerify;
+  @YamlSchemaTypes(value = {runtime})
+  @ApiModelProperty(dataType = "io.harness.yaml.extended.ci.codebase.PRCloneStrategy")
+  @VariableExpression
+  ParameterField<PRCloneStrategy> prCloneStrategy;
+  @VariableExpression ContainerResource resources;
 }

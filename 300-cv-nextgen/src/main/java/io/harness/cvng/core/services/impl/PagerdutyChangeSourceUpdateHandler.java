@@ -7,7 +7,7 @@
 
 package io.harness.cvng.core.services.impl;
 
-import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
+import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.entities.changeSource.PagerDutyChangeSource;
 import io.harness.cvng.core.services.api.PagerDutyService;
 
@@ -24,28 +24,28 @@ public class PagerdutyChangeSourceUpdateHandler extends ChangeSourceUpdateHandle
       log.info("Not creating pagerduty webhook because change source is configured for demo");
     } else {
       log.info("Creating pagerduty webhook", changeSource);
-      ServiceEnvironmentParams serviceEnvironmentParams = ServiceEnvironmentParams.builder()
-                                                              .accountIdentifier(changeSource.getAccountId())
-                                                              .orgIdentifier(changeSource.getOrgIdentifier())
-                                                              .projectIdentifier(changeSource.getProjectIdentifier())
-                                                              .serviceIdentifier(changeSource.getServiceIdentifier())
-                                                              .environmentIdentifier(changeSource.getEnvIdentifier())
-                                                              .build();
-      pagerDutyService.registerPagerDutyWebhook(serviceEnvironmentParams, changeSource);
+      MonitoredServiceParams monitoredServiceParams =
+          MonitoredServiceParams.builder()
+              .accountIdentifier(changeSource.getAccountId())
+              .orgIdentifier(changeSource.getOrgIdentifier())
+              .projectIdentifier(changeSource.getProjectIdentifier())
+              .monitoredServiceIdentifier(changeSource.getMonitoredServiceIdentifier())
+              .build();
+      pagerDutyService.registerPagerDutyWebhook(monitoredServiceParams, changeSource);
       log.info("Done creating pagerduty webhook", changeSource);
     }
   }
 
   @Override
   public void handleDelete(PagerDutyChangeSource changeSource) {
-    ServiceEnvironmentParams serviceEnvironmentParams = ServiceEnvironmentParams.builder()
-                                                            .accountIdentifier(changeSource.getAccountId())
-                                                            .orgIdentifier(changeSource.getOrgIdentifier())
-                                                            .projectIdentifier(changeSource.getProjectIdentifier())
-                                                            .serviceIdentifier(changeSource.getServiceIdentifier())
-                                                            .environmentIdentifier(changeSource.getEnvIdentifier())
-                                                            .build();
-    pagerDutyService.deletePagerdutyWebhook(serviceEnvironmentParams, changeSource);
+    MonitoredServiceParams monitoredServiceParams =
+        MonitoredServiceParams.builder()
+            .accountIdentifier(changeSource.getAccountId())
+            .orgIdentifier(changeSource.getOrgIdentifier())
+            .projectIdentifier(changeSource.getProjectIdentifier())
+            .monitoredServiceIdentifier(changeSource.getMonitoredServiceIdentifier())
+            .build();
+    pagerDutyService.deletePagerdutyWebhook(monitoredServiceParams, changeSource);
   }
 
   @Override

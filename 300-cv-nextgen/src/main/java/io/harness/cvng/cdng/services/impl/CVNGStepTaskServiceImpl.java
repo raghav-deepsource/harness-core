@@ -12,6 +12,8 @@ import io.harness.cvng.activity.beans.DeploymentActivitySummaryDTO;
 import io.harness.cvng.analysis.beans.LogAnalysisClusterChartDTO;
 import io.harness.cvng.analysis.beans.LogAnalysisClusterDTO;
 import io.harness.cvng.analysis.beans.LogAnalysisClusterWithCountDTO;
+import io.harness.cvng.analysis.beans.LogAnalysisRadarChartClusterDTO;
+import io.harness.cvng.analysis.beans.LogAnalysisRadarChartListWithCountDTO;
 import io.harness.cvng.analysis.beans.TransactionMetricInfoSummaryPageDTO;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
@@ -19,7 +21,6 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.activity.ActivityStatusDTO;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
-import io.harness.cvng.beans.cvnglog.CVNGLogType;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.entities.CVNGStepTask.CVNGStepTaskKeys;
 import io.harness.cvng.cdng.entities.CVNGStepTask.Status;
@@ -30,6 +31,7 @@ import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceD
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentLogAnalysisFilter;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentTimeSeriesAnalysisFilter;
+import io.harness.cvng.core.beans.params.logsFilterParams.DeploymentLogsFilter;
 import io.harness.cvng.core.services.api.CVNGLogService;
 import io.harness.cvng.core.utils.monitoredService.CVConfigToHealthSourceTransformer;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
@@ -112,6 +114,9 @@ public class CVNGStepTaskServiceImpl implements CVNGStepTaskService {
         deploymentTimeSeriesAnalysisService.getAnalysisSummary(Arrays.asList(stepTask.getVerificationJobInstanceId())));
     deploymentVerificationJobInstanceSummary.setLogsAnalysisSummary(deploymentLogAnalysisService.getAnalysisSummary(
         stepTask.getAccountId(), Arrays.asList(stepTask.getVerificationJobInstanceId())));
+    deploymentVerificationJobInstanceSummary.setErrorAnalysisSummary(
+        deploymentLogAnalysisService.getErrorAnalysisSummary(
+            stepTask.getAccountId(), Arrays.asList(stepTask.getVerificationJobInstanceId())));
     return DeploymentActivitySummaryDTO.builder()
         .deploymentVerificationJobInstanceSummary(deploymentVerificationJobInstanceSummary)
         .serviceIdentifier(stepTask.getServiceIdentifier())
@@ -176,6 +181,20 @@ public class CVNGStepTaskServiceImpl implements CVNGStepTaskService {
   }
 
   @Override
+  public LogAnalysisRadarChartListWithCountDTO getDeploymentActivityRadarChartLogAnalysisResult(String accountId,
+      String callBackId, DeploymentLogAnalysisFilter deploymentLogAnalysisFilter, PageParams pageParams) {
+    return deploymentLogAnalysisService.getRadarChartLogAnalysisResult(
+        accountId, callBackId, deploymentLogAnalysisFilter, pageParams);
+  }
+
+  @Override
+  public List<LogAnalysisRadarChartClusterDTO> getDeploymentActivityRadarCartLogAnalysisClusters(
+      String accountId, String callBackId, DeploymentLogAnalysisFilter deploymentLogAnalysisFilter) {
+    return deploymentLogAnalysisService.getRadarChartLogAnalysisClusters(
+        accountId, callBackId, deploymentLogAnalysisFilter);
+  }
+
+  @Override
   public List<String> getTransactionNames(String accountId, String callBackId) {
     return deploymentTimeSeriesAnalysisService.getTransactionNames(
         accountId, getByCallBackId(callBackId).getVerificationJobInstanceId());
@@ -193,10 +212,10 @@ public class CVNGStepTaskServiceImpl implements CVNGStepTaskService {
   }
 
   @Override
-  public PageResponse<CVNGLogDTO> getCVNGLogs(String accountId, String callBackId, CVNGLogType logType,
-      List<String> healthSourceIdentifiers, boolean errorLogsOnly, PageParams pageParams) {
-    return cvngLogService.getCVNGLogs(accountId, getByCallBackId(callBackId).getVerificationJobInstanceId(), logType,
-        healthSourceIdentifiers, errorLogsOnly, pageParams);
+  public PageResponse<CVNGLogDTO> getCVNGLogs(
+      String accountId, String callBackId, DeploymentLogsFilter deploymentLogsFilter, PageParams pageParams) {
+    return cvngLogService.getCVNGLogs(
+        accountId, getByCallBackId(callBackId).getVerificationJobInstanceId(), deploymentLogsFilter, pageParams);
   }
 
   private String getServiceNameFromStep(CVNGStepTask step) {

@@ -9,7 +9,14 @@ package io.harness.ngmigration.beans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ngmigration.serializer.CgEntityIdDeserializer;
 
+import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.NGMigrationEntityType;
+
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import java.util.List;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,4 +31,7 @@ public class MigrationInputDTO {
   private String accountIdentifier;
   private String orgIdentifier;
   private String projectIdentifier;
+  private List<DiscoverEntityInput> entities;
+  private Map<NGMigrationEntityType, InputDefaults> defaults;
+  @JsonDeserialize(keyUsing = CgEntityIdDeserializer.class) private Map<CgEntityId, BaseProvidedInput> inputs;
 }

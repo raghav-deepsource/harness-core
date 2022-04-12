@@ -13,6 +13,8 @@ import io.harness.EntityType;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.EntityReference;
+import io.harness.gitsync.common.helper.RepoProviderHelper;
+import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
 import io.harness.gitsync.sdk.GitSyncApiConstants;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -23,9 +25,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
+import lombok.extern.slf4j.Slf4j;
 
 @Data
 @Builder
+@Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @FieldNameConstants(innerTypeName = "GitSyncEntityDTOKeys")
 @Schema(name = "GitSyncEntity", description = "This contains details of the Git Sync Entity")
@@ -39,9 +43,26 @@ public class GitSyncEntityDTO {
   @Schema(description = GitSyncApiConstants.BRANCH_PARAM_MESSAGE) private String branch;
   @Schema(description = GitSyncApiConstants.FOLDER_PATH_PARAM_MESSAGE) private String folderPath;
   @Schema(description = GitSyncApiConstants.FILEPATH_PARAM_MESSAGE) private String entityGitPath;
-  @Schema(description = "Type of Git Repo Provider") private RepoProviders repoProviderType;
   @Schema(description = "This contains details about the Entity’s Scope and its Identifier")
   EntityReference entityReference;
   @Schema(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @JsonIgnore String accountId;
   @Schema(hidden = true) @JsonIgnore String lastCommitId;
+  @Schema(description = GitSyncApiConstants.ENTITY_GIT_URL_DESCRIPTION) String entityUrl;
+  @JsonIgnore RepoProviders repoProvider;
+
+  public String getEntityUrl() {
+    String completeFilePath = GitSyncFilePathUtils.createFilePath(folderPath, entityGitPath);
+    /*
+     * This is a fallback logic which will be used if the migration to update repo provider in
+     *  the entity fails.
+     *
+     *  todo @deepak Remove this if condition after the migration has made it to the prod
+     */
+    if (repoProvider == null) {
+      log.info("The repo provider was null for the git entity with the identifier {}", entityIdentifier);
+      repoProvider = RepoProviderHelper.getRepoProviderFromTheUrl(repo);
+    }
+
+    return RepoProviderHelper.getTheFilePathUrl(repo, branch, repoProvider, completeFilePath);
+  }
 }

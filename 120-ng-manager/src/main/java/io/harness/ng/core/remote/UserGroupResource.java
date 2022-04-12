@@ -310,8 +310,10 @@ public class UserGroupResource {
         ApiResponse(description = "Returns the list of the user groups selected by a filter in a User Group.")
       })
   public ResponseDTO<List<UserGroupDTO>>
-  list(@RequestBody(
-      description = "User Group Filter", required = true) @Body @NotNull UserGroupFilterDTO userGroupFilterDTO) {
+  list(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @QueryParam(
+           NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @RequestBody(
+          description = "User Group Filter", required = true) @Body @NotNull UserGroupFilterDTO userGroupFilterDTO) {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(userGroupFilterDTO.getAccountIdentifier(), userGroupFilterDTO.getOrgIdentifier(),
             userGroupFilterDTO.getProjectIdentifier()),

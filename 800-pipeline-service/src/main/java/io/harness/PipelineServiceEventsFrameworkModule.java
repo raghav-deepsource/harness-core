@@ -9,7 +9,6 @@ package io.harness;
 
 import static io.harness.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.eventsframework.EventsFrameworkConstants.ORCHESTRATION_LOG;
 import static io.harness.eventsframework.EventsFrameworkConstants.PLAN_NOTIFY_EVENT_TOPIC;
 import static io.harness.eventsframework.EventsFrameworkConstants.PMS_ORCHESTRATION_NOTIFY_EVENT;
 import static io.harness.eventsframework.EventsFrameworkConstants.WEBHOOK_REQUEST_PAYLOAD_DETAILS;
@@ -52,9 +51,6 @@ public class PipelineServiceEventsFrameworkModule extends AbstractModule {
           .annotatedWith(Names.named(WEBHOOK_REQUEST_PAYLOAD_DETAILS))
           .toInstance(NoOpProducer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME));
       bind(Producer.class)
-          .annotatedWith(Names.named(ORCHESTRATION_LOG))
-          .toInstance(NoOpProducer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME));
-      bind(Producer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.PLAN_NOTIFY_EVENT_PRODUCER))
           .toInstance(NoOpProducer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME));
 
@@ -82,11 +78,6 @@ public class PipelineServiceEventsFrameworkModule extends AbstractModule {
       bind(Producer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.ENTITY_CRUD))
           .toInstance(RedisProducer.of(EventsFrameworkConstants.ENTITY_CRUD, redissonClient,
-              pipelineRedisEventsConfig.getEntityCrud().getMaxTopicSize(), PIPELINE_SERVICE.getServiceId(),
-              redisConfig.getEnvNamespace()));
-      bind(Producer.class)
-          .annotatedWith(Names.named(ORCHESTRATION_LOG))
-          .toInstance(RedisProducer.of(ORCHESTRATION_LOG, redissonClient,
               pipelineRedisEventsConfig.getEntityCrud().getMaxTopicSize(), PIPELINE_SERVICE.getServiceId(),
               redisConfig.getEnvNamespace()));
       bind(Producer.class)

@@ -16,6 +16,7 @@ import io.harness.cvng.beans.CVNGPerpetualTaskState;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.DataCollectionTaskDTO;
 import io.harness.cvng.beans.DataCollectionTaskDTO.DataCollectionTaskResult;
+import io.harness.cvng.beans.DataCollectionTaskDTO.DataCollectionTaskResult.ExecutionLog;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.DataCollectionTask;
@@ -24,6 +25,8 @@ import io.harness.cvng.core.entities.DeploymentDataCollectionTask;
 import io.harness.cvng.core.entities.MetricCVConfig;
 import io.harness.cvng.core.services.api.DataCollectionTaskManagementService;
 import io.harness.cvng.core.services.api.DataCollectionTaskService;
+import io.harness.cvng.core.services.api.ExecutionLogService;
+import io.harness.cvng.core.services.api.ExecutionLogger;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.metrics.CVNGMetricsUtils;
@@ -64,6 +67,7 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
   @Inject
   private Map<DataCollectionTask.Type, DataCollectionTaskManagementService>
       dataCollectionTaskManagementServiceMapBinder;
+  @Inject private ExecutionLogService executionLogService;
 
   // TODO: this is creating reverse dependency. Find a way to get rid of this dependency.
   // Probabally by moving ProgressLog concept to a separate service and model.
@@ -177,6 +181,12 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
     }
     DataCollectionTask dataCollectionTask = getDataCollectionTask(result.getDataCollectionTaskId());
     recordMetricsOnUpdateStatus(dataCollectionTask);
+    ExecutionLogger executionLogger = executionLogService.getLogger(dataCollectionTask);
+    executionLogger.log(
+        dataCollectionTask.getLogLevel(), "Data collection task status: " + dataCollectionTask.getStatus());
+    for (ExecutionLog executionLog : result.getExecutionLogs()) {
+      executionLogger.log(executionLog.getLogLevel(), executionLog.getLog());
+    }
     if (result.getStatus() == DataCollectionExecutionStatus.SUCCESS) {
       // TODO: make this an atomic operation
       if (dataCollectionTask.shouldCreateNextTask()) {
@@ -236,6 +246,15 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
         .asList(new FindOptions().limit(count));
   }
 
+  @Override
+  public List<DataCollectionTask> getAllDataCollectionTasks(String accountId, String verificationTaskId) {
+    return hPersistence.createQuery(DataCollectionTask.class)
+        .filter(DataCollectionTaskKeys.accountId, accountId)
+        .filter(DataCollectionTaskKeys.verificationTaskId, verificationTaskId)
+        .order(Sort.descending(DataCollectionTaskKeys.startTime))
+        .asList();
+  }
+
   private void markDependentTasksFailed(DataCollectionTask task) {
     if (task instanceof DeploymentDataCollectionTask) {
       verificationJobInstanceService.logProgress(
@@ -273,6 +292,7 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
                               .filter(DataCollectionTaskKeys.uuid, task.getNextTaskId())
                               .filter(DataCollectionTaskKeys.status, DataCollectionExecutionStatus.WAITING),
           updateOperations);
+      executionLogService.getLogger(task).log(task.getLogLevel(), "Data collection task status: " + task.getStatus());
     }
   }
 
@@ -296,6 +316,8 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
       log.error("Task is in the past. Enqueuing next task with new data collection startTime. {}, {}, {}",
           dataCollectionTask.getUuid(), dataCollectionTask.getException(), dataCollectionTask.getStacktrace());
     }
+    executionLogService.getLogger(dataCollectionTask)
+        .log(dataCollectionTask.getLogLevel(), "Data collection task status: " + dataCollectionTask.getStatus());
   }
 
   @Override

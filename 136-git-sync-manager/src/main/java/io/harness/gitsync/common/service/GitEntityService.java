@@ -36,7 +36,7 @@ public interface GitEntityService {
 
   GitSyncEntityDTO get(EntityReference entityReference, EntityType entityType, String branch);
 
-  boolean save(String accountId, EntityDetail entityDetail, YamlGitConfigDTO yamlGitConfig, String folderPath,
+  GitSyncEntityDTO save(String accountId, EntityDetail entityDetail, YamlGitConfigDTO yamlGitConfig, String folderPath,
       String filePath, String commitId, String branchName);
 
   List<GitSyncEntityListDTO> listSummaryByRepoAndBranch(String projectIdentifier, String organizationIdentifier,
@@ -49,4 +49,6 @@ public interface GitEntityService {
   Optional<GitSyncEntityDTO> get(String accountIdentifier, String completeFilePath, String repoUrl, String branch);
 
   void updateFilePath(String accountId, String prevFilePath, String repo, String branchName, String newFilePath);
+
+  void deleteAll(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 }

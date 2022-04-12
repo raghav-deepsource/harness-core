@@ -18,6 +18,8 @@ import io.harness.artifacts.docker.service.DockerRegistryService;
 import io.harness.artifacts.docker.service.DockerRegistryServiceImpl;
 import io.harness.artifacts.gcr.service.GcrApiService;
 import io.harness.artifacts.gcr.service.GcrApiServiceImpl;
+import io.harness.aws.AWSCloudformationClient;
+import io.harness.aws.AWSCloudformationClientImpl;
 import io.harness.azure.client.AzureAutoScaleSettingsClient;
 import io.harness.azure.client.AzureComputeClient;
 import io.harness.azure.client.AzureMonitorClient;
@@ -30,6 +32,8 @@ import io.harness.cache.HarnessCacheManager;
 import io.harness.delegate.DelegateConfigurationServiceProvider;
 import io.harness.delegate.DelegatePropertiesServiceProvider;
 import io.harness.delegate.beans.DelegateFileManagerBase;
+import io.harness.delegate.task.cloudformation.CloudformationBaseHelper;
+import io.harness.delegate.task.cloudformation.CloudformationBaseHelperImpl;
 import io.harness.exception.WingsException;
 import io.harness.git.GitClientV2;
 import io.harness.git.GitClientV2Impl;
@@ -239,6 +243,8 @@ public class WingsTestModule extends AbstractModule {
     bind(CustomManifestService.class).to(CustomManifestServiceImpl.class);
     bind(EncryptDecryptHelper.class).to(EncryptDecryptHelperImpl.class);
     bind(DelegateFileManagerBase.class).toInstance(mock(DelegateFileManagerBase.class));
+    bind(AWSCloudformationClient.class).to(AWSCloudformationClientImpl.class);
+    bind(CloudformationBaseHelper.class).to(CloudformationBaseHelperImpl.class);
 
     bind(ExecutorService.class)
         .annotatedWith(Names.named("systemExecutor"))

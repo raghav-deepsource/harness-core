@@ -1,0 +1,25 @@
+{
+  "accountIdentifier":"kmpySmUISimoRrJL6NL73w",
+  "orgIdentifier":null,
+  "projectIdentifier":null,
+  "identifier":"test_resource_group",
+  "name":"test resource group",
+  "resourceSelectors":[
+    {
+      "type":"ResourceSelectorByScope",
+      "includeChildScopes":false,
+      "scope":{
+        "accountIdentifier":"kmpySmUISimoRrJL6NL73w",
+        "orgIdentifier":null,
+        "projectIdentifier":null
+      }
+    }
+  ],
+  "fullScopeSelected":false,
+  "tags":{},
+  "description":"",
+  "allowedScopeLevels":[
+    "account"
+  ],
+  "color":"#0063f7"
+}

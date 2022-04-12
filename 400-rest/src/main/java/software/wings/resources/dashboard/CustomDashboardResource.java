@@ -19,6 +19,7 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.PageResponse.PageResponseBuilder;
 import io.harness.beans.SearchFilter.Operator;
+import io.harness.configuration.DeployMode;
 import io.harness.dashboard.Action;
 import io.harness.dashboard.DashboardSettings;
 import io.harness.dashboard.DashboardSettingsService;
@@ -220,7 +221,8 @@ public class CustomDashboardResource {
       @QueryParam("durationStartTs") Long durationStartTs, @QueryParam("durationEndTs") Long durationEndTs) {
     User authUser = UserThreadLocal.get();
 
-    if (harnessUserGroupService.isHarnessSupportUser(authUser.getUuid())) {
+    String deployMode = System.getenv(DeployMode.DEPLOY_MODE);
+    if (DeployMode.isOnPrem(deployMode) || harnessUserGroupService.isHarnessSupportUser(authUser.getUuid())) {
       if (durationEndTs == null || durationStartTs == null || durationStartTs <= 0 || durationEndTs <= 0) {
         return Builder.aRestResponse()
             .withResponseMessages(Lists.newArrayList(ResponseMessage.builder()

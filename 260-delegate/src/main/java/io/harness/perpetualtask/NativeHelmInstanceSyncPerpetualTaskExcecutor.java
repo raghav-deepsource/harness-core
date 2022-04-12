@@ -76,7 +76,7 @@ public class NativeHelmInstanceSyncPerpetualTaskExcecutor implements PerpetualTa
     List<NativeHelmDeploymentReleaseData> deploymentReleaseDataList =
         fixNativeHelmDeploymentReleaseData(getNativeHelmDeploymentReleaseData(taskParams));
 
-    HelmVersion helmVersion = taskParams.getHelmVersion().equals("V3") ? HelmVersion.V3 : HelmVersion.V2;
+    HelmVersion helmVersion = HelmVersion.fromString(taskParams.getHelmVersion());
 
     Set<ContainerDetailsRequest> distinctContainerDetailsRequestList =
         getDistinctContainerDetailsRequestList(deploymentReleaseDataList);

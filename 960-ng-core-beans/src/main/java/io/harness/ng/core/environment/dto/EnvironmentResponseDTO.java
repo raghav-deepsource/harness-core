@@ -22,7 +22,7 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Schema(name = "EnvironmentResponse", description = "This is the Environment entity defined in Harness")
+@Schema(name = "EnvironmentResponseDetails", description = "This is the Environment entity defined in Harness")
 public class EnvironmentResponseDTO {
   String accountId;
   String orgIdentifier;
@@ -35,4 +35,5 @@ public class EnvironmentResponseDTO {
   boolean deleted;
   Map<String, String> tags;
   @JsonIgnore Long version;
+  String yaml;
 }

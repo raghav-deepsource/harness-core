@@ -15,6 +15,8 @@ import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.core.beans.DatadogMetricHealthDefinition;
+import io.harness.cvng.core.entities.DatadogMetricCVConfig.MetricInfo;
+import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
 import io.harness.cvng.core.utils.analysisinfo.DevelopmentVerificationTransformer;
 import io.harness.cvng.core.utils.analysisinfo.LiveMonitoringTransformer;
 import io.harness.cvng.core.utils.analysisinfo.SLIMetricTransformer;
@@ -23,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -39,7 +42,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class DatadogMetricCVConfig extends MetricCVConfig {
+public class DatadogMetricCVConfig extends MetricCVConfig<MetricInfo> {
   private List<MetricInfo> metricInfoList;
   private String dashboardId;
   private String dashboardName;
@@ -95,11 +98,40 @@ public class DatadogMetricCVConfig extends MetricCVConfig {
     this.setMetricPack(metricPack);
   }
 
+  @Override
+  public boolean isSLIEnabled() {
+    return AnalysisInfoUtility.anySLIEnabled(metricInfoList);
+  }
+
+  @Override
+  public boolean isLiveMonitoringEnabled() {
+    return AnalysisInfoUtility.anyLiveMonitoringEnabled(metricInfoList);
+  }
+
+  @Override
+  public boolean isDeploymentVerificationEnabled() {
+    return AnalysisInfoUtility.anyDeploymentVerificationEnabled(metricInfoList);
+  }
+
+  @Override
+  public Optional<String> maybeGetGroupName() {
+    return Optional.empty(); // it does not have group name for some reason. Need to check and refactor.
+  }
+
+  @Override
+  public List<MetricInfo> getMetricInfos() {
+    return metricInfoList;
+  }
+
+  @Override
+  public void setMetricInfos(List<MetricInfo> metricInfos) {
+    this.metricInfoList = metricInfos;
+  }
+
   @Data
   @SuperBuilder
   @FieldNameConstants(innerTypeName = "MetricInfoKeys")
   public static class MetricInfo extends AnalysisInfo {
-    private String metricName;
     private String metricPath;
     private String metric;
     private String query;

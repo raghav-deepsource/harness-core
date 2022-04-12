@@ -40,5 +40,10 @@ public class GitSyncThreadDecoratorTest extends CategoryTest {
     queryParameters_1.add("branch", "5%2F10");
     final String branch_1 = gitSyncThreadDecorator.getRequestParamFromContext("branch", null, queryParameters_1);
     assertThat(branch_1).isEqualTo("5/10");
+
+    queryParameters_1.add("newField", "ERR@#$%&!@#$%&()_+GHJ");
+    final String new_field =
+        gitSyncThreadDecorator.getRequestParamFromContextWithoutDecoding("newField", queryParameters_1);
+    assertThat(new_field).isEqualTo("ERR@#$%&!@#$%&()_+GHJ");
   }
 }

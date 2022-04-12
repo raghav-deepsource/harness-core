@@ -8,6 +8,8 @@
 package software.wings.sm.states.provision;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.task.cloudformation.CloudformationBaseHelperImpl.CLOUDFORMATION_STACK_CREATE_BODY;
+import static io.harness.delegate.task.cloudformation.CloudformationBaseHelperImpl.CLOUDFORMATION_STACK_CREATE_URL;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.BOJANA;
 import static io.harness.rule.OwnerRule.SATYAM;
@@ -121,7 +123,7 @@ public class CloudFormationRollbackStackStateTest extends WingsBaseTest {
     when(morphiaIterator.hasNext()).thenReturn(true).thenReturn(true).thenReturn(false);
     cloudFormationRollbackConfig = CloudFormationRollbackConfig.builder()
                                        .workflowExecutionId(WORKFLOW_EXECUTION_ID)
-                                       .createType(CloudFormationCreateStackRequest.CLOUD_FORMATION_STACK_CREATE_URL)
+                                       .createType(CLOUDFORMATION_STACK_CREATE_URL)
                                        .url("url")
                                        .variables(Arrays.asList(NameValuePair.builder().build()))
                                        .build();
@@ -215,7 +217,7 @@ public class CloudFormationRollbackStackStateTest extends WingsBaseTest {
     ExecutionResponse response = state.executeInternal(mockContext, ACTIVITY_ID);
     ScriptStateExecutionData stateExecutionData = (ScriptStateExecutionData) response.getStateExecutionData();
     assertThat(stateExecutionData.getActivityId()).isEqualTo(ACTIVITY_ID);
-    verifyDelegate(CloudFormationCreateStackRequest.CLOUD_FORMATION_STACK_CREATE_URL, "url", false, true);
+    verifyDelegate(CLOUDFORMATION_STACK_CREATE_URL, "url", false, true);
   }
 
   @Test
@@ -229,10 +231,10 @@ public class CloudFormationRollbackStackStateTest extends WingsBaseTest {
         .findSweepingOutput(any());
     cloudFormationRollbackConfig.setVariables(null);
     cloudFormationRollbackConfig.setBody("body");
-    cloudFormationRollbackConfig.setCreateType(CloudFormationCreateStackRequest.CLOUD_FORMATION_STACK_CREATE_BODY);
+    cloudFormationRollbackConfig.setCreateType(CLOUDFORMATION_STACK_CREATE_BODY);
     awsConfig.setValue(AwsConfig.builder().build());
     ExecutionResponse response = state.executeInternal(mockContext, ACTIVITY_ID);
-    verifyDelegate(CloudFormationCreateStackRequest.CLOUD_FORMATION_STACK_CREATE_BODY, "body", false, false);
+    verifyDelegate(CLOUDFORMATION_STACK_CREATE_BODY, "body", false, false);
   }
 
   @Test
@@ -260,7 +262,7 @@ public class CloudFormationRollbackStackStateTest extends WingsBaseTest {
     ExecutionResponse response = state.executeInternal(mockContext, ACTIVITY_ID);
     ScriptStateExecutionData stateExecutionData = (ScriptStateExecutionData) response.getStateExecutionData();
     assertThat(stateExecutionData.getActivityId()).isEqualTo(ACTIVITY_ID);
-    verifyDelegate(CloudFormationCreateStackRequest.CLOUD_FORMATION_STACK_CREATE_URL, "url", true, true);
+    verifyDelegate(CLOUDFORMATION_STACK_CREATE_URL, "url", true, true);
   }
 
   @Test

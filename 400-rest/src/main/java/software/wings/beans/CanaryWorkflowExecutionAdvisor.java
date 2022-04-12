@@ -16,6 +16,7 @@ import static io.harness.beans.ExecutionStatus.EXPIRED;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.STARTING;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
+import static io.harness.beans.FeatureName.CONSIDER_ORIGINAL_STATE_VERSION;
 import static io.harness.beans.FeatureName.LOG_APP_DEFAULTS;
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
 import static io.harness.beans.OrchestrationWorkflowType.ROLLING;
@@ -147,7 +148,19 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
         return anExecutionEventAdvice().withExecutionInterruptType(ExecutionInterruptType.END_EXECUTION).build();
       }
 
-      Workflow workflow = workflowService.readWorkflow(workflowExecution.getAppId(), workflowExecution.getWorkflowId());
+      Workflow workflow;
+      if (featureFlagService.isEnabled(CONSIDER_ORIGINAL_STATE_VERSION, context.getAccountId())) {
+        Integer originalStateVersion = context.getStateMachine().getOriginVersion();
+        if (originalStateVersion == null) {
+          workflow = workflowService.readWorkflow(workflowExecution.getAppId(), workflowExecution.getWorkflowId());
+        } else {
+          workflow = workflowService.readWorkflow(
+              workflowExecution.getAppId(), workflowExecution.getWorkflowId(), originalStateVersion);
+        }
+      } else {
+        workflow = workflowService.readWorkflow(workflowExecution.getAppId(), workflowExecution.getWorkflowId());
+      }
+
       CanaryOrchestrationWorkflow orchestrationWorkflow =
           (CanaryOrchestrationWorkflow) findOrchestrationWorkflow(workflow, workflowExecution);
 
@@ -552,10 +565,11 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
     return false;
   }
 
-  private ExecutionEventAdvice computeExecutionEventAdvice(CanaryOrchestrationWorkflow orchestrationWorkflow,
+  ExecutionEventAdvice computeExecutionEventAdvice(CanaryOrchestrationWorkflow orchestrationWorkflow,
       FailureStrategy failureStrategy, ExecutionEvent executionEvent, PhaseSubWorkflow phaseSubWorkflow,
       StateExecutionInstance stateExecutionInstance) {
-    if (workflowExecutionService.checkIfOnDemand(
+    if (failureStrategy == null
+        && workflowExecutionService.checkIfOnDemand(
             stateExecutionInstance.getAppId(), stateExecutionInstance.getExecutionUuid())) {
       if (phaseSubWorkflow == null) {
         return null;

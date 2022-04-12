@@ -15,7 +15,6 @@ import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.MILOS;
 import static io.harness.rule.OwnerRule.RAGHVENDRA;
 import static io.harness.rule.OwnerRule.RUSHABH;
-import static io.harness.rule.OwnerRule.SATYAM;
 import static io.harness.rule.OwnerRule.TMACARI;
 
 import static software.wings.utils.WingsTestConstants.ACCESS_KEY;
@@ -72,16 +71,6 @@ import com.amazonaws.services.autoscaling.model.AmazonAutoScalingException;
 import com.amazonaws.services.autoscaling.model.DescribeScalingActivitiesRequest;
 import com.amazonaws.services.autoscaling.model.DescribeScalingActivitiesResult;
 import com.amazonaws.services.autoscaling.model.SetDesiredCapacityRequest;
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
-import com.amazonaws.services.cloudformation.model.CreateStackRequest;
-import com.amazonaws.services.cloudformation.model.DeleteStackRequest;
-import com.amazonaws.services.cloudformation.model.DescribeStackEventsRequest;
-import com.amazonaws.services.cloudformation.model.DescribeStackEventsResult;
-import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
-import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
-import com.amazonaws.services.cloudformation.model.Stack;
-import com.amazonaws.services.cloudformation.model.StackEvent;
-import com.amazonaws.services.cloudformation.model.UpdateStackRequest;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.DescribeRegionsResult;
@@ -148,137 +137,6 @@ public class AwsHelperServiceTest extends WingsBaseTest {
         .isEqualTo("ip-172-31-18-241");
     assertThat(awsHelperService.getHostnameFromPrivateDnsName("ip-172-31-18-241.us-west-2.compute.internal"))
         .isEqualTo("ip-172-31-18-241");
-  }
-
-  @Test
-  @Owner(developers = SATYAM)
-  @Category(UnitTests.class)
-  public void shouldUpdateStack() {
-    char[] accessKey = "abcd".toCharArray();
-    char[] secretKey = "pqrs".toCharArray();
-    String stackName = "Stack Name";
-    String region = "us-west-1";
-    UpdateStackRequest request = new UpdateStackRequest().withStackName(stackName);
-    AmazonCloudFormationClient mockClient = mock(AmazonCloudFormationClient.class);
-    AwsHelperService service = spy(new AwsHelperService());
-    doReturn(mockClient).when(service).getAmazonCloudFormationClient(any(), any());
-    AwsCallTracker mockTracker = mock(AwsCallTracker.class);
-    doNothing().when(mockTracker).trackCFCall(anyString());
-    on(service).set("tracker", mockTracker);
-    service.updateStack(region, request, AwsConfig.builder().accessKey(accessKey).secretKey(secretKey).build());
-    verify(mockClient).updateStack(request);
-  }
-
-  @Test
-  @Owner(developers = SATYAM)
-  @Category(UnitTests.class)
-  public void shouldDeleteStack() {
-    char[] accessKey = "abcd".toCharArray();
-    char[] secretKey = "pqrs".toCharArray();
-    String stackName = "Stack Name";
-    String region = "us-west-1";
-    DeleteStackRequest request = new DeleteStackRequest().withStackName(stackName);
-    AmazonCloudFormationClient mockClient = mock(AmazonCloudFormationClient.class);
-    AwsHelperService service = spy(new AwsHelperService());
-    doReturn(mockClient).when(service).getAmazonCloudFormationClient(any(), any());
-    AwsCallTracker mockTracker = mock(AwsCallTracker.class);
-    doNothing().when(mockTracker).trackCFCall(anyString());
-    on(service).set("tracker", mockTracker);
-    service.deleteStack(region, request, AwsConfig.builder().accessKey(accessKey).secretKey(secretKey).build());
-    verify(mockClient).deleteStack(request);
-  }
-
-  @Test
-  @Owner(developers = SATYAM)
-  @Category(UnitTests.class)
-  public void shouldDescribeStack() {
-    char[] accessKey = "qwer".toCharArray();
-    char[] secretKey = "pqrs".toCharArray();
-    String stackName = "Stack Name";
-    String region = "us-west-1";
-    DescribeStacksRequest request = new DescribeStacksRequest().withStackName(stackName);
-    AmazonCloudFormationClient mockClient = mock(AmazonCloudFormationClient.class);
-    AwsHelperService service = spy(new AwsHelperService());
-    doReturn(mockClient).when(service).getAmazonCloudFormationClient(any(), any());
-    DescribeStacksResult result = new DescribeStacksResult().withStacks(new Stack().withStackName(stackName));
-    doReturn(result).when(mockClient).describeStacks(request);
-    AwsCallTracker mockTracker = mock(AwsCallTracker.class);
-    doNothing().when(mockTracker).trackCFCall(anyString());
-    on(service).set("tracker", mockTracker);
-    DescribeStacksResult actual =
-        service.describeStacks(region, request, AwsConfig.builder().accessKey(accessKey).secretKey(secretKey).build());
-    assertThat(actual).isNotNull();
-    assertThat(actual.getStacks().size()).isEqualTo(1);
-    assertThat(actual.getStacks().get(0).getStackName()).isEqualTo(stackName);
-  }
-
-  @Test
-  @Owner(developers = SATYAM)
-  @Category(UnitTests.class)
-  public void shouldGetAllEvents() {
-    char[] accessKey = "qwer".toCharArray();
-    char[] secretKey = "pqrs".toCharArray();
-    String stackName = "Stack Name";
-    String region = "us-west-1";
-    DescribeStackEventsRequest request = new DescribeStackEventsRequest().withStackName(stackName);
-    AmazonCloudFormationClient mockClient = mock(AmazonCloudFormationClient.class);
-    AwsHelperService service = spy(new AwsHelperService());
-    doReturn(mockClient).when(service).getAmazonCloudFormationClient(any(), any());
-    DescribeStackEventsResult result =
-        new DescribeStackEventsResult().withStackEvents(new StackEvent().withStackName(stackName).withEventId("id"));
-    doReturn(result).when(mockClient).describeStackEvents(request);
-    AwsCallTracker mockTracker = mock(AwsCallTracker.class);
-    doNothing().when(mockTracker).trackCFCall(anyString());
-    on(service).set("tracker", mockTracker);
-    List<StackEvent> events = service.getAllStackEvents(
-        region, request, AwsConfig.builder().accessKey(accessKey).secretKey(secretKey).build());
-    assertThat(events).isNotNull();
-    assertThat(events.size()).isEqualTo(1);
-    assertThat(events.get(0).getStackName()).isEqualTo(stackName);
-    assertThat(events.get(0).getEventId()).isEqualTo("id");
-  }
-
-  @Test
-  @Owner(developers = SATYAM)
-  @Category(UnitTests.class)
-  public void shouldCreateStack() {
-    char[] accessKey = "abcd".toCharArray();
-    char[] secretKey = "pqrs".toCharArray();
-    String stackName = "Stack Name";
-    String region = "us-west-1";
-    CreateStackRequest request = new CreateStackRequest().withStackName(stackName);
-    AmazonCloudFormationClient mockClient = mock(AmazonCloudFormationClient.class);
-    AwsHelperService service = spy(new AwsHelperService());
-    doReturn(mockClient).when(service).getAmazonCloudFormationClient(any(), any());
-    AwsCallTracker mockTracker = mock(AwsCallTracker.class);
-    doNothing().when(mockTracker).trackCFCall(anyString());
-    on(service).set("tracker", mockTracker);
-    service.createStack(region, request, AwsConfig.builder().accessKey(accessKey).secretKey(secretKey).build());
-    verify(mockClient).createStack(request);
-  }
-
-  @Test
-  @Owner(developers = SATYAM)
-  @Category(UnitTests.class)
-  public void shouldListStacks() {
-    char[] accessKey = "qwer".toCharArray();
-    char[] secretKey = "pqrs".toCharArray();
-    String stackName = "Stack Name";
-    String region = "us-west-1";
-    DescribeStacksRequest request = new DescribeStacksRequest().withStackName(stackName);
-    AmazonCloudFormationClient mockClient = mock(AmazonCloudFormationClient.class);
-    AwsHelperService service = spy(new AwsHelperService());
-    doReturn(mockClient).when(service).getAmazonCloudFormationClient(any(), any());
-    DescribeStacksResult result = new DescribeStacksResult().withStacks(new Stack().withStackName(stackName));
-    doReturn(result).when(mockClient).describeStacks(request);
-    AwsCallTracker mockTracker = mock(AwsCallTracker.class);
-    doNothing().when(mockTracker).trackCFCall(anyString());
-    on(service).set("tracker", mockTracker);
-    List<Stack> stacks =
-        service.getAllStacks(region, request, AwsConfig.builder().accessKey(accessKey).secretKey(secretKey).build());
-    assertThat(stacks).isNotNull();
-    assertThat(stacks.size()).isEqualTo(1);
-    assertThat(stacks.get(0).getStackName()).isEqualTo(stackName);
   }
 
   @Test
@@ -351,8 +209,6 @@ public class AwsHelperServiceTest extends WingsBaseTest {
 
     awsHelperService.describeAutoScalingGroupActivities(
         client, "TestAutoScalingGroup", completedActivities, logCallback, true);
-
-    // logResult.stream().forEach(s -> log.info(s));
 
     assertThat(logResult.size()).isEqualTo(2);
 

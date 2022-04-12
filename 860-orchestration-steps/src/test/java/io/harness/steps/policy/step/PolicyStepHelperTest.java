@@ -16,6 +16,8 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.eraro.ErrorCode;
+import io.harness.opaclient.model.OpaEvaluationResponseHolder;
+import io.harness.opaclient.model.OpaPolicySetEvaluationResponse;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -76,5 +78,38 @@ public class PolicyStepHelperTest extends CategoryTest {
     assertThat(failureData.getLevel()).isEqualTo("ERROR");
     assertThat(failureData.getMessage()).isEqualTo("Custom payload is not a valid JSON.");
     assertThat(failureData.getFailureTypesList()).containsExactly(FailureType.UNKNOWN_FAILURE);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testBuildPolicyEvaluationFailureMessage() {
+    OpaEvaluationResponseHolder evaluationResponse0 =
+        OpaEvaluationResponseHolder.builder()
+            .status("error")
+            .details(Collections.singletonList(
+                OpaPolicySetEvaluationResponse.builder().status("error").name("myName").build()))
+            .build();
+    String singleErrorSingleResponse = PolicyStepHelper.buildPolicyEvaluationFailureMessage(evaluationResponse0);
+    assertThat(singleErrorSingleResponse).isEqualTo("The following Policy Set was not adhered to: myName");
+
+    OpaEvaluationResponseHolder evaluationResponse1 =
+        OpaEvaluationResponseHolder.builder()
+            .status("error")
+            .details(Arrays.asList(OpaPolicySetEvaluationResponse.builder().status("error").name("myName").build(),
+                OpaPolicySetEvaluationResponse.builder().status("pass").name("my name").build()))
+            .build();
+    String singleErrorMultipleResponse = PolicyStepHelper.buildPolicyEvaluationFailureMessage(evaluationResponse1);
+    assertThat(singleErrorMultipleResponse).isEqualTo("The following Policy Set was not adhered to: myName");
+
+    OpaEvaluationResponseHolder evaluationResponse2 =
+        OpaEvaluationResponseHolder.builder()
+            .status("error")
+            .details(Arrays.asList(OpaPolicySetEvaluationResponse.builder().status("error").name("myName").build(),
+                OpaPolicySetEvaluationResponse.builder().status("pass").name("my Name").build(),
+                OpaPolicySetEvaluationResponse.builder().status("error").name("my name").build()))
+            .build();
+    String multipleErrors = PolicyStepHelper.buildPolicyEvaluationFailureMessage(evaluationResponse2);
+    assertThat(multipleErrors).isEqualTo("The following Policy Sets were not adhered to: myName, my name");
   }
 }

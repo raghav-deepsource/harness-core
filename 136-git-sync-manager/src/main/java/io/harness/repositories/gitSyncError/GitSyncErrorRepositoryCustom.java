@@ -37,4 +37,6 @@ public interface GitSyncErrorRepositoryCustom {
   long count(Criteria criteria);
 
   UpdateResult upsert(Criteria criteria, Update update);
+
+  List<GitSyncError> deleteAll(Criteria criteria);
 }

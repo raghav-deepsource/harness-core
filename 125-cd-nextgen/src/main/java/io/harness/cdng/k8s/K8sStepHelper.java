@@ -26,6 +26,7 @@ import static java.util.Collections.emptyList;
 
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -80,6 +81,7 @@ import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
 import io.harness.helm.HelmSubCommandType;
+import io.harness.k8s.model.HelmVersion;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -160,13 +162,22 @@ public class K8sStepHelper extends CDStepHelper {
 
       case ManifestType.HelmChart:
         HelmChartManifestOutcome helmChartManifestOutcome = (HelmChartManifestOutcome) manifestOutcome;
+        HelmVersion helmVersion =
+            getHelmVersionBasedOnFF(helmChartManifestOutcome.getHelmVersion(), AmbianceUtils.getAccountId(ambiance));
         return HelmChartManifestDelegateConfig.builder()
             .storeDelegateConfig(getStoreDelegateConfig(helmChartManifestOutcome.getStore(), ambiance, manifestOutcome,
                 manifestOutcome.getType() + " manifest"))
             .chartName(getParameterFieldValue(helmChartManifestOutcome.getChartName()))
             .chartVersion(getParameterFieldValue(helmChartManifestOutcome.getChartVersion()))
-            .helmVersion(helmChartManifestOutcome.getHelmVersion())
+            .helmVersion(helmVersion)
             .helmCommandFlag(getDelegateHelmCommandFlag(helmChartManifestOutcome.getCommandFlags()))
+            .useRepoFlags(helmVersion != HelmVersion.V2
+                && cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.USE_HELM_REPO_FLAGS))
+            .checkIncorrectChartVersion(cdFeatureFlagHelper.isEnabled(
+                AmbianceUtils.getAccountId(ambiance), FeatureName.HELM_CHART_VERSION_STRICT_MATCH))
+            .deleteRepoCacheDir(helmVersion != HelmVersion.V2
+                && cdFeatureFlagHelper.isEnabled(
+                    AmbianceUtils.getAccountId(ambiance), FeatureName.DELETE_HELM_REPO_CACHE_DIR))
             .build();
 
       case ManifestType.Kustomize:
@@ -263,7 +274,7 @@ public class K8sStepHelper extends CDStepHelper {
       return emptyList();
     }
     return patchesFileContents.stream()
-        .map(patchesFileContent -> engineExpressionService.renderExpression(ambiance, patchesFileContent))
+        .map(patchesFileContent -> engineExpressionService.renderExpression(ambiance, patchesFileContent, false))
         .collect(Collectors.toList());
   }
 

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.helm.HelmTaskHelperBase.getChartDirectory;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.k8s.manifest.ManifestHelper.values_filename;
@@ -23,6 +24,8 @@ import static io.harness.logging.LogLevel.INFO;
 import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
+import static software.wings.delegatetasks.helm.HelmTaskHelper.copyManifestFilesToWorkingDir;
+import static software.wings.delegatetasks.helm.HelmTaskHelper.handleIncorrectConfiguration;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
@@ -35,10 +38,12 @@ import io.harness.beans.FileData;
 import io.harness.delegate.k8s.beans.K8sHandlerConfig;
 import io.harness.delegate.k8s.kustomize.KustomizeTaskHelper;
 import io.harness.delegate.k8s.openshift.OpenShiftDelegateService;
+import io.harness.delegate.task.helm.CustomManifestFetchTaskHelper;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.filesystem.FileIo;
 import io.harness.git.model.GitFile;
@@ -50,6 +55,7 @@ import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.manifest.CustomManifestService;
+import io.harness.manifest.CustomManifestSource;
 
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitFileConfig;
@@ -77,6 +83,7 @@ import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -103,6 +110,7 @@ public class K8sTaskHelper {
   @Inject private CustomManifestService customManifestService;
   @Inject private ContainerDeploymentDelegateHelper containerDeploymentDelegateHelper;
   @Inject private ScmFetchFilesHelper scmFetchFilesHelper;
+  @Inject private CustomManifestFetchTaskHelper customManifestFetchTaskHelper;
 
   public boolean doStatusCheckAllResourcesForHelm(Kubectl client, List<KubernetesResourceId> resourceIds, String ocPath,
       String workingDir, String namespace, String kubeconfigPath, ExecutionLogCallback executionLogCallback)
@@ -367,6 +375,42 @@ public class K8sTaskHelper {
     }
   }
 
+  private boolean downloadZippedManifestFilesFormCustomSource(K8sDelegateManifestConfig delegateManifestConfig,
+      String manifestFilesDirectory, ExecutionLogCallback executionLogCallback) {
+    String tempWorkingDir = null;
+    try {
+      tempWorkingDir = customManifestService.getWorkingDirectory();
+
+      CustomManifestSource customManifestSource = delegateManifestConfig.getCustomManifestSource();
+      handleIncorrectConfiguration(delegateManifestConfig);
+      customManifestFetchTaskHelper.downloadAndUnzipCustomSourceManifestFiles(
+          tempWorkingDir, customManifestSource.getZippedManifestFileId(), customManifestSource.getAccountId());
+      File file = new File(tempWorkingDir);
+      if (isEmpty(file.list())) {
+        throw new InvalidRequestException("No manifest files found under working directory", USER);
+      }
+      // preparing legacy directory structure for manifests and values yamls
+      File customManifestFolderPath = file.listFiles(pathname -> !file.isHidden())[0];
+      copyManifestFilesToWorkingDir(customManifestFolderPath, new File(manifestFilesDirectory));
+
+      executionLogCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
+      executionLogCallback.saveExecutionLog(k8sTaskHelperBase.getManifestFileNamesInLogFormat(manifestFilesDirectory));
+      executionLogCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
+      return true;
+    } catch (IOException e) {
+      log.error("Failed to get files from manifest directory", ExceptionMessageSanitizer.sanitizeException(e));
+      executionLogCallback.saveExecutionLog(
+          "Failed to get manifest files from custom source. " + ExceptionUtils.getMessage(e), ERROR,
+          CommandExecutionStatus.FAILURE);
+      return false;
+    } catch (Exception e) {
+      log.error("Failed to process custom manifest", ExceptionMessageSanitizer.sanitizeException(e));
+      executionLogCallback.saveExecutionLog(
+          "Failed to process custom manifest. " + ExceptionUtils.getMessage(e), ERROR, CommandExecutionStatus.FAILURE);
+      return false;
+    }
+  }
+
   public boolean fetchManifestFilesAndWriteToDirectory(K8sDelegateManifestConfig delegateManifestConfig,
       String manifestFilesDirectory, ExecutionLogCallback executionLogCallback, long timeoutInMillis) {
     StoreType storeType = delegateManifestConfig.getManifestStoreTypes();
@@ -388,6 +432,10 @@ public class K8sTaskHelper {
       case CUSTOM:
       case CUSTOM_OPENSHIFT_TEMPLATE:
         if (delegateManifestConfig.isCustomManifestEnabled()) {
+          if (delegateManifestConfig.isBindValuesAndManifestFetchTask()) {
+            return downloadZippedManifestFilesFormCustomSource(
+                delegateManifestConfig, manifestFilesDirectory, executionLogCallback);
+          }
           return downloadManifestFilesFromCustomSource(
               delegateManifestConfig, manifestFilesDirectory, executionLogCallback);
         }

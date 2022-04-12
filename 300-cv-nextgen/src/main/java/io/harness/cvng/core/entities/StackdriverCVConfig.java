@@ -17,6 +17,8 @@ import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.beans.stackdriver.StackDriverMetricDefinition;
 import io.harness.cvng.core.beans.StackdriverDefinition;
 import io.harness.cvng.core.entities.MetricPack.MetricDefinition;
+import io.harness.cvng.core.entities.StackdriverCVConfig.MetricInfo;
+import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
 import io.harness.cvng.core.utils.analysisinfo.DevelopmentVerificationTransformer;
 import io.harness.cvng.core.utils.analysisinfo.LiveMonitoringTransformer;
 import io.harness.cvng.core.utils.analysisinfo.SLIMetricTransformer;
@@ -27,6 +29,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -43,16 +46,45 @@ import org.mongodb.morphia.query.UpdateOperations;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class StackdriverCVConfig extends MetricCVConfig {
+public class StackdriverCVConfig extends MetricCVConfig<MetricInfo> {
   private List<MetricInfo> metricInfoList;
   private String dashboardName;
   private String dashboardPath;
+
+  @Override
+  public boolean isSLIEnabled() {
+    return AnalysisInfoUtility.anySLIEnabled(metricInfoList);
+  }
+
+  @Override
+  public boolean isLiveMonitoringEnabled() {
+    return AnalysisInfoUtility.anyLiveMonitoringEnabled(metricInfoList);
+  }
+
+  @Override
+  public boolean isDeploymentVerificationEnabled() {
+    return AnalysisInfoUtility.anyDeploymentVerificationEnabled(metricInfoList);
+  }
+
+  @Override
+  public Optional<String> maybeGetGroupName() {
+    return Optional.empty(); // does not have group name. Need to refactor the UI and backend.
+  }
+
+  @Override
+  public List<MetricInfo> getMetricInfos() {
+    return metricInfoList;
+  }
+
+  @Override
+  public void setMetricInfos(List<MetricInfo> metricInfos) {
+    metricInfoList = metricInfos;
+  }
 
   @Data
   @SuperBuilder
   @FieldNameConstants(innerTypeName = "MetricInfoKeys")
   public static class MetricInfo extends AnalysisInfo {
-    private String metricName;
     private String jsonMetricDefinition;
     private List<String> tags;
     private TimeSeriesMetricType metricType;

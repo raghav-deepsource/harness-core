@@ -8,15 +8,21 @@
 package io.harness.event;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.pms.contracts.execution.Status.APPROVAL_WAITING;
+import static io.harness.pms.contracts.execution.Status.FAILED;
+import static io.harness.pms.contracts.execution.Status.INTERVENTION_WAITING;
+import static io.harness.pms.contracts.execution.Status.RUNNING;
 import static io.harness.pms.contracts.execution.Status.SUCCEEDED;
 import static io.harness.pms.contracts.execution.events.OrchestrationEventType.NODE_EXECUTION_STATUS_UPDATE;
 import static io.harness.rule.OwnerRule.ALEXEI;
+import static io.harness.rule.OwnerRule.ARCHIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.OrchestrationVisualizationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
@@ -30,10 +36,13 @@ import io.harness.category.element.UnitTests;
 import io.harness.data.OutcomeInstance;
 import io.harness.engine.events.OrchestrationEventEmitter;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.utils.PmsLevelUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
+import io.harness.execution.PlanExecutionMetadata;
+import io.harness.plan.NodeType;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -42,6 +51,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.data.PmsOutcome;
+import io.harness.pms.data.stepparameters.PmsStepParameters;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.rule.Owner;
@@ -55,6 +65,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.assertj.core.util.Maps;
 import org.awaitility.Awaitility;
@@ -71,7 +82,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestBase {
   @Inject private PlanExecutionService planExecutionService;
   @Inject private SpringMongoStore mongoStore;
-
+  @Mock private PlanExecutionMetadataService planExecutionMetadataService;
   @Inject @InjectMocks private NodeExecutionService nodeExecutionService;
   @Inject @Spy private GraphGenerationService graphGenerationService;
   @Inject private MongoTemplate mongoTemplate;
@@ -102,6 +113,9 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
   @RealMongo
   @Ignore("Using event sourcing now, will remove/update")
   public void shouldAddRootNodeIdToTheGraphAndAddVertex() {
+    when(planExecutionMetadataService.findByPlanExecutionId(any()))
+        .thenReturn(Optional.of(PlanExecutionMetadata.builder().build()));
+
     // creating PlanExecution
     PlanExecution planExecution =
         PlanExecution.builder().uuid(generateUuid()).startTs(System.currentTimeMillis()).status(Status.RUNNING).build();
@@ -163,6 +177,9 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
   @Category(UnitTests.class)
   @RealMongo
   public void shouldUpdateExistingVertexInGraphAndAddOutcomes() {
+    when(planExecutionMetadataService.findByPlanExecutionId(any()))
+        .thenReturn(Optional.of(PlanExecutionMetadata.builder().build()));
+
     // creating PlanExecution
     PlanExecution planExecution =
         PlanExecution.builder().uuid(generateUuid()).startTs(System.currentTimeMillis()).status(Status.RUNNING).build();
@@ -177,22 +194,26 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
                             .identifier("identifier1")
                             .serviceName("PIPELINE")
                             .build();
-    NodeExecution dummyStart =
-        NodeExecution.builder()
-            .uuid(generateUuid())
-            .ambiance(Ambiance.newBuilder()
-                          .setPlanExecutionId(planExecution.getUuid())
-                          .addLevels(Level.newBuilder().setStepType(stepType).setSetupId(planNode.getUuid()).build())
-                          .build())
-            .mode(ExecutionMode.SYNC)
-            .status(SUCCEEDED)
-            .nodeId(planNode.getUuid())
-            .name(planNode.getName())
-            .stepType(planNode.getStepType())
-            .identifier(planNode.getIdentifier())
-            .module(planNode.getServiceName())
-            .skipGraphType(planNode.getSkipGraphType())
-            .build();
+    NodeExecution dummyStart = NodeExecution.builder()
+                                   .uuid(generateUuid())
+                                   .ambiance(Ambiance.newBuilder()
+                                                 .setPlanExecutionId(planExecution.getUuid())
+                                                 .addLevels(Level.newBuilder()
+                                                                .setStepType(stepType)
+                                                                .setNodeType(NodeType.PLAN_NODE.name())
+                                                                .setSetupId(planNode.getUuid())
+                                                                .build())
+                                                 .build())
+                                   .mode(ExecutionMode.SYNC)
+                                   .status(SUCCEEDED)
+                                   .nodeId(planNode.getUuid())
+                                   .name(planNode.getName())
+                                   .resolvedParams(PmsStepParameters.parse(new HashMap<>()))
+                                   .stepType(planNode.getStepType())
+                                   .identifier(planNode.getIdentifier())
+                                   .module(planNode.getServiceName())
+                                   .skipGraphType(planNode.getSkipGraphType())
+                                   .build();
     nodeExecutionService.save(dummyStart);
 
     // creating cached graph
@@ -263,5 +284,25 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
         .interruptHistories(nodeExecution.getInterruptHistories())
         .retryIds(nodeExecution.getRetryIds())
         .build();
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testIsOutcomeUpdateGraphStatus() {
+    boolean outcomeUpdateGraphStatus = eventHandlerV2.isOutcomeUpdateGraphStatus(Status.SUCCEEDED);
+    assertThat(outcomeUpdateGraphStatus).isTrue();
+
+    outcomeUpdateGraphStatus = eventHandlerV2.isOutcomeUpdateGraphStatus(FAILED);
+    assertThat(outcomeUpdateGraphStatus).isTrue();
+
+    outcomeUpdateGraphStatus = eventHandlerV2.isOutcomeUpdateGraphStatus(INTERVENTION_WAITING);
+    assertThat(outcomeUpdateGraphStatus).isTrue();
+
+    outcomeUpdateGraphStatus = eventHandlerV2.isOutcomeUpdateGraphStatus(APPROVAL_WAITING);
+    assertThat(outcomeUpdateGraphStatus).isTrue();
+
+    outcomeUpdateGraphStatus = eventHandlerV2.isOutcomeUpdateGraphStatus(RUNNING);
+    assertThat(outcomeUpdateGraphStatus).isFalse();
   }
 }

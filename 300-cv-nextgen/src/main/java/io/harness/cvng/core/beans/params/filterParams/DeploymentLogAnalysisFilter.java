@@ -26,6 +26,8 @@ import lombok.experimental.SuperBuilder;
 public class DeploymentLogAnalysisFilter extends LogAnalysisFilter {
   @QueryParam("clusterTypes") List<ClusterType> clusterTypes;
   @QueryParam("hostName") String hostName;
+  @QueryParam("minAngle") Double minAngle;
+  @QueryParam("maxAngle") Double maxAngle;
 
   public boolean filterByHostName() {
     return isNotEmpty(hostName);
@@ -33,5 +35,12 @@ public class DeploymentLogAnalysisFilter extends LogAnalysisFilter {
 
   public boolean filterByClusterType() {
     return isNotEmpty(clusterTypes);
+  }
+
+  public boolean filterByAngle() {
+    if (minAngle != null && maxAngle != null) {
+      return true;
+    }
+    return false;
   }
 }

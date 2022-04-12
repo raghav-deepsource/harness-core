@@ -13,39 +13,53 @@ import static io.harness.ngtriggers.beans.source.webhook.WebhookAction.CLOSED;
 import static io.harness.ngtriggers.beans.source.webhook.WebhookAction.OPENED;
 import static io.harness.ngtriggers.beans.source.webhook.WebhookEvent.PULL_REQUEST;
 import static io.harness.rule.OwnerRule.ADWAIT;
+import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.ngtriggers.beans.config.NGTriggerConfig;
+import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
+import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
 import io.harness.ngtriggers.beans.source.scheduled.CronTriggerSpec;
 import io.harness.ngtriggers.beans.source.scheduled.ScheduledTriggerConfig;
 import io.harness.ngtriggers.beans.source.webhook.CustomWebhookTriggerSpec;
 import io.harness.ngtriggers.beans.source.webhook.WebhookTriggerConfig;
 import io.harness.ngtriggers.beans.source.webhook.WebhookTriggerSpec;
+import io.harness.repositories.spring.TriggerEventHistoryRepository;
 import io.harness.rule.Owner;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Sort;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NGTriggerElementMapperTest extends CategoryTest {
   private String ngCustomTriggerYaml;
   private String ngTriggerGitConnYaml;
   private String ngTriggerCronYaml;
+  @Mock private TriggerEventHistoryRepository triggerEventHistoryRepository;
+  @InjectMocks private NGTriggerElementMapper ngTriggerElementMapper;
 
   @Before
   public void setUp() throws IOException {
@@ -159,5 +173,60 @@ public class NGTriggerElementMapperTest extends CategoryTest {
                                           .collect(Collectors.toSet());
 
     assertThat(payloadConditionSet).containsOnly("<+trigger.payload.project.team>:in:cd, ci");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testFetchLatestExecutionForTrigger() throws Exception {
+    NGTriggerEntity ngTriggerEntity1 = NGTriggerEntity.builder()
+                                           .accountId("account")
+                                           .orgIdentifier("org")
+                                           .projectIdentifier("project")
+                                           .targetIdentifier("pipeline1")
+                                           .identifier("id1")
+                                           .build();
+    NGTriggerEntity ngTriggerEntity2 = NGTriggerEntity.builder()
+                                           .accountId("account")
+                                           .orgIdentifier("org")
+                                           .projectIdentifier("project")
+                                           .targetIdentifier("pipeline2")
+                                           .identifier("id1")
+                                           .build();
+    NGTriggerEntity ngTriggerEntity3 = NGTriggerEntity.builder()
+                                           .accountId("account")
+                                           .orgIdentifier("org")
+                                           .projectIdentifier("project")
+                                           .targetIdentifier("pipeline3")
+                                           .identifier("id1")
+                                           .build();
+    List<TriggerEventHistory> pipeLine1Triggers = new ArrayList<>();
+    List<TriggerEventHistory> pipeLine2Triggers = new ArrayList<>();
+    List<TriggerEventHistory> allTriggersInProject = new ArrayList<>();
+    TriggerEventHistory pipeline1Trigger =
+        TriggerEventHistory.builder().triggerIdentifier("id1").targetIdentifier("pipeline1").build();
+    TriggerEventHistory pipeline2Trigger =
+        TriggerEventHistory.builder().triggerIdentifier("id1").targetIdentifier("pipeline2").build();
+    pipeLine1Triggers.add(pipeline1Trigger);
+    pipeLine2Triggers.add(pipeline2Trigger);
+    allTriggersInProject.add(pipeline1Trigger);
+    allTriggersInProject.add(pipeline2Trigger);
+
+    when(triggerEventHistoryRepository
+             .findFirst1ByAccountIdAndOrgIdentifierAndProjectIdentifierAndTargetIdentifierAndTriggerIdentifier(
+                 eq("account"), eq("org"), eq("project"), eq("pipeline1"), eq("id1"), any(Sort.class)))
+        .thenReturn(pipeLine1Triggers);
+    when(triggerEventHistoryRepository
+             .findFirst1ByAccountIdAndOrgIdentifierAndProjectIdentifierAndTargetIdentifierAndTriggerIdentifier(
+                 eq("account"), eq("org"), eq("project"), eq("pipeline2"), eq("id1"), any(Sort.class)))
+        .thenReturn(pipeLine2Triggers);
+    when(triggerEventHistoryRepository.findFirst1ByAccountIdAndOrgIdentifierAndProjectIdentifierAndTriggerIdentifier(
+             eq("account"), eq("org"), eq("project"), eq("id1"), any(Sort.class)))
+        .thenReturn(allTriggersInProject);
+    assertThat(ngTriggerElementMapper.fetchLatestExecutionForTrigger(ngTriggerEntity1).get().getTargetIdentifier())
+        .isEqualTo(ngTriggerEntity1.getTargetIdentifier());
+    assertThat(ngTriggerElementMapper.fetchLatestExecutionForTrigger(ngTriggerEntity2).get().getTargetIdentifier())
+        .isEqualTo(ngTriggerEntity2.getTargetIdentifier());
+    assertThat(ngTriggerElementMapper.fetchLatestExecutionForTrigger(ngTriggerEntity3).isPresent()).isFalse();
   }
 }

@@ -65,7 +65,7 @@ public interface UserGroupService
    * @see software.wings.service.intfc.UserGroupService#list(software.wings.dl.PageRequest)
    */
   PageResponse<UserGroup> list(@NotEmpty String accountId, PageRequest<UserGroup> req, boolean loadUsers);
-
+  long getCountOfUserGroups(String accountId);
   /**
    * list user groups by name.
    */
@@ -221,7 +221,7 @@ public interface UserGroupService
 
   void maintainTemplatePermissions(UserGroup userGroup);
 
-  void addParentsReference(String userGroupId, String accountId, String appId, String pipelineId);
+  void addParentsReference(String userGroupId, String accountId, String appId, String entityId, String entityType);
 
-  void removeParentsReference(String userGroupId, String accountId, String appId, String pipelineId);
+  void removeParentsReference(String userGroupId, String accountId, String appId, String entityId, String entityType);
 }

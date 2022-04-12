@@ -9,8 +9,10 @@ package software.wings.service;
 
 import static io.harness.annotations.dev.HarnessModule._970_RBAC_CORE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.beans.SearchFilter.Operator.EQ;
+import static io.harness.beans.SearchFilter.Operator.HAS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.eraro.ErrorCode.INVALID_CREDENTIAL;
 import static io.harness.rule.OwnerRule.ANUBHAW;
@@ -134,6 +136,7 @@ import software.wings.beans.marketplace.MarketPlaceType;
 import software.wings.beans.security.AccessRequest;
 import software.wings.beans.security.HarnessUserGroup;
 import software.wings.beans.security.UserGroup;
+import software.wings.beans.security.UserGroup.UserGroupKeys;
 import software.wings.beans.sso.SSOType;
 import software.wings.beans.sso.SamlSettings;
 import software.wings.beans.utm.UtmInfo;
@@ -903,6 +906,9 @@ public class UserServiceTest extends WingsBaseTest {
     when(wingsPersistence.get(User.class, USER_ID)).thenReturn(userBuilder.uuid(USER_ID).build());
     when(wingsPersistence.delete(User.class, USER_ID)).thenReturn(true);
     when(wingsPersistence.findAndDelete(any(), any())).thenReturn(userBuilder.uuid(USER_ID).build());
+    when(userGroupService.list(
+             ACCOUNT_ID, aPageRequest().withLimit("0").addFilter(UserGroupKeys.memberIds, HAS, USER_ID).build(), true))
+        .thenReturn(aPageResponse().withResponse(Collections.emptyList()).withTotal(0).withLimit("0").build());
     userService.delete(ACCOUNT_ID, USER_ID);
     verify(wingsPersistence).findAndDelete(any(), any());
     verify(cache).remove(USER_ID);

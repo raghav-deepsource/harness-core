@@ -50,7 +50,7 @@ def update_instance_state(jsonData):
     :return: None
     """
     last_updated_at = datetime.date.today() - datetime.timedelta(days=1)
-    query = "UPDATE `%s` set status='TERMINATED' WHERE status='RUNNING' and lastUpdatedAt < '%s';" % (
+    query = "UPDATE `%s` set status='DELETED' WHERE status != 'DELETED' and lastUpdatedAt < '%s';" % (
         jsonData["targetTableId"], last_updated_at)
 
     try:

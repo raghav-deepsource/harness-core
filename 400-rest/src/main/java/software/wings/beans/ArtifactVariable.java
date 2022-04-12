@@ -14,6 +14,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 
+import software.wings.beans.artifact.ArtifactInput;
 import software.wings.beans.artifact.ArtifactStreamSummary;
 
 import java.util.List;
@@ -41,13 +42,19 @@ public class ArtifactVariable extends Variable {
   private ArtifactStreamMetadata artifactStreamMetadata;
   private LastDeployedArtifactInformation lastDeployedArtifactInfo;
 
+  /*
+  This takes artifact buildNo and artifactStreamId. When this is populated, we will ignore ArtifactVariable#value and
+  will pick it from artifactInput#buildno.
+   */
+  private ArtifactInput artifactInput;
+
   @Builder
   public ArtifactVariable(String name, String description, boolean mandatory, String value, boolean fixed,
       String allowedValues, List<String> allowedList, Map<String, Object> metadata, VariableType type,
       EntityType entityType, String entityId, List<ArtifactVariable> overriddenArtifactVariables,
       List<ArtifactStreamSummary> artifactStreamSummaries, Map<String, List<String>> displayInfo,
       List<String> workflowIds, String uiDisplayName, ArtifactStreamMetadata artifactStreamMetadata,
-      LastDeployedArtifactInformation lastDeployedArtifactInfo) {
+      LastDeployedArtifactInformation lastDeployedArtifactInfo, ArtifactInput artifactInput) {
     super(name, description, mandatory, value, fixed, allowedValues, allowedList, metadata, type);
     this.entityType = entityType;
     this.entityId = entityId;
@@ -58,6 +65,7 @@ public class ArtifactVariable extends Variable {
     this.uiDisplayName = uiDisplayName;
     this.artifactStreamMetadata = artifactStreamMetadata;
     this.lastDeployedArtifactInfo = lastDeployedArtifactInfo;
+    this.artifactInput = artifactInput;
   }
 
   public String fetchAssociatedService() {

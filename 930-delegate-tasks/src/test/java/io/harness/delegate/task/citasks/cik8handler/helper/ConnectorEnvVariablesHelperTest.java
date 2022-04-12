@@ -10,6 +10,7 @@ package io.harness.delegate.task.citasks.cik8handler.helper;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.delegate.beans.ci.pod.SecretParams.Type.TEXT;
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
+import static io.harness.rule.OwnerRule.HARSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -80,6 +81,56 @@ public class ConnectorEnvVariablesHelperTest extends CategoryTest {
           Object[] args = invocation.getArguments();
           return (DecryptableEntity) args[0];
         });
+  }
+
+  @Test
+  @Owner(developers = HARSH)
+  @Category(UnitTests.class)
+  public void shouldGetArtifactorySecretVariablesWithUserName() {
+    ConnectorDetails connectorDetails =
+        ConnectorDetails.builder()
+            .envToSecretEntry(EnvVariableEnum.ARTIFACTORY_USERNAME, USERNAME_ENV)
+            .envToSecretEntry(EnvVariableEnum.ARTIFACTORY_PASSWORD, SECRET_ENV)
+            .envToSecretEntry(EnvVariableEnum.ARTIFACTORY_ENDPOINT, ENDPOINT_ENV)
+            .identifier(CONNECTOR_ID)
+            .connectorType(ConnectorType.ARTIFACTORY)
+            .connectorConfig(
+                ArtifactoryConnectorDTO.builder()
+                    .artifactoryServerUrl(SERVER_URL)
+                    .auth(ArtifactoryAuthenticationDTO.builder()
+                              .authType(ArtifactoryAuthType.USER_PASSWORD)
+                              .credentials(
+                                  ArtifactoryUsernamePasswordAuthDTO.builder()
+                                      .usernameRef(
+                                          SecretRefData.builder().decryptedValue(USERNAME_VALUE.toCharArray()).build())
+                                      .passwordRef(
+                                          SecretRefData.builder().decryptedValue(SECRET_VALUE.toCharArray()).build())
+                                      .build())
+                              .build())
+                    .build())
+            .build();
+    Map<String, SecretParams> actualSecretVariables =
+        connectorEnvVariablesHelper.getArtifactorySecretVariables(connectorDetails);
+    Map<String, SecretParams> expectedSecretVariables = new HashMap<>();
+    expectedSecretVariables.put(ENDPOINT_ENV,
+        SecretParams.builder()
+            .value(encodeBase64(SERVER_URL))
+            .secretKey(ENDPOINT_ENV + CONNECTOR_ID)
+            .type(TEXT)
+            .build());
+    expectedSecretVariables.put(USERNAME_ENV,
+        SecretParams.builder()
+            .value(encodeBase64(USERNAME_VALUE))
+            .secretKey(USERNAME_ENV + CONNECTOR_ID)
+            .type(TEXT)
+            .build());
+    expectedSecretVariables.put(SECRET_ENV,
+        SecretParams.builder()
+            .value(encodeBase64(SECRET_VALUE))
+            .secretKey(SECRET_ENV + CONNECTOR_ID)
+            .type(TEXT)
+            .build());
+    assertThat(actualSecretVariables).isEqualTo(expectedSecretVariables);
   }
 
   @Test
@@ -201,6 +252,56 @@ public class ConnectorEnvVariablesHelperTest extends CategoryTest {
         SecretParams.builder()
             .value(encodeBase64(AWS_SECRET))
             .secretKey(SECRET_KEY_ENV + CONNECTOR_ID)
+            .type(TEXT)
+            .build());
+    assertThat(actualSecretVariables).isEqualTo(expectedSecretVariables);
+  }
+
+  @Test
+  @Owner(developers = ALEKSANDAR)
+  @Category(UnitTests.class)
+  public void shouldGetDockerSecretVariablesWithSecretUserName() {
+    ConnectorDetails connectorDetails =
+        ConnectorDetails.builder()
+            .identifier(CONNECTOR_ID)
+            .envToSecretEntry(EnvVariableEnum.DOCKER_USERNAME, USERNAME_ENV)
+            .envToSecretEntry(EnvVariableEnum.DOCKER_PASSWORD, SECRET_ENV)
+            .envToSecretEntry(EnvVariableEnum.DOCKER_REGISTRY, REGISTRY_ENV)
+            .connectorType(ConnectorType.DOCKER)
+            .connectorConfig(
+                DockerConnectorDTO.builder()
+                    .dockerRegistryUrl(SERVER_URL)
+                    .auth(DockerAuthenticationDTO.builder()
+                              .authType(DockerAuthType.USER_PASSWORD)
+                              .credentials(
+                                  DockerUserNamePasswordDTO.builder()
+                                      .usernameRef(
+                                          SecretRefData.builder().decryptedValue(USERNAME_VALUE.toCharArray()).build())
+                                      .passwordRef(
+                                          SecretRefData.builder().decryptedValue(SECRET_VALUE.toCharArray()).build())
+                                      .build())
+                              .build())
+                    .build())
+            .build();
+    Map<String, SecretParams> actualSecretVariables =
+        connectorEnvVariablesHelper.getDockerSecretVariables(connectorDetails);
+    Map<String, SecretParams> expectedSecretVariables = new HashMap<>();
+    expectedSecretVariables.put(USERNAME_ENV,
+        SecretParams.builder()
+            .value(encodeBase64(USERNAME_VALUE))
+            .secretKey(USERNAME_ENV + CONNECTOR_ID)
+            .type(TEXT)
+            .build());
+    expectedSecretVariables.put(SECRET_ENV,
+        SecretParams.builder()
+            .value(encodeBase64(SECRET_VALUE))
+            .secretKey(SECRET_ENV + CONNECTOR_ID)
+            .type(TEXT)
+            .build());
+    expectedSecretVariables.put(REGISTRY_ENV,
+        SecretParams.builder()
+            .value(encodeBase64(SERVER_URL))
+            .secretKey(REGISTRY_ENV + CONNECTOR_ID)
             .type(TEXT)
             .build());
     assertThat(actualSecretVariables).isEqualTo(expectedSecretVariables);

@@ -330,4 +330,25 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
     when(inputSetRepository.update(any(), any())).thenReturn(InputSetEntity.builder().build());
     assertTrue(pmsInputSetService.switchValidationFlag(inputSetEntity, true));
   }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testCheckForInputSetsForPipeline() {
+    doReturn(true)
+        .when(inputSetRepository)
+        .existsByAccountIdAndOrgIdentifierAndProjectIdentifierAndPipelineIdentifierAndDeletedNot(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, true);
+    assertThat(pmsInputSetServiceMock.checkForInputSetsForPipeline(
+                   ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER))
+        .isTrue();
+
+    doReturn(false)
+        .when(inputSetRepository)
+        .existsByAccountIdAndOrgIdentifierAndProjectIdentifierAndPipelineIdentifierAndDeletedNot(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, true);
+    assertThat(pmsInputSetServiceMock.checkForInputSetsForPipeline(
+                   ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER))
+        .isFalse();
+  }
 }

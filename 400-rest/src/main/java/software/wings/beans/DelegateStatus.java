@@ -60,6 +60,8 @@ public class DelegateStatus {
     private long profileExecutedAt;
     private boolean profileError;
     private boolean sampleDelegate;
+    private boolean grpcActive;
+    private boolean tokenActive;
     List<DelegateConnectionDetails> connections;
   }
 }

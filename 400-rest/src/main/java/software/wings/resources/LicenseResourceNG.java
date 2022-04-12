@@ -12,9 +12,11 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.ccm.license.CeLicenseInfo;
+import io.harness.ccm.license.CeLicenseInfo.CeLicenseInfoBuilder;
 import io.harness.ccm.license.CeLicenseInfoDTO;
 import io.harness.ccm.license.CeLicenseType;
 import io.harness.exception.InvalidRequestException;
+import io.harness.licensing.Edition;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 
@@ -67,6 +69,12 @@ public class LicenseResourceNG {
   }
 
   private CeLicenseInfo convertDTO(CeLicenseInfoDTO dto) {
-    return CeLicenseInfo.builder().expiryTime(dto.getExpiryTime()).licenseType(CeLicenseType.LIMITED_TRIAL).build();
+    CeLicenseInfoBuilder licenseInfoBuilder = CeLicenseInfo.builder().expiryTime(dto.getExpiryTime());
+    if (Edition.ENTERPRISE.equals(dto.getEdition())) {
+      licenseInfoBuilder.licenseType(CeLicenseType.FULL_TRIAL);
+    } else {
+      licenseInfoBuilder.licenseType(CeLicenseType.LIMITED_TRIAL);
+    }
+    return licenseInfoBuilder.build();
   }
 }

@@ -8,17 +8,19 @@
 package io.harness;
 
 import static io.harness.AuthorizationServiceHeader.PIPELINE_SERVICE;
-import static io.harness.OrchestrationEventsFrameworkConstants.INITIATE_NODE_EVENT_BATCH_SIZE;
 import static io.harness.OrchestrationEventsFrameworkConstants.INITIATE_NODE_EVENT_CONSUMER;
 import static io.harness.OrchestrationEventsFrameworkConstants.INITIATE_NODE_EVENT_PRODUCER;
-import static io.harness.OrchestrationEventsFrameworkConstants.PARTIAL_PLAN_EVENT_BATCH_SIZE;
 import static io.harness.OrchestrationEventsFrameworkConstants.PARTIAL_PLAN_EVENT_CONSUMER;
-import static io.harness.OrchestrationEventsFrameworkConstants.SDK_RESPONSE_EVENT_BATCH_SIZE;
 import static io.harness.OrchestrationEventsFrameworkConstants.SDK_RESPONSE_EVENT_CONSUMER;
+import static io.harness.eventsframework.EventsFrameworkConstants.INITIATE_NODE_EVENT_BATCH_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.INITIATE_NODE_EVENT_MAX_TOPIC_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.INITIATE_NODE_EVENT_TOPIC;
+import static io.harness.eventsframework.EventsFrameworkConstants.ORCHESTRATION_LOG;
+import static io.harness.eventsframework.EventsFrameworkConstants.ORCHESTRATION_LOG_MAX_TOPIC_SIZE;
+import static io.harness.eventsframework.EventsFrameworkConstants.PARTIAL_PLAN_EVENT_BATCH_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_PARTIAL_PLAN_RESPONSE;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_SDK_RESPONSE_EVENT_TOPIC;
+import static io.harness.eventsframework.EventsFrameworkConstants.SDK_RESPONSE_EVENT_BATCH_SIZE;
 import static io.harness.pms.events.PmsEventFrameworkConstants.MAX_PROCESSING_TIME_SECONDS;
 
 import io.harness.events.PmsRedissonClientFactory;
@@ -63,6 +65,9 @@ public class OrchestrationEventsFrameworkModule extends AbstractModule {
       bind(Producer.class)
           .annotatedWith(Names.named(INITIATE_NODE_EVENT_PRODUCER))
           .toInstance(NoOpProducer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME));
+      bind(Producer.class)
+          .annotatedWith(Names.named(ORCHESTRATION_LOG))
+          .toInstance(NoOpProducer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME));
     } else {
       RedissonClient redissonClient = PmsRedissonClientFactory.getRedisClient(redisConfig);
 
@@ -88,6 +93,10 @@ public class OrchestrationEventsFrameworkModule extends AbstractModule {
           .toInstance(RedisConsumer.of(INITIATE_NODE_EVENT_TOPIC, PIPELINE_SERVICE.getServiceId(), redissonClient,
               Duration.ofSeconds(MAX_PROCESSING_TIME_SECONDS), INITIATE_NODE_EVENT_BATCH_SIZE,
               redisConfig.getEnvNamespace()));
+      bind(Producer.class)
+          .annotatedWith(Names.named(ORCHESTRATION_LOG))
+          .toInstance(RedisProducer.of(ORCHESTRATION_LOG, redissonClient, ORCHESTRATION_LOG_MAX_TOPIC_SIZE,
+              PIPELINE_SERVICE.getServiceId(), redisConfig.getEnvNamespace()));
     }
   }
 }

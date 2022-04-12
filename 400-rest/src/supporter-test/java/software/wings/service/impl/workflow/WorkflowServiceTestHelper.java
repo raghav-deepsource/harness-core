@@ -83,6 +83,7 @@ import static software.wings.utils.WingsTestConstants.SERVICE_TEMPLATE_ID;
 import static software.wings.utils.WingsTestConstants.TARGET_APP_ID;
 import static software.wings.utils.WingsTestConstants.TARGET_SERVICE_ID;
 import static software.wings.utils.WingsTestConstants.TEMPLATE_ID;
+import static software.wings.utils.WingsTestConstants.USER_GROUP_ID;
 import static software.wings.utils.WingsTestConstants.WORKFLOW_ID;
 import static software.wings.utils.WingsTestConstants.WORKFLOW_NAME;
 
@@ -134,6 +135,8 @@ import software.wings.infra.DirectKubernetesInfrastructure;
 import software.wings.infra.GoogleKubernetesEngine;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.sm.StateType;
+import software.wings.sm.StepType;
+import software.wings.sm.states.ApprovalState.ApprovalStateType;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
@@ -234,6 +237,44 @@ public class WorkflowServiceTestHelper {
         .build();
   }
 
+  public static Workflow constructCanaryWithApprovalStep() {
+    return aWorkflow()
+        .name(WORKFLOW_NAME)
+        .appId(APP_ID)
+        .workflowType(WorkflowType.ORCHESTRATION)
+        .orchestrationWorkflow(
+            aCanaryOrchestrationWorkflow()
+                .withPreDeploymentSteps(aPhaseStep(PRE_DEPLOYMENT)
+                                            .addStep(constructApprovalStep(asList(USER_GROUP_ID, USER_GROUP_ID + 2)))
+                                            .build())
+                .withPostDeploymentSteps(aPhaseStep(POST_DEPLOYMENT).build())
+                .build())
+        .build();
+  }
+
+  public static Workflow constructCanaryWithApprovalPhaseStep() {
+    return aWorkflow()
+        .name(WORKFLOW_NAME)
+        .appId(APP_ID)
+        .workflowType(WorkflowType.ORCHESTRATION)
+        .orchestrationWorkflow(
+            aCanaryOrchestrationWorkflow()
+                .withPreDeploymentSteps(aPhaseStep(PRE_DEPLOYMENT).build())
+                .addWorkflowPhase(
+                    aWorkflowPhase()
+                        .infraMappingId(INFRA_MAPPING_ID)
+                        .infraDefinitionId(INFRA_DEFINITION_ID)
+                        .serviceId(SERVICE_ID)
+                        .deploymentType(SSH)
+                        .phaseSteps(asList(aPhaseStep(VERIFY_SERVICE, WorkflowServiceHelper.ENABLE_SERVICE)
+                                               .addStep(constructApprovalStep(asList(USER_GROUP_ID, USER_GROUP_ID + 2)))
+                                               .build()))
+                        .build())
+                .withPostDeploymentSteps(aPhaseStep(POST_DEPLOYMENT).build())
+                .build())
+        .build();
+  }
+
   public static Workflow constructCanaryWithHttpPhaseStep() {
     return aWorkflow()
         .name(WORKFLOW_NAME)
@@ -274,6 +315,17 @@ public class WorkflowServiceTestHelper {
         .type("HTTP")
         .name("http")
         .properties(ImmutableMap.<String, Object>builder().put("url", "http://www.google.com").build())
+        .build();
+  }
+
+  public static GraphNode constructApprovalStep(List<String> userGroups) {
+    return GraphNode.builder()
+        .type(StepType.APPROVAL.name())
+        .name("Approval")
+        .properties(ImmutableMap.<String, Object>builder()
+                        .put("userGroups", userGroups)
+                        .put("approvalStateType", ApprovalStateType.USER_GROUP.name())
+                        .build())
         .build();
   }
 

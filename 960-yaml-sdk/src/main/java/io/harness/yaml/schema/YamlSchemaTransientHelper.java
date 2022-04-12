@@ -8,107 +8,34 @@
 package io.harness.yaml.schema;
 
 import static io.harness.yaml.schema.beans.SchemaConstants.ALL_OF_NODE;
-import static io.harness.yaml.schema.beans.SchemaConstants.CONST_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.ENUM_NODE;
-import static io.harness.yaml.schema.beans.SchemaConstants.IF_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.ONE_OF_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.PROPERTIES_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.TYPE_NODE;
 
-import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.jackson.JsonNodeUtils;
-import io.harness.yaml.utils.YamlSchemaUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.collect.ImmutableSet;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
 // Todo: to be deleted after finishing the steps migration to new schema
 public class YamlSchemaTransientHelper {
-  // Add all steps in this list that are moved to new schema.
-  public static final List<EntityType> allStepV2EntityTypes = new ArrayList<EntityType>() {
-    {
-      add(EntityType.HTTP_STEP);
-      add(EntityType.JIRA_CREATE_STEP);
-      add(EntityType.JIRA_UPDATE_STEP);
-      add(EntityType.SHELL_SCRIPT_STEP);
-      add(EntityType.K8S_CANARY_DEPLOY_STEP);
-      add(EntityType.TEMPLATE);
-      add(EntityType.SERVICENOW_APPROVAL_STEP);
-      add(EntityType.JIRA_APPROVAL_STEP);
-      add(EntityType.RUN_STEP);
-      add(EntityType.RUN_TEST);
-      add(EntityType.PLUGIN);
-      add(EntityType.RESTORE_CACHE_GCS);
-      add(EntityType.RESTORE_CACHE_S3);
-      add(EntityType.SAVE_CACHE_GCS);
-      add(EntityType.SAVE_CACHE_S3);
-      add(EntityType.SECURITY);
-      add(EntityType.ARTIFACTORY_UPLOAD);
-      add(EntityType.GCS_UPLOAD);
-      add(EntityType.S3_UPLOAD);
-      add(EntityType.BUILD_AND_PUSH_GCR);
-      add(EntityType.BUILD_AND_PUSH_ECR);
-      add(EntityType.BUILD_AND_PUSH_DOCKER_REGISTRY);
-      add(EntityType.HARNESS_APPROVAL_STEP);
-      add(EntityType.BARRIER_STEP);
-      add(EntityType.VERIFY_STEP);
-      add(EntityType.FLAG_CONFIGURATION);
-      add(EntityType.K8S_APPLY_STEP);
-      add(EntityType.K8S_BLUE_GREEN_DEPLOY_STEP);
-      add(EntityType.K8S_ROLLING_DEPLOY_STEP);
-      add(EntityType.K8S_ROLLING_ROLLBACK_STEP);
-      add(EntityType.K8S_SCALE_STEP);
-      add(EntityType.K8S_DELETE_STEP);
-      add(EntityType.K8S_BG_SWAP_SERVICES_STEP);
-      add(EntityType.K8S_CANARY_DELETE_STEP);
-      add(EntityType.TERRAFORM_APPLY_STEP);
-      add(EntityType.TERRAFORM_PLAN_STEP);
-      add(EntityType.TERRAFORM_DESTROY_STEP);
-      add(EntityType.TERRAFORM_ROLLBACK_STEP);
-      add(EntityType.HELM_DEPLOY_STEP);
-      add(EntityType.HELM_ROLLBACK_STEP);
-      add(EntityType.POLICY_STEP);
-      add(EntityType.SERVICENOW_CREATE_STEP);
-      add(EntityType.SERVICENOW_UPDATE_STEP);
-    }
-  };
-
-  public static final Set<String> allV2Stages = ImmutableSet.of("Deployment", "Approval", "CI", "FeatureFlag");
-
   public void deleteSpecNodeInStageElementConfig(JsonNode stageElementConfig) {
     JsonNodeUtils.deletePropertiesInJsonNode((ObjectNode) stageElementConfig.get(PROPERTIES_NODE), "spec");
   }
 
-  // Removing the step nodes from type enum that are migrated to new schema
-  public Set<Class<?>> removeNewSchemaStepsSubtypes(Set<Class<?>> subTypes, Collection<Class<?>> newStepsToBeRemoved) {
-    Set<Class<?>> newSchemaSteps = new HashSet<>();
-    for (Class<?> clazz : newStepsToBeRemoved) {
-      if (YamlSchemaUtils.getTypedField(clazz) != null) {
-        newSchemaSteps.add(YamlSchemaUtils.getTypedField(clazz).getType());
-      }
-    }
-    return subTypes.stream().filter(o -> !newSchemaSteps.contains(o)).collect(Collectors.toSet());
-  }
-
   public void removeV2StagesFromStageElementConfig(JsonNode stageElementConfigNode) {
     for (JsonNode jsonNode : stageElementConfigNode.get(ONE_OF_NODE)) {
-      removeV2StepFromAllOfNode((ArrayNode) jsonNode.get(ALL_OF_NODE), allV2Stages);
+      removeV2StepFromAllOfNode((ArrayNode) jsonNode.get(ALL_OF_NODE));
       try {
         ArrayNode enumNode = (ArrayNode) jsonNode.get(PROPERTIES_NODE).get(TYPE_NODE).get(ENUM_NODE);
-        removeV2EnumsFromTypeNode(enumNode, allV2Stages);
+        removeV2EnumsFromTypeNode(enumNode);
       } catch (Exception e) {
         // Type ENUM node not present.(Would be template node)
       }
@@ -119,35 +46,21 @@ public class YamlSchemaTransientHelper {
     if (stepElementConfigNode == null) {
       return;
     }
-    Set<String> v2StepTypes = allStepV2EntityTypes.stream().map(EntityType::getYamlName).collect(Collectors.toSet());
-    removeV2StepFromAllOfNode((ArrayNode) stepElementConfigNode.get(ALL_OF_NODE), v2StepTypes);
+    removeV2StepFromAllOfNode((ArrayNode) stepElementConfigNode.get(ALL_OF_NODE));
     ArrayNode enumNode = (ArrayNode) stepElementConfigNode.get(PROPERTIES_NODE).get(TYPE_NODE).get(ENUM_NODE);
-    removeV2EnumsFromTypeNode(enumNode, v2StepTypes);
+    removeV2EnumsFromTypeNode(enumNode);
   }
-  public void removeV2EnumsFromTypeNode(ArrayNode enumNode, Set<String> v2StepTypes) {
+  public void removeV2EnumsFromTypeNode(ArrayNode enumNode) {
     if (enumNode == null) {
       return;
     }
-    ArrayNode enumArray = enumNode.deepCopy();
     enumNode.removeAll();
-    for (JsonNode arrayElement : enumArray) {
-      if (!v2StepTypes.contains(arrayElement.asText())) {
-        enumNode.add(arrayElement);
-      }
-    }
   }
 
-  public void removeV2StepFromAllOfNode(ArrayNode allOfNode, Set<String> v2StepTypes) {
+  public void removeV2StepFromAllOfNode(ArrayNode allOfNode) {
     if (allOfNode == null) {
       return;
     }
-    ArrayNode allOfArray = allOfNode.deepCopy();
     allOfNode.removeAll();
-    for (JsonNode arrayElement : allOfArray) {
-      if (!v2StepTypes.contains(
-              arrayElement.get(IF_NODE).get(PROPERTIES_NODE).get(TYPE_NODE).get(CONST_NODE).asText())) {
-        allOfNode.add(arrayElement);
-      }
-    }
   }
 }

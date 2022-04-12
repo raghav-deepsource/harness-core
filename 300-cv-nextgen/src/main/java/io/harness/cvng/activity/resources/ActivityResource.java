@@ -11,18 +11,13 @@ import static io.harness.cvng.core.services.CVNextGenConstants.ACTIVITY_RESOURCE
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.ExposeInternalException;
-import io.harness.cvng.activity.beans.ActivityVerificationResultDTO;
-import io.harness.cvng.activity.beans.DeploymentActivitySummaryDTO;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterType;
 import io.harness.cvng.analysis.beans.LogAnalysisClusterChartDTO;
 import io.harness.cvng.analysis.beans.LogAnalysisClusterDTO;
-import io.harness.cvng.analysis.beans.TransactionMetricInfoSummaryPageDTO;
-import io.harness.cvng.core.beans.DatasourceTypeDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceDTO;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentLogAnalysisFilter;
-import io.harness.cvng.core.beans.params.filterParams.DeploymentTimeSeriesAnalysisFilter;
 import io.harness.ng.beans.PageResponse;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -36,7 +31,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -51,58 +45,6 @@ import org.hibernate.validator.constraints.NotEmpty;
 @NextGenManagerAuth
 public class ActivityResource {
   @Inject private ActivityService activityService;
-
-  @GET
-  @Path("/{activityId}/deployment-activity-summary")
-  @ApiOperation(value = "get summary of deployment activity", nickname = "getDeploymentActivitySummary")
-  public RestResponse<DeploymentActivitySummaryDTO> getDeploymentSummary(
-      @NotNull @QueryParam("accountId") String accountId, @NotNull @PathParam("activityId") String activityId) {
-    return new RestResponse(activityService.getDeploymentSummary(activityId));
-  }
-
-  @GET
-  @Path("recent-activity-verifications")
-  @ApiOperation(
-      value = "get a list of recent activity verification results", nickname = "getRecentActivityVerificationResults")
-  public RestResponse<List<ActivityVerificationResultDTO>>
-  getRecentActivityVerificationResults(@NotNull @QueryParam("accountId") String accountId,
-      @NotNull @QueryParam("orgIdentifier") String orgIdentifier,
-      @NotNull @QueryParam("projectIdentifier") String projectIdentifier, @QueryParam("size") int size) {
-    return new RestResponse(
-        activityService.getRecentActivityVerificationResults(accountId, orgIdentifier, projectIdentifier, size));
-  }
-
-  @GET
-  @Path("/{activityId}/activity-risks")
-  @ApiOperation(value = "get activity verification result", nickname = "getActivityVerificationResult")
-  public RestResponse<ActivityVerificationResultDTO> getActivityVerificationResult(
-      @NotNull @QueryParam("accountId") String accountId, @NotNull @PathParam("activityId") String activityId) {
-    return new RestResponse(activityService.getActivityVerificationResult(accountId, activityId));
-  }
-
-  @GET
-  @Path("/{activityId}/deployment-timeseries-data")
-  @Timed
-  @ExceptionMetered
-  @ApiOperation(value = "get metrics for given activity", nickname = "getDeploymentMetrics")
-  public RestResponse<TransactionMetricInfoSummaryPageDTO> getMetrics(
-      @NotEmpty @NotNull @PathParam("activityId") String activityId, @NotNull @QueryParam("accountId") String accountId,
-      @BeanParam DeploymentTimeSeriesAnalysisFilter deploymentTimeSeriesAnalysisFilter,
-      @BeanParam PageParams pageParams) {
-    return new RestResponse(activityService.getDeploymentActivityTimeSeriesData(
-        accountId, activityId, deploymentTimeSeriesAnalysisFilter, pageParams));
-  }
-
-  @GET
-  @Path("/{activityId}/datasource-types")
-  @Timed
-  @ExceptionMetered
-  @ApiOperation(value = "get datasource types for an activity", nickname = "getDatasourceTypes")
-  public RestResponse<Set<DatasourceTypeDTO>> getDatasourceTypes(
-      @NotNull @NotEmpty @PathParam("activityId") String activityId,
-      @NotNull @QueryParam("accountId") String accountId) {
-    return new RestResponse(activityService.getDataSourcetypes(accountId, activityId));
-  }
 
   @GET
   @Path("/{activityId}/healthSources")

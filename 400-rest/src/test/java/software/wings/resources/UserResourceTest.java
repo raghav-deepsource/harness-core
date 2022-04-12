@@ -45,6 +45,7 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.common.beans.Generation;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
@@ -112,6 +113,7 @@ public class UserResourceTest extends WingsBaseTest {
   public static final AccountPasswordExpirationJob ACCOUNT_PASSWORD_EXPIRATION_JOB =
       mock(AccountPasswordExpirationJob.class);
   public static final ReCaptchaVerifier RE_CAPTCHA_VERIFIER = mock(ReCaptchaVerifier.class);
+  public static final FeatureFlagService FEATURE_FLAG_SERVICE = mock(FeatureFlagService.class);
   public static final TwoFactorAuthenticationManager TWO_FACTOR_AUTHENTICATION_MANAGER =
       mock(TwoFactorAuthenticationManager.class);
   static final AccountPermissionUtils ACCOUNT_PERMISSION_UTILS = mock(AccountPermissionUtils.class);
@@ -129,7 +131,8 @@ public class UserResourceTest extends WingsBaseTest {
       ResourceTestRule.builder()
           .instance(new UserResource(USER_SERVICE, AUTH_SERVICE, ACCOUNT_SERVICE, ACCOUNT_PERMISSION_UTILS,
               AUTHENTICATION_MANAGER, TWO_FACTOR_AUTHENTICATION_MANAGER, CACHES, HARNESS_USER_GROUP_SERVICE,
-              USER_GROUP_SERVICE, MAIN_CONFIGURATION, ACCOUNT_PASSWORD_EXPIRATION_JOB, RE_CAPTCHA_VERIFIER))
+              USER_GROUP_SERVICE, MAIN_CONFIGURATION, ACCOUNT_PASSWORD_EXPIRATION_JOB, RE_CAPTCHA_VERIFIER,
+              FEATURE_FLAG_SERVICE))
           .instance(new AbstractBinder() {
             @Override
             protected void configure() {

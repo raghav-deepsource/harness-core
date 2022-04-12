@@ -13,6 +13,7 @@ import static io.harness.batch.processing.ccm.BatchJobBucket.IN_CLUSTER_NODE_REC
 import static io.harness.batch.processing.ccm.BatchJobBucket.IN_CLUSTER_RECOMMENDATION;
 import static io.harness.batch.processing.ccm.BatchJobBucket.OTHERS;
 import static io.harness.batch.processing.ccm.BatchJobBucket.OUT_OF_CLUSTER;
+import static io.harness.batch.processing.ccm.BatchJobBucket.OUT_OF_CLUSTER_ECS;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -34,8 +35,8 @@ public enum BatchJobType {
   SYNC_BILLING_REPORT_S3(100, 1, ChronoUnit.HOURS, emptyList(), OUT_OF_CLUSTER),
   SYNC_BILLING_REPORT_AZURE(100, 1, ChronoUnit.HOURS, emptyList(), OUT_OF_CLUSTER),
   SYNC_BILLING_REPORT_GCP(100, 1, ChronoUnit.HOURS, emptyList(), OUT_OF_CLUSTER),
-  AWS_ECS_CLUSTER_SYNC(110, 1, ChronoUnit.DAYS, emptyList(), OUT_OF_CLUSTER),
-  AWS_ECS_CLUSTER_DATA_SYNC(115, 1, ChronoUnit.HOURS, emptyList(), OUT_OF_CLUSTER),
+  AWS_ECS_CLUSTER_SYNC(110, 1, ChronoUnit.DAYS, emptyList(), OUT_OF_CLUSTER_ECS),
+  AWS_ECS_CLUSTER_DATA_SYNC(115, 1, ChronoUnit.HOURS, emptyList(), OUT_OF_CLUSTER_ECS),
   DEPLOYMENT_EVENT(150, 1, ChronoUnit.DAYS, emptyList(), IN_CLUSTER),
   K8S_EVENT(300, 1, ChronoUnit.HOURS, emptyList(), IN_CLUSTER),
   K8S_WATCH_EVENT(350, 1, ChronoUnit.DAYS, singletonList(K8S_EVENT), IN_CLUSTER_BILLING),

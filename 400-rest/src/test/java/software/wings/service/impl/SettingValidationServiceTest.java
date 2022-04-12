@@ -22,6 +22,7 @@ import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.shell.AuthenticationScheme.SSH_KEY;
 
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
+import static software.wings.service.impl.DelegateSelectionLogsServiceImpl.NO_ELIGIBLE_DELEGATES;
 import static software.wings.utils.WingsTestConstants.ACCESS_KEY;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.SECRET_KEY;
@@ -1238,12 +1239,13 @@ public class SettingValidationServiceTest extends WingsBaseTest {
     settingAttribute.setValue(createSmtpConfig());
     settingAttribute.setName(NG_SMTP_SETTINGS_PREFIX + "dummy");
     when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(null);
-    when(delegateService.executeTask(any(DelegateTask.class))).thenThrow(new NoEligibleDelegatesInAccountException());
+    when(delegateService.executeTask(any(DelegateTask.class)))
+        .thenThrow(new NoEligibleDelegatesInAccountException(NO_ELIGIBLE_DELEGATES));
     try {
       settingValidationService.validateConnectivity(settingAttribute);
       fail("The delegate task executed should have thrown error.");
     } catch (NoEligibleDelegatesInAccountException e) {
-      assertThat(e.getMessage()).isEqualTo("No eligible delegates to execute task");
+      assertThat(e.getMessage()).isEqualTo("No eligible delegate(s) in account to execute task. ");
     }
     ArgumentCaptor<DelegateTask> taskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
     verify(delegateService, times(1)).executeTask(taskArgumentCaptor.capture());

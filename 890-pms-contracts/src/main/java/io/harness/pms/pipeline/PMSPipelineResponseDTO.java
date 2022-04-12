@@ -29,6 +29,7 @@ import lombok.Data;
 @Schema(name = "PMSPipelineResponse", description = "This contains pipeline yaml with the version.")
 public class PMSPipelineResponseDTO {
   private String yamlPipeline;
+  @Schema(description = "Pipeline YAML after resolving templates") private String resolvedTemplatesPipelineYaml;
   @JsonIgnore Long version;
   EntityGitDetails gitDetails;
   EntityValidityDetails entityValidityDetails;

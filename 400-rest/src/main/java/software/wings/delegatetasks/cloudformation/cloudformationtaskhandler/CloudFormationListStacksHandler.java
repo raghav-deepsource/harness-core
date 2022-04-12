@@ -13,12 +13,12 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.exception.ExceptionUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.security.encryption.EncryptedDataDetail;
 
-import software.wings.beans.AwsConfig;
 import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.helpers.ext.cloudformation.request.CloudFormationCommandRequest;
 import software.wings.helpers.ext.cloudformation.request.CloudFormationListStacksRequest;
@@ -26,6 +26,7 @@ import software.wings.helpers.ext.cloudformation.response.CloudFormationCommandE
 import software.wings.helpers.ext.cloudformation.response.CloudFormationCommandExecutionResponse.CloudFormationCommandExecutionResponseBuilder;
 import software.wings.helpers.ext.cloudformation.response.CloudFormationListStacksResponse;
 import software.wings.helpers.ext.cloudformation.response.StackSummaryInfo;
+import software.wings.service.mappers.artifact.AwsConfigToInternalMapper;
 
 import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
 import com.amazonaws.services.cloudformation.model.Stack;
@@ -45,8 +46,9 @@ public class CloudFormationListStacksHandler extends CloudFormationCommandTaskHa
       List<EncryptedDataDetail> details, ExecutionLogCallback executionLogCallback) {
     CloudFormationListStacksRequest cloudFormationListStacksRequest = (CloudFormationListStacksRequest) request;
     CloudFormationCommandExecutionResponseBuilder builder = CloudFormationCommandExecutionResponse.builder();
-    AwsConfig awsConfig = cloudFormationListStacksRequest.getAwsConfig();
-    encryptionService.decrypt(awsConfig, details, false);
+    AwsInternalConfig awsInternalConfig =
+        AwsConfigToInternalMapper.toAwsInternalConfig(cloudFormationListStacksRequest.getAwsConfig());
+    encryptionService.decrypt(awsInternalConfig, details, false);
     try {
       DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest();
       String stackId = cloudFormationListStacksRequest.getStackId();
@@ -54,7 +56,7 @@ public class CloudFormationListStacksHandler extends CloudFormationCommandTaskHa
         describeStacksRequest.withStackName(stackId);
       }
       executionLogCallback.saveExecutionLog("Sending list stacks call to Aws");
-      List<Stack> stacks = awsHelperService.getAllStacks(request.getRegion(), describeStacksRequest, awsConfig);
+      List<Stack> stacks = awsHelperService.getAllStacks(request.getRegion(), describeStacksRequest, awsInternalConfig);
       executionLogCallback.saveExecutionLog("Completed list stacks call to Aws");
       List<StackSummaryInfo> summaryInfos = Collections.emptyList();
       if (isNotEmpty(stacks)) {

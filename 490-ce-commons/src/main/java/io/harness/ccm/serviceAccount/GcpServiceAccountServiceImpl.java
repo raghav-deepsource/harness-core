@@ -10,7 +10,7 @@ package io.harness.ccm.serviceAccount;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import static com.hazelcast.util.Preconditions.checkFalse;
+import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static java.lang.String.format;
 import static java.util.Collections.singletonList;
 

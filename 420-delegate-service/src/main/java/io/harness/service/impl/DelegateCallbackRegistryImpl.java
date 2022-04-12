@@ -85,7 +85,7 @@ public class DelegateCallbackRegistryImpl implements DelegateCallbackRegistry {
           persistence.createUpdateOperations(DelegateCallbackRecord.class)
               .set(DelegateCallbackRecordKeys.uuid, uuid)
               .set(DelegateCallbackRecordKeys.callbackMetadata, bytes)
-              .set(DelegateCallbackRecordKeys.validUntil, Date.from(OffsetDateTime.now().plusMonths(1).toInstant())));
+              .set(DelegateCallbackRecordKeys.validUntil, Date.from(OffsetDateTime.now().plusYears(1).toInstant())));
 
       return uuid;
     } catch (NoSuchAlgorithmException e) {

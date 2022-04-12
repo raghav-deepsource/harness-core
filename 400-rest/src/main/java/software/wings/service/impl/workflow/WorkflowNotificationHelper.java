@@ -115,6 +115,7 @@ public class WorkflowNotificationHelper {
   private static final String SERVICE = "SERVICE";
   private static final String NAME = "_NAME";
   private static final String URL = "_URL";
+  public static final String USER_NAME = "USER_NAME";
   @Inject private WorkflowService workflowService;
   @Inject private NotificationService notificationService;
   @Inject private ServiceResourceService serviceResourceService;
@@ -405,7 +406,7 @@ public class WorkflowNotificationHelper {
     placeHolderValues.put("WORKFLOW_NAME", context.getWorkflowExecutionName());
     placeHolderValues.put("WORKFLOW_URL", workflowUrl);
     placeHolderValues.put("VERB", NotificationMessageResolver.getStatusVerb(status));
-    placeHolderValues.put("USER_NAME", triggeredBy);
+    placeHolderValues.put(USER_NAME, triggeredBy);
     placeHolderValues.put("APP_NAME", app.getName());
     placeHolderValues.put(APPLICATION + NAME, app.getName());
     placeHolderValues.put("START_TS_SECS", Long.toString(startTs / 1000L));

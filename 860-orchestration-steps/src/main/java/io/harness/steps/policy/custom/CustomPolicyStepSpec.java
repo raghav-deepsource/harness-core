@@ -18,6 +18,7 @@ import io.harness.steps.policy.PolicySpec;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Value;
 
@@ -27,7 +28,7 @@ import lombok.Value;
 @JsonTypeName(CUSTOM_POLICY_STEP_TYPE)
 @RecasterAlias("io.harness.steps.policy.custom.CustomPolicyStepSpec")
 public class CustomPolicyStepSpec implements PolicySpec {
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> payload;
+  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> payload;
 
   @Override
   public String getType() {

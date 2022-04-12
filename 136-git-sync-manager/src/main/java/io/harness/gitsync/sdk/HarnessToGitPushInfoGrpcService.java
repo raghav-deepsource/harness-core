@@ -37,6 +37,7 @@ import io.harness.serializer.KryoSerializer;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
 
@@ -124,11 +125,14 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
   @Override
   public void getDefaultBranch(RepoDetails request, StreamObserver<BranchDetails> responseObserver) {
     try (MdcContextSetter ignore1 = new MdcContextSetter(request.getContextMapMap())) {
-      log.debug("Grpc request received for getDefaultBranch");
+      log.info("Grpc request received for getDefaultBranch");
       final BranchDetails branchDetails = harnessToGitHelperService.getBranchDetails(request);
+      log.info("Grpc request completed for getDefaultBranch");
       responseObserver.onNext(branchDetails);
-      responseObserver.onCompleted();
-      log.debug("Grpc request completed for getDefaultBranch");
+    } catch (Exception ex) {
+      final String errorMessage = ExceptionUtils.getMessage(ex);
+      responseObserver.onError(Status.fromThrowable(ex).withDescription(errorMessage).asRuntimeException());
     }
+    responseObserver.onCompleted();
   }
 }

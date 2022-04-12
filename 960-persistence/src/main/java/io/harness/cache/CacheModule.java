@@ -15,7 +15,6 @@ import static javax.cache.Caching.getCachingProvider;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.govern.ProviderMethodInterceptor;
 import io.harness.govern.ServersModule;
-import io.harness.hazelcast.HazelcastModule;
 import io.harness.redis.RedissonKryoCodec;
 
 import com.google.common.io.Files;
@@ -28,8 +27,6 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
-import com.hazelcast.cache.HazelcastCachingProvider;
-import com.hazelcast.core.HazelcastInstance;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
@@ -149,18 +146,6 @@ public class CacheModule extends AbstractModule implements ServersModule {
   }
 
   @Provides
-  @Named("Hazelcast")
-  @Singleton
-  CacheManager getHazelcastCacheManager(Provider<HazelcastInstance> hazelcastInstanceProvider) {
-    hazelcastInstanceProvider.get();
-    System.setProperty(CACHING_PROVIDER_CLASSPATH, "com.hazelcast.cache.HazelcastCachingProvider");
-    Properties properties = new Properties();
-    properties.setProperty(HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME, HazelcastModule.INSTANCE_NAME);
-    CachingProvider provider = getCachingProvider();
-    return provider.getCacheManager(provider.getDefaultURI(), provider.getDefaultClassLoader(), properties);
-  }
-
-  @Provides
   @Named("Caffeine")
   @Singleton
   CacheManager getCaffeineCacheManager() {
@@ -173,17 +158,14 @@ public class CacheModule extends AbstractModule implements ServersModule {
   @Provides
   @Singleton
   public HarnessCacheManager getHarnessCacheManager(@Named("Redis") Provider<CacheManager> redisProvider,
-      @Named("Hazelcast") Provider<CacheManager> hazelcastProvider,
       @Named("Caffeine") Provider<CacheManager> caffeineProvider) {
     CacheBackend cacheBackend = cacheConfig.getCacheBackend();
     switch (cacheBackend) {
       case NOOP:
+      case HAZELCAST:
         return new NoOpHarnessCacheManager();
       case REDIS:
         this.cacheManager = redisProvider.get();
-        break;
-      case HAZELCAST:
-        this.cacheManager = hazelcastProvider.get();
         break;
       case CAFFEINE:
         this.cacheManager = caffeineProvider.get();
@@ -200,8 +182,6 @@ public class CacheModule extends AbstractModule implements ServersModule {
 
   @Override
   protected void configure() {
-    install(HazelcastModule.getInstance());
-
     if (cacheConfig.getCacheBackend() == REDIS) {
       bind(RedissonKryoCodec.class).toInstance(new RedissonKryoCodec());
     }

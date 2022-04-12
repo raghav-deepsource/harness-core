@@ -216,7 +216,11 @@ public class MessageServiceImpl implements MessageService {
                 messageHandler.accept(message);
               }
               try {
-                messageQueues.get(getMessageChannel(sourceType, sourceProcessId)).put(message);
+                if (messageQueues.get(getMessageChannel(sourceType, sourceProcessId)) != null) {
+                  messageQueues.get(getMessageChannel(sourceType, sourceProcessId)).put(message);
+                } else {
+                  log.warn("Failed attempt to read from closed channel");
+                }
               } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
               } catch (IOException e) {
@@ -345,6 +349,10 @@ public class MessageServiceImpl implements MessageService {
       File channel = getMessageChannel(type, id);
       if (channel.exists()) {
         FileUtils.write(channel, "", UTF_8);
+      }
+      if (messageQueues.get(getMessageChannel(type, id)) != null) {
+        log.info("Clearing {} messages from channel.", messageQueues.get(getMessageChannel(type, id)).size());
+        messageQueues.get(getMessageChannel(type, id)).clear();
       }
     } catch (Exception e) {
       log.error("Error clearing channel {} {}", type, id, e);

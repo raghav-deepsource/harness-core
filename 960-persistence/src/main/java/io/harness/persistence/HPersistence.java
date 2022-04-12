@@ -33,7 +33,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.OptimisticLockingFailureException;
 
 public interface HPersistence extends HealthMonitor {
+  String ANALYTICS_STORE_NAME = "analytic";
   Store DEFAULT_STORE = Store.builder().name("default").build();
+  Store ANALYTIC_STORE = Store.builder().name(ANALYTICS_STORE_NAME).build();
 
   static Logger logger() {
     return LoggerFactory.getLogger(HPersistence.class);
@@ -46,6 +48,8 @@ public interface HPersistence extends HealthMonitor {
    * @param uri the datastore uri
    */
   void register(Store store, String uri);
+
+  void registerDatastore(String storeName, AdvancedDatastore datastore);
 
   /**
    * Gets the datastore.
@@ -86,6 +90,23 @@ public interface HPersistence extends HealthMonitor {
           .findFirst()
           .orElseGet(() -> DEFAULT_STORE);
     }));
+  }
+
+  default AdvancedDatastore getDefaultAnalyticsDatastore(Class cls) {
+    Store classStore = getClassStores().computeIfAbsent(cls,
+        klass
+        -> Arrays.stream(cls.getDeclaredAnnotations())
+               .filter(annotation -> annotation.annotationType().equals(StoreIn.class))
+               .map(annotation -> ((StoreIn) annotation).value())
+               .map(name -> Store.builder().name(name).build())
+               .findFirst()
+               .orElseGet(() -> DEFAULT_STORE));
+
+    // only if the request is for cg db, get from analytics node
+    if (DEFAULT_STORE.equals(classStore)) {
+      return getDatastore(ANALYTIC_STORE);
+    }
+    return getDatastore(classStore);
   }
 
   /**

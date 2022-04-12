@@ -15,6 +15,7 @@ import lombok.NonNull;
 @Data
 @Builder
 @AllArgsConstructor
+@Deprecated
 public class PVCParams {
   @NonNull private String volumeName;
   @NonNull private String claimName;

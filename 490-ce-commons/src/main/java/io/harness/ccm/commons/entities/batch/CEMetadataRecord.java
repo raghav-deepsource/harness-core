@@ -49,5 +49,6 @@ public final class CEMetadataRecord implements PersistentEntity, UuidAware, Acco
   private Boolean gcpDataPresent;
   private Boolean azureDataPresent;
   private Boolean applicationDataPresent;
+  private Boolean segmentDataReadyEventSent;
   private long lastUpdatedAt;
 }

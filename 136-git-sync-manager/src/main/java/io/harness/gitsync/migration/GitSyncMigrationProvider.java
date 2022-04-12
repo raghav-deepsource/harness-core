@@ -28,7 +28,10 @@ public class GitSyncMigrationProvider implements MigrationProvider {
   @Override
   public List<Class<? extends MigrationDetails>> getMigrationDetailsList() {
     return new ArrayList<Class<? extends MigrationDetails>>() {
-      { add(GitSyncMigrationDetails.class); }
+      {
+        add(GitSyncMigrationDetails.class);
+        add(GitSyncBackgroundMigrationDetails.class);
+      }
     };
   }
 }

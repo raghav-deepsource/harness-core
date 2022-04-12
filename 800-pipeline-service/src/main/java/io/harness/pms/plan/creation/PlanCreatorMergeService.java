@@ -10,6 +10,7 @@ package io.harness.pms.plan.creation;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.async.plan.PlanNotifyEventConsumer.PMS_PLAN_CREATION;
 
+import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -18,6 +19,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.YamlException;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.logging.AutoLogContext;
 import io.harness.pms.async.plan.PartialPlanResponseCallback;
 import io.harness.pms.contracts.plan.CreatePartialPlanEvent;
 import io.harness.pms.contracts.plan.Dependencies;
@@ -34,6 +36,7 @@ import io.harness.pms.exception.PmsExceptionUtils;
 import io.harness.pms.plan.creation.validator.PlanCreationValidator;
 import io.harness.pms.sdk.PmsSdkHelper;
 import io.harness.pms.utils.CompletableFutures;
+import io.harness.pms.utils.PmsGrpcClientUtils;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.waiter.WaitNotifyEngine;
@@ -47,6 +50,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
@@ -66,16 +70,19 @@ public class PlanCreatorMergeService {
   private final WaitNotifyEngine waitNotifyEngine;
   PmsEventSender pmsEventSender;
   PlanCreationValidator planCreationValidator;
+  private final Integer planCreatorMergeServiceDependencyBatch;
 
   @Inject
   public PlanCreatorMergeService(PmsSdkHelper pmsSdkHelper, PmsEventSender pmsEventSender,
       WaitNotifyEngine waitNotifyEngine, PlanCreationValidator planCreationValidator,
-      @Named("PlanCreatorMergeExecutorService") Executor executor) {
+      @Named("PlanCreatorMergeExecutorService") Executor executor,
+      @Named("planCreatorMergeServiceDependencyBatch") Integer planCreatorMergeServiceDependencyBatch) {
     this.pmsSdkHelper = pmsSdkHelper;
     this.pmsEventSender = pmsEventSender;
     this.waitNotifyEngine = waitNotifyEngine;
     this.planCreationValidator = planCreationValidator;
     this.executor = executor;
+    this.planCreatorMergeServiceDependencyBatch = planCreatorMergeServiceDependencyBatch;
   }
 
   public String getPublisher() {
@@ -113,23 +120,25 @@ public class PlanCreatorMergeService {
 
   public PlanCreationBlobResponse createPlan(String accountId, String orgIdentifier, String projectIdentifier,
       ExecutionMetadata metadata, PlanExecutionMetadata planExecutionMetadata) throws IOException {
-    log.info("Starting plan creation");
-    Map<String, PlanCreatorServiceInfo> services = pmsSdkHelper.getServices();
+    try (AutoLogContext ignore =
+             PlanCreatorUtils.autoLogContext(metadata, accountId, orgIdentifier, projectIdentifier)) {
+      log.info("[PMS_PlanCreatorMergeService] Starting plan creation");
+      Map<String, PlanCreatorServiceInfo> services = pmsSdkHelper.getServices();
 
-    YamlField pipelineField = YamlUtils.extractPipelineField(planExecutionMetadata.getProcessedYaml());
-    if (pipelineField.getNode().getUuid() == null) {
-      throw new YamlException("Processed pipeline yaml does not have uuid for the pipeline field");
+      YamlField pipelineField = YamlUtils.extractPipelineField(planExecutionMetadata.getProcessedYaml());
+      if (pipelineField.getNode().getUuid() == null) {
+        throw new YamlException("Processed pipeline yaml does not have uuid for the pipeline field");
+      }
+      Dependencies dependencies =
+          Dependencies.newBuilder()
+              .setYaml(planExecutionMetadata.getProcessedYaml())
+              .putDependencies(pipelineField.getNode().getUuid(), pipelineField.getNode().getYamlPath())
+              .build();
+      PlanCreationBlobResponse finalResponse = createPlanForDependenciesRecursive(accountId, orgIdentifier,
+          projectIdentifier, services, dependencies, metadata, planExecutionMetadata.getTriggerPayload());
+      planCreationValidator.validate(accountId, finalResponse);
+      return finalResponse;
     }
-    Dependencies dependencies =
-        Dependencies.newBuilder()
-            .setYaml(planExecutionMetadata.getProcessedYaml())
-            .putDependencies(pipelineField.getNode().getUuid(), pipelineField.getNode().getYamlPath())
-            .build();
-    PlanCreationBlobResponse finalResponse = createPlanForDependenciesRecursive(accountId, orgIdentifier,
-        projectIdentifier, services, dependencies, metadata, planExecutionMetadata.getTriggerPayload());
-    planCreationValidator.validate(accountId, finalResponse);
-    log.info("Done with plan creation");
-    return finalResponse;
   }
 
   @VisibleForTesting
@@ -162,71 +171,155 @@ public class PlanCreatorMergeService {
     finalResponseBuilder.putAllContext(
         createInitialPlanCreationContext(accountId, orgIdentifier, projectIdentifier, metadata, triggerPayload));
 
-    for (int i = 0; i < MAX_DEPTH && EmptyPredicate.isNotEmpty(finalResponseBuilder.getDeps().getDependenciesMap());
-         i++) {
-      PlanCreationBlobResponse currIterationResponse = createPlanForDependencies(services, finalResponseBuilder);
-      PlanCreationBlobResponseUtils.addNodes(finalResponseBuilder, currIterationResponse.getNodesMap());
-      PlanCreationBlobResponseUtils.mergeStartingNodeId(
-          finalResponseBuilder, currIterationResponse.getStartingNodeId());
-      PlanCreationBlobResponseUtils.mergeLayoutNodeInfo(finalResponseBuilder, currIterationResponse);
-      if (EmptyPredicate.isNotEmpty(finalResponseBuilder.getDeps().getDependenciesMap())) {
-        throw new InvalidRequestException(
-            PmsExceptionUtils.getUnresolvedDependencyPathsErrorMessage(finalResponseBuilder.getDeps()));
+    try {
+      for (int i = 0; i < MAX_DEPTH && EmptyPredicate.isNotEmpty(finalResponseBuilder.getDeps().getDependenciesMap());
+           i++) {
+        YamlField fullYamlField = YamlUtils.readTree(finalResponseBuilder.getDeps().getYaml());
+        PlanCreationBlobResponse currIterationResponse =
+            createPlanForDependencies(services, finalResponseBuilder, fullYamlField);
+        PlanCreationBlobResponseUtils.addNodes(finalResponseBuilder, currIterationResponse.getNodesMap());
+        PlanCreationBlobResponseUtils.mergeStartingNodeId(
+            finalResponseBuilder, currIterationResponse.getStartingNodeId());
+        PlanCreationBlobResponseUtils.mergeLayoutNodeInfo(finalResponseBuilder, currIterationResponse);
+        if (EmptyPredicate.isNotEmpty(finalResponseBuilder.getDeps().getDependenciesMap())) {
+          throw new InvalidRequestException(
+              PmsExceptionUtils.getUnresolvedDependencyPathsErrorMessage(finalResponseBuilder.getDeps()));
+        }
+        PlanCreationBlobResponseUtils.mergeContext(finalResponseBuilder, currIterationResponse.getContextMap());
+        PlanCreationBlobResponseUtils.addDependenciesV2(finalResponseBuilder, currIterationResponse);
       }
-      PlanCreationBlobResponseUtils.mergeContext(finalResponseBuilder, currIterationResponse.getContextMap());
-      PlanCreationBlobResponseUtils.addDependenciesV2(finalResponseBuilder, currIterationResponse);
+    } catch (Exception e) {
+      throw new UnexpectedException("Error merging plan responses from services", e);
     }
 
     return finalResponseBuilder.build();
   }
 
-  private PlanCreationBlobResponse createPlanForDependencies(
-      Map<String, PlanCreatorServiceInfo> services, PlanCreationBlobResponse.Builder responseBuilder) {
+  private PlanCreationBlobResponse createPlanForDependencies(Map<String, PlanCreatorServiceInfo> services,
+      PlanCreationBlobResponse.Builder responseBuilder, YamlField fullYamlField) {
     PlanCreationBlobResponse.Builder currIterationResponseBuilder = PlanCreationBlobResponse.newBuilder();
     CompletableFutures<PlanCreationResponse> completableFutures = new CompletableFutures<>(executor);
+    PlanCreationContextValue metadata = responseBuilder.getContextMap().get("metadata");
+    try (AutoLogContext ignore = PlanCreatorUtils.autoLogContext(metadata.getMetadata(),
+             metadata.getAccountIdentifier(), metadata.getOrgIdentifier(), metadata.getProjectIdentifier())) {
+      long start = System.currentTimeMillis();
+      Map<Map.Entry<String, PlanCreatorServiceInfo>, List<Map.Entry<String, String>>> serviceToDependencyMap =
+          new HashMap<>();
+      getServiceToDependenciesMap(services, responseBuilder, fullYamlField, serviceToDependencyMap);
 
-    for (Map.Entry<String, PlanCreatorServiceInfo> serviceEntry : services.entrySet()) {
-      if (!pmsSdkHelper.containsSupportedDependencyByYamlPath(serviceEntry.getValue(), responseBuilder.getDeps())) {
-        continue;
+      // Sending batch dependency requests for a single service in a async fashion.
+      executeCreatePlanInBatchDependency(responseBuilder, completableFutures, serviceToDependencyMap);
+
+      // Collecting results for all completable futures at one go, thus it will wait till all dependencies are resolved.
+      List<ErrorResponse> errorResponses;
+      try {
+        List<PlanCreationResponse> planCreationResponses = completableFutures.allOf().get(5, TimeUnit.MINUTES);
+        errorResponses = planCreationResponses.stream()
+                             .filter(resp -> resp.getResponseCase() == PlanCreationResponse.ResponseCase.ERRORRESPONSE)
+                             .map(PlanCreationResponse::getErrorResponse)
+                             .collect(Collectors.toList());
+        if (EmptyPredicate.isEmpty(errorResponses)) {
+          planCreationResponses.forEach(
+              resp -> PlanCreationBlobResponseUtils.merge(currIterationResponseBuilder, resp.getBlobResponse()));
+        }
+      } catch (Exception ex) {
+        throw new UnexpectedException("Error fetching plan creation response from service", ex);
+      } finally {
+        log.info("[PMS_PlanCreatorMergeService_Time] Sdk plan creators done took {}ms for initial dependencies size {}",
+            System.currentTimeMillis() - start, responseBuilder.getDeps().getDependenciesMap().size());
+      }
+      PmsExceptionUtils.checkAndThrowPlanCreatorException(errorResponses);
+      return currIterationResponseBuilder.build();
+    }
+  }
+
+  // Sending all dependencies in batch manner in async fashion
+  private void executeCreatePlanInBatchDependency(PlanCreationBlobResponse.Builder responseBuilder,
+      CompletableFutures<PlanCreationResponse> completableFutures,
+      Map<Map.Entry<String, PlanCreatorServiceInfo>, List<Map.Entry<String, String>>> serviceToDependencyMap) {
+    for (Map.Entry<Map.Entry<String, PlanCreatorServiceInfo>, List<Map.Entry<String, String>>> serviceDependencyEntry :
+        serviceToDependencyMap.entrySet()) {
+      Map.Entry<String, PlanCreatorServiceInfo> serviceInfo = serviceDependencyEntry.getKey();
+      List<Map.Entry<String, String>> dependencyList = serviceDependencyEntry.getValue();
+      Map<String, String> dependencyBatch = new HashMap<>();
+      for (Map.Entry<String, String> dependency : dependencyList) {
+        dependencyBatch.put(dependency.getKey(), dependency.getValue());
+        if (dependencyBatch.size() >= planCreatorMergeServiceDependencyBatch) {
+          Dependencies batchDependency = pmsSdkHelper.createBatchDependency(responseBuilder.getDeps(), dependencyBatch);
+          executeDependenciesAsync(completableFutures, serviceInfo, batchDependency, responseBuilder.getContextMap());
+          dependencyBatch = new HashMap<>();
+        }
       }
 
-      completableFutures.supplyAsync(() -> {
+      // call completable future for leftover batch
+      if (dependencyBatch.size() > 0) {
+        Dependencies batchDependency = pmsSdkHelper.createBatchDependency(responseBuilder.getDeps(), dependencyBatch);
+        executeDependenciesAsync(completableFutures, serviceInfo, batchDependency, responseBuilder.getContextMap());
+      }
+    }
+  }
+
+  // Collecting which dependencies are supported with which service as a map.
+  private void getServiceToDependenciesMap(Map<String, PlanCreatorServiceInfo> services,
+      PlanCreationBlobResponse.Builder responseBuilder, YamlField fullYamlField,
+      Map<Map.Entry<String, PlanCreatorServiceInfo>, List<Map.Entry<String, String>>> serviceToDependencyMap) {
+    // Initializing the responseMap
+    for (Map.Entry<String, PlanCreatorServiceInfo> serviceEntry : services.entrySet()) {
+      serviceToDependencyMap.put(serviceEntry, new LinkedList<>());
+    }
+
+    for (Map.Entry<String, String> dependencyEntry : responseBuilder.getDeps().getDependenciesMap().entrySet()) {
+      // Always first check for pipeline-service dependencies
+      Map.Entry<String, PlanCreatorServiceInfo> pmsPlanCreatorService =
+          services.entrySet()
+              .stream()
+              .filter(this::isPipelineService)
+              .findFirst()
+              .orElseThrow(
+                  () -> new InvalidRequestException("Pipeline Service service provider information is missing."));
+      if (pmsSdkHelper.containsSupportedSingleDependencyByYamlPath(
+              pmsPlanCreatorService.getValue(), fullYamlField, dependencyEntry)) {
+        serviceToDependencyMap.get(pmsPlanCreatorService).add(dependencyEntry);
+      } else {
+        for (Map.Entry<String, PlanCreatorServiceInfo> serviceInfoEntry : services.entrySet()) {
+          if (isPipelineService(serviceInfoEntry)) {
+            continue;
+          }
+          if (pmsSdkHelper.containsSupportedSingleDependencyByYamlPath(
+                  serviceInfoEntry.getValue(), fullYamlField, dependencyEntry)) {
+            serviceToDependencyMap.get(serviceInfoEntry).add(dependencyEntry);
+          }
+        }
+      }
+    }
+  }
+
+  // Sending batch dependency requests for a single service in a async fashion.
+  private void executeDependenciesAsync(CompletableFutures<PlanCreationResponse> completableFutures,
+      Map.Entry<String, PlanCreatorServiceInfo> serviceInfo, Dependencies batchDependency,
+      Map<String, PlanCreationContextValue> contextMap) {
+    PlanCreationContextValue metadata = contextMap.get("metadata");
+    completableFutures.supplyAsync(() -> {
+      try (AutoLogContext ignore = PlanCreatorUtils.autoLogContext(metadata.getMetadata(),
+               metadata.getAccountIdentifier(), metadata.getOrgIdentifier(), metadata.getProjectIdentifier())) {
         try {
-          return serviceEntry.getValue().getPlanCreationClient().createPlan(
-              PlanCreationBlobRequest.newBuilder()
-                  .setDeps(responseBuilder.getDeps())
-                  .putAllContext(responseBuilder.getContextMap())
-                  .build());
+          return PmsGrpcClientUtils.retryAndProcessException(serviceInfo.getValue().getPlanCreationClient()::createPlan,
+              PlanCreationBlobRequest.newBuilder().setDeps(batchDependency).putAllContext(contextMap).build());
         } catch (StatusRuntimeException ex) {
           log.error(
-              String.format("Error connecting with service: [%s]. Is this service Running?", serviceEntry.getKey()),
-              ex);
+              String.format("Error connecting with service: [%s]. Is this service Running?", serviceInfo.getKey()), ex);
           return PlanCreationResponse.newBuilder()
               .setErrorResponse(
                   ErrorResponse.newBuilder()
-                      .addMessages(String.format("Error connecting with service: [%s]", serviceEntry.getKey()))
+                      .addMessages(String.format("Error connecting with service: [%s]", serviceInfo.getKey()))
                       .build())
               .build();
         }
-      });
-    }
-
-    List<ErrorResponse> errorResponses;
-    try {
-      List<PlanCreationResponse> planCreationResponses = completableFutures.allOf().get(5, TimeUnit.MINUTES);
-      errorResponses = planCreationResponses.stream()
-                           .filter(resp -> resp.getResponseCase() == PlanCreationResponse.ResponseCase.ERRORRESPONSE)
-                           .map(PlanCreationResponse::getErrorResponse)
-                           .collect(Collectors.toList());
-      if (EmptyPredicate.isEmpty(errorResponses)) {
-        planCreationResponses.forEach(
-            resp -> PlanCreationBlobResponseUtils.merge(currIterationResponseBuilder, resp.getBlobResponse()));
       }
-    } catch (Exception ex) {
-      throw new UnexpectedException("Error fetching plan creation response from service", ex);
-    }
+    });
+  }
 
-    PmsExceptionUtils.checkAndThrowPlanCreatorException(errorResponses);
-    return currIterationResponseBuilder.build();
+  private boolean isPipelineService(Map.Entry<String, PlanCreatorServiceInfo> serviceInfo) {
+    return serviceInfo.getKey().equals(ModuleType.PMS.name().toLowerCase());
   }
 }

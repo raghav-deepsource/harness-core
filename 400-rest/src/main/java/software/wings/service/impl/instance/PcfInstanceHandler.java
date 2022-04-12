@@ -26,6 +26,7 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.NoDelegatesException;
 import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
 import io.harness.delegate.task.pcf.response.CfInstanceSyncResponse;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.pcf.PcfAppNotFoundException;
 
@@ -146,13 +147,12 @@ public class PcfInstanceHandler extends InstanceHandler implements InstanceSyncB
           if (e instanceof PcfAppNotFoundException) {
             log.info("PCF Application Name : [{}] is not found, Infrastructure Mapping Id : [{}]", pcfApplicationName,
                 infraMappingId);
-            latestpcfInstanceInfoList = new ArrayList<>();
           } else {
             log.info("Failed to retrieve data for PCF Application Name : [{}]. Infrastructure Mapping Id : [{}]",
                 pcfApplicationName, infraMappingId);
-            // skip processing this time, as app exists but we could not fetch data
-            failedToRetrieveData = true;
           }
+          throw new InvalidRequestException(
+              String.format("Failed to instance sync for PCF Application Name: %s", pcfApplicationName));
         }
 
         if (!failedToRetrieveData) {

@@ -29,7 +29,8 @@ message VariablesServiceRequest {
 
 message VariableResponseMapValueProto {
   io.harness.pms.contracts.plan.YamlProperties yamlProperties = 1;
-  io.harness.pms.contracts.plan.YamlOutputProperties yamlOutputProperties = 2;
+  io.harness.pms.contracts.plan.YamlOutputProperties yamlOutputProperties = 2 [deprecated = true];
+  io.harness.pms.contracts.plan.YamlExtraProperties yamlExtraProperties = 3;
 }
 
 message ServiceExpressionPropertiesProto {

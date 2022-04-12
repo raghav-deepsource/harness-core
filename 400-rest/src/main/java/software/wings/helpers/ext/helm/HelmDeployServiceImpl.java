@@ -17,6 +17,8 @@ import static io.harness.helm.HelmConstants.DEFAULT_TILLER_CONNECTION_TIMEOUT_MI
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.validation.Validator.notNullCheck;
 
+import static software.wings.delegatetasks.helm.HelmTaskHelper.copyManifestFilesToWorkingDir;
+import static software.wings.delegatetasks.helm.HelmTaskHelper.handleIncorrectConfiguration;
 import static software.wings.helpers.ext.helm.HelmHelper.filterWorkloads;
 
 import static java.lang.String.format;
@@ -30,6 +32,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FileData;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.container.ContainerInfo;
+import io.harness.delegate.task.helm.CustomManifestFetchTaskHelper;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCommandResponse;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
@@ -117,7 +120,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -146,6 +148,7 @@ public class HelmDeployServiceImpl implements HelmDeployService {
   @Inject private GitClientHelper gitClientHelper;
   @Inject private KubernetesContainerService kubernetesContainerService;
   @Inject private ScmFetchFilesHelper scmFetchFilesHelper;
+  @Inject private CustomManifestFetchTaskHelper customManifestFetchTaskHelper;
 
   private static final String ACTIVITY_ID = "ACTIVITY_ID";
   protected static final String WORKING_DIR = "./repository/helm/source/${" + ACTIVITY_ID + "}";
@@ -365,7 +368,7 @@ public class HelmDeployServiceImpl implements HelmDeployService {
 
     handleIncorrectConfiguration(sourceRepoConfig);
     String workingDirectory = Paths.get(getWorkingDirectory(commandRequest)).toString();
-    helmTaskHelper.downloadAndUnzipCustomSourceManifestFiles(workingDirectory,
+    customManifestFetchTaskHelper.downloadAndUnzipCustomSourceManifestFiles(workingDirectory,
         sourceRepoConfig.getCustomManifestSource().getZippedManifestFileId(), commandRequest.getAccountId());
 
     File file = new File(workingDirectory);
@@ -377,24 +380,6 @@ public class HelmDeployServiceImpl implements HelmDeployService {
 
     commandRequest.setWorkingDir(workingDirectory);
     commandRequest.getExecutionLogCallback().saveExecutionLog("Custom source manifest downloaded locally");
-  }
-
-  private static void copyManifestFilesToWorkingDir(File src, File dest) throws IOException {
-    FileUtils.copyDirectory(src, dest);
-    deleteDirectoryAndItsContentIfExists(src.getAbsolutePath());
-    FileIo.waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
-  }
-
-  private void handleIncorrectConfiguration(K8sDelegateManifestConfig sourceRepoConfig) {
-    if (sourceRepoConfig == null) {
-      throw new InvalidRequestException("Source Config can not be null", USER);
-    }
-    if (!sourceRepoConfig.isCustomManifestEnabled()) {
-      throw new InvalidRequestException("Can not use store type: CUSTOM, with feature flag off", USER);
-    }
-    if (sourceRepoConfig.getCustomManifestSource() == null) {
-      throw new InvalidRequestException("Custom Manifest Source can not be null", USER);
-    }
   }
 
   @VisibleForTesting
@@ -662,13 +647,13 @@ public class HelmDeployServiceImpl implements HelmDeployService {
             HelmCliResponse cliResponse = helmClient.getClientAndServerVersion(
                 HelmCommandDataMapper.getHelmCommandData(helmCommandRequest), false);
             if (cliResponse.getCommandExecutionStatus() == CommandExecutionStatus.FAILURE) {
-              throw new InvalidRequestException(cliResponse.getOutput());
+              throw new InvalidRequestException(cliResponse.getOutputWithErrorStream());
             }
 
             boolean helm3 = isHelm3(cliResponse.getOutput());
             CommandExecutionStatus commandExecutionStatus =
                 helm3 ? CommandExecutionStatus.FAILURE : CommandExecutionStatus.SUCCESS;
-            return new HelmCommandResponse(commandExecutionStatus, cliResponse.getOutput());
+            return new HelmCommandResponse(commandExecutionStatus, cliResponse.getOutputWithErrorStream());
           });
     } catch (UncheckedTimeoutException e) {
       String msg = "Timed out while finding helm client and server version";
@@ -703,7 +688,7 @@ public class HelmDeployServiceImpl implements HelmDeployService {
           LogLevel.INFO, CommandExecutionStatus.RUNNING);
       cliResponse = helmClient.addPublicRepo(HelmCommandDataMapper.getHelmCommandData(commandRequest), false);
       if (cliResponse.getCommandExecutionStatus() == CommandExecutionStatus.FAILURE) {
-        String msg = "Failed to add repository. Reason: " + cliResponse.getOutput();
+        String msg = "Failed to add repository. Reason: " + cliResponse.getErrorStreamOutput();
         executionLogCallback.saveExecutionLog(msg);
         throw new InvalidRequestException(msg);
       }
@@ -728,7 +713,8 @@ public class HelmDeployServiceImpl implements HelmDeployService {
     HelmCliResponse cliResponse = helmClient.renderChart(
         HelmCommandDataMapper.getHelmCommandData(commandRequest), chartLocation, namespace, valueOverrides, false);
     if (cliResponse.getCommandExecutionStatus() == CommandExecutionStatus.FAILURE) {
-      String msg = format("Failed to render chart location: %s. Reason %s ", chartLocation, cliResponse.getOutput());
+      String msg =
+          format("Failed to render chart location: %s. Reason %s ", chartLocation, cliResponse.getErrorStreamOutput());
       executionLogCallback.saveExecutionLog(msg);
       throw new InvalidRequestException(msg);
     }
@@ -748,7 +734,7 @@ public class HelmDeployServiceImpl implements HelmDeployService {
   @Override
   public HelmCommandResponse ensureHelmInstalled(HelmCommandRequest commandRequest) {
     HelmVersion helmVersion = commandRequest.getHelmVersion();
-    if (helmVersion == HelmVersion.V3 || helmVersion == HelmVersion.V380) {
+    if (HelmVersion.isHelmV3(helmVersion)) {
       return ensureHelm3Installed(commandRequest);
     }
     if (helmVersion == null) {
@@ -770,7 +756,7 @@ public class HelmDeployServiceImpl implements HelmDeployService {
           parseHelmReleaseCommandOutput(helmCliResponse.getOutput(), HelmCommandType.LIST_RELEASE);
       return HelmListReleasesCommandResponse.builder()
           .commandExecutionStatus(helmCliResponse.getCommandExecutionStatus())
-          .output(helmCliResponse.getOutput())
+          .output(helmCliResponse.getOutputWithErrorStream())
           .releaseInfoList(releaseInfoList)
           .build();
     } catch (Exception e) {
@@ -853,7 +839,7 @@ public class HelmDeployServiceImpl implements HelmDeployService {
       return "Release: \"" + releaseName + "\" not found\n";
     }
 
-    return helmCliResponse.getOutput();
+    return helmCliResponse.getOutputWithErrorStream();
   }
 
   void deleteAndPurgeHelmRelease(HelmInstallCommandRequest commandRequest, LogCallback executionLogCallback) {
@@ -863,7 +849,7 @@ public class HelmDeployServiceImpl implements HelmDeployService {
 
       HelmCliResponse deleteCommandResponse =
           helmClient.deleteHelmRelease(HelmCommandDataMapper.getHelmCommandData(commandRequest), false);
-      executionLogCallback.saveExecutionLog(deleteCommandResponse.getOutput());
+      executionLogCallback.saveExecutionLog(deleteCommandResponse.getOutputWithErrorStream());
     } catch (Exception e) {
       log.error("Helm delete failed", ExceptionMessageSanitizer.sanitizeException(e));
     }

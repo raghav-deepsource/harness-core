@@ -21,7 +21,7 @@ import software.wings.service.impl.analysis.ContinuousVerificationService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.hazelcast.util.Preconditions;
+import com.hazelcast.internal.util.Preconditions;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;

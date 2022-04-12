@@ -22,6 +22,7 @@ import io.harness.ccm.commons.beans.recommendation.NodePoolId;
 import io.harness.ccm.commons.beans.recommendation.TotalResourceUsage;
 import io.harness.ccm.commons.beans.recommendation.models.NodePool;
 import io.harness.ccm.commons.beans.recommendation.models.RecommendClusterRequest;
+import io.harness.ccm.commons.beans.recommendation.models.RecommendNodePoolClusterRequest;
 import io.harness.ccm.commons.beans.recommendation.models.RecommendationResponse;
 import io.harness.ccm.commons.constants.CloudProvider;
 import io.harness.ccm.commons.dao.recommendation.K8sRecommendationDAO;
@@ -117,10 +118,14 @@ public class NodeRecommendationServiceTest extends CategoryTest {
                         .maxmemory(8D * 1024D)
                         .build());
 
-    RecommendClusterRequest request = nodeRecommendationService.constructRecommendationRequest(ACCOUNT_ID,
-        NodePoolId.builder().clusterid("cId").nodepoolname("npName").build(), OffsetDateTime.now(),
-        OffsetDateTime.now());
+    RecommendNodePoolClusterRequest recommendNodePoolClusterRequest =
+        nodeRecommendationService.constructRecommendationRequest(ACCOUNT_ID,
+            NodePoolId.builder().clusterid("cId").nodepoolname("npName").build(), java.time.OffsetDateTime.now(),
+            java.time.OffsetDateTime.now());
 
+    RecommendClusterRequest request = recommendNodePoolClusterRequest.getRecommendClusterRequest();
+
+    TotalResourceUsage totalResourceUsage = recommendNodePoolClusterRequest.getTotalResourceUsage();
     assertThat(request).isNotNull();
 
     assertThat(request.getSumCpu()).isCloseTo(10D, doubleOffset);
@@ -128,6 +133,9 @@ public class NodeRecommendationServiceTest extends CategoryTest {
 
     assertThat(request.getMaxNodes()).isEqualTo(5L);
     assertThat(request.getMinNodes()).isEqualTo(3L);
+
+    assertThat(totalResourceUsage.getMaxcpu()).isEqualTo(2L);
+    assertThat(totalResourceUsage.getMaxmemory()).isEqualTo(8L);
   }
 
   @Test
@@ -143,9 +151,11 @@ public class NodeRecommendationServiceTest extends CategoryTest {
                         .build());
 
     assertThatThrownBy(()
-                           -> nodeRecommendationService.constructRecommendationRequest(ACCOUNT_ID,
-                               NodePoolId.builder().clusterid("cId").nodepoolname("npName").build(),
-                               OffsetDateTime.now(), OffsetDateTime.now()))
+                           -> nodeRecommendationService
+                                  .constructRecommendationRequest(ACCOUNT_ID,
+                                      NodePoolId.builder().clusterid("cId").nodepoolname("npName").build(),
+                                      OffsetDateTime.now(), OffsetDateTime.now())
+                                  .getRecommendClusterRequest())
         .isExactlyInstanceOf(InvalidRequestException.class);
   }
 }

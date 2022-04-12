@@ -83,6 +83,8 @@ public class HelmInstallationCapabilityCheck implements CapabilityCheck, ProtoCa
         return HelmVersion.V2;
       case V3:
         return HelmVersion.V3;
+      case V380:
+        return HelmVersion.V380;
       default:
         throw new RuntimeException("Helm version not found");
     }

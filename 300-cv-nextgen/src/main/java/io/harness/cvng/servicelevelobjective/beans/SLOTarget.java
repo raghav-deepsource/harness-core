@@ -38,4 +38,8 @@ public class SLOTarget {
   public boolean isSloTarget() {
     return sloTargetPercentage < 100;
   }
+
+  public SLOTargetType getType() {
+    return this.spec.getType();
+  }
 }

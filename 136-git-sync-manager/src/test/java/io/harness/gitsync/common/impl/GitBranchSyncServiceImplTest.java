@@ -7,6 +7,7 @@
 
 package io.harness.gitsync.common.impl;
 
+import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.MEET;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -16,10 +17,15 @@ import static org.mockito.Mockito.when;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.gitsync.GitSyncTestBase;
+import io.harness.gitsync.common.dtos.GitFileChangeDTO;
 import io.harness.gitsync.common.service.ScmOrchestratorService;
+import io.harness.gitsync.scm.ScmGitUtils;
 import io.harness.product.ci.scm.proto.Commit;
 import io.harness.rule.Owner;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.Function;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,6 +41,7 @@ public class GitBranchSyncServiceImplTest extends GitSyncTestBase {
   public static final String commitId = "commitId";
   public static final String accountIdentifier = "accountIdentifier";
   public static final String message = "message";
+  public static final String rootFolder = "abc/.harness";
   @Before
   public void setup() throws Exception {
     MockitoAnnotations.initMocks(this);
@@ -48,5 +55,22 @@ public class GitBranchSyncServiceImplTest extends GitSyncTestBase {
     Commit commit = Commit.newBuilder().setMessage(message).build();
     when(scmOrchestratorService.processScmRequest(any(Function.class), any(), any(), any())).thenReturn(commit);
     assertThat(gitBranchSyncService.getCommitMessage(yamlGitConfigDTO, commitId, accountIdentifier)).isEqualTo(message);
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testGetFilteredFiles() {
+    String filePath1 = "xyz.yaml";
+    String filePath2 = "ttt.yaml";
+    List<GitFileChangeDTO> gitFileChangeDTOList = new ArrayList<>();
+    gitFileChangeDTOList.add(GitFileChangeDTO.builder().path(rootFolder + "/" + filePath1).build());
+    gitFileChangeDTOList.add(GitFileChangeDTO.builder().path(rootFolder + "/" + filePath2).build());
+    List<String> filesToExclude = Arrays.asList(ScmGitUtils.createFilePath(rootFolder, filePath1));
+    // full sync sends file with createFilePath method and GitFileChangeDTO contains path that is send directly by Git.
+    List<GitFileChangeDTO> filteredFiles = gitBranchSyncService.getFilteredFiles(gitFileChangeDTOList, filesToExclude);
+    assertThat(filteredFiles).isNotNull();
+    assertThat(filteredFiles.size()).isEqualTo(1);
+    assertThat(filteredFiles.get(0).getPath()).isEqualTo(rootFolder + "/" + filePath2);
   }
 }

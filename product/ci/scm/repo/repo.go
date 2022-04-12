@@ -45,16 +45,20 @@ func CreateWebhook(ctx context.Context, request *pb.CreateWebhookRequest, log *z
 	}
 	// for native events we convert enums to strings, which the gitprovider expects
 	switch request.GetProvider().GetHook().(type) {
+	case *pb.Provider_Azure:
+		eventStrings := convertAzureEnumToStrings(request.GetNativeEvents().GetAzure())
+		inputParams.NativeEvents = eventStrings
 	case *pb.Provider_BitbucketCloud:
-		events := convertBitbucketCloudEnumToStrings(request.GetNativeEvents().GetBitbucketCloud())
-		inputParams.NativeEvents = events
+		eventStrings := convertBitbucketCloudEnumToStrings(request.GetNativeEvents().GetBitbucketCloud())
+		inputParams.NativeEvents = eventStrings
 	case *pb.Provider_BitbucketServer:
-		events := convertBitbucketServerEnumToStrings(request.GetNativeEvents().GetBitbucketServer())
-		inputParams.NativeEvents = events
+		eventStrings := convertBitbucketServerEnumToStrings(request.GetNativeEvents().GetBitbucketServer())
+		inputParams.NativeEvents = eventStrings
 	case *pb.Provider_Github:
-		strings := convertGithubEnumToStrings(request.GetNativeEvents().GetGithub())
-		inputParams.NativeEvents = strings
+		eventStrings := convertGithubEnumToStrings(request.GetNativeEvents().GetGithub())
+		inputParams.NativeEvents = eventStrings
 	case *pb.Provider_Gitlab:
+		// NB we use scm events not native events like the others.
 		events := convertGitlabEnumToHookEvents(request.GetNativeEvents().GetGitlab())
 		inputParams.Events = events
 	default:
@@ -198,6 +202,13 @@ func nativeEventsFromStrings(sliceOfStrings []string, p pb.Provider) (nativeEven
 	case *pb.Provider_Gitlab:
 		gitlabEvents := convertStringsToGitlabEnum(sliceOfStrings)
 		nativeEvents = &pb.NativeEvents{NativeEvents: &gitlabEvents}
+	case *pb.Provider_Azure:
+		// Azure only allows a single event type per webhook
+		if len(sliceOfStrings) != 1 {
+			return nil, fmt.Errorf("azure only supports a single event type per webhook")
+		}
+		azureEvents := convertStringsToAzureEnum(sliceOfStrings)
+		nativeEvents = &pb.NativeEvents{NativeEvents: &azureEvents}
 	default:
 		return nil, fmt.Errorf("there is no logic to convertStringsToEnums, for this provider %s", gitclient.GetProvider(p))
 	}
@@ -206,7 +217,7 @@ func nativeEventsFromStrings(sliceOfStrings []string, p pb.Provider) (nativeEven
 
 func convertStringsToGitlabEnum(strings []string) (enums pb.NativeEvents_Gitlab) {
 	// We make the slice of strings into a map, This makes looking up the enum fast and simple
-	var gitlabWebhookMap map[string]pb.GitlabWebhookEvent = map[string]pb.GitlabWebhookEvent{
+	var gitlabWebhookMap = map[string]pb.GitlabWebhookEvent{
 		"comment": pb.GitlabWebhookEvent_GITLAB_COMMENT,
 		"issues":  pb.GitlabWebhookEvent_GITLAB_ISSUES,
 		"merge":   pb.GitlabWebhookEvent_GITLAB_MERGE,
@@ -314,6 +325,39 @@ func convertBitbucketCloudEnumToStrings(enums *pb.BitbucketCloudWebhookEvents) (
 		}
 	}
 	return strings
+}
+
+func convertAzureEnumToStrings(enums *pb.AzureWebhookEvents) (strings []string) {
+	switch enums.GetEvents() {
+	case pb.AzureWebhookEvent_AZURE_PUSH:
+		strings = append(strings, "git.push")
+	case pb.AzureWebhookEvent_AZURE_PULLREQUEST_CREATED:
+		strings = append(strings, "git.pullrequest.created")
+	case pb.AzureWebhookEvent_AZURE_PULLREQUEST_UPDATED:
+		strings = append(strings, "git.pullrequest.updated")
+	case pb.AzureWebhookEvent_AZURE_PULLREQUEST_MERGED:
+		strings = append(strings, "git.pullrequest.merged")
+	}
+	return strings
+}
+
+func convertStringsToAzureEnum(strings []string) (enums pb.NativeEvents_Azure) {
+	var array []pb.AzureWebhookEvent
+	for _, e := range strings {
+		switch e {
+		case "git.push":
+			array = append(array, pb.AzureWebhookEvent_AZURE_PUSH)
+		case "git.pullrequest.created":
+			array = append(array, pb.AzureWebhookEvent_AZURE_PULLREQUEST_CREATED)
+		case "git.pullrequest.updated":
+			array = append(array, pb.AzureWebhookEvent_AZURE_PULLREQUEST_UPDATED)
+		case "git.pullrequest.merged":
+			array = append(array, pb.AzureWebhookEvent_AZURE_PULLREQUEST_MERGED)
+		}
+	}
+
+	enums.Azure = &pb.AzureWebhookEvents{Events: array[0]}
+	return enums
 }
 
 func convertStringsToBitbucketServerEnum(strings []string) (enums pb.NativeEvents_BitbucketServer) {

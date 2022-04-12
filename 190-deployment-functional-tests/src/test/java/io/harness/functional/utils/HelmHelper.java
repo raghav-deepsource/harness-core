@@ -103,7 +103,7 @@ public class HelmHelper {
     properties.put(HELM_RELEASE_NAME_PREFIX, releaseName);
     helmDeployStep.setProperties(properties);
 
-    if (HelmVersion.V3 == helmVersion) {
+    if (HelmVersion.isHelmV3(helmVersion)) {
       // Starting with v3, helm doesn't manage anymore namespace. This script will create namespace if it's missing
       // (create-namespace alternative is available starting with 3.2)
       GraphNode createNamespaceStep = createShellScriptNode(CREATE_NAMESPACE_STEP_NAME, CREATE_NAMESPACE_SCRIPT);
@@ -211,7 +211,7 @@ public class HelmHelper {
     String helmCliPath = "helm";
     String helmPurgeAction = "delete";
     String opts = "--purge";
-    if (HelmVersion.V3 == helmVersion) {
+    if (HelmVersion.isHelmV3(helmVersion)) {
       helmCliPath = getHelm3ClientToolsPath();
       helmPurgeAction = "uninstall";
       opts = "--namespace ${infra.kubernetes.namespace}";

@@ -22,6 +22,8 @@ public class DelegateConfiguration {
   private List<String> delegateVersions;
   private Action action;
   @Transient private boolean accountVersion;
+  // Since we will always have one delegateversion for account adding validUntil for all of them at once.
+  private Long validUntil;
 
   public enum Action { SELF_DESTRUCT }
 }

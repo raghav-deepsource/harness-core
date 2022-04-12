@@ -17,8 +17,11 @@ import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.n
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.entities.billing.CECloudAccount;
 import io.harness.ccm.setup.CECloudAccountDao;
+import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
+import io.harness.delegate.beans.connector.CEFeatures;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
 
 import software.wings.beans.AwsCrossAccountAttributes;
@@ -27,6 +30,7 @@ import software.wings.beans.ce.CEAwsConfig;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
 import com.google.inject.Singleton;
+import java.util.Arrays;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.StepContribution;
@@ -71,7 +75,9 @@ public class AwsECSClusterSyncTasklet implements Tasklet {
   }
 
   public void syncNGClusters(String accountId) {
-    List<ConnectorResponseDTO> nextGenConnectors = ngConnectorHelper.getNextGenConnectors(accountId);
+    List<ConnectorResponseDTO> nextGenConnectors =
+        ngConnectorHelper.getNextGenConnectors(accountId, Arrays.asList(ConnectorType.CE_AWS),
+            Arrays.asList(CEFeatures.VISIBILITY), Arrays.asList(ConnectivityStatus.SUCCESS));
     log.info("Next gen connector list size {}", nextGenConnectors.size());
     for (ConnectorResponseDTO connector : nextGenConnectors) {
       ConnectorInfoDTO connectorInfo = connector.getConnector();

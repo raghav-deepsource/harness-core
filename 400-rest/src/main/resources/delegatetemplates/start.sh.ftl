@@ -100,6 +100,7 @@ if [[ "$OSTYPE" == linux* ]]; then
   if [ ! $? -eq 0 ]; then
     echo "/tmp is mounted noexec. Overriding tmpdir"
     export OVERRIDE_TMP_PROPS="-Djava.io.tmpdir=$DIR/tmp"
+    export WATCHER_JAVA_OPTS
     export JAVA_OPTS
   fi
 fi
@@ -141,8 +142,10 @@ WATCHER_STORAGE_URL=${watcherStorageUrl}
 REMOTE_WATCHER_LATEST=$(curl $MANAGER_PROXY_CURL -ks $WATCHER_STORAGE_URL/${watcherCheckLocation})
 if [[ $DEPLOY_MODE != "KUBERNETES" ]]; then
 REMOTE_WATCHER_URL=$WATCHER_STORAGE_URL/$(echo $REMOTE_WATCHER_LATEST | cut -d " " -f2)
+<#if useCdn == "true">
 else
 REMOTE_WATCHER_URL=${remoteWatcherUrlCdn}/$(echo $REMOTE_WATCHER_LATEST | cut -d " " -f2)
+</#if>
 fi
 REMOTE_WATCHER_VERSION=$(echo $REMOTE_WATCHER_LATEST | cut -d " " -f1)
 
@@ -190,6 +193,11 @@ set +x
 if ! `grep accountSecret config-watcher.yml > /dev/null`; then
   echo "accountSecret: ${accountSecret}" >> config-watcher.yml
 fi
+<#if delegateToken??>
+if ! `grep delegateToken config-watcher.yml > /dev/null`; then
+echo "delegateToken: ${delegateToken}" >> config-watcher.yml
+fi
+</#if>
 set -x
 if ! `grep managerUrl config-watcher.yml > /dev/null`; then
   echo "managerUrl: ${managerHostAndPort}/api/" >> config-watcher.yml
@@ -199,7 +207,7 @@ if ! `grep doUpgrade config-watcher.yml > /dev/null`; then
 fi
 if ! `grep upgradeCheckLocation config-watcher.yml > /dev/null`; then
   echo "upgradeCheckLocation: ${watcherStorageUrl}/${watcherCheckLocation}" >> config-watcher.yml
-else
+elif [[ "$(grep upgradeCheckLocation config-watcher.yml | cut -d ' ' -f 2)" != "${watcherStorageUrl}/${watcherCheckLocation}" ]]; then
   sed -i.bak "s|^upgradeCheckLocation:.*$|upgradeCheckLocation: ${watcherStorageUrl}/${watcherCheckLocation}|" config-watcher.yml
 fi
 if ! `grep upgradeCheckIntervalSeconds config-watcher.yml > /dev/null`; then
@@ -207,7 +215,7 @@ if ! `grep upgradeCheckIntervalSeconds config-watcher.yml > /dev/null`; then
 fi
 if ! `grep delegateCheckLocation config-watcher.yml > /dev/null`; then
   echo "delegateCheckLocation: ${delegateStorageUrl}/${delegateCheckLocation}" >> config-watcher.yml
-else
+elif [[ "$(grep delegateCheckLocation config-watcher.yml | cut -d ' ' -f 2)" != "${delegateStorageUrl}/${delegateCheckLocation}" ]]; then
   sed -i.bak "s|^delegateCheckLocation:.*$|delegateCheckLocation: ${delegateStorageUrl}/${delegateCheckLocation}|" config-watcher.yml
 fi
 if ! `grep fileHandlesMonitoringEnabled config-watcher.yml > /dev/null`; then
@@ -240,12 +248,12 @@ if [[ $1 == "upgrade" ]]; then
   WATCHER_CURRENT_VERSION=$(jar_app_version watcher.jar)
   mkdir -p watcherBackup.$WATCHER_CURRENT_VERSION
   cp watcher.jar watcherBackup.$WATCHER_CURRENT_VERSION
-  $JRE_BINARY $JAVA_OPTS $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -Dwatchersourcedir="$DIR" -Xmx192m -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -jar watcher.jar config-watcher.yml upgrade $2
+  $JRE_BINARY $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -Dwatchersourcedir="$DIR" -Xmx192m -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 $WATCHER_JAVA_OPTS -jar watcher.jar config-watcher.yml upgrade $2
 else
   if `pgrep -f "\-Dwatchersourcedir=$DIR"> /dev/null`; then
     echo "Watcher already running"
   else
-    nohup $JRE_BINARY $JAVA_OPTS $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -Dwatchersourcedir="$DIR" -Xmx192m -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -jar watcher.jar config-watcher.yml >nohup-watcher.out 2>&1 &
+    nohup $JRE_BINARY $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -Dwatchersourcedir="$DIR" -Xmx192m -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 $WATCHER_JAVA_OPTS -jar watcher.jar config-watcher.yml >nohup-watcher.out 2>&1 &
     sleep 1
     if [ -s nohup-watcher.out ]; then
       echo "Failed to start Watcher."

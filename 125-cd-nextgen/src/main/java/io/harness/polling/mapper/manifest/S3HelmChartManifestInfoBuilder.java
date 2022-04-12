@@ -10,10 +10,10 @@ package io.harness.polling.mapper.manifest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
+import io.harness.k8s.model.HelmVersion;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.polling.bean.PollingInfo;
 import io.harness.polling.bean.manifest.HelmChartManifestInfo;
-import io.harness.polling.contracts.HelmVersion;
 import io.harness.polling.contracts.PollingPayloadData;
 import io.harness.polling.contracts.S3HelmPayload;
 import io.harness.polling.mapper.PollingInfoBuilder;
@@ -31,8 +31,7 @@ public class S3HelmChartManifestInfoBuilder implements PollingInfoBuilder {
                    .folderPath(ParameterField.<String>builder().value(s3HelmPayload.getFolderPath()).build())
                    .build())
         .chartName(s3HelmPayload.getChartName())
-        .helmVersion(s3HelmPayload.getHelmVersion() == HelmVersion.V2 ? io.harness.k8s.model.HelmVersion.V2
-                                                                      : io.harness.k8s.model.HelmVersion.V3)
+        .helmVersion(HelmVersion.fromString(s3HelmPayload.getHelmVersion().name()))
         .build();
   }
 }

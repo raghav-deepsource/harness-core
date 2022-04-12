@@ -22,7 +22,7 @@ import lombok.experimental.SuperBuilder;
 
 @Data
 @SuperBuilder
-@JsonTypeName("API_CALL_LOG")
+@JsonTypeName("ApiCallLog")
 @NoArgsConstructor
 @OwnedBy(HarnessTeam.CV)
 public class ApiCallLogDTO extends CVNGLogDTO {

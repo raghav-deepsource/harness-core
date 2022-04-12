@@ -8,7 +8,6 @@
 package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.persistence.HPersistence.upToOne;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
@@ -17,7 +16,6 @@ import static software.wings.beans.DelegateConnection.TTL;
 
 import static java.lang.System.currentTimeMillis;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateConnectionDetails;
@@ -32,10 +30,8 @@ import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
 
@@ -89,6 +85,7 @@ public class DelegateConnectionDao {
                                                        .project(DelegateConnectionKeys.delegateId, true)
                                                        .project(DelegateConnectionKeys.version, true)
                                                        .project(DelegateConnectionKeys.lastHeartbeat, true)
+                                                       .project(DelegateConnectionKeys.lastGrpcHeartbeat, true)
                                                        .asList();
 
     return delegateConnections.stream().collect(Collectors.groupingBy(delegateConnection
@@ -98,25 +95,9 @@ public class DelegateConnectionDao {
                    .uuid(delegateConnection.getUuid())
                    .lastHeartbeat(delegateConnection.getLastHeartbeat())
                    .version(delegateConnection.getVersion())
+                   .lastGrpcHeartbeat(delegateConnection.getLastGrpcHeartbeat())
                    .build(),
             toList())));
-  }
-
-  public Set<String> obtainConnectedDelegates(String accountId, String primaryVersion, String matchAllVersionWildcard) {
-    Query<DelegateConnection> query = persistence.createQuery(DelegateConnection.class)
-                                          .filter(DelegateConnectionKeys.accountId, accountId)
-                                          .filter(DelegateConnectionKeys.disconnected, Boolean.FALSE)
-                                          .field(DelegateConnectionKeys.lastHeartbeat)
-                                          .greaterThan(currentTimeMillis() - EXPIRY_TIME.toMillis());
-
-    if (isNotEmpty(primaryVersion) && !StringUtils.equals(primaryVersion, matchAllVersionWildcard)) {
-      query.filter(DelegateConnectionKeys.version, primaryVersion);
-    }
-    return query.project(DelegateConnectionKeys.delegateId, true)
-        .asList()
-        .stream()
-        .map(DelegateConnection::getDelegateId)
-        .collect(toSet());
   }
 
   public List<DelegateConnection> list(String accountId, String delegateId) {

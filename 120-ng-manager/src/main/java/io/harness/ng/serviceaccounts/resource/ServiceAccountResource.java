@@ -7,11 +7,8 @@
 
 package io.harness.ng.serviceaccounts.resource;
 
-import static io.harness.NGCommonEntityConstants.ACCOUNT_KEY;
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
-import static io.harness.NGCommonEntityConstants.ORG_KEY;
 import static io.harness.NGCommonEntityConstants.ORG_PARAM_MESSAGE;
-import static io.harness.NGCommonEntityConstants.PROJECT_KEY;
 import static io.harness.NGCommonEntityConstants.PROJECT_PARAM_MESSAGE;
 import static io.harness.NGResourceFilterConstants.IDENTIFIER;
 import static io.harness.NGResourceFilterConstants.IDENTIFIERS;
@@ -20,6 +17,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.SERVICEACCOUNT;
 import static io.harness.utils.PageUtils.getPageRequest;
 
+import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
@@ -69,6 +67,7 @@ import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.validator.constraints.NotBlank;
 
 @Api("serviceaccount")
 @Path("serviceaccount")
@@ -108,11 +107,12 @@ public class ServiceAccountResource {
       })
   @NGAccessControlCheck(resourceType = SERVICEACCOUNT, permission = PlatformPermissions.EDIT_SERVICEACCOUNT_PERMISSION)
   public ResponseDTO<ServiceAccountDTO>
-  createServiceAccount(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-                           ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @Parameter(description = ORG_PARAM_MESSAGE) @Optional @QueryParam(ORG_KEY) @OrgIdentifier String orgIdentifier,
-      @Parameter(description = PROJECT_PARAM_MESSAGE) @Optional @QueryParam(
-          PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+  createServiceAccount(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
+                           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @OrgIdentifier @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @io.harness.accesscontrol.OrgIdentifier String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @ProjectIdentifier @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @io.harness.accesscontrol.ProjectIdentifier String projectIdentifier,
       @RequestBody(required = true, description = "Details required to create Service Account")
       @Valid ServiceAccountDTO serviceAccountRequestDTO) {
     ServiceAccountDTO serviceAccountDTO = serviceAccountService.createServiceAccount(
@@ -131,11 +131,12 @@ public class ServiceAccountResource {
       })
   @NGAccessControlCheck(resourceType = SERVICEACCOUNT, permission = PlatformPermissions.EDIT_SERVICEACCOUNT_PERMISSION)
   public ResponseDTO<ServiceAccountDTO>
-  updateServiceAccount(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-                           ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @Parameter(description = ORG_PARAM_MESSAGE) @Optional @QueryParam(ORG_KEY) @OrgIdentifier String orgIdentifier,
-      @Parameter(description = PROJECT_PARAM_MESSAGE) @Optional @QueryParam(
-          PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+  updateServiceAccount(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
+                           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @OrgIdentifier @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @io.harness.accesscontrol.OrgIdentifier String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @ProjectIdentifier @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @io.harness.accesscontrol.ProjectIdentifier String projectIdentifier,
       @Parameter(description = "Service Account ID") @NotNull @PathParam(
           IDENTIFIER) @ResourceIdentifier String identifier,
       @RequestBody(required = true,
@@ -158,11 +159,12 @@ public class ServiceAccountResource {
   @NGAccessControlCheck(
       resourceType = SERVICEACCOUNT, permission = PlatformPermissions.DELETE_SERVICEACCOUNT_PERMISSION)
   public ResponseDTO<Boolean>
-  deleteServiceAccount(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-                           ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @Parameter(description = ORG_PARAM_MESSAGE) @Optional @QueryParam(ORG_KEY) @OrgIdentifier String orgIdentifier,
-      @Parameter(description = PROJECT_PARAM_MESSAGE) @Optional @QueryParam(
-          PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+  deleteServiceAccount(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
+                           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @OrgIdentifier @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @io.harness.accesscontrol.OrgIdentifier String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @ProjectIdentifier @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @io.harness.accesscontrol.ProjectIdentifier String projectIdentifier,
       @Parameter(description = "Service Account ID") @NotNull @PathParam(
           IDENTIFIER) @ResourceIdentifier String identifier) {
     boolean deleted =
@@ -181,11 +183,12 @@ public class ServiceAccountResource {
       })
   @NGAccessControlCheck(resourceType = SERVICEACCOUNT, permission = PlatformPermissions.VIEW_SERVICEACCOUNT_PERMISSION)
   public ResponseDTO<List<ServiceAccountDTO>>
-  listServiceAccounts(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-                          ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @Parameter(description = ORG_PARAM_MESSAGE) @Optional @QueryParam(ORG_KEY) @OrgIdentifier String orgIdentifier,
-      @Parameter(description = PROJECT_PARAM_MESSAGE) @Optional @QueryParam(
-          PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+  listServiceAccounts(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
+                          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @OrgIdentifier @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @io.harness.accesscontrol.OrgIdentifier String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @ProjectIdentifier @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @io.harness.accesscontrol.ProjectIdentifier String projectIdentifier,
       @Parameter(
           description = "This is the list of Service Account IDs. Details specific to these IDs would be fetched.")
       @Optional @QueryParam(IDENTIFIERS) List<String> identifiers) {
@@ -206,11 +209,12 @@ public class ServiceAccountResource {
       })
   @NGAccessControlCheck(resourceType = SERVICEACCOUNT, permission = PlatformPermissions.VIEW_SERVICEACCOUNT_PERMISSION)
   public ResponseDTO<PageResponse<ServiceAccountAggregateDTO>>
-  listAggregatedServiceAccounts(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-                                    ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @Parameter(description = ORG_PARAM_MESSAGE) @Optional @QueryParam(ORG_KEY) @OrgIdentifier String orgIdentifier,
-      @Parameter(description = PROJECT_PARAM_MESSAGE) @Optional @QueryParam(
-          PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+  listAggregatedServiceAccounts(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
+                                    NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @OrgIdentifier @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @io.harness.accesscontrol.OrgIdentifier String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @ProjectIdentifier @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @io.harness.accesscontrol.ProjectIdentifier String projectIdentifier,
       @Parameter(
           description = "This is the list of Service Account IDs. Details specific to these IDs would be fetched.")
       @Optional @QueryParam(IDENTIFIERS) List<String> identifiers,
@@ -249,11 +253,12 @@ public class ServiceAccountResource {
       })
   @NGAccessControlCheck(resourceType = SERVICEACCOUNT, permission = PlatformPermissions.VIEW_SERVICEACCOUNT_PERMISSION)
   public ResponseDTO<ServiceAccountAggregateDTO>
-  getAggregatedServiceAccount(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-                                  ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @Parameter(description = ORG_PARAM_MESSAGE) @Optional @QueryParam(ORG_KEY) @OrgIdentifier String orgIdentifier,
-      @Parameter(description = PROJECT_PARAM_MESSAGE) @Optional @QueryParam(
-          PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+  getAggregatedServiceAccount(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
+                                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @OrgIdentifier @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @io.harness.accesscontrol.OrgIdentifier String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @ProjectIdentifier @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @io.harness.accesscontrol.ProjectIdentifier String projectIdentifier,
       @Parameter(description = "Service Account IDr") @NotNull @PathParam(
           IDENTIFIER) @ResourceIdentifier String identifier) {
     ServiceAccountAggregateDTO aggregateDTO = serviceAccountService.getServiceAccountAggregateDTO(

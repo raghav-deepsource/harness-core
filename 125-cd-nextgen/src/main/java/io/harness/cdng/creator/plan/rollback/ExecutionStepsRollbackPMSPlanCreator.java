@@ -10,7 +10,7 @@ package io.harness.cdng.creator.plan.rollback;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.rollback.steps.RollbackStepsStep;
-import io.harness.plancreator.beans.OrchestrationConstants;
+import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.steps.SkipType;
@@ -85,8 +85,9 @@ public class ExecutionStepsRollbackPMSPlanCreator implements PartialPlanCreator<
                                         .build();
     PlanNode executionRollbackNode =
         PlanNode.builder()
-            .uuid(rollbackStepsField.getNode().getUuid() + OrchestrationConstants.ROLLBACK_STEPS_NODE_ID_SUFFIX)
-            .name(OrchestrationConstants.ROLLBACK_NODE_NAME)
+            .uuid(rollbackStepsField.getNode().getUuid()
+                + NGCommonUtilPlanCreationConstants.ROLLBACK_STEPS_NODE_ID_SUFFIX)
+            .name(NGCommonUtilPlanCreationConstants.ROLLBACK_NODE_NAME)
             .identifier(YAMLFieldNameConstants.ROLLBACK_STEPS)
             .stepType(RollbackStepsStep.STEP_TYPE)
             .stepParameters(stepParameters)

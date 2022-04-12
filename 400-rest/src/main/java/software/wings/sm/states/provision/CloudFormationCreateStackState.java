@@ -15,6 +15,9 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
+import static io.harness.delegate.task.cloudformation.CloudformationBaseHelperImpl.CLOUDFORMATION_STACK_CREATE_BODY;
+import static io.harness.delegate.task.cloudformation.CloudformationBaseHelperImpl.CLOUDFORMATION_STACK_CREATE_GIT;
+import static io.harness.delegate.task.cloudformation.CloudformationBaseHelperImpl.CLOUDFORMATION_STACK_CREATE_URL;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.TaskType.CLOUD_FORMATION_TASK;
@@ -219,16 +222,16 @@ public class CloudFormationCreateStackState extends CloudFormationState {
         return buildAndQueueFetchS3FilesTask(executionContext, awsConfig, activityId);
       }
       ensureNonEmptyStringField(provisioner.getTemplateFilePath(), "Template Url");
-      builder.createType(CloudFormationCreateStackRequest.CLOUD_FORMATION_STACK_CREATE_URL)
+      builder.createType(CLOUDFORMATION_STACK_CREATE_URL)
           .data(executionContext.renderExpression(provisioner.getTemplateFilePath()));
     } else if (provisioner.provisionByBody()) {
       String templateBody = provisioner.getTemplateBody();
       ensureNonEmptyStringField(templateBody, "Template Body");
       String renderedTemplate = executionContext.renderExpression(templateBody);
-      builder.createType(CloudFormationCreateStackRequest.CLOUD_FORMATION_STACK_CREATE_BODY).data(renderedTemplate);
+      builder.createType(CLOUDFORMATION_STACK_CREATE_BODY).data(renderedTemplate);
     } else if (provisioner.provisionByGit()) {
       String renderedGitTemplate = executionContext.renderExpression(gitTemplateBody);
-      builder.createType(CloudFormationCreateStackRequest.CLOUD_FORMATION_STACK_CREATE_GIT).data(renderedGitTemplate);
+      builder.createType(CLOUDFORMATION_STACK_CREATE_GIT).data(renderedGitTemplate);
     } else {
       throw new InvalidRequestException("Create type is not set on cloud provisioner");
     }

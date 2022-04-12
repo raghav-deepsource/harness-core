@@ -24,12 +24,11 @@ import io.harness.pms.events.PipelineUpdateEvent;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
-import io.harness.pms.pipeline.PipelineMetadata;
+import io.harness.pms.pipeline.PipelineMetadataV2;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.springdata.TransactionHelper;
 
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
@@ -93,24 +92,35 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
 
   @Override
   public PipelineEntity save(PipelineEntity pipelineToSave) {
+    String accountIdentifier = pipelineToSave.getAccountIdentifier();
+    String orgIdentifier = pipelineToSave.getOrgIdentifier();
+    String projectIdentifier = pipelineToSave.getProjectIdentifier();
     Supplier<OutboxEvent> supplier = ()
-        -> outboxService.save(new PipelineCreateEvent(pipelineToSave.getAccountIdentifier(),
-            pipelineToSave.getOrgIdentifier(), pipelineToSave.getProjectIdentifier(), pipelineToSave));
+        -> outboxService.save(
+            new PipelineCreateEvent(accountIdentifier, orgIdentifier, projectIdentifier, pipelineToSave));
+    Supplier<OutboxEvent> supplierWithGitSyncTrue = ()
+        -> outboxService.save(
+            new PipelineCreateEvent(accountIdentifier, orgIdentifier, projectIdentifier, pipelineToSave, true));
     return transactionHelper.performTransaction(() -> {
       PipelineEntity savedEntity = gitAwarePersistence.save(
           pipelineToSave, pipelineToSave.getYaml(), ChangeType.ADD, PipelineEntity.class, supplier);
-      ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal(savedEntity);
-      PipelineMetadata metadata =
-          PipelineMetadata.builder()
-              .accountIdentifier(savedEntity.getAccountIdentifier())
-              .orgIdentifier(savedEntity.getOrgIdentifier())
-              .projectIdentifier(savedEntity.getProjectIdentifier())
-              .executionSummaryInfo(savedEntity.getExecutionSummaryInfo())
-              .runSequence(0)
-              .identifier(savedEntity.getIdentifier())
-              .entityGitDetails(pmsGitSyncHelper.getEntityGitDetailsFromBytes(gitSyncBranchContext))
-              .build();
-      pipelineMetadataService.save(metadata);
+      makeSupplierCallIfGitSyncIsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, supplierWithGitSyncTrue);
+
+      // checking if PipelineMetadata exists or not, if exists don't re-save the entity, as only one entry across git
+      // repos should be there.
+      Optional<PipelineMetadataV2> metadataOptional =
+          pipelineMetadataService.getMetadata(savedEntity.getAccountIdentifier(), savedEntity.getOrgIdentifier(),
+              savedEntity.getProjectIdentifier(), savedEntity.getIdentifier());
+      if (!metadataOptional.isPresent()) {
+        PipelineMetadataV2 metadata = PipelineMetadataV2.builder()
+                                          .accountIdentifier(savedEntity.getAccountIdentifier())
+                                          .orgIdentifier(savedEntity.getOrgIdentifier())
+                                          .projectIdentifier(savedEntity.getProjectIdentifier())
+                                          .runSequence(0)
+                                          .identifier(savedEntity.getIdentifier())
+                                          .build();
+        pipelineMetadataService.save(metadata);
+      }
       return savedEntity;
     });
   }
@@ -148,16 +158,24 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   @Override
   public PipelineEntity updatePipelineYaml(
       PipelineEntity pipelineToUpdate, PipelineEntity oldPipelineEntity, ChangeType changeType) {
+    String accountIdentifier = pipelineToUpdate.getAccountIdentifier();
+    String orgIdentifier = pipelineToUpdate.getOrgIdentifier();
+    String projectIdentifier = pipelineToUpdate.getProjectIdentifier();
     Supplier<OutboxEvent> supplier = null;
-    if (!gitSyncSdkService.isGitSyncEnabled(pipelineToUpdate.getAccountId(), pipelineToUpdate.getOrgIdentifier(),
-            pipelineToUpdate.getProjectIdentifier())) {
+    if (!gitSyncSdkService.isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
       supplier = ()
-          -> outboxService.save(
-              new PipelineUpdateEvent(pipelineToUpdate.getAccountIdentifier(), pipelineToUpdate.getOrgIdentifier(),
-                  pipelineToUpdate.getProjectIdentifier(), pipelineToUpdate, oldPipelineEntity));
+          -> outboxService.save(new PipelineUpdateEvent(
+              accountIdentifier, orgIdentifier, projectIdentifier, pipelineToUpdate, oldPipelineEntity));
     }
-    return gitAwarePersistence.save(
+    PipelineEntity updatedEntity = gitAwarePersistence.save(
         pipelineToUpdate, pipelineToUpdate.getYaml(), changeType, PipelineEntity.class, supplier);
+    if (updatedEntity != null) {
+      Supplier<OutboxEvent> supplierWithGitSyncTrue = ()
+          -> outboxService.save(new PipelineUpdateEvent(
+              accountIdentifier, orgIdentifier, projectIdentifier, pipelineToUpdate, oldPipelineEntity, true));
+      makeSupplierCallIfGitSyncIsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, supplierWithGitSyncTrue);
+    }
+    return updatedEntity;
   }
 
   @Override
@@ -175,25 +193,33 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
 
   @Override
   public PipelineEntity deletePipeline(PipelineEntity pipelineToUpdate) {
+    String accountId = pipelineToUpdate.getAccountId();
+    String orgIdentifier = pipelineToUpdate.getOrgIdentifier();
+    String projectIdentifier = pipelineToUpdate.getProjectIdentifier();
     Optional<PipelineEntity> pipelineEntityOptional =
-        findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(pipelineToUpdate.getAccountId(),
-            pipelineToUpdate.getOrgIdentifier(), pipelineToUpdate.getProjectIdentifier(),
-            pipelineToUpdate.getIdentifier(), true);
+        findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
+            accountId, orgIdentifier, projectIdentifier, pipelineToUpdate.getIdentifier(), true);
     if (pipelineEntityOptional.isPresent()) {
       Supplier<OutboxEvent> supplier = ()
-          -> outboxService.save(new PipelineDeleteEvent(pipelineToUpdate.getAccountIdentifier(),
-              pipelineToUpdate.getOrgIdentifier(), pipelineToUpdate.getProjectIdentifier(), pipelineToUpdate));
+          -> outboxService.save(new PipelineDeleteEvent(accountId, orgIdentifier, projectIdentifier, pipelineToUpdate));
       PipelineEntity pipelineEntity = gitAwarePersistence.save(
           pipelineToUpdate, pipelineToUpdate.getYaml(), ChangeType.DELETE, PipelineEntity.class, supplier);
-      if (pipelineEntity.getDeleted()
-          && gitSyncSdkService.isGitSyncEnabled(pipelineToUpdate.getAccountIdentifier(),
-              pipelineToUpdate.getOrgIdentifier(), pipelineToUpdate.getProjectIdentifier())) {
-        outboxService.save(new PipelineDeleteEvent(pipelineToUpdate.getAccountIdentifier(),
-            pipelineToUpdate.getOrgIdentifier(), pipelineToUpdate.getProjectIdentifier(), pipelineToUpdate, true));
+      if (pipelineEntity.getDeleted()) {
+        Supplier<OutboxEvent> supplierWithGitSyncTrue = ()
+            -> outboxService.save(
+                new PipelineDeleteEvent(accountId, orgIdentifier, projectIdentifier, pipelineToUpdate, true));
+        makeSupplierCallIfGitSyncIsEnabled(accountId, orgIdentifier, projectIdentifier, supplierWithGitSyncTrue);
       }
       return pipelineEntity;
     }
     throw new InvalidRequestException("No such pipeline exists");
+  }
+
+  private void makeSupplierCallIfGitSyncIsEnabled(
+      String accountId, String orgIdentifier, String projectIdentifier, Supplier<OutboxEvent> supplier) {
+    if (gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier) && supplier != null) {
+      supplier.get();
+    }
   }
 
   private RetryPolicy<Object> getRetryPolicyForPipelineUpdate() {

@@ -99,6 +99,7 @@ import software.wings.beans.config.ArtifactoryConfig;
 import software.wings.beans.config.NexusConfig;
 import software.wings.beans.template.TemplateHelper;
 import software.wings.beans.template.artifactsource.CustomRepositoryMapping.AttributeMapping;
+import software.wings.delegatetasks.buildsource.BuildCollectParameters;
 import software.wings.delegatetasks.buildsource.BuildSourceParameters;
 import software.wings.delegatetasks.buildsource.BuildSourceParameters.BuildSourceParametersBuilder;
 import software.wings.delegatetasks.buildsource.BuildSourceParameters.BuildSourceRequestType;
@@ -324,7 +325,15 @@ public class ArtifactCollectionUtils {
   }
 
   public DelegateTaskBuilder fetchCustomDelegateTask(String waitId, ArtifactStream artifactStream,
-      ArtifactStreamAttributes artifactStreamAttributes, boolean isCollection) {
+      ArtifactStreamAttributes artifactStreamAttributes, boolean isCollection,
+      BuildSourceRequestType buildSourceRequestType) {
+    return fetchCustomDelegateTask(
+        waitId, artifactStream, artifactStreamAttributes, isCollection, buildSourceRequestType, null);
+  }
+
+  public DelegateTaskBuilder fetchCustomDelegateTask(String waitId, ArtifactStream artifactStream,
+      ArtifactStreamAttributes artifactStreamAttributes, boolean isCollection,
+      BuildSourceRequestType buildSourceRequestType, BuildCollectParameters buildCollectParameters) {
     String accountId = artifactStreamAttributes.getAccountId();
     DelegateTaskBuilder delegateTaskBuilder =
         DelegateTask.builder().waitId(waitId).expiry(getDelegateQueueTimeout(accountId));
@@ -336,16 +345,16 @@ public class ArtifactCollectionUtils {
 
     final TaskDataBuilder dataBuilder = TaskData.builder().async(true).taskType(TaskType.BUILD_SOURCE_TASK.name());
 
-    BuildSourceRequestType requestType = BuildSourceRequestType.GET_BUILDS;
-
     BuildSourceParametersBuilder buildSourceParametersBuilder =
         BuildSourceParameters.builder()
             .accountId(artifactStreamAttributes.getAccountId())
             .appId(artifactStream.fetchAppId())
             .artifactStreamAttributes(artifactStreamAttributes)
             .artifactStreamType(artifactStream.getArtifactStreamType())
-            .buildSourceRequestType(requestType)
-            .limit(ArtifactCollectionUtils.getLimit(artifactStream.getArtifactStreamType(), requestType, isCollection))
+            .buildSourceRequestType(buildSourceRequestType)
+            .limit(ArtifactCollectionUtils.getLimit(
+                artifactStream.getArtifactStreamType(), buildSourceRequestType, isCollection))
+            .buildCollectParameters(buildCollectParameters)
             .isCollection(isCollection);
 
     if (isCollection) {

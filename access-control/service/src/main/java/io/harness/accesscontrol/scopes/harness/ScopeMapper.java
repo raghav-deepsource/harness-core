@@ -50,6 +50,22 @@ public class ScopeMapper {
     return fromParams(harnessScopeParams);
   }
 
+  public static ScopeDTO toDTO(@NotNull HarnessScopeParams harnessScopeParams) {
+    return ScopeDTO.builder()
+        .accountIdentifier(harnessScopeParams.getAccountIdentifier())
+        .orgIdentifier(harnessScopeParams.getOrgIdentifier())
+        .projectIdentifier(harnessScopeParams.getProjectIdentifier())
+        .build();
+  }
+
+  public static HarnessScopeParams toParams(@NotNull ScopeDTO scopeDTO) {
+    return HarnessScopeParams.builder()
+        .accountIdentifier(scopeDTO.getAccountIdentifier())
+        .orgIdentifier(scopeDTO.getOrgIdentifier())
+        .projectIdentifier(scopeDTO.getProjectIdentifier())
+        .build();
+  }
+
   public static HarnessScopeParams toParams(@Valid Scope scope) {
     Map<String, String> params = new HashMap<>();
     Scope currentScope = scope;
@@ -91,5 +107,27 @@ public class ScopeMapper {
                   .build();
     }
     return scope;
+  }
+
+  public static HarnessScopeParams toParentScopeParams(
+      @Valid @NotNull HarnessScopeParams harnessScopeParams, String parentHarnessScopeLevel) {
+    if (parentHarnessScopeLevel == null) {
+      return harnessScopeParams;
+    }
+
+    if (HarnessScopeLevel.ACCOUNT.toString().equals(parentHarnessScopeLevel)) {
+      return HarnessScopeParams.builder().accountIdentifier(harnessScopeParams.getAccountIdentifier()).build();
+    } else if (HarnessScopeLevel.ORGANIZATION.toString().equals(parentHarnessScopeLevel)) {
+      return HarnessScopeParams.builder()
+          .accountIdentifier(harnessScopeParams.getAccountIdentifier())
+          .orgIdentifier(harnessScopeParams.getOrgIdentifier())
+          .build();
+    } else {
+      return HarnessScopeParams.builder()
+          .accountIdentifier(harnessScopeParams.getAccountIdentifier())
+          .orgIdentifier(harnessScopeParams.getOrgIdentifier())
+          .projectIdentifier(harnessScopeParams.getProjectIdentifier())
+          .build();
+    }
   }
 }

@@ -38,4 +38,8 @@ public interface GitFileLocationRepositoryCustom {
       String branch, List<EntityType> entityTypeList, String searchTerm, int size);
 
   GitFileLocation update(Query query, Update update);
+
+  List<GitFileLocation> deleteAll(Query query);
+
+  GitFileLocation findOne(Criteria criteria);
 }

@@ -40,6 +40,7 @@ import org.springframework.data.annotation.TypeAlias;
 public class K8PodDetails implements PersistentEntity, UuidAware, ContextElement, AccountAccess {
   private String namespace; // Don't use it, it will be removed soon
   private String stageID;
+  private String stageName;
   private String clusterName; // Don't use it, it will be removed soon
   private long lastUpdatedAt;
   @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;

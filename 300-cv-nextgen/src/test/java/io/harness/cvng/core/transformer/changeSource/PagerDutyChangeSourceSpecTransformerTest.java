@@ -46,9 +46,6 @@ public class PagerDutyChangeSourceSpecTransformerTest extends CvNextGenTestBase 
     assertThat(pagerDutyChangeSource.getAccountId()).isEqualTo(builderFactory.getContext().getAccountId());
     assertThat(pagerDutyChangeSource.getProjectIdentifier())
         .isEqualTo(builderFactory.getContext().getProjectIdentifier());
-    assertThat(pagerDutyChangeSource.getServiceIdentifier())
-        .isEqualTo(builderFactory.getContext().getServiceIdentifier());
-    assertThat(pagerDutyChangeSource.getEnvIdentifier()).isEqualTo(builderFactory.getContext().getEnvIdentifier());
     assertThat(pagerDutyChangeSource.getMonitoredServiceIdentifier())
         .isEqualTo(builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier());
     assertThat(pagerDutyChangeSource.isEnabled()).isTrue();

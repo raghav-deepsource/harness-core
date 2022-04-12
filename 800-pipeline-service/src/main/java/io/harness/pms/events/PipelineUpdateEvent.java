@@ -33,6 +33,7 @@ public class PipelineUpdateEvent implements Event {
   private String projectIdentifier;
   private PipelineEntity newPipeline;
   private PipelineEntity oldPipeline;
+  private Boolean isFromGit;
 
   public PipelineUpdateEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       PipelineEntity newPipeline, PipelineEntity oldPipeline) {
@@ -41,6 +42,17 @@ public class PipelineUpdateEvent implements Event {
     this.projectIdentifier = projectIdentifier;
     this.newPipeline = newPipeline;
     this.oldPipeline = oldPipeline;
+    this.isFromGit = false;
+  }
+
+  public PipelineUpdateEvent(String orgIdentifier, String accountIdentifier, String projectIdentifier,
+      PipelineEntity newPipeline, PipelineEntity oldPipeline, Boolean isFromGit) {
+    this.orgIdentifier = orgIdentifier;
+    this.accountIdentifier = accountIdentifier;
+    this.projectIdentifier = projectIdentifier;
+    this.newPipeline = newPipeline;
+    this.oldPipeline = oldPipeline;
+    this.isFromGit = isFromGit;
   }
 
   @JsonIgnore

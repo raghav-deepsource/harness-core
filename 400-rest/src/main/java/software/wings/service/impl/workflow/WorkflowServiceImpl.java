@@ -55,6 +55,7 @@ import static software.wings.beans.EntityType.HELM_CHART;
 import static software.wings.beans.EntityType.SERVICE;
 import static software.wings.beans.EntityType.WORKFLOW;
 import static software.wings.beans.NotificationRule.NotificationRuleBuilder.aNotificationRule;
+import static software.wings.beans.PhaseStep.PhaseStepBuilder.aPhaseStep;
 import static software.wings.common.InfrastructureConstants.INFRA_ID_EXPRESSION;
 import static software.wings.common.ProvisionerConstants.GENERIC_ROLLBACK_NAME_FORMAT;
 import static software.wings.common.WorkflowConstants.WORKFLOW_INFRAMAPPING_VALIDATION_MESSAGE;
@@ -89,6 +90,7 @@ import static software.wings.sm.StateType.SHELL_SCRIPT;
 import static software.wings.sm.StateType.TERRAFORM_ROLLBACK;
 import static software.wings.sm.StateType.TERRAGRUNT_ROLLBACK;
 import static software.wings.sm.StateType.values;
+import static software.wings.sm.StepType.APPROVAL;
 import static software.wings.sm.StepType.ASG_AMI_ALB_SHIFT_SWITCH_ROUTES;
 import static software.wings.sm.StepType.ASG_AMI_ROLLBACK_ALB_SHIFT_SWITCH_ROUTES;
 import static software.wings.sm.StepType.ASG_AMI_SERVICE_ALB_SHIFT_DEPLOY;
@@ -275,6 +277,8 @@ import software.wings.sm.StateType;
 import software.wings.sm.StateTypeDescriptor;
 import software.wings.sm.StateTypeScope;
 import software.wings.sm.StepType;
+import software.wings.sm.states.ApprovalState.ApprovalStateKeys;
+import software.wings.sm.states.ApprovalState.ApprovalStateType;
 import software.wings.sm.states.EnvState.EnvStateKeys;
 import software.wings.sm.states.k8s.K8sStateHelper;
 import software.wings.stencils.DataProvider;
@@ -286,6 +290,7 @@ import software.wings.stencils.WorkflowStepType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
@@ -626,6 +631,7 @@ public class WorkflowServiceImpl implements WorkflowService, DataProvider {
    */
   @Override
   public PageResponse<Workflow> listWorkflowsWithoutOrchestration(PageRequest<Workflow> pageRequest) {
+    pageRequest.addFieldsExcluded(WorkflowKeys.orchestration);
     return wingsPersistence.query(Workflow.class, pageRequest);
   }
 
@@ -932,11 +938,11 @@ public class WorkflowServiceImpl implements WorkflowService, DataProvider {
       WorkflowCreator workflowCreator = abstractWorkflowFactory.getWorkflowCreatorFactory(category).getWorkflowCreator(
           orchestrationWorkflow.getOrchestrationWorkflowType());
       workflow = workflowCreator.createWorkflow(workflow);
-      if (isEmpty(orchestrationWorkflow.getNotificationRules())) {
+      if (isEmpty(orchestrationWorkflow.getNotificationRules()) && !workflow.isSyncFromGit()) {
         createDefaultNotificationRule(workflow);
       }
       if (orchestrationWorkflow.getOrchestrationWorkflowType() != BUILD
-          && orchestrationWorkflow instanceof CanaryOrchestrationWorkflow) {
+          && orchestrationWorkflow instanceof CanaryOrchestrationWorkflow && !workflow.isSyncFromGit()) {
         CanaryOrchestrationWorkflow canaryOrchestrationWorkflow = (CanaryOrchestrationWorkflow) orchestrationWorkflow;
         if (isEmpty(canaryOrchestrationWorkflow.getFailureStrategies())) {
           createDefaultFailureStrategy(workflow);
@@ -960,6 +966,13 @@ public class WorkflowServiceImpl implements WorkflowService, DataProvider {
       workflowServiceTemplateHelper.populatePropertiesFromWorkflow(workflow);
 
       workflowServiceTemplateHelper.setServiceTemplateExpressionMetadata(workflow, orchestrationWorkflow);
+      Set<String> currentUserGroups = getUserGroups(workflow);
+      try {
+        updateWorkflowReferenceInUserGroup(new HashSet<>(), currentUserGroups, workflow.getAccountId(),
+            workflow.getAppId(), workflow.getUuid(), WORKFLOW.name());
+      } catch (Exception e) {
+        log.error("An error occurred when trying to reference this pipeline {} in userGroups ", workflow.getUuid(), e);
+      }
 
       StateMachine stateMachine = new StateMachine(workflow, workflow.getDefaultVersion(),
           ((CustomOrchestrationWorkflow) orchestrationWorkflow).getGraph(), stencilMap(workflow.getAppId()), false);
@@ -1182,12 +1195,14 @@ public class WorkflowServiceImpl implements WorkflowService, DataProvider {
   private Workflow updateWorkflow(Workflow workflow, OrchestrationWorkflow orchestrationWorkflow,
       boolean onSaveCallNeeded, boolean infraChanged, boolean envChanged, boolean cloned, boolean migration) {
     workflowServiceHelper.validateWaitInterval(workflow);
-    String accountId = appService.getAccountIdByAppId(workflow.getAppId());
+    final String appId = workflow.getAppId();
+    String accountId = appService.getAccountIdByAppId(appId);
 
     validateFailureStrategiesWithTimeoutErrorFailureType(accountId, orchestrationWorkflow);
 
     WorkflowServiceHelper.cleanupWorkflowStrategies(orchestrationWorkflow);
-    Workflow savedWorkflow = readWorkflow(workflow.getAppId(), workflow.getUuid());
+    final String workflowId = workflow.getUuid();
+    Workflow savedWorkflow = readWorkflow(appId, workflowId);
 
     UpdateOperations<Workflow> ops = wingsPersistence.createUpdateOperations(Workflow.class);
     setUnset(ops, "description", workflow.getDescription());
@@ -1202,7 +1217,7 @@ public class WorkflowServiceImpl implements WorkflowService, DataProvider {
     boolean isSyncFromGit = workflow.isSyncFromGit();
 
     if (orchestrationWorkflow == null) {
-      workflow = readWorkflow(workflow.getAppId(), workflow.getUuid(), workflow.getDefaultVersion());
+      workflow = readWorkflow(appId, workflowId, workflow.getDefaultVersion());
       orchestrationWorkflow = workflow.getOrchestrationWorkflow();
       if (envId != null) {
         if (workflow.getEnvId() == null || !workflow.getEnvId().equals(envId)) {
@@ -1215,8 +1230,8 @@ public class WorkflowServiceImpl implements WorkflowService, DataProvider {
       List<Pipeline> pipelinesWithWorkflowLinked = pipelineService.listPipelines(
           aPageRequest()
               .withLimit(PageRequest.UNLIMITED)
-              .addFilter(PipelineKeys.appId, EQ, workflow.getAppId())
-              .addFilter("pipelineStages.pipelineStageElements.properties.workflowId", EQ, workflow.getUuid())
+              .addFilter(PipelineKeys.appId, EQ, appId)
+              .addFilter("pipelineStages.pipelineStageElements.properties.workflowId", EQ, workflowId)
               .build());
       if (isNotEmpty(pipelinesWithWorkflowLinked)) {
         updateEnvIdInLinkedPipelines(workflow, envId, pipelinesWithWorkflowLinked);
@@ -1228,7 +1243,7 @@ public class WorkflowServiceImpl implements WorkflowService, DataProvider {
       templateExpressions = new ArrayList<>();
     }
     orchestrationWorkflow = workflowServiceHelper.propagateWorkflowDataToPhases(orchestrationWorkflow,
-        templateExpressions, workflow.getAppId(), serviceId, infraDefinitionId, envChanged, infraChanged, migration);
+        templateExpressions, appId, serviceId, infraDefinitionId, envChanged, infraChanged, migration);
 
     workflowServiceTemplateHelper.setServiceTemplateExpressionMetadata(workflow, orchestrationWorkflow);
 
@@ -1245,8 +1260,8 @@ public class WorkflowServiceImpl implements WorkflowService, DataProvider {
         }
       }
       if (!cloned) {
-        EntityVersion entityVersion = entityVersionService.newEntityVersion(workflow.getAppId(), WORKFLOW,
-            workflow.getUuid(), workflow.getName(), EntityVersion.ChangeType.UPDATED, workflow.getNotes());
+        EntityVersion entityVersion = entityVersionService.newEntityVersion(
+            appId, WORKFLOW, workflowId, workflow.getName(), EntityVersion.ChangeType.UPDATED, workflow.getNotes());
         workflow.setDefaultVersion(entityVersion.getVersion());
       }
 
@@ -1256,7 +1271,7 @@ public class WorkflowServiceImpl implements WorkflowService, DataProvider {
         workflow.setAccountId(accountId);
       }
       StateMachine stateMachine = new StateMachine(workflow, workflow.getDefaultVersion(),
-          ((CustomOrchestrationWorkflow) orchestrationWorkflow).getGraph(), stencilMap(workflow.getAppId()), migration);
+          ((CustomOrchestrationWorkflow) orchestrationWorkflow).getGraph(), stencilMap(appId), migration);
 
       stateMachine.validate();
 
@@ -1268,12 +1283,17 @@ public class WorkflowServiceImpl implements WorkflowService, DataProvider {
       setUnset(ops, "orchestration", workflow.getOrchestrationWorkflow());
     }
 
-    wingsPersistence.update(wingsPersistence.createQuery(Workflow.class)
-                                .filter(WorkflowKeys.appId, workflow.getAppId())
-                                .filter(ID_KEY, workflow.getUuid()),
-        ops);
+    wingsPersistence.update(
+        wingsPersistence.createQuery(Workflow.class).filter(WorkflowKeys.appId, appId).filter(ID_KEY, workflowId), ops);
 
-    Workflow finalWorkflow = readWorkflow(workflow.getAppId(), workflow.getUuid(), workflow.getDefaultVersion());
+    Set<String> previousUserGroups = getUserGroups(savedWorkflow);
+    Set<String> currentUserGroups = getUserGroups(workflow);
+
+    executorService.submit(()
+                               -> updateWorkflowReferenceInUserGroup(previousUserGroups, currentUserGroups, accountId,
+                                   appId, workflowId, WORKFLOW.name()));
+
+    Workflow finalWorkflow = readWorkflow(appId, workflowId, workflow.getDefaultVersion());
 
     if (!migration) {
       yamlPushService.pushYamlChangeSet(accountId, savedWorkflow, finalWorkflow, Type.UPDATE, isSyncFromGit, isRename);
@@ -1498,12 +1518,19 @@ public class WorkflowServiceImpl implements WorkflowService, DataProvider {
         ensureWorkflowSafeToDelete(workflow);
       }
 
+      loadOrchestrationWorkflow(workflow, workflow.getDefaultVersion(), false);
+
       yamlPushService.pushYamlChangeSet(accountId, workflow, null, Type.DELETE, syncFromGit, false);
 
       if (!pruneWorkflow(appId, workflowId)) {
         throw new InvalidRequestException(
             String.format("Workflow %s does not exist or might already be deleted.", workflow.getName()));
       }
+
+      Set<String> previousUserGroups = getUserGroups(workflow);
+      executorService.submit(()
+                                 -> updateWorkflowReferenceInUserGroup(previousUserGroups, new HashSet<>(), accountId,
+                                     appId, workflowId, WORKFLOW.name()));
 
       return true;
     });
@@ -2289,6 +2316,16 @@ public class WorkflowServiceImpl implements WorkflowService, DataProvider {
 
     orchestrationWorkflow =
         (CanaryOrchestrationWorkflow) updateWorkflow(workflow, orchestrationWorkflow, false).getOrchestrationWorkflow();
+
+    final String accountId = workflow.getAccountId();
+
+    Set<String> previousUserGroupIds =
+        getUserGroupsFromPhaseStep(aPhaseStep(PhaseStepType.CUSTOM_DEPLOYMENT_PHASE_STEP).addStep(node).build());
+    Set<String> currentUserGroupIds = getUserGroupsFromOrchestrationWorkflow(orchestrationWorkflow);
+    executorService.submit(()
+                               -> updateWorkflowReferenceInUserGroup(previousUserGroupIds, currentUserGroupIds,
+                                   accountId, appId, workflowId, WORKFLOW.name()));
+
     Optional<GraphNode> graphNode = orchestrationWorkflow.getGraph()
                                         .getSubworkflows()
                                         .get(subworkflowId)
@@ -2793,8 +2830,9 @@ public class WorkflowServiceImpl implements WorkflowService, DataProvider {
         // Set default artifact as last collected artifact.
         String artifactStreamId = artifactVariable.getAllowedList().get(0);
         ArtifactStream artifactStream = artifactStreamService.get(artifactStreamId);
-        ArtifactStreamSummaryBuilder artifactStreamSummaryBuilder =
-            ArtifactStreamSummary.builder().artifactStreamId(artifactStreamId);
+        ArtifactStreamSummaryBuilder artifactStreamSummaryBuilder = ArtifactStreamSummary.builder()
+                                                                        .artifactStreamId(artifactStreamId)
+                                                                        .artifactStreamName(artifactStream.getName());
         if (artifactStream != null) {
           Artifact artifact = artifactService.fetchLastCollectedApprovedArtifactSorted(artifactStream);
           if (artifact != null) {
@@ -2811,12 +2849,16 @@ public class WorkflowServiceImpl implements WorkflowService, DataProvider {
           : null;
       ArtifactSummary artifactSummary =
           (artifact != null) ? ArtifactStreamServiceImpl.prepareSummaryFromArtifact(artifact) : null;
+      Map<String, String> artifactStreamIdToNameMap =
+          artifactStreamService.getArtifactStreamNames(appId, new HashSet<>(artifactVariable.getAllowedList()));
       artifactVariable.setArtifactStreamSummaries(artifactVariable.getAllowedList()
                                                       .stream()
                                                       .map(artifactStreamId -> {
                                                         ArtifactStreamSummaryBuilder artifactStreamSummaryBuilder =
-                                                            ArtifactStreamSummary.builder().artifactStreamId(
-                                                                artifactStreamId);
+                                                            ArtifactStreamSummary.builder()
+                                                                .artifactStreamId(artifactStreamId)
+                                                                .artifactStreamName(
+                                                                    artifactStreamIdToNameMap.get(artifactStreamId));
                                                         if (artifactSummary != null) {
                                                           artifactStreamSummaryBuilder.defaultArtifact(artifactSummary);
                                                         }
@@ -4488,5 +4530,75 @@ public class WorkflowServiceImpl implements WorkflowService, DataProvider {
         })
         .map(Workflow::getName)
         .collect(toList());
+  }
+
+  public Set<String> getUserGroups(Workflow workflow) {
+    if (!(workflow.getOrchestrationWorkflow() instanceof CanaryOrchestrationWorkflow)) {
+      return new HashSet<>();
+    }
+    CanaryOrchestrationWorkflow canaryOrchestrationWorkflow =
+        (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
+    return getUserGroupsFromOrchestrationWorkflow(canaryOrchestrationWorkflow);
+  }
+
+  private Set<String> getUserGroupsFromOrchestrationWorkflow(CanaryOrchestrationWorkflow canaryOrchestrationWorkflow) {
+    Set<String> userGroupIds = new HashSet<>();
+    if (canaryOrchestrationWorkflow == null) {
+      return userGroupIds;
+    }
+    userGroupIds.addAll(getUserGroupsFromPhaseStep(canaryOrchestrationWorkflow.getPreDeploymentSteps()));
+    userGroupIds.addAll(getUserGroupsFromPhaseStep(canaryOrchestrationWorkflow.getPostDeploymentSteps()));
+    if (isNotEmpty(canaryOrchestrationWorkflow.getWorkflowPhases())) {
+      for (WorkflowPhase workflowPhase : canaryOrchestrationWorkflow.getWorkflowPhases()) {
+        List<PhaseStep> phaseSteps = workflowPhase.getPhaseSteps();
+        if (isNotEmpty(phaseSteps)) {
+          for (PhaseStep phaseStep : phaseSteps) {
+            userGroupIds.addAll(getUserGroupsFromPhaseStep(phaseStep));
+          }
+        }
+      }
+    }
+
+    // Update Rollback Phase Steps
+    if (canaryOrchestrationWorkflow.getRollbackWorkflowPhaseIdMap() != null) {
+      canaryOrchestrationWorkflow.getRollbackWorkflowPhaseIdMap().values().forEach(workflowPhase -> {
+        if (isNotEmpty(workflowPhase.getPhaseSteps())) {
+          for (PhaseStep phaseStep : workflowPhase.getPhaseSteps()) {
+            userGroupIds.addAll(getUserGroupsFromPhaseStep(phaseStep));
+          }
+        }
+      });
+    }
+    return userGroupIds;
+  }
+
+  private Set<String> getUserGroupsFromPhaseStep(PhaseStep phaseStep) {
+    Set<String> userGroupIds = new HashSet<>();
+    if (phaseStep != null && phaseStep.getSteps() != null) {
+      for (GraphNode step : phaseStep.getSteps()) {
+        if (APPROVAL.name().equals(step.getType())
+            && ApprovalStateType.USER_GROUP.name().equals(
+                step.getProperties().get(ApprovalStateKeys.approvalStateType))) {
+          Object userGroupProperty = step.getProperties().get("userGroups");
+          if (userGroupProperty instanceof List) {
+            userGroupIds.addAll((List<String>) userGroupProperty);
+          }
+        }
+      }
+    }
+    return userGroupIds;
+  }
+
+  private void updateWorkflowReferenceInUserGroup(Set<String> previousUserGroups, Set<String> currentUserGroups,
+      String accountId, String appId, String workflowId, String entityType) {
+    Set<String> parentsToRemove = Sets.difference(previousUserGroups, currentUserGroups);
+    Set<String> parentsToAdd = Sets.difference(currentUserGroups, previousUserGroups);
+
+    for (String id : parentsToRemove) {
+      userGroupService.removeParentsReference(id, accountId, appId, workflowId, entityType);
+    }
+    for (String id : parentsToAdd) {
+      userGroupService.addParentsReference(id, accountId, appId, workflowId, entityType);
+    }
   }
 }

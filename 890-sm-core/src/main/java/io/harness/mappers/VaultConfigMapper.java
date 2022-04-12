@@ -46,6 +46,9 @@ public class VaultConfigMapper {
                                   .awsRegion(vaultConfigDTO.getAwsRegion())
                                   .vaultAwsIamRole(vaultConfigDTO.getVaultAwsIamRole())
                                   .xVaultAwsIamServerId(vaultConfigDTO.getXVaultAwsIamServerId())
+                                  .useK8sAuth(vaultConfigDTO.isUseK8sAuth())
+                                  .vaultK8sAuthRole(vaultConfigDTO.getVaultK8sAuthRole())
+                                  .serviceAccountTokenPath(vaultConfigDTO.getServiceAccountTokenPath())
                                   .sinkPath(vaultConfigDTO.getSinkPath())
                                   .build();
     vaultConfig.setNgMetadata(ngMetaDataFromDto(vaultConfigDTO));

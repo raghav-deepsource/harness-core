@@ -15,4 +15,7 @@ import java.util.List;
 public interface ServiceNowResourceService {
   List<ServiceNowFieldNG> getIssueCreateMetadata(
       IdentifierRef serviceNowConnectorRef, String orgId, String projectId, String ticketType);
+
+  List<ServiceNowFieldNG> getMetadata(
+      IdentifierRef serviceNowConnectorRef, String orgId, String projectId, String ticketType);
 }

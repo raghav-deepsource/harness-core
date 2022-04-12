@@ -1,9 +1,8 @@
 FROM redhat/ubi8-minimal:8.4
 
-LABEL name="harness/delegate:immutable" \
+LABEL name="harness/delegate-immutable" \
       vendor="Harness" \
-      maintainer="Harness" \
-      version="1.0"
+      maintainer="Harness"
 
 RUN microdnf update \
   && microdnf install --nodocs \
@@ -16,12 +15,18 @@ RUN microdnf update \
   && mkdir -p /opt/harness-delegate/
 
 COPY immutable-scripts /opt/harness-delegate/
+COPY scripts/client_tools.sh /opt/harness-delegate/client_tools.sh
 
 WORKDIR /opt/harness-delegate
 
-RUN chmod -R 755 /opt/harness-delegate \
-  && chgrp -R 0 /opt/harness-delegate  \
-  && chmod -R g=u /opt/harness-delegate
+ARG disable_client_tools=true
+RUN ./client_tools.sh $disable_client_tools \
+    && chmod -R 755 /opt/harness-delegate \
+    && chgrp -R 0 /opt/harness-delegate  \
+    && chmod -R g=u /opt/harness-delegate \
+    && chown -R 1001 /opt/harness-delegate
+
+RUN rm /opt/harness-delegate/client_tools.sh
 
 COPY --from=adoptopenjdk/openjdk8:jre8u242-b08-ubi-minimal /opt/java/openjdk/ /opt/java/openjdk/
 

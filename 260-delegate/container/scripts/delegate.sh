@@ -21,6 +21,14 @@ function jar_app_version() {
 
   if [ -z "$VERSION" ]
   then
+    if unzip -l $JAR | grep -q BOOT-INF/classes/main/resources-filtered/versionInfo.yaml
+    then
+      VERSION=$(unzip -c $JAR BOOT-INF/classes/main/resources-filtered/versionInfo.yaml | grep "^version " | cut -d ":" -f2 | tr -d " " | tr -d "\r" | tr -d "\n")
+    fi
+  fi
+
+  if [ -z "$VERSION" ]
+  then
     VERSION=$(unzip -c $JAR META-INF/MANIFEST.MF | grep Application-Version | cut -d "=" -f2 | tr -d " " | tr -d "\r" | tr -d "\n")
   fi
   echo $VERSION
@@ -128,7 +136,11 @@ fi
 
 if [ ! -e config-delegate.yml ]; then
   echo "accountId: $ACCOUNT_ID" > config-delegate.yml
-  echo "accountSecret: $ACCOUNT_SECRET" >> config-delegate.yml
+  if [ ! -e $DELEGATE_TOKEN ]; then
+    echo "delegateToken: $DELEGATE_TOKEN" >> config-delegate.yml
+  else
+    echo "delegateToken: $ACCOUNT_SECRET" >> config-delegate.yml
+  fi
 fi
 test "$(tail -c 1 config-delegate.yml)" && `echo "" >> config-delegate.yml`
 if ! `grep managerUrl config-delegate.yml > /dev/null`; then
@@ -210,7 +222,7 @@ fi
 
 if [[ $DEPLOY_MODE != "KUBERNETES" ]]; then
   echo "Starting delegate - version $REMOTE_DELEGATE_VERSION"
-  $JRE_BINARY $JAVA_OPTS $PROXY_SYS_PROPS -Xbootclasspath/p:alpn-boot-8.1.13.v20181017.jar $OVERRIDE_TMP_PROPS -DACCOUNT_ID="${accountId}" -DMANAGER_HOST_AND_PORT="${MANAGER_HOST_AND_PORT}" -Ddelegatesourcedir="$DIR" -Xmx4096m -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true -DLANG=en_US.UTF-8 -jar delegate.jar config-delegate.yml watched $1
+  $JRE_BINARY $PROXY_SYS_PROPS -Xbootclasspath/p:alpn-boot-8.1.13.v20181017.jar $OVERRIDE_TMP_PROPS -DACCOUNT_ID="${accountId}" -DMANAGER_HOST_AND_PORT="${MANAGER_HOST_AND_PORT}" -Ddelegatesourcedir="$DIR" ${delegateXmx} -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true -DLANG=en_US.UTF-8 $JAVA_OPTS -jar delegate.jar config-delegate.yml watched $1
 fi
 
 sleep 3

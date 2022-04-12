@@ -8,6 +8,7 @@
 package io.harness.gitsync.core.fullsync;
 
 import static io.harness.rule.OwnerRule.BHAVYA;
+import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.PHOENIKX;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -166,5 +167,14 @@ public class GitFullSyncConfigServiceImplTest extends GitSyncTestBase {
     assertThatThrownBy(() -> gitFullSyncConfigService.createConfig(ACCOUNT, ORG, PROJECT, gitFullSyncConfigRequestDTO))
         .isInstanceOf(InvalidRequestException.class)
         .matches(ex -> ex.getMessage().equals(String.format("Branch [%s] already exist", BRANCH)));
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testDeleteAll() {
+    create();
+    gitFullSyncConfigService.deleteAll(ACCOUNT, ORG, PROJECT);
+    assertThat(gitFullSyncConfigService.get(ACCOUNT, ORG, PROJECT).isPresent()).isFalse();
   }
 }

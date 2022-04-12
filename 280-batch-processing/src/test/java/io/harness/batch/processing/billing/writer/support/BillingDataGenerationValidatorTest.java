@@ -58,7 +58,7 @@ public class BillingDataGenerationValidatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldReturnFalseWhenClusterEventIsOld() {
     when(lastReceivedPublishedMessageDao.get(ACCOUNT_ID, CLUSTER_ID))
-        .thenReturn(lastReceivedPublishedMessage(START_TIME.minus(1, ChronoUnit.DAYS).toEpochMilli()));
+        .thenReturn(lastReceivedPublishedMessage(START_TIME.minus(3, ChronoUnit.DAYS).toEpochMilli()));
     boolean generateBillingData =
         billingDataGenerationValidator.shouldGenerateBillingData(ACCOUNT_ID, CLUSTER_ID, START_TIME);
     assertThat(generateBillingData).isFalse();

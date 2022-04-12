@@ -24,6 +24,8 @@ import io.harness.artifacts.docker.service.DockerRegistryService;
 import io.harness.artifacts.docker.service.DockerRegistryServiceImpl;
 import io.harness.artifacts.gcr.service.GcrApiService;
 import io.harness.artifacts.gcr.service.GcrApiServiceImpl;
+import io.harness.aws.AWSCloudformationClient;
+import io.harness.aws.AWSCloudformationClientImpl;
 import io.harness.aws.AwsClient;
 import io.harness.aws.AwsClientImpl;
 import io.harness.azure.client.AzureAuthorizationClient;
@@ -150,6 +152,8 @@ import io.harness.delegate.task.aws.AwsCodeCommitApiDelegateTask;
 import io.harness.delegate.task.aws.AwsCodeCommitDelegateTask;
 import io.harness.delegate.task.aws.AwsDelegateTask;
 import io.harness.delegate.task.aws.AwsValidationHandler;
+import io.harness.delegate.task.azure.AzureTask;
+import io.harness.delegate.task.azure.AzureValidationHandler;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters.AzureAppServiceTaskType;
 import io.harness.delegate.task.azure.arm.AzureARMTaskParameters;
 import io.harness.delegate.task.azure.resource.operation.AzureResourceProvider;
@@ -161,6 +165,13 @@ import io.harness.delegate.task.citasks.CICleanupTask;
 import io.harness.delegate.task.citasks.CIExecuteStepTask;
 import io.harness.delegate.task.citasks.CIInitializeTask;
 import io.harness.delegate.task.citasks.ExecuteCommandTask;
+import io.harness.delegate.task.cloudformation.CloudformationBaseHelper;
+import io.harness.delegate.task.cloudformation.CloudformationBaseHelperImpl;
+import io.harness.delegate.task.cloudformation.CloudformationTaskNG;
+import io.harness.delegate.task.cloudformation.CloudformationTaskType;
+import io.harness.delegate.task.cloudformation.handlers.CloudformationAbstractTaskHandler;
+import io.harness.delegate.task.cloudformation.handlers.CloudformationCreateStackTaskHandler;
+import io.harness.delegate.task.cloudformation.handlers.CloudformationDeleteStackTaskHandler;
 import io.harness.delegate.task.cvng.CVConnectorValidationHandler;
 import io.harness.delegate.task.docker.DockerTestConnectionDelegateTask;
 import io.harness.delegate.task.docker.DockerValidationHandler;
@@ -479,6 +490,7 @@ import software.wings.helpers.ext.sftp.SftpService;
 import software.wings.helpers.ext.sftp.SftpServiceImpl;
 import software.wings.helpers.ext.smb.SmbService;
 import software.wings.helpers.ext.smb.SmbServiceImpl;
+import software.wings.misc.MemoryHelper;
 import software.wings.service.EcrClassicBuildServiceImpl;
 import software.wings.service.impl.AcrBuildServiceImpl;
 import software.wings.service.impl.AmazonS3BuildServiceImpl;
@@ -618,7 +630,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @TargetModule(HarnessModule._420_DELEGATE_AGENT)
 @OwnedBy(HarnessTeam.DEL)
 @BreakDependencyOn("io.harness.delegate.beans.connector.ConnectorType")
@@ -637,16 +651,21 @@ public class DelegateModule extends AbstractModule {
   private final DelegateConfiguration configuration;
 
   /*
-   * Creates and return ScheduledExecutorService object, which can be used for health monitoring purpose
-   * Currently this executor has been used for sending heartbeat to manager and watcher. This is also being
-   * used to send KeepAlive packet to manager.
+   * Creates and return ScheduledExecutorService object, which can be used for health monitoring purpose.
+   * This threadpool currently being used for various below operations:
+   *  1) Sending heartbeat to manager and watcher.
+   *  2) Receiving heartbeat from manager.
+   *  3) Sending KeepAlive packet to manager.
+   *  4) Perform self upgrade check.
+   *  5) Perform watcher upgrade check.
+   *  6) Track changes in delegate profile.
    */
   @Provides
   @Singleton
   @Named("healthMonitorExecutor")
   public ScheduledExecutorService healthMonitorExecutor() {
     return new ScheduledThreadPoolExecutor(
-        1, new ThreadFactoryBuilder().setNameFormat("healthMonitor-%d").setPriority(Thread.MAX_PRIORITY).build());
+        20, new ThreadFactoryBuilder().setNameFormat("healthMonitor-%d").setPriority(Thread.MAX_PRIORITY).build());
   }
 
   /*
@@ -663,17 +682,6 @@ public class DelegateModule extends AbstractModule {
   }
 
   /*
-   * Creates and return ScheduledExecutorService object, which can be used for scheduling self upgrade check.
-   */
-  @Provides
-  @Singleton
-  @Named("upgradeExecutor")
-  public ScheduledExecutorService upgradeExecutor() {
-    return new ScheduledThreadPoolExecutor(
-        1, new ThreadFactoryBuilder().setNameFormat("upgrade-%d").setPriority(Thread.MAX_PRIORITY).build());
-  }
-
-  /*
    * Creates and return ScheduledExecutorService object, which can be used for reading message from
    * watcher and take appropriate action.
    */
@@ -683,18 +691,6 @@ public class DelegateModule extends AbstractModule {
   public ScheduledExecutorService inputExecutor() {
     return new ScheduledThreadPoolExecutor(
         1, new ThreadFactoryBuilder().setNameFormat("input-%d").setPriority(Thread.NORM_PRIORITY).build());
-  }
-
-  /*
-   * Creates and return ScheduledExecutorService object, which can be used for tracking delegate profile
-   * and execute it in case of any changes.
-   */
-  @Provides
-  @Singleton
-  @Named("profileExecutor")
-  public ScheduledExecutorService profileExecutor() {
-    return new ScheduledThreadPoolExecutor(
-        1, new ThreadFactoryBuilder().setNameFormat("profile-%d").setPriority(Thread.NORM_PRIORITY).build());
   }
 
   @Provides
@@ -723,17 +719,6 @@ public class DelegateModule extends AbstractModule {
   public ExecutorService backgroundExecutor() {
     return ThreadPool.create(1, 1, 5, TimeUnit.SECONDS,
         new ThreadFactoryBuilder().setNameFormat("background-%d").setPriority(Thread.MIN_PRIORITY).build());
-  }
-
-  /*
-   * Creates and return ExecutorService object, which can be used for performing watcher upgrade.
-   */
-  @Provides
-  @Singleton
-  @Named("watcherUpgradeExecutor")
-  public ExecutorService watcherUpgradeExecutor() {
-    return ThreadPool.create(1, 1, 5, TimeUnit.SECONDS,
-        new ThreadFactoryBuilder().setNameFormat("watcherUpgrade-%d").setPriority(Thread.MAX_PRIORITY).build());
   }
 
   @Provides
@@ -783,7 +768,20 @@ public class DelegateModule extends AbstractModule {
   @Singleton
   @Named("taskExecutor")
   public ExecutorService taskExecutor() {
-    final int maxPoolSize = configuration.isDynamicHandlingOfRequestEnabled() ? Integer.MAX_VALUE : 400;
+    int maxPoolSize = Integer.MAX_VALUE;
+    long delegateXmx = 0;
+    try {
+      delegateXmx = MemoryHelper.getProcessMaxMemoryMB();
+      if (!configuration.isDynamicHandlingOfRequestEnabled()) {
+        // Set max threads to 400, if dynamic handling is disabled.
+        maxPoolSize = 400;
+      }
+    } catch (Exception ex) {
+      // We failed to fetch memory bean, setting number of threads as 400.
+      maxPoolSize = 400;
+    }
+    log.info(
+        "Starting Delegate process with {} MB of Xmx and {} number of execution threads", delegateXmx, maxPoolSize);
     return ThreadPool.create(10, maxPoolSize, 1, TimeUnit.SECONDS,
         new ThreadFactoryBuilder().setNameFormat("task-exec-%d").setPriority(Thread.MIN_PRIORITY).build());
   }
@@ -794,14 +792,6 @@ public class DelegateModule extends AbstractModule {
   public ExecutorService asyncExecutor() {
     return ThreadPool.create(10, 400, 1, TimeUnit.SECONDS,
         new ThreadFactoryBuilder().setNameFormat("async-%d").setPriority(Thread.MIN_PRIORITY).build());
-  }
-
-  @Provides
-  @Singleton
-  @Named("syncExecutor")
-  public ExecutorService syncExecutor() {
-    return ThreadPool.create(10, 40, 1, TimeUnit.SECONDS,
-        new ThreadFactoryBuilder().setNameFormat("sync-task-%d").setPriority(Thread.NORM_PRIORITY).build());
   }
 
   @Provides
@@ -979,7 +969,7 @@ public class DelegateModule extends AbstractModule {
     bind(TerraformBaseHelper.class).to(TerraformBaseHelperImpl.class);
     bind(DelegateFileManagerBase.class).to(DelegateFileManagerImpl.class);
     bind(TerraformClient.class).to(TerraformClientImpl.class);
-
+    bind(CloudformationBaseHelper.class).to(CloudformationBaseHelperImpl.class);
     bind(HelmDeployServiceNG.class).to(HelmDeployServiceImplNG.class);
 
     MapBinder<String, CommandUnitExecutorService> serviceCommandExecutorServiceMapBinder =
@@ -1094,6 +1084,7 @@ public class DelegateModule extends AbstractModule {
     bind(ManifestCollectionService.class).to(HelmChartCollectionService.class);
     bind(AzureKubernetesClient.class).to(AzureKubernetesClientImpl.class);
     bind(ArtifactoryNgService.class).to(ArtifactoryNgServiceImpl.class);
+    bind(AWSCloudformationClient.class).to(AWSCloudformationClientImpl.class);
 
     // NG Delegate
     MapBinder<String, K8sRequestHandler> k8sTaskTypeToRequestHandler =
@@ -1116,6 +1107,14 @@ public class DelegateModule extends AbstractModule {
     tfTaskTypeToHandlerMap.addBinding(TFTaskType.APPLY).to(TerraformApplyTaskHandler.class);
     tfTaskTypeToHandlerMap.addBinding(TFTaskType.PLAN).to(TerraformPlanTaskHandler.class);
     tfTaskTypeToHandlerMap.addBinding(TFTaskType.DESTROY).to(TerraformDestroyTaskHandler.class);
+
+    // Cloudformation Task Handlers
+    MapBinder<CloudformationTaskType, CloudformationAbstractTaskHandler> cfnTaskTypeToHandlerMap =
+        MapBinder.newMapBinder(binder(), CloudformationTaskType.class, CloudformationAbstractTaskHandler.class);
+    cfnTaskTypeToHandlerMap.addBinding(CloudformationTaskType.CREATE_STACK)
+        .to(CloudformationCreateStackTaskHandler.class);
+    cfnTaskTypeToHandlerMap.addBinding(CloudformationTaskType.DELETE_STACK)
+        .to(CloudformationDeleteStackTaskHandler.class);
 
     // HelmNG Task Handlers
 
@@ -1513,6 +1512,7 @@ public class DelegateModule extends AbstractModule {
         .toInstance(CEKubernetesTestConnectionDelegateTask.class);
     mapBinder.addBinding(TaskType.K8S_SERVICE_ACCOUNT_INFO).toInstance(K8sFetchServiceAccountTask.class);
     mapBinder.addBinding(TaskType.HTTP_HELM_CONNECTIVITY_TASK).toInstance(HttpHelmConnectivityDelegateTask.class);
+    mapBinder.addBinding(TaskType.NG_AZURE_TASK).toInstance(AzureTask.class);
 
     mapBinder.addBinding(TaskType.K8_FETCH_NAMESPACES).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.K8_FETCH_WORKLOADS).toInstance(ServiceImplDelegateTask.class);
@@ -1536,6 +1536,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.SCM_GIT_WEBHOOK_TASK).toInstance(ScmGitWebhookTask.class);
     mapBinder.addBinding(TaskType.SERVICENOW_CONNECTIVITY_TASK_NG).toInstance(ServiceNowTestConnectionTaskNG.class);
     mapBinder.addBinding(TaskType.SERVICENOW_TASK_NG).toInstance(ServiceNowTaskNG.class);
+    mapBinder.addBinding(TaskType.CLOUDFORMATION_TASK_NG).toInstance(CloudformationTaskNG.class);
   }
 
   private void registerSecretManagementBindings() {
@@ -1661,6 +1662,8 @@ public class DelegateModule extends AbstractModule {
         .to(ServiceNowValidationHandler.class);
     connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.ERROR_TRACKING.getDisplayName())
         .to(CVConnectorValidationHandler.class);
+    connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.AZURE.getDisplayName())
+        .to(AzureValidationHandler.class);
   }
 
   private void bindExceptionHandlers() {

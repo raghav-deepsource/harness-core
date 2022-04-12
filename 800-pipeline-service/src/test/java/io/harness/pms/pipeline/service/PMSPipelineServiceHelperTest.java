@@ -102,6 +102,17 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
     assertThat(updatedEntity.getFilters().size()).isEqualTo(1);
     assertThat(updatedEntity.getFilters().containsKey("whatKey?")).isTrue();
     assertThat(updatedEntity.getFilters().containsValue(Document.parse("{\"some\" : \"value\"}"))).isTrue();
+
+    response = FilterCreatorMergeServiceResponse.builder()
+                   .stageCount(1)
+                   .stageNames(Collections.singletonList("stage-1"))
+                   .build();
+    doReturn(response).when(filterCreatorMergeService).getPipelineInfo(any());
+    updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(updatedEntity);
+    assertThat(updatedEntity.getStageCount()).isEqualTo(1);
+    assertThat(updatedEntity.getStageNames().size()).isEqualTo(1);
+    assertThat(updatedEntity.getStageNames().contains("stage-1")).isTrue();
+    assertThat(updatedEntity.getFilters().size()).isEqualTo(0);
   }
 
   @Test

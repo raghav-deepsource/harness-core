@@ -8,9 +8,9 @@ package file
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/harness/harness-core/commons/go/lib/logs"
@@ -23,7 +23,7 @@ func TestFindFilePositivePath(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(200)
-		content, _ := ioutil.ReadFile("testdata/FileFindSource.json")
+		content, _ := os.ReadFile("testdata/FileFindSource.json")
 		fmt.Fprint(w, string(content))
 	}))
 	defer ts.Close()
@@ -57,7 +57,7 @@ func TestFindFileNegativePath(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(404)
-		content, _ := ioutil.ReadFile("testdata/FileErrorSource.json")
+		content, _ := os.ReadFile("testdata/FileErrorSource.json")
 		fmt.Fprint(w, string(content))
 	}))
 	defer ts.Close()
@@ -91,7 +91,7 @@ func TestCreateFile(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(201)
-		content, _ := ioutil.ReadFile("testdata/FileCreateSource.json")
+		content, _ := os.ReadFile("testdata/FileCreateSource.json")
 		fmt.Fprint(w, string(content))
 	}))
 	defer ts.Close()
@@ -130,7 +130,7 @@ func TestCreateFileConflict(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(409)
-		content, _ := ioutil.ReadFile("testdata/FileCreateNoMatch.json")
+		content, _ := os.ReadFile("testdata/FileCreateNoMatch.json")
 		fmt.Fprint(w, string(content))
 	}))
 	defer ts.Close()
@@ -170,7 +170,7 @@ func TestUpdateFile(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(200)
-		content, _ := ioutil.ReadFile("testdata/FileUpdateSource.json")
+		content, _ := os.ReadFile("testdata/FileUpdateSource.json")
 		fmt.Fprint(w, string(content))
 	}))
 	defer ts.Close()
@@ -210,7 +210,7 @@ func TestUpdateFileNoMatchGithub(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(409)
-		content, _ := ioutil.ReadFile("testdata/FileUpdateNoMatch.json")
+		content, _ := os.ReadFile("testdata/FileUpdateNoMatch.json")
 		fmt.Fprint(w, string(content))
 	}))
 	defer ts.Close()
@@ -279,7 +279,7 @@ func TestDeleteFile(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(200)
-		content, _ := ioutil.ReadFile("testdata/FileUpdateSource.json")
+		content, _ := os.ReadFile("testdata/FileUpdateSource.json")
 		fmt.Fprint(w, string(content))
 	}))
 	defer ts.Close()
@@ -321,16 +321,16 @@ func TestPushNewFile(t *testing.T) {
 		if r.Method == http.MethodGet {
 			if serveActualFile {
 				// 3. file find
-				content, _ := ioutil.ReadFile("testdata/FileFindSource.json")
+				content, _ := os.ReadFile("testdata/FileFindSource.json")
 				fmt.Fprint(w, string(content))
 			} else {
 				// 1. file does not exist yet
-				content, _ := ioutil.ReadFile("testdata/FileError.json")
+				content, _ := os.ReadFile("testdata/FileError.json")
 				fmt.Fprint(w, string(content))
 			}
 		} else {
 			// 2. file is created
-			content, _ := ioutil.ReadFile("testdata/FileCreateSource.json")
+			content, _ := os.ReadFile("testdata/FileCreateSource.json")
 			serveActualFile = true
 			fmt.Fprint(w, string(content))
 		}
@@ -369,7 +369,7 @@ func TestFindFilesInBranch(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(200)
-		content, _ := ioutil.ReadFile("testdata/FileList.json")
+		content, _ := os.ReadFile("testdata/FileList.json")
 		fmt.Fprint(w, string(content))
 	}))
 	defer ts.Close()
@@ -445,7 +445,7 @@ func TestFindFilesInCommit(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(200)
-		content, _ := ioutil.ReadFile("testdata/FileList.json")
+		content, _ := os.ReadFile("testdata/FileList.json")
 		fmt.Fprint(w, string(content))
 	}))
 	defer ts.Close()
@@ -477,7 +477,7 @@ func TestBatchFindFile(t *testing.T) {
 		if r.URL.Path == "/repos/tphoney/scm-test/contents/README.md" {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(200)
-			content, _ := ioutil.ReadFile("testdata/FileFindSource.json")
+			content, _ := os.ReadFile("testdata/FileFindSource.json")
 			fmt.Fprint(w, string(content))
 		} else {
 			w.Header().Set("Content-Type", "application/json")

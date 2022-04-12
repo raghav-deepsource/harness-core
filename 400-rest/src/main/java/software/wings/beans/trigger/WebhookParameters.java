@@ -43,6 +43,7 @@ public class WebhookParameters {
 
   // Bit Bucket Push Request suggestions
   public static final String BIT_BUCKET_PUSH_BRANCH_REF = "${push.changes[0].'new'.name}";
+  public static final String BIT_BUCKET_PUSH_BRANCH_FORMAT = "${push.changes[%d].'new'.name}";
   public static final String BIT_BUCKET_PULL_BRANCH_REF = "${pullrequest.source.branch.name}";
   public static final String BIT_BUCKET_ON_PREM_PULL_BRANCH_REF = "${pullRequest.fromRef.displayId}";
   public static final String BIT_BUCKET_COMMIT_ID = "${push.changes[0].'new'.target.hash}";
@@ -114,7 +115,7 @@ public class WebhookParameters {
   /* For Pull request merged event */
   public static final String AZURE_DEVOPS_PULL_REQUEST_MERGED_REF_BRANCH =
       "${resource.targetRefName.split('refs/heads/')[1]}";
-  public static final String AZURE_DEVOPS_PULL_REQUEST_MERGED_COMMIT_ID = "${resource.lastMergeSourceCommit.commitId}";
+  public static final String AZURE_DEVOPS_PULL_REQUEST_MERGED_COMMIT_ID = "${resource.lastMergeCommit.commitId}";
   public static final String AZURE_DEVOPS_PULL_REQUEST_MERGED_REPOSITORY_FULL_NAME = "${resource.repository.name}";
 
   public static List<String> bitBucketPullRequestExpressions() {

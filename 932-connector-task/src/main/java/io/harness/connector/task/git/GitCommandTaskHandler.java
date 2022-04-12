@@ -36,6 +36,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.git.GitCommandExecutionResponse;
 import io.harness.eraro.ErrorCode;
 import io.harness.errorhandling.NGErrorHelper;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.runtime.SCMRuntimeException;
 import io.harness.git.GitClientHelper;
 import io.harness.product.ci.scm.proto.GetUserReposResponse;
@@ -132,8 +133,10 @@ public class GitCommandTaskHandler {
         reposResponse = scmDelegateClient.processScmRequest(
             c -> scmServiceClient.getUserRepos(scmConnector, SCMGrpc.newBlockingStub(c)));
       }
+    } catch (InvalidRequestException e) {
+      throw SCMRuntimeException.builder().message(e.getMessage()).errorCode(ErrorCode.INVALID_REQUEST).build();
     } catch (Exception e) {
-      throw SCMRuntimeException.builder().errorCode(ErrorCode.UNEXPECTED).cause(e).build();
+      throw SCMRuntimeException.builder().message(e.getMessage()).errorCode(ErrorCode.UNEXPECTED).cause(e).build();
     }
     if (reposResponse != null && reposResponse.getStatus() > 300) {
       ErrorCode errorCode = convertScmStatusCodeToErrorCode(reposResponse.getStatus());

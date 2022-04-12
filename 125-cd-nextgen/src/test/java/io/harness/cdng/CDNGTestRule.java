@@ -38,6 +38,7 @@ import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.impl.noop.NoOpProducer;
 import io.harness.factory.ClosingFactory;
+import io.harness.gitsync.persistance.testing.GitSyncablePersistenceTestModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
@@ -69,7 +70,6 @@ import io.harness.serializer.ManagerRegistrars;
 import io.harness.service.intfc.DelegateAsyncService;
 import io.harness.service.intfc.DelegateSyncService;
 import io.harness.springdata.HTransactionTemplate;
-import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
 import io.harness.threading.CurrentThreadExecutor;
@@ -131,6 +131,7 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
     List<Module> modules = new ArrayList<>();
     modules.add(KryoModule.getInstance());
     modules.add(YamlSdkModule.getInstance());
+    modules.add(new GitSyncablePersistenceTestModule());
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
@@ -199,13 +200,6 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
       }
 
       @Provides
-      @Named("new-yaml-schema-subtypes-cd")
-      @Singleton
-      public Map<Class<?>, Set<Class<?>>> newCdYamlSchemaSubtypes() {
-        return Mockito.mock(Map.class);
-      }
-
-      @Provides
       @Named("disableDeserialization")
       @Singleton
       public boolean getSerializationForDelegate() {
@@ -236,12 +230,14 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
         bind(Producer.class)
             .annotatedWith(Names.named(EventsFrameworkConstants.ENTITY_CRUD))
             .toInstance(mock(NoOpProducer.class));
+        bind(Producer.class)
+            .annotatedWith(Names.named(EventsFrameworkConstants.SETUP_USAGE))
+            .toInstance(mock(NoOpProducer.class));
       }
     });
     modules.add(TimeModule.getInstance());
     modules.add(NGModule.getInstance());
     modules.add(TestMongoModule.getInstance());
-    modules.add(new SpringPersistenceTestModule());
     modules.add(OrchestrationModule.getInstance(getOrchestrationConfig()));
     modules.add(mongoTypeModule(annotations));
     modules.add(new EntitySetupUsageModule());

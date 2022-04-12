@@ -14,7 +14,7 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.beans.recommendation.NodePoolId;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
-import io.harness.ccm.commons.beans.recommendation.models.RecommendClusterRequest;
+import io.harness.ccm.commons.beans.recommendation.models.RecommendNodePoolClusterRequest;
 import io.harness.ccm.graphql.core.recommendation.NodeRecommendationService;
 import io.harness.ccm.graphql.core.recommendation.WorkloadRecommendationService;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationDetailsDTO;
@@ -73,7 +73,7 @@ public class RecommendationsDetailsQuery {
   }
 
   @GraphQLQuery(name = "nodeRecommendationRequest")
-  public RecommendClusterRequest nodeRecommendationRequest(
+  public RecommendNodePoolClusterRequest nodeRecommendationRequest(
       @GraphQLNonNull @GraphQLArgument(name = "nodePoolId") NodePoolId nodePoolId,
       @GraphQLArgument(name = "startTime", description = "defaults to Now().minusDays(7)") OffsetDateTime startTime,
       @GraphQLArgument(name = "endTime", description = "defaults to Now()") OffsetDateTime endTime,

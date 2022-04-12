@@ -9,6 +9,7 @@ package io.harness.ccm.license;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.licensing.Edition;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import javax.validation.constraints.NotNull;
@@ -28,4 +29,5 @@ import lombok.experimental.FieldDefaults;
 public class CeLicenseInfoDTO {
   @NotNull private String accountId;
   @NotNull private long expiryTime;
+  private Edition edition;
 }

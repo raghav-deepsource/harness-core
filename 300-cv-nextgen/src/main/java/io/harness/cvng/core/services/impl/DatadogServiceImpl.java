@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.services.impl;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.cvng.beans.DataCollectionRequest;
@@ -24,6 +25,7 @@ import io.harness.cvng.core.beans.OnboardingResponseDTO;
 import io.harness.cvng.core.beans.TimeSeriesSampleDTO;
 import io.harness.cvng.core.beans.datadog.DatadogDashboardDTO;
 import io.harness.cvng.core.beans.datadog.DatadogDashboardDetail;
+import io.harness.cvng.core.beans.datadog.MetricTagResponseDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.DatadogService;
 import io.harness.cvng.core.services.api.OnboardingService;
@@ -38,10 +40,12 @@ import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.google.inject.Inject;
 import java.lang.reflect.Type;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -51,6 +55,7 @@ public class DatadogServiceImpl implements DatadogService {
   public static final int MAX_METRIC_TAGS_COUNT = 1000;
 
   @Inject private OnboardingService onboardingService;
+  @Inject private Clock clock;
 
   @Override
   public PageResponse<DatadogDashboardDTO> getAllDashboards(ProjectParams projectParams, String connectorIdentifier,
@@ -84,7 +89,6 @@ public class DatadogServiceImpl implements DatadogService {
     Type type = new TypeToken<List<DatadogDashboardDetail>>() {}.getType();
     return performRequestAndGetDataResult(request, type, projectParams, connectorIdentifier, tracingId);
   }
-
   @Override
   public List<String> getMetricTagsList(
       ProjectParams projectParams, String connectorIdentifier, String metricName, String tracingId) {
@@ -101,17 +105,23 @@ public class DatadogServiceImpl implements DatadogService {
   }
 
   @Override
-  public List<String> getActiveMetrics(ProjectParams projectParams, String connectorIdentifier, String tracingId) {
-    long from = Instant.now().getEpochSecond() - 24 * 60 * 60;
-    DataCollectionRequest<DatadogConnectorDTO> request =
-        DatadogActiveMetricsRequest.builder().from(from).type(DataCollectionRequestType.DATADOG_ACTIVE_METRICS).build();
+  public List<String> getActiveMetrics(
+      ProjectParams projectParams, String connectorIdentifier, String filter, String tracingId) {
+    long fromEpochSecond = clock.instant().minus(Duration.ofDays(1)).getEpochSecond();
+    DataCollectionRequest<DatadogConnectorDTO> request = DatadogActiveMetricsRequest.builder()
+                                                             .from(fromEpochSecond)
+                                                             .type(DataCollectionRequestType.DATADOG_ACTIVE_METRICS)
+                                                             .build();
 
     Type type = new TypeToken<List<String>>() {}.getType();
     List<String> activeMetricsList =
         performRequestAndGetDataResult(request, type, projectParams, connectorIdentifier, tracingId);
 
     // limit to 1000 items (datadog api doesn't provide additional filtering)
-    return activeMetricsList.stream().limit(MAX_ACTIVE_METRICS_COUNT).collect(Collectors.toList());
+    return activeMetricsList.stream()
+        .filter(metric -> isEmpty(filter) || metric.toLowerCase().contains(filter.toLowerCase()))
+        .limit(MAX_ACTIVE_METRICS_COUNT)
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -160,6 +170,29 @@ public class DatadogServiceImpl implements DatadogService {
 
     Type type = new TypeToken<List<String>>() {}.getType();
     return performRequestAndGetDataResult(request, type, projectParams, connectorIdentifier, tracingId);
+  }
+
+  @Override
+  public MetricTagResponseDTO getMetricTagsResponse(
+      ProjectParams projectParams, String connectorIdentifier, String metricName, String filter, String tracingId) {
+    DataCollectionRequest<DatadogConnectorDTO> request = DatadogMetricTagsRequest.builder()
+                                                             .metric(metricName)
+                                                             .type(DataCollectionRequestType.DATADOG_METRIC_TAGS)
+                                                             .build();
+    Type type = new TypeToken<List<String>>() {}.getType();
+    List<String> metricTagsList =
+        performRequestAndGetDataResult(request, type, projectParams, connectorIdentifier, tracingId);
+    Set<String> tagKeys = metricTagsList.stream()
+                              .map(tag -> tag.split(":")[0])
+                              .distinct()
+                              .limit(MAX_METRIC_TAGS_COUNT)
+                              .collect(Collectors.toSet());
+    List<String> metricTags =
+        metricTagsList.stream()
+            .filter(metricTag -> isEmpty(filter) || metricTag.toLowerCase().contains(filter.toLowerCase()))
+            .limit(MAX_METRIC_TAGS_COUNT)
+            .collect(Collectors.toList());
+    return MetricTagResponseDTO.builder().metricTags(metricTags).tagKeys(tagKeys).build();
   }
 
   @Override

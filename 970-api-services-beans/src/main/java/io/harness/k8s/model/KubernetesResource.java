@@ -63,16 +63,19 @@ import io.kubernetes.client.openapi.models.V1VolumeProjection;
 import io.kubernetes.client.openapi.models.V1beta1CronJob;
 import io.kubernetes.client.util.Yaml;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.yaml.snakeyaml.constructor.ConstructorException;
 
 @Data
 @Builder
@@ -84,6 +87,7 @@ public class KubernetesResource {
   private static final String MISSING_STATEFULSET_SPEC_MSG = "StatefulSet does not have spec";
   private static final String MISSING_DEPLOYMENT_CONFIG_SPEC_MSG = "DeploymentConfig does not have spec";
   private static final String MISSING_CRON_JOB_SPEC_MSG = "CronJob does not have spec";
+  private static final String YAML_CONSTRUCTION_EXCEPTION_MESSAGE_FORMAT = "%s %n%s";
 
   private KubernetesResourceId resourceId;
   private Object value;
@@ -493,33 +497,49 @@ public class KubernetesResource {
 
   @VisibleForTesting
   Object getK8sResource() {
-    Kind kind = Kind.valueOf(this.resourceId.getKind());
+    try {
+      Kind kind = Kind.valueOf(this.resourceId.getKind());
 
-    switch (kind) {
-      case Deployment:
-        return Yaml.loadAs(this.spec, V1Deployment.class);
-      case DaemonSet:
-        return Yaml.loadAs(this.spec, V1DaemonSet.class);
-      case StatefulSet:
-        return Yaml.loadAs(this.spec, V1StatefulSet.class);
-      case Job:
-        return Yaml.loadAs(this.spec, V1Job.class);
-      case Service:
-        return Yaml.loadAs(this.spec, V1Service.class);
-      case Secret:
-        return Yaml.loadAs(this.spec, V1Secret.class);
-      case ConfigMap:
-        return Yaml.loadAs(this.spec, V1ConfigMap.class);
-      case Pod:
-        return Yaml.loadAs(this.spec, V1Pod.class);
-      case DeploymentConfig:
-        return Yaml.loadAs(this.spec, DeploymentConfig.class);
-      case CronJob:
-        return Yaml.loadAs(this.spec, V1beta1CronJob.class);
-      default:
-        unhandled(this.resourceId.getKind());
-        throw new KubernetesYamlException("Unhandled Kubernetes resource " + this.resourceId.getKind());
+      switch (kind) {
+        case Deployment:
+          return Yaml.loadAs(this.spec, V1Deployment.class);
+        case DaemonSet:
+          return Yaml.loadAs(this.spec, V1DaemonSet.class);
+        case StatefulSet:
+          return Yaml.loadAs(this.spec, V1StatefulSet.class);
+        case Job:
+          return Yaml.loadAs(this.spec, V1Job.class);
+        case Service:
+          return Yaml.loadAs(this.spec, V1Service.class);
+        case Secret:
+          return Yaml.loadAs(this.spec, V1Secret.class);
+        case ConfigMap:
+          return Yaml.loadAs(this.spec, V1ConfigMap.class);
+        case Pod:
+          return Yaml.loadAs(this.spec, V1Pod.class);
+        case DeploymentConfig:
+          return Yaml.loadAs(this.spec, DeploymentConfig.class);
+        case CronJob:
+          return Yaml.loadAs(this.spec, V1beta1CronJob.class);
+        default:
+          unhandled(this.resourceId.getKind());
+          throw new KubernetesYamlException("Unhandled Kubernetes resource " + this.resourceId.getKind());
+      }
+    } catch (Exception ex) {
+      String yamlConstructionExceptionMessage =
+          ex instanceof ConstructorException ? extractMessageHeaderWithProblemMarks(ex) : "";
+      String exceptionMessage = format("Failed to load spec for resource kind: %s, name: %s %n",
+          this.resourceId.getKind(), this.resourceId.getName());
+      throw new KubernetesYamlException(exceptionMessage + yamlConstructionExceptionMessage);
     }
+  }
+
+  private String extractMessageHeaderWithProblemMarks(Exception ex) {
+    String messageHeader = ex.getMessage().split("\\{")[0];
+    String problemMarkLine = Arrays.stream(((ConstructorException) ex).getProblemMark().toString().split("\\n"))
+                                 .filter(line -> line.contains("line"))
+                                 .collect(Collectors.joining("\n"));
+    return String.format(YAML_CONSTRUCTION_EXCEPTION_MESSAGE_FORMAT, messageHeader, problemMarkLine);
   }
 
   private void updateConfigMapRef(Object k8sResource, UnaryOperator<Object> transformer) {

@@ -10,11 +10,11 @@ package io.harness.polling.mapper.manifest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
+import io.harness.k8s.model.HelmVersion;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.polling.bean.PollingInfo;
 import io.harness.polling.bean.manifest.HelmChartManifestInfo;
 import io.harness.polling.contracts.GcsHelmPayload;
-import io.harness.polling.contracts.HelmVersion;
 import io.harness.polling.contracts.PollingPayloadData;
 import io.harness.polling.mapper.PollingInfoBuilder;
 
@@ -30,8 +30,7 @@ public class GcsHelmChartManifestInfoBuilder implements PollingInfoBuilder {
                    .folderPath(ParameterField.<String>builder().value(gcsHelmPayload.getFolderPath()).build())
                    .build())
         .chartName(gcsHelmPayload.getChartName())
-        .helmVersion(gcsHelmPayload.getHelmVersion() == HelmVersion.V2 ? io.harness.k8s.model.HelmVersion.V2
-                                                                       : io.harness.k8s.model.HelmVersion.V3)
+        .helmVersion(HelmVersion.fromString(gcsHelmPayload.getHelmVersion().name()))
         .build();
   }
 }

@@ -14,10 +14,10 @@ import static io.harness.waiter.OrchestrationNotifyEventListener.ORCHESTRATION;
 
 import static software.wings.common.VerificationConstants.URL_BODY_APPENDER;
 import static software.wings.common.VerificationConstants.VERIFICATION_HOST_PLACEHOLDER;
+import static software.wings.delegatetasks.cv.CVConstants.CONTROL_HOST_NAME;
+import static software.wings.delegatetasks.cv.CVConstants.TEST_HOST_NAME;
 import static software.wings.service.impl.apm.APMMetricInfo.ResponseMapper;
 import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
-import static software.wings.sm.states.DynatraceState.CONTROL_HOST_NAME;
-import static software.wings.sm.states.DynatraceState.TEST_HOST_NAME;
 
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;

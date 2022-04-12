@@ -3559,11 +3559,13 @@ public class ArtifactStreamServiceTest extends WingsBaseTest {
     savedCustomArtifactStream.getScripts().get(0).setScriptString(SCRIPT_STRING_UPDATED);
     savedArtifactSteam.setTemplateVariables(
         asList(aVariable().name("var1").value("another overridden value").type(TEXT).build()));
+    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_COLLECTION_CONFIGURABLE, ACCOUNT_ID)).thenReturn(true);
     ArtifactStream updatedArtifactStream = artifactStreamService.update(savedArtifactSteam, false, true);
 
     assertThat(updatedArtifactStream.getUuid()).isNotEmpty();
     assertThat(updatedArtifactStream.getSourceName()).isEqualTo(updatedArtifactStream.getName());
     assertThat(updatedArtifactStream.getArtifactStreamType()).isEqualTo(ArtifactStreamType.CUSTOM.name());
+    assertThat(updatedArtifactStream.getCollectionStatus()).isEqualTo(UNSTABLE.name());
     CustomArtifactStream updatedCustomArtifactStream = (CustomArtifactStream) savedArtifactSteam;
     Script updatedScript = updatedCustomArtifactStream.getScripts().stream().findFirst().orElse(null);
     assertThat(updatedScript.getScriptString()).isEqualTo(SCRIPT_STRING_UPDATED);

@@ -22,8 +22,6 @@ public class HarnessCDChangeSourceSpecTransformer
         .accountId(monitoredServiceParams.getAccountIdentifier())
         .orgIdentifier(monitoredServiceParams.getOrgIdentifier())
         .projectIdentifier(monitoredServiceParams.getProjectIdentifier())
-        .serviceIdentifier(monitoredServiceParams.getServiceIdentifier())
-        .envIdentifier(monitoredServiceParams.getEnvironmentIdentifier())
         .monitoredServiceIdentifier(monitoredServiceParams.getMonitoredServiceIdentifier())
         .identifier(changeSourceDTO.getIdentifier())
         .name(changeSourceDTO.getName())

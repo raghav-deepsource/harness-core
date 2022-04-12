@@ -31,9 +31,10 @@ public class NodeProjectionUtils {
   public static final Set<String> fieldsForNodeUpdateObserver = Sets.newHashSet(
       NodeExecutionKeys.ambiance, NodeExecutionKeys.status, NodeExecutionKeys.endTs, NodeExecutionKeys.oldRetry);
 
-  public static final Set<String> fieldsForResume = Sets.newHashSet(NodeExecutionKeys.status,
-      NodeExecutionKeys.ambiance, NodeExecutionKeys.executableResponses, NodeExecutionKeys.mode,
-      NodeExecutionKeys.resolvedParams, NodeExecutionKeys.module, NodeExecutionKeys.originalNodeExecutionId);
+  public static final Set<String> fieldsForResume =
+      Sets.newHashSet(NodeExecutionKeys.status, NodeExecutionKeys.ambiance, NodeExecutionKeys.executableResponses,
+          NodeExecutionKeys.mode, NodeExecutionKeys.resolvedParams, NodeExecutionKeys.module,
+          NodeExecutionKeys.originalNodeExecutionId, NodeExecutionKeys.stepType);
 
   public static final Set<String> fieldsForExpressionEngine = Sets.newHashSet(NodeExecutionKeys.status,
       NodeExecutionKeys.ambiance, NodeExecutionKeys.mode, NodeExecutionKeys.startTs, NodeExecutionKeys.endTs,

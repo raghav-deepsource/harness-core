@@ -390,40 +390,6 @@ public class DelegateSetupResourceV3 {
     }
   }
 
-  @PUT
-  @Path("{delegateId}/tags")
-  @Timed
-  @ExceptionMetered
-  @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
-  @AuthRule(permissionType = MANAGE_DELEGATES)
-  @Operation(operationId = "updateDelegateTags", summary = "Updates tags for the delegate.",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default", description = "Updated delegate")
-      })
-  public RestResponse<Delegate>
-  updateTags(@Parameter(description = "Delegate UUID") @PathParam("delegateId") @NotEmpty String delegateId,
-      @Parameter(description = "Account UUID") @QueryParam("accountId") @NotEmpty String accountId,
-      @RequestBody(required = true, description = "List of tag values to be updated") DelegateTags delegateTags) {
-    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
-         AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
-      Delegate delegate = delegateCache.get(accountId, delegateId, true);
-      delegate.setTags(delegateTags.getTags());
-      return new RestResponse<>(delegateService.updateTags(delegate));
-    }
-  }
-
-  @VisibleForTesting
-  protected static class DelegateTags {
-    private List<String> tags;
-    public List<String> getTags() {
-      return tags;
-    }
-    public void setTags(List<String> tags) {
-      this.tags = tags;
-    }
-  }
-
   @GET
   @Path("kubernetes-delegates")
   @Timed
@@ -1055,6 +1021,7 @@ public class DelegateSetupResourceV3 {
     }
   }
 
+  // TODO: ARPIT remove this api once UI starts a new one from DelegateTokenNgResource
   @GET
   @Path("/ng/delegate-token")
   @Timed

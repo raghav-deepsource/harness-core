@@ -85,6 +85,7 @@ import io.harness.secretmanagerclient.dto.VaultAgentCredentialDTO;
 import io.harness.secretmanagerclient.dto.VaultAppRoleCredentialDTO;
 import io.harness.secretmanagerclient.dto.VaultAuthTokenCredentialDTO;
 import io.harness.secretmanagerclient.dto.VaultAwsIamRoleCredentialDTO;
+import io.harness.secretmanagerclient.dto.VaultK8sCredentialDTO;
 import io.harness.secretmanagerclient.dto.VaultMetadataRequestSpecDTO;
 import io.harness.secretmanagerclient.dto.VaultMetadataSpecDTO;
 import io.harness.secretmanagerclient.dto.VaultSecretEngineDTO;
@@ -180,7 +181,7 @@ public class NGVaultServiceImpl implements NGVaultService {
         }
       }
     } catch (WingsException wingsException) {
-      log.error("Listing secret engines failed for account Id {}", baseVaultConfig.getAccountId(), wingsException);
+      log.error("Listing secret engines failed for account Id {}", baseVaultConfig.getAccountId());
       throw wingsException;
     } catch (DelegateServiceDriverException ex) {
       if (ex.getCause() != null) {
@@ -364,6 +365,7 @@ public class NGVaultServiceImpl implements NGVaultService {
     setVaultAgentParams(vaultConfig, specDTO);
     setTokenParam(vaultConfig, specDTO);
     setApproleParams(vaultConfig, specDTO);
+    setK8sAuthParams(vaultConfig, specDTO);
 
     Optional<Set<String>> delegateSelectors =
         Optional.ofNullable(specDTO).map(VaultMetadataRequestSpecDTO::getDelegateSelectors);
@@ -458,6 +460,32 @@ public class NGVaultServiceImpl implements NGVaultService {
     xVaultAwsIamServerId.ifPresent(x -> { vaultConfig.setXVaultAwsIamServerId(x); });
   }
 
+  private void setK8sAuthParams(BaseVaultConfig vaultConfig, VaultMetadataRequestSpecDTO specDTO) {
+    Optional<String> vaultK8sAuthRole =
+        Optional.ofNullable(specDTO)
+            .filter(metadataRequestSpec -> metadataRequestSpec.getAccessType() == AccessType.K8s_AUTH)
+            .map(metadataRequestSpec -> ((VaultK8sCredentialDTO) (metadataRequestSpec.getSpec())).getVaultK8sAuthRole())
+            .filter(vaultK8sRole -> !vaultK8sRole.isEmpty());
+    vaultK8sAuthRole.ifPresent(vaultK8sRole -> {
+      vaultConfig.setAuthToken(null);
+      vaultConfig.setAppRoleId(null);
+      vaultConfig.setSecretId(null);
+      vaultConfig.setSinkPath(null);
+      vaultConfig.setUseVaultAgent(false);
+      vaultConfig.setUseAwsIam(false);
+      vaultConfig.setUseK8sAuth(true);
+      vaultConfig.setVaultK8sAuthRole(vaultK8sRole);
+    });
+
+    Optional<String> serviceAccountTokenPath =
+        Optional.ofNullable(specDTO)
+            .filter(metadataRequestSpec -> metadataRequestSpec.getAccessType() == AccessType.K8s_AUTH)
+            .map(metadataRequestSpec
+                -> ((VaultK8sCredentialDTO) (metadataRequestSpec.getSpec())).getServiceAccountTokenPath())
+            .filter(saTokenPath -> !saTokenPath.isEmpty());
+    serviceAccountTokenPath.ifPresent(saTokenPath -> { vaultConfig.setServiceAccountTokenPath(saTokenPath); });
+  }
+
   private SecretManagerMetadataDTO getAzureKeyVaultMetadata(String accountIdentifier,
       SecretManagerMetadataRequestDTO requestDTO, EncryptionConfig existingVaultEncryptionConfig) {
     AzureKeyVaultMetadataRequestSpecDTO specDTO = (AzureKeyVaultMetadataRequestSpecDTO) requestDTO.getSpec();
@@ -483,7 +511,7 @@ public class NGVaultServiceImpl implements NGVaultService {
     try {
       vaultNames = listVaultsInternal(accountIdentifier, azureVaultConfig);
     } catch (WingsException wingsException) {
-      log.error("Listing vaults failed for account Id {}", accountIdentifier, wingsException);
+      log.error("Listing vaults failed for account Id {}", accountIdentifier);
       throw wingsException; // for error handling framework
     } catch (DelegateServiceDriverException ex) {
       if (ex.getCause() != null) {

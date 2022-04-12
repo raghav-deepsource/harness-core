@@ -22,8 +22,10 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.commons.beans.recommendation.NodePoolId;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
+import io.harness.ccm.commons.beans.recommendation.TotalResourceUsage;
 import io.harness.ccm.commons.beans.recommendation.models.NodePool;
 import io.harness.ccm.commons.beans.recommendation.models.RecommendClusterRequest;
+import io.harness.ccm.commons.beans.recommendation.models.RecommendNodePoolClusterRequest;
 import io.harness.ccm.commons.beans.recommendation.models.RecommendationResponse;
 import io.harness.ccm.commons.beans.recommendation.models.VirtualMachine;
 import io.harness.ccm.graphql.core.recommendation.NodeRecommendationService;
@@ -254,21 +256,34 @@ public class RecommendationsDetailsQueryTest extends CategoryTest {
   public void testNodeRecommendationRequest() throws Exception {
     NodePoolId nodePoolId = NodePoolId.builder().clusterid("cId").nodepoolname("npName").build();
     when(nodeRecommendationService.constructRecommendationRequest(eq(ACCOUNT_ID), eq(nodePoolId), any(), any()))
-        .thenReturn(RecommendClusterRequest.builder()
-                        .sumCpu(20D)
-                        .sumMem(64D)
-                        .maxNodes(7L)
-                        .minNodes(3L)
-                        .onDemandPct(100L)
+        .thenReturn(RecommendNodePoolClusterRequest.builder()
+                        .totalResourceUsage(
+                            TotalResourceUsage.builder().maxcpu(2D).maxmemory(8D).sumcpu(4D).summemory(16D).build())
+                        .recommendClusterRequest(RecommendClusterRequest.builder()
+                                                     .sumCpu(20D)
+                                                     .sumMem(64D)
+                                                     .maxNodes(7L)
+                                                     .minNodes(3L)
+                                                     .onDemandPct(100L)
+                                                     .build())
                         .build());
 
-    final RecommendClusterRequest request = detailsQuery.nodeRecommendationRequest(nodePoolId, null, null, null);
+    RecommendNodePoolClusterRequest recommendNodePoolClusterRequest =
+        detailsQuery.nodeRecommendationRequest(nodePoolId, null, null, null);
+    final RecommendClusterRequest request = recommendNodePoolClusterRequest.getRecommendClusterRequest();
+    final TotalResourceUsage totalResourceUsage = recommendNodePoolClusterRequest.getTotalResourceUsage();
 
     assertThat(request).isNotNull();
     assertThat(request.getMinNodes()).isEqualTo(3L);
     assertThat(request.getMaxNodes()).isEqualTo(7L);
     assertThat(request.getSumCpu()).isEqualTo(20D);
     assertThat(request.getSumMem()).isEqualTo(64D);
+
+    assertThat(totalResourceUsage).isNotNull();
+    assertThat(totalResourceUsage.getMaxcpu()).isEqualTo(2D);
+    assertThat(totalResourceUsage.getMaxmemory()).isEqualTo(8D);
+    assertThat(totalResourceUsage.getSumcpu()).isEqualTo(4D);
+    assertThat(totalResourceUsage.getSummemory()).isEqualTo(16D);
   }
 
   public static NodeRecommendationDTO createNodeRecommendation() {

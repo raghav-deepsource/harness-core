@@ -276,6 +276,10 @@ func CreateFile(ctx context.Context, fileRequest *pb.FileModifyRequest, log *zap
 		Name:  fileRequest.GetSignature().GetName(),
 		Email: fileRequest.GetSignature().GetEmail(),
 	}
+	// include the commitid if set, this is for azure
+	if fileRequest.GetCommitId() != "" {
+		inputParams.Ref = fileRequest.GetCommitId()
+	}
 	response, err := client.Contents.Create(ctx, fileRequest.GetSlug(), fileRequest.GetPath(), inputParams)
 	if err != nil {
 		log.Errorw("CreateFile failure", "slug", fileRequest.GetSlug(), "path", fileRequest.GetPath(), "branch", inputParams.Branch, "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
@@ -429,6 +433,25 @@ func parseCrudResponse(ctx context.Context, client *scm.Client, body io.Reader, 
 			return "", ""
 		}
 		return response.CommitId, ""
+	case *pb.Provider_Azure:
+		// We try to find out the latest commit on the file, which is most-likely the commit done by SCM itself
+		// It works on best-effort basis. The commit id is confusingly called the new object ID.
+		type azureResponse struct {
+			RefUpdates []struct {
+				RepositoryID string `json:"repositoryId"`
+				Name         string `json:"name"`
+				OldObjectID  string `json:"oldObjectId"`
+				NewObjectID  string `json:"newObjectId"`
+			} `json:"refUpdates"`
+		}
+		out := azureResponse{}
+		err := json.Unmarshal([]byte(bodyStr), &out)
+		// there is no commit id or sha, no need to error
+		if err != nil || len(out.RefUpdates) == 0 {
+			log.Errorw("parseCrudResponse unable to get commitid/blobid from Azure CRUD operation", zap.Error(err))
+			return "", ""
+		}
+		return out.RefUpdates[0].NewObjectID, ""
 	default:
 		return "", ""
 	}

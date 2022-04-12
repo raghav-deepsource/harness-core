@@ -62,6 +62,7 @@ io.harness.cdng.provision.terraform.TerraformApplyOutcome
 io.harness.steps.approval.step.harness.HarnessApprovalStepInfo
 io.harness.steps.http.HttpOutcome
 io.harness.cdng.infra.yaml.K8SDirectInfrastructure
+io.harness.cdng.infra.yaml.PdcInfrastructure
 io.harness.advisers.rollback.OnFailRollbackParameters
 io.harness.ngpipeline.artifact.bean.GcrArtifactOutcome
 io.harness.cdng.infra.beans.K8sDirectInfraMapping
@@ -74,6 +75,7 @@ io.harness.cdng.manifest.yaml.KustomizeManifestOutcome
 io.harness.cdng.manifest.yaml.GitLabStore
 io.harness.cdng.provision.terraform.TerraformPlanExecutionDataParameters
 io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome
+io.harness.cdng.infra.beans.PdcInfrastructureOutcome
 io.harness.cdng.manifest.yaml.S3StoreConfig
 io.harness.cdng.infra.beans.InfraUseFromStage
 io.harness.cdng.k8s.K8sRollingStepParameters
@@ -99,6 +101,7 @@ io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome
 io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig
 io.harness.steps.shellscript.K8sInfraDelegateConfigOutput
 io.harness.cdng.infra.beans.K8sGcpInfraMapping
+io.harness.cdng.infra.beans.PdcInfraMapping
 io.harness.steps.common.pipeline.PipelineSetupStepParameters
 io.harness.cdng.k8s.InstanceSelectionWrapper
 io.harness.cdng.artifact.steps.ArtifactStepParameters
@@ -263,3 +266,22 @@ io.harness.steps.servicenow.create.ServiceNowCreateStepInfo
 io.harness.steps.servicenow.update.ServiceNowUpdateSpecParameters
 io.harness.steps.servicenow.update.ServiceNowUpdateStepNode
 io.harness.steps.servicenow.update.ServiceNowUpdateStepInfo
+io.harness.yaml.core.failurestrategy.abort.AbortFailureActionConfig
+io.harness.yaml.core.failurestrategy.ignore.IgnoreFailureActionConfig
+io.harness.yaml.core.failurestrategy.manualintervention.ManualFailureSpecConfig
+io.harness.yaml.core.failurestrategy.manualintervention.ManualInterventionFailureActionConfig
+io.harness.yaml.core.failurestrategy.retry.OnRetryFailureConfig
+io.harness.yaml.core.failurestrategy.manualintervention.OnTimeoutConfig
+io.harness.yaml.core.failurestrategy.retry.RetryFailureActionConfig
+io.harness.yaml.core.failurestrategy.retry.RetryFailureSpecConfig
+io.harness.yaml.core.failurestrategy.rollback.StepGroupFailureActionConfig
+io.harness.plancreator.steps.StepElementConfig
+io.harness.plancreator.stages.stage.StageElementConfig
+io.harness.plancreator.stages.parallel.ParallelStageElementConfig
+io.harness.plancreator.stages.StageElementWrapperConfig
+io.harness.plancreator.execution.StepsExecutionConfig
+io.harness.yaml.core.parallelStepElementConfig
+io.harness.cdng.envGroup.beans.EnvironmentGroupConfig
+io.harness.cdng.service.beans.WinRmServiceSpec
+io.harness.cdng.artifact.CustomArtifactSummary
+io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig

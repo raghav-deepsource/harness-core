@@ -8,6 +8,7 @@
 package io.harness.pms.expressions.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.k8s.model.ImageDetails.ImageDetailsBuilder;
 
 import static java.lang.String.format;
@@ -24,7 +25,6 @@ import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthType;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsernamePasswordAuthDTO;
@@ -98,10 +98,10 @@ public class ImagePullSecretUtils {
             String.format("Unknown Artifact Config type: [%s]", artifactOutcome.getArtifactType()));
     }
     ImageDetails imageDetails = imageDetailsBuilder.build();
-    if (EmptyPredicate.isNotEmpty(imageDetails.getRegistryUrl()) && isNotBlank(imageDetails.getUsername())
+    if (isNotEmpty(imageDetails.getRegistryUrl()) && isNotBlank(imageDetails.getUsername())
         && isNotBlank(imageDetails.getPassword())) {
       return getArtifactRegistryCredentials(imageDetails);
-    } else if (EmptyPredicate.isNotEmpty(imageDetails.getRegistryUrl()) && isNotBlank(imageDetails.getUsernameRef())
+    } else if (isNotEmpty(imageDetails.getRegistryUrl()) && isNotBlank(imageDetails.getUsernameRef())
         && isNotBlank(imageDetails.getPassword())) {
       return getArtifactRegistryCredentialsFromUsernameRef(imageDetails);
     }
@@ -199,7 +199,11 @@ public class ImagePullSecretUtils {
       }
       imageDetailsBuilder.username(credentials.getUsername());
       imageDetailsBuilder.password(getPasswordExpression(passwordRef, ambiance));
-      imageDetailsBuilder.registryUrl(connectorConfig.getNexusServerUrl());
+      if (isNotEmpty(nexusArtifactOutcome.getRegistryHostname())) {
+        imageDetailsBuilder.registryUrl(nexusArtifactOutcome.getRegistryHostname());
+      } else {
+        imageDetailsBuilder.registryUrl(connectorConfig.getNexusServerUrl());
+      }
     }
   }
 
@@ -219,7 +223,11 @@ public class ImagePullSecretUtils {
       }
       imageDetailsBuilder.username(credentials.getUsername());
       imageDetailsBuilder.password(getPasswordExpression(passwordRef, ambiance));
-      imageDetailsBuilder.registryUrl(connectorConfig.getArtifactoryServerUrl());
+      if (isNotEmpty(artifactoryArtifactOutcome.getRegistryHostname())) {
+        imageDetailsBuilder.registryUrl(artifactoryArtifactOutcome.getRegistryHostname());
+      } else {
+        imageDetailsBuilder.registryUrl(connectorConfig.getArtifactoryServerUrl());
+      }
     }
   }
 

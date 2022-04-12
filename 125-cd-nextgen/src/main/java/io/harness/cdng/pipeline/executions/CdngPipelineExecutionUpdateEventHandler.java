@@ -22,7 +22,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
-import io.harness.plancreator.beans.OrchestrationConstants;
+import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
@@ -92,7 +92,7 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
   // currently not used, but left here for future use.
   private boolean isInfrastructureRollback(Ambiance ambiance) {
     Level level = AmbianceUtils.obtainCurrentLevel(ambiance);
-    return level.getIdentifier().equals(OrchestrationConstants.INFRA_ROLLBACK_NODE_IDENTIFIER);
+    return level.getIdentifier().equals(NGCommonUtilPlanCreationConstants.INFRA_ROLLBACK_NODE_IDENTIFIER);
   }
 
   // currently not used, but left here for future use.
@@ -107,7 +107,7 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
 
       // if we find the infra rollback node identifier then it must be an infrastructure rollback and not the deployment
       // one
-      if (level.getIdentifier().equals(OrchestrationConstants.INFRA_ROLLBACK_NODE_IDENTIFIER)) {
+      if (level.getIdentifier().equals(NGCommonUtilPlanCreationConstants.INFRA_ROLLBACK_NODE_IDENTIFIER)) {
         hasInfraRollbackNodeStep = true;
         break;
       }
@@ -123,7 +123,7 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
 
     if (isTFStep) {
       for (Level level : ambiance.getLevelsList()) {
-        if (level.getIdentifier().equals(OrchestrationConstants.INFRA_ROLLBACK_NODE_IDENTIFIER)) {
+        if (level.getIdentifier().equals(NGCommonUtilPlanCreationConstants.INFRA_ROLLBACK_NODE_IDENTIFIER)) {
           return true;
         }
       }

@@ -12,6 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.security.annotations.PublicApi;
 import io.harness.testing.TestExecution;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.HashMultimap;
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.MapBinder;
@@ -31,6 +32,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,9 +40,10 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.NotImplementedException;
 
 @Slf4j
-public abstract class OASModule extends AbstractModule {
+public class OASModule extends AbstractModule {
   public static final String ACCOUNT_IDENTIFIER = "accountIdentifier";
   public static final String ACCOUNT_ID = "accountId";
   public static final String EXCLUSION_FILE = "/oas/exclusion-file";
@@ -51,31 +54,39 @@ public abstract class OASModule extends AbstractModule {
   public static final String HIDDEN_EXCLUSION = "hidden-exclusion";
   public static final String PARAM_EXCLUSION = "param-exclusion";
   public static final String OPERATION_EXCLUSION = "operation-exclusion";
+  public static final String OPERATION_PROPERTIES_EXCLUSION = "operation-properties-exclusion";
 
-  public abstract Collection<Class<?>> getResourceClasses();
+  public Collection<Class<?>> getResourceClasses() {
+    throw new NotImplementedException("getResourceClasses");
+  }
 
   public void testOASAdoption(Collection<Class<?>> classes) {
-    List<String> classWithoutTagNameOrDescription = new ArrayList<>();
-    List<String> endpointsWithoutAccountParam = new ArrayList<>();
-    List<String> dtoWithoutDescriptionToField = new ArrayList<>();
-    List<String> methodsWithoutDescriptionToParam = new ArrayList<>();
-    List<String> methodsHiddenFromSwaggerButNotOpenApi = new ArrayList<>();
-    List<String> methodsWithoutParameter = new ArrayList<>();
-    List<String> methodsWithoutFilledOperation = new ArrayList<>();
+    Set<String> classWithoutTagNameOrDescription = new HashSet<>();
+    Set<String> endpointsWithoutAccountParam = new HashSet<>();
+    Set<String> dtoWithoutDescriptionToField = new HashSet<>();
+    Set<String> methodsWithoutDescriptionToParam = new HashSet<>();
+    Set<String> methodsHiddenFromSwaggerButNotOpenApi = new HashSet<>();
+    Set<String> methodsWithoutParameter = new HashSet<>();
+    Set<String> methodsWithoutOperationOrHiddenAnnotation = new HashSet<>();
+    Set<String> methodsWithoutOperationProperties = new HashSet<>();
 
     if (classes == null) {
       return;
     }
     for (Class<?> clazz : classes) {
-      if (clazz.isAnnotationPresent(Tag.class)) {
+      if (clazz.isAnnotationPresent(Tag.class) && !clazz.isAnnotationPresent(Hidden.class)) {
         classWithoutTagNameOrDescription.addAll(checkTagNameAndDescription(clazz));
         for (final Method method : clazz.getDeclaredMethods()) {
           if (Modifier.isPublic(method.getModifiers())) {
+            if (!method.isAnnotationPresent(Operation.class) && !method.isAnnotationPresent(Hidden.class)) {
+              methodsWithoutOperationOrHiddenAnnotation.add(
+                  method.getDeclaringClass().getName() + "." + method.getName());
+            }
             if (method.isAnnotationPresent(Operation.class) && !isHiddenFromOpenApi(method)) {
               methodsWithoutDescriptionToParam.addAll(checkParamAnnotation(method));
               dtoWithoutDescriptionToField.addAll(checkDtoFieldsDescription(method));
               endpointsWithoutAccountParam.addAll(checkAccountIdentifierParam(method));
-              methodsWithoutFilledOperation.addAll(checkOperationAnnotation(method));
+              methodsWithoutOperationProperties.addAll(checkOperationAnnotation(method));
             }
             methodsHiddenFromSwaggerButNotOpenApi.addAll(checkHiddenMethod(method));
             methodsWithoutParameter.addAll(checkParameter(method));
@@ -95,11 +106,13 @@ public abstract class OASModule extends AbstractModule {
         "All the methods hidden in Swagger should also be hidden from OpenApi, but found below : ");
     finalAssertion(methodsWithoutParameter, PARAM_EXCLUSION,
         "All the methods with QueryParam or PathParam should also have Parameter annotation, but found below : ");
-    finalAssertion(methodsWithoutFilledOperation, OPERATION_EXCLUSION,
-        "All the methods with Operation Annotation should have filled fields, but found below : ");
+    finalAssertion(methodsWithoutOperationOrHiddenAnnotation, OPERATION_EXCLUSION,
+        "All the methods should have Operation OR Hidden Annotation, but found below : ");
+    finalAssertion(methodsWithoutOperationProperties, OPERATION_PROPERTIES_EXCLUSION,
+        "All the methods with Operation Annotation should have property fields, but found below : ");
   }
 
-  private void finalAssertion(List<String> listFromCheck, String exclusionType, String message) {
+  private void finalAssertion(Set<String> listFromCheck, String exclusionType, String message) {
     if (!listFromCheck.isEmpty()) {
       List<String> exclusionDtoList = new ArrayList<>();
       Map<String, Collection<String>> map = exclude(exclusionType).asMap();
@@ -113,7 +126,7 @@ public abstract class OASModule extends AbstractModule {
     }
   }
 
-  private String getDetails(List<String> endpointsWithoutAccountParam, String message) {
+  private String getDetails(Set<String> endpointsWithoutAccountParam, String message) {
     StringBuilder details = new StringBuilder(message);
     endpointsWithoutAccountParam.forEach(entry -> details.append("\n ").append(entry));
     return details.toString();
@@ -238,19 +251,33 @@ public abstract class OASModule extends AbstractModule {
       if (field.getType().isAnnotationPresent(Schema.class)) {
         dtoWithoutDescriptionToField.addAll(recursiveDtoFieldDescriptionCheck(field.getType()));
       } else {
-        if (!field.isAnnotationPresent(Schema.class)) {
-          if (!dtoWithoutDescriptionToField.contains(clazz.getName())) {
+        if (!field.isAnnotationPresent(Schema.class) && !field.isAnnotationPresent(Parameter.class)
+            && !field.isAnnotationPresent(JsonIgnore.class)) {
+          if (!dtoWithoutDescriptionToField.contains(clazz.getName()) && !field.getName().startsWith("this$0")) {
             dtoWithoutDescriptionToField.add(clazz.getName());
           }
         } else {
           Annotation[] annotations = field.getAnnotations();
+          boolean jsonIgnoredField = false;
+          boolean parameterAnnotationDescriptionPresent = true;
+          boolean schemaAnnotationDescriptionPresent = true;
           for (Annotation annotation : annotations) {
             if (annotation.annotationType() == Schema.class) {
               Schema schema = (Schema) annotation;
               if (schema.description().isEmpty()) {
-                dtoWithoutDescriptionToField.add(clazz.getName());
+                schemaAnnotationDescriptionPresent = false;
               }
+            } else if (annotation.annotationType() == Parameter.class) {
+              Parameter parameter = (Parameter) annotation;
+              if (parameter.description().isEmpty()) {
+                parameterAnnotationDescriptionPresent = false;
+              }
+            } else if (annotation.annotationType() == JsonIgnore.class) {
+              jsonIgnoredField = true;
             }
+          }
+          if ((!schemaAnnotationDescriptionPresent || !parameterAnnotationDescriptionPresent) && !jsonIgnoredField) {
+            dtoWithoutDescriptionToField.add(clazz.getName());
           }
         }
       }

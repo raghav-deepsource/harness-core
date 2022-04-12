@@ -152,8 +152,9 @@ public abstract class VerificationServiceAuthenticationFilter implements Contain
     String accountId = getRequestParamFromContext("accountId", pathParameters, queryParameters);
     String header = containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
     if (header.contains("Delegate")) {
-      validateDelegateToken(
-          accountId, substringAfter(containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION), "Delegate "));
+      String delegateId = containerRequestContext.getHeaderString("delegateId");
+      validateDelegateToken(accountId,
+          substringAfter(containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION), "Delegate "), delegateId);
     } else {
       throw new IllegalStateException("Invalid header:" + header);
     }
@@ -208,7 +209,7 @@ public abstract class VerificationServiceAuthenticationFilter implements Contain
     }
   }
 
-  public abstract void validateDelegateToken(String accountId, String tokenString);
+  public abstract void validateDelegateToken(String accountId, String tokenString, String delegateId);
 
   protected boolean validateHarnessClientApiRequest(ClientType clientType, String apiKey) {
     if (clientType == null || apiKey == null) {

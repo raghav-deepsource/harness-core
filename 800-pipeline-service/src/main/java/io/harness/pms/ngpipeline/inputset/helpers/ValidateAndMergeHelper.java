@@ -70,7 +70,7 @@ public class ValidateAndMergeHelper {
     return InputSetErrorsHelper.getErrorMap(pipelineYaml, yaml);
   }
 
-  private String getPipelineYaml(String accountId, String orgIdentifier, String projectIdentifier,
+  public String getPipelineYaml(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String pipelineBranch, String pipelineRepoID) {
     GitSyncBranchContext gitSyncBranchContext =
         GitSyncBranchContext.builder()
@@ -157,10 +157,15 @@ public class ValidateAndMergeHelper {
             new ArrayList<>(StagesExpressionExtractor.getNonLocalExpressions(pipelineYaml, stageIdentifiers));
         template = createTemplateFromPipelineForGivenStages(pipelineYaml, stageIdentifiers);
       }
+
+      boolean hasInputSets = pmsInputSetService.checkForInputSetsForPipeline(
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
+
       return InputSetTemplateResponseDTOPMS.builder()
           .inputSetTemplateYaml(template)
           .replacedExpressions(replacedExpressions)
           .modules(optionalPipelineEntity.get().getFilters().keySet())
+          .hasInputSets(hasInputSets)
           .build();
     } else {
       throw new InvalidRequestException(PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(

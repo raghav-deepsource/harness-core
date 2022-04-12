@@ -9,15 +9,25 @@ package io.harness.cvng.servicelevelobjective.resources;
 
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
+import static io.harness.rule.OwnerRule.KAPIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
+import io.harness.cvng.CVNGTestConstants;
+import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
+import io.harness.cvng.core.services.api.CVNGLogService;
 import io.harness.cvng.core.services.api.MetricPackService;
+import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
+import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
 import io.harness.rule.Owner;
 import io.harness.rule.ResourceTestRule;
 import io.harness.utils.InvalidResourceData;
@@ -25,12 +35,16 @@ import io.harness.utils.InvalidResourceData;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.json.JSONObject;
@@ -41,9 +55,13 @@ import org.junit.experimental.categories.Category;
 import org.yaml.snakeyaml.Yaml;
 
 public class ServiceLevelObjectiveResourceTest extends CvNextGenTestBase {
+  @Inject ServiceLevelObjectiveService serviceLevelObjectiveService;
+  @Inject VerificationTaskService verificationTaskService;
+  @Inject ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject private Injector injector;
   @Inject private MonitoredServiceService monitoredServiceService;
   @Inject private MetricPackService metricPackService;
+  @Inject CVNGLogService cvngLogService;
   private MonitoredServiceDTO monitoredServiceDTO;
   private BuilderFactory builderFactory;
   private static ServiceLevelObjectiveResource serviceLevelObjectiveResource = new ServiceLevelObjectiveResource();
@@ -227,6 +245,95 @@ public class ServiceLevelObjectiveResourceTest extends CvNextGenTestBase {
                             .post(Entity.json(convertToJson(sloYaml)));
     assertThat(response.getStatus()).isEqualTo(400);
     assertThat(response.readEntity(String.class)).contains("\"field\":\"dayOfWeek\",\"message\":\"may not be null\"");
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testGetServiceLevelObjectiveLogs_withNoSLO() throws IOException {
+    Instant startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().minusSeconds(5);
+    Instant endTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant();
+    WebTarget webTarget = RESOURCES.client()
+                              .target("http://localhost:9998/slo/"
+                                  + "SLOIdentifier"
+                                  + "/logs")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                              .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                              .queryParam("logType", "ExecutionLog")
+                              .queryParam("startTime", startTime.toEpochMilli())
+                              .queryParam("endTime", endTime.toEpochMilli())
+                              .queryParam("pageNumber", 0)
+                              .queryParam("pageSize", 10);
+
+    Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).get();
+    assertThat(response.getStatus()).isEqualTo(404);
+    assertThat(response.readEntity(String.class)).contains("SLO with identifier SLOIdentifier not found.");
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testGetServiceLevelObjectiveLogs() throws IOException {
+    Instant startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().minusSeconds(5);
+    Instant endTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant();
+    ServiceLevelObjectiveDTO sloDTO = builderFactory.getServiceLevelObjectiveDTOBuilder().build();
+    serviceLevelObjectiveService.create(builderFactory.getContext().getProjectParams(), sloDTO);
+    List<String> serviceLevelIndicators = sloDTO.getServiceLevelIndicators()
+                                              .stream()
+                                              .map(ServiceLevelIndicatorDTO::getIdentifier)
+                                              .collect(Collectors.toList());
+    List<String> sliIds =
+        serviceLevelIndicatorService.getEntities(builderFactory.getContext().getProjectParams(), serviceLevelIndicators)
+            .stream()
+            .map(ServiceLevelIndicator::getUuid)
+            .collect(Collectors.toList());
+    List<String> verificationTaskIds =
+        verificationTaskService.getSLIVerificationTaskIds(builderFactory.getContext().getAccountId(), sliIds);
+    List<CVNGLogDTO> cvngLogDTOs =
+        IntStream.range(0, 3)
+            .mapToObj(index -> builderFactory.executionLogDTOBuilder().traceableId(verificationTaskIds.get(0)).build())
+            .collect(Collectors.toList());
+    cvngLogService.save(cvngLogDTOs);
+
+    WebTarget webTarget = RESOURCES.client()
+                              .target("http://localhost:9998/slo/" + sloDTO.getIdentifier() + "/logs")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                              .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                              .queryParam("logType", "ExecutionLog")
+                              .queryParam("startTime", startTime.toEpochMilli())
+                              .queryParam("endTime", endTime.toEpochMilli())
+                              .queryParam("pageNumber", 0)
+                              .queryParam("pageSize", 10);
+
+    Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).get();
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(response.readEntity(String.class)).contains("\"totalItems\":1");
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testGetServiceLevelObjectiveLogs_withIncorrectLogType() throws IOException {
+    Instant startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().minusSeconds(5);
+    Instant endTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant();
+    ServiceLevelObjectiveDTO sloDTO = builderFactory.getServiceLevelObjectiveDTOBuilder().build();
+    serviceLevelObjectiveService.create(builderFactory.getContext().getProjectParams(), sloDTO);
+    WebTarget webTarget = RESOURCES.client()
+                              .target("http://localhost:9998/slo/" + sloDTO.getIdentifier() + "/logs")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                              .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                              .queryParam("logType", "executionlog")
+                              .queryParam("startTime", startTime.toEpochMilli())
+                              .queryParam("endTime", endTime.toEpochMilli())
+                              .queryParam("pageNumber", 0)
+                              .queryParam("pageSize", 10);
+
+    Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).get();
+    assertThat(response.getStatus()).isEqualTo(400);
+    assertThat(response.readEntity(String.class)).contains("Failed to convert query param logType to CVNGLogType");
   }
 
   private static String convertToJson(String yamlString) {

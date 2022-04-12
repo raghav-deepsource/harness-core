@@ -32,6 +32,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import org.hibernate.validator.constraints.NotBlank;
 
 @OwnedBy(PL)
 @Getter
@@ -43,12 +44,18 @@ import lombok.ToString;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(name = "GcpKmsConnector", description = "This contains GCP KMS SecretManager configuration.")
 public class GcpKmsConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
-  @Schema(description = "ID of the project on GCP.") private String projectId;
-  @Schema(description = "Region.") private String region;
-  @Schema(description = "Name of the Key Ring where Google Cloud Symmetric Key is created.") private String keyRing;
-  @Schema(description = "Name of the Google Cloud Symmetric Key.") private String keyName;
+  @NotNull
+  @NotBlank
+  @Schema(description = SecretManagerDescriptionConstants.GCP_KMS_PROJECT_ID)
+  private String projectId;
 
-  @Schema(description = "File Secret which is Service Account Key.")
+  @NotNull @NotBlank @Schema(description = SecretManagerDescriptionConstants.GCP_KMS_REGION) private String region;
+
+  @NotNull @NotBlank @Schema(description = SecretManagerDescriptionConstants.GCP_KEYRING) private String keyRing;
+
+  @NotNull @NotBlank @Schema(description = SecretManagerDescriptionConstants.GCP_KEYNAME) private String keyName;
+
+  @Schema(description = SecretManagerDescriptionConstants.GCP_CRED_FILE)
   @ApiModelProperty(dataType = "string")
   @NotNull
   @SecretReference

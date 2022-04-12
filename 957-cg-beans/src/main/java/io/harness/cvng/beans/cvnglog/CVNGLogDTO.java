@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -25,6 +26,10 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXISTING_PROPERTY)
+@JsonSubTypes({
+  @JsonSubTypes.Type(value = ApiCallLogDTO.class, name = "ApiCallLog")
+  , @JsonSubTypes.Type(value = ExecutionLogDTO.class, name = "ExecutionLog"),
+})
 @OwnedBy(HarnessTeam.CV)
 public abstract class CVNGLogDTO {
   private String accountId;

@@ -38,6 +38,7 @@ import software.wings.beans.artifact.Artifact;
 import software.wings.beans.deployment.DeploymentMetadata;
 import software.wings.graphql.datafetcher.MutationContext;
 import software.wings.graphql.datafetcher.artifact.ArtifactController;
+import software.wings.graphql.datafetcher.manifest.ManifestController;
 import software.wings.graphql.datafetcher.user.UserController;
 import software.wings.graphql.schema.mutation.execution.input.QLServiceInput;
 import software.wings.graphql.schema.mutation.execution.input.QLStartExecutionInput;
@@ -60,6 +61,8 @@ import software.wings.graphql.schema.type.QLWorkflowExecution.QLWorkflowExecutio
 import software.wings.graphql.schema.type.aggregation.deployment.QLDeploymentTag;
 import software.wings.graphql.schema.type.artifact.QLArtifact;
 import software.wings.graphql.schema.type.artifact.QLArtifact.QLArtifactBuilder;
+import software.wings.graphql.schema.type.manifest.QLManifest;
+import software.wings.graphql.schema.type.manifest.QLManifest.QLManifestBuilder;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.security.PermissionAttribute;
 import software.wings.service.impl.AppLogContext;
@@ -107,6 +110,7 @@ public class WorkflowExecutionController {
     List<QLDeploymentTag> tags = new ArrayList<>();
     List<QLArtifact> artifacts = new ArrayList<>();
     List<QLArtifact> rollbackArtifacts = new ArrayList<>();
+    List<QLManifest> manifests = new ArrayList<>();
 
     if (workflowExecution.getPipelineExecutionId() != null) {
       cause =
@@ -155,7 +159,16 @@ public class WorkflowExecutionController {
                       })
                       .collect(Collectors.toList());
     }
-
+    if (isNotEmpty(workflowExecution.getHelmCharts())) {
+      manifests = workflowExecution.getHelmCharts()
+                      .stream()
+                      .map(helmChart -> {
+                        QLManifestBuilder qlManifestBuilder = QLManifest.builder();
+                        ManifestController.populateManifest(helmChart, qlManifestBuilder);
+                        return qlManifestBuilder.build();
+                      })
+                      .collect(Collectors.toList());
+    }
     if (isNotEmpty(workflowExecution.getRollbackArtifacts())) {
       rollbackArtifacts = workflowExecution.getRollbackArtifacts()
                               .stream()
@@ -185,6 +198,7 @@ public class WorkflowExecutionController {
         .tags(tags)
         .failureDetails(failureDetails)
         .artifacts(artifacts)
+        .manifests(manifests)
         .rollbackArtifacts(rollbackArtifacts);
   }
 

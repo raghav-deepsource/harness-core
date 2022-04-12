@@ -50,8 +50,7 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
   }
 
   @Override
-  public void regenerateStageLayoutGraph(String planExecutionId) {
-    List<NodeExecution> nodeExecutions = nodeExecutionService.fetchStageExecutions(planExecutionId);
+  public void regenerateStageLayoutGraph(String planExecutionId, List<NodeExecution> nodeExecutions) {
     Update update = new Update();
     for (NodeExecution nodeExecution : nodeExecutions) {
       ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, planExecutionId, nodeExecution);

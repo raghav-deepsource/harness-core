@@ -9,6 +9,7 @@ package software.wings.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.remote.client.NGRestUtils.getResponse;
 
 import io.harness.accesscontrol.AccessControlAdminClient;
 import io.harness.annotations.dev.HarnessModule;
@@ -21,13 +22,15 @@ import io.harness.datahandler.models.AccountSummary;
 import io.harness.datahandler.models.FeatureFlagBO;
 import io.harness.datahandler.services.AdminAccountService;
 import io.harness.datahandler.services.AdminUserService;
+import io.harness.licensing.beans.modules.AccountLicenseDTO;
+import io.harness.licensing.beans.modules.ModuleLicenseDTO;
+import io.harness.licensing.remote.admin.AdminLicenseHttpClient;
 import io.harness.limits.ActionType;
 import io.harness.limits.ConfiguredLimit;
 import io.harness.limits.impl.model.RateLimit;
 import io.harness.limits.impl.model.StaticLimit;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
-import io.harness.remote.client.NGRestUtils;
 import io.harness.rest.RestResponse;
 
 import software.wings.beans.Account;
@@ -71,14 +74,17 @@ public class AdminAccountResource {
   private AdminUserService adminUserService;
   private AccessControlAdminClient accessControlAdminClient;
   private DelegateService delegateService;
+  private AdminLicenseHttpClient adminLicenseHttpClient;
 
   @Inject
   public AdminAccountResource(AdminAccountService adminAccountService, AdminUserService adminUserService,
-      AccessControlAdminClient accessControlAdminClient, DelegateService delegateService) {
+      AccessControlAdminClient accessControlAdminClient, DelegateService delegateService,
+      AdminLicenseHttpClient adminLicenseHttpClient) {
     this.adminAccountService = adminAccountService;
     this.adminUserService = adminUserService;
     this.accessControlAdminClient = accessControlAdminClient;
     this.delegateService = delegateService;
+    this.adminLicenseHttpClient = adminLicenseHttpClient;
   }
 
   @Inject CEDataCleanupRequestDao ceDataCleanupRequestDao;
@@ -113,8 +119,7 @@ public class AdminAccountResource {
   @Path("{accountId}/nextgen-accesscontrol-enabled")
   public RestResponse<Boolean> updateNextgenAccessControlPreference(
       @PathParam("accountId") String accountId, @QueryParam("enabled") @DefaultValue("false") boolean enabled) {
-    return new RestResponse<>(
-        NGRestUtils.getResponse(accessControlAdminClient.updateAccessControlPreference(accountId, enabled)));
+    return new RestResponse<>(getResponse(accessControlAdminClient.updateAccessControlPreference(accountId, enabled)));
   }
 
   @PUT
@@ -264,5 +269,33 @@ public class AdminAccountResource {
   @Path("delegates-with-version")
   public RestResponse<Map<String, List<String>>> getActiveDelegatesWithPrimary(@QueryParam("version") String version) {
     return new RestResponse<>(delegateService.getActiveDelegatesPerAccount(version));
+  }
+
+  @POST
+  @Path("{accountId}/ng/license")
+  public RestResponse<ModuleLicenseDTO> createNgLicense(
+      @PathParam("accountId") String accountId, @Body ModuleLicenseDTO moduleLicenseDTO) {
+    return new RestResponse<>(getResponse(adminLicenseHttpClient.createAccountLicense(accountId, moduleLicenseDTO)));
+  }
+
+  @PUT
+  @Path("{accountId}/ng/license")
+  public RestResponse<ModuleLicenseDTO> updateNgLicense(
+      @PathParam("accountId") String accountId, @Body ModuleLicenseDTO moduleLicenseDTO) {
+    return new RestResponse<>(
+        getResponse(adminLicenseHttpClient.updateModuleLicense(moduleLicenseDTO.getId(), accountId, moduleLicenseDTO)));
+  }
+
+  @GET
+  @Path("{accountId}/ng/license")
+  public RestResponse<AccountLicenseDTO> getNgAccountLicenses(@PathParam("accountId") String accountId) {
+    return new RestResponse<>(getResponse(adminLicenseHttpClient.getAccountLicense(accountId)));
+  }
+
+  @DELETE
+  @Path("{accountId}/ng/license")
+  public RestResponse<Void> deleteNgLicense(
+      @PathParam("accountId") String accountId, @QueryParam("identifier") String identifier) {
+    return new RestResponse<>(getResponse(adminLicenseHttpClient.deleteModuleLicense(identifier, accountId)));
   }
 }

@@ -23,6 +23,7 @@ import io.harness.cvng.analysis.services.api.LearningEngineTaskService;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
 import io.harness.cvng.core.jobs.StateMachineEventPublisherService;
+import io.harness.cvng.core.services.api.ExecutionLogService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.metrics.CVNGMetricsUtils;
 import io.harness.cvng.metrics.beans.AccountMetricContext;
@@ -58,6 +59,7 @@ public class LearningEngineTaskServiceImpl implements LearningEngineTaskService 
   @Inject private Clock clock;
   @Inject private MetricContextBuilder metricContextBuilder;
   @Inject private StateMachineEventPublisherService stateMachineEventPublisherService;
+  @Inject private ExecutionLogService executionLogService;
 
   @Override
   public LearningEngineTask getNextAnalysisTask() {
@@ -79,7 +81,13 @@ public class LearningEngineTaskServiceImpl implements LearningEngineTaskService 
         hPersistence.createUpdateOperations(LearningEngineTask.class);
     updateOperations.set(LearningEngineTaskKeys.taskStatus, ExecutionStatus.RUNNING)
         .set(LearningEngineTaskKeys.pickedAt, clock.instant());
-    return hPersistence.findAndModify(learningEngineTaskQuery, updateOperations, new FindAndModifyOptions());
+    LearningEngineTask learningEngineTask =
+        hPersistence.findAndModify(learningEngineTaskQuery, updateOperations, new FindAndModifyOptions());
+    if (learningEngineTask != null) {
+      executionLogService.getLogger(learningEngineTask)
+          .log(learningEngineTask.getLogLevel(), "Learning engine task status: " + learningEngineTask.getTaskStatus());
+    }
+    return learningEngineTask;
   }
 
   @Override
@@ -97,6 +105,8 @@ public class LearningEngineTaskServiceImpl implements LearningEngineTaskService 
     if (verificationTask.getTaskInfo().getTaskType() == TaskType.DEPLOYMENT) {
       learningEngineTask.setTaskPriority(P0.getValue());
     }
+    executionLogService.getLogger(learningEngineTask)
+        .log(learningEngineTask.getLogLevel(), "Learning engine task status: " + learningEngineTask.getTaskStatus());
     return hPersistence.save(learningEngineTask);
   }
 
@@ -116,8 +126,11 @@ public class LearningEngineTaskServiceImpl implements LearningEngineTaskService 
             // TODO: this should be done using iterator.
             log.info("LearningEngineTask {} for verificationTaskId {} has TIMEDOUT", task.getUuid(),
                 task.getVerificationTaskId());
-            incTaskStatusMetric(task.getAccountId(), ExecutionStatus.TIMEOUT);
             task.setTaskStatus(ExecutionStatus.TIMEOUT);
+            incTaskStatusMetric(task.getAccountId(), ExecutionStatus.TIMEOUT);
+            addTimeToFinishMetrics(task);
+            executionLogService.getLogger(task).log(
+                task.getLogLevel(), "Learning engine task status: " + task.getTaskStatus());
             timedOutTaskIds.add(task.getUuid());
           }
           taskStatuses.put(task.getUuid(), task.getTaskStatus());
@@ -145,11 +158,9 @@ public class LearningEngineTaskServiceImpl implements LearningEngineTaskService 
   private void addTimeToFinishMetrics(LearningEngineTask task) {
     try (AutoMetricContext ignore = metricContextBuilder.getContext(task, LearningEngineTask.class)) {
       metricService.recordDuration(CVNGMetricsUtils.LEARNING_ENGINE_TASK_TOTAL_TIME, task.totalTime(clock.instant()));
-      if (task.getPickedAt() != null) { // Remove this in the future after lastPickedAt is populated.
-        metricService.recordDuration(CVNGMetricsUtils.LEARNING_ENGINE_TASK_WAIT_TIME, task.waitTime());
-        metricService.recordDuration(
-            CVNGMetricsUtils.LEARNING_ENGINE_TASK_RUNNING_TIME, task.runningTime(clock.instant()));
-      }
+      metricService.recordDuration(CVNGMetricsUtils.LEARNING_ENGINE_TASK_WAIT_TIME, task.waitTime());
+      metricService.recordDuration(
+          CVNGMetricsUtils.LEARNING_ENGINE_TASK_RUNNING_TIME, task.runningTime(clock.instant()));
     }
   }
 
@@ -183,6 +194,7 @@ public class LearningEngineTaskServiceImpl implements LearningEngineTaskService 
     incTaskStatusMetric(task.getAccountId(), ExecutionStatus.SUCCESS);
     addTimeToFinishMetrics(task);
     stateMachineEventPublisherService.registerTaskComplete(task.getAccountId(), task.getVerificationTaskId());
+    executionLogService.getLogger(task).log(task.getLogLevel(), "Learning engine task status: " + task.getTaskStatus());
   }
 
   @Override
@@ -199,12 +211,16 @@ public class LearningEngineTaskServiceImpl implements LearningEngineTaskService 
     }
     hPersistence.update(hPersistence.createQuery(LearningEngineTask.class).filter(LearningEngineTaskKeys.uuid, taskId),
         updateOperations);
-    incTaskStatusMetric(get(taskId).getAccountId(), ExecutionStatus.FAILED);
+    LearningEngineTask learningEngineTask = get(taskId);
+    incTaskStatusMetric(learningEngineTask.getAccountId(), ExecutionStatus.FAILED);
+    addTimeToFinishMetrics(learningEngineTask);
+    executionLogService.getLogger(learningEngineTask)
+        .log(learningEngineTask.getLogLevel(), "Learning engine task status: " + learningEngineTask.getTaskStatus());
   }
 
   private boolean hasTaskTimedOut(LearningEngineTask task) {
     if (task != null && task.getTaskStatus().equals(ExecutionStatus.RUNNING)) {
-      Instant tenMinsAgo = Instant.now().minus(10, ChronoUnit.MINUTES);
+      Instant tenMinsAgo = clock.instant().minus(10, ChronoUnit.MINUTES);
       if (Instant.ofEpochMilli(task.getLastUpdatedAt()).isBefore(tenMinsAgo)) {
         return true;
       }

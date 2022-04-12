@@ -17,6 +17,7 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.beans.Scope;
 import io.harness.data.validator.Trimmed;
 import io.harness.git.model.ChangeType;
+import io.harness.gitsync.common.dtos.RepoProviders;
 import io.harness.gitsync.gitsyncerror.GitSyncErrorStatus;
 import io.harness.gitsync.gitsyncerror.beans.GitToHarnessErrorDetails.GitToHarnessErrorDetailsKeys;
 import io.harness.mongo.index.MongoIndex;
@@ -63,6 +64,7 @@ public class GitSyncError
   @Trimmed @NotEmpty private String accountIdentifier;
   // The repo details about the git sync error repo
   private String repoUrl;
+  private RepoProviders repoProvider;
   private String branchName;
   private List<Scope> scopes;
 
@@ -88,7 +90,8 @@ public class GitSyncError
   public GitSyncError(String uuid, String accountIdentifier, String repoUrl, String branchName, List<Scope> scopes,
       ChangeType changeType, String completeFilePath, EntityType entityType, String failureReason,
       GitSyncErrorStatus status, GitSyncErrorType errorType, GitSyncErrorDetails additionalErrorDetails,
-      EmbeddedUser createdBy, long createdAt, EmbeddedUser lastUpdatedBy, long lastUpdatedAt) {
+      EmbeddedUser createdBy, long createdAt, EmbeddedUser lastUpdatedBy, long lastUpdatedAt,
+      RepoProviders repoProvider) {
     this.uuid = uuid;
     this.accountIdentifier = accountIdentifier;
     this.repoUrl = repoUrl;
@@ -105,6 +108,7 @@ public class GitSyncError
     this.createdAt = createdAt;
     this.lastUpdatedBy = lastUpdatedBy;
     this.lastUpdatedAt = lastUpdatedAt;
+    this.repoProvider = repoProvider;
   }
 
   public static final class GitSyncErrorKeys {

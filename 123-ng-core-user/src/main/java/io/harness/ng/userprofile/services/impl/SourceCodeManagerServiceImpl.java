@@ -24,7 +24,7 @@ import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.PrincipalType;
 
 import com.google.inject.Inject;
-import com.hazelcast.util.Preconditions;
+import com.hazelcast.internal.util.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

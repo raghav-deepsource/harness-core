@@ -7,9 +7,7 @@
 
 package io.harness.batch.processing.metrics;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.utils.RestCallToNGManagerClientUtils.execute;
-
+import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.ng.NGConnectorHelper;
 import io.harness.ccm.budget.dao.BudgetDao;
 import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.commons.beans.recommendation.RecommendationTelemetryStats;
@@ -23,18 +21,15 @@ import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewState;
 import io.harness.ccm.views.entities.ViewType;
 import io.harness.connector.ConnectivityStatus;
-import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
-import io.harness.filter.FilterType;
-import io.harness.ng.beans.PageResponse;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -52,6 +47,7 @@ public class CENGTelemetryServiceImpl implements CENGTelemetryService {
   @Autowired @Inject private BudgetDao budgetDao;
   @Autowired @Inject private BudgetUtils budgetUtils;
   @Autowired @Inject private CEReportScheduleDao ceReportScheduleDao;
+  @Autowired @Inject private NGConnectorHelper ngConnectorHelper;
 
   public HashMap<String, Object> getReportMetrics(String accountId) {
     HashMap<String, Object> properties = new HashMap<>();
@@ -129,23 +125,10 @@ public class CENGTelemetryServiceImpl implements CENGTelemetryService {
   }
 
   public HashMap<String, Object> getNextGenConnectorsCountByType(String accountId) {
-    List<ConnectorResponseDTO> nextGenConnectors = new ArrayList<>();
-    PageResponse<ConnectorResponseDTO> response = null;
-    ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
-        ConnectorFilterPropertiesDTO.builder()
-            .types(Arrays.asList(ConnectorType.CE_KUBERNETES_CLUSTER, ConnectorType.CE_AWS, ConnectorType.CE_AZURE,
-                ConnectorType.GCP_CLOUD_COST, ConnectorType.KUBERNETES_CLUSTER))
-            .build();
-    connectorFilterPropertiesDTO.setFilterType(FilterType.CONNECTOR);
-    int page = 0;
-    int size = 100;
-    do {
-      response = getConnectors(accountId, page, size, connectorFilterPropertiesDTO);
-      if (response != null && isNotEmpty(response.getContent())) {
-        nextGenConnectors.addAll(response.getContent());
-      }
-      page++;
-    } while (response != null && isNotEmpty(response.getContent()));
+    List<ConnectorType> connectorTypes = Arrays.asList(ConnectorType.CE_KUBERNETES_CLUSTER, ConnectorType.CE_AWS,
+        ConnectorType.CE_AZURE, ConnectorType.GCP_CLOUD_COST, ConnectorType.KUBERNETES_CLUSTER);
+    List<ConnectorResponseDTO> nextGenConnectors = ngConnectorHelper.getNextGenConnectors(
+        accountId, connectorTypes, Collections.emptyList(), Collections.emptyList());
 
     HashMap<String, Object> properties = new HashMap<>();
 
@@ -185,11 +168,5 @@ public class CENGTelemetryServiceImpl implements CENGTelemetryService {
     return nextGenConnectors.stream()
         .filter(connector -> connector.getConnector().getConnectorType() == connectorType)
         .count();
-  }
-
-  private PageResponse getConnectors(
-      String accountId, int page, int size, ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO) {
-    return execute(
-        connectorResourceClient.listConnectors(accountId, null, null, page, size, connectorFilterPropertiesDTO, false));
   }
 }

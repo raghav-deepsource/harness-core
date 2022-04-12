@@ -34,4 +34,5 @@ public class GitToHarnessErrorDetailsDTO implements GitSyncErrorDetailsDTO {
   @Schema(description = "Git File Content") String yamlContent;
   @Schema(description = GitSyncApiConstants.COMMIT_MESSAGE_PARAM_MESSAGE) String commitMessage;
   @Schema(description = "Commit Id that resolved the Git Sync Error") String resolvedByCommitId;
+  @Schema(description = GitSyncApiConstants.ENTITY_GIT_URL_DESCRIPTION) String entityUrl;
 }

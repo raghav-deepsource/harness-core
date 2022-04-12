@@ -6,6 +6,12 @@
     "type"
   ],
   "properties": {
+    "delegateSelectors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "description": {
       "type": "string"
     },
@@ -267,6 +273,12 @@
         "type"
       ],
       "properties": {
+        "delegateSelectors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "description": {
           "type": "string"
         },
@@ -353,8 +365,7 @@
       "type": "object",
       "required": [
         "disallowPipelineExecutor",
-        "minimumCount",
-        "userGroups"
+        "minimumCount"
       ],
       "properties": {
         "disallowPipelineExecutor": {
@@ -384,14 +395,17 @@
               "type": "array",
               "items": {
                 "type": "string"
-              }
+              },
+              "maxItems": 2147483647,
+              "minItems": 1
             },
             {
               "type": "string",
               "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
               "minLength": 1
             }
-          ]
+          ],
+          "minLength": 1
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -472,8 +486,7 @@
       "type": "object",
       "required": [
         "key",
-        "operator",
-        "value"
+        "operator"
       ],
       "properties": {
         "key": {
@@ -489,7 +502,8 @@
           ]
         },
         "value": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -557,6 +571,9 @@
         },
         {
           "type": "object",
+          "required": [
+            "payload"
+          ],
           "properties": {
             "payload": {
               "type": "string"
@@ -1399,15 +1416,27 @@
         },
         {
           "type": "object",
+          "required": [
+            "policySets"
+          ],
           "properties": {
             "metadata": {
               "type": "string"
             },
             "policySets": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "type": {
               "type": "string"
@@ -1753,8 +1782,14 @@
                 "$ref": "#/definitions/ServiceNowField"
               }
             },
+            "templateName": {
+              "type": "string"
+            },
             "ticketType": {
               "type": "string"
+            },
+            "useServiceNowTemplate": {
+              "type": "boolean"
             }
           }
         }
@@ -1814,11 +1849,17 @@
                 "$ref": "#/definitions/ServiceNowField"
               }
             },
+            "templateName": {
+              "type": "string"
+            },
             "ticketNumber": {
               "type": "string"
             },
             "ticketType": {
               "type": "string"
+            },
+            "useServiceNowTemplate": {
+              "type": "boolean"
             }
           }
         }
@@ -2426,6 +2467,12 @@
         "steps"
       ],
       "properties": {
+        "delegateSelectors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "failureStrategies": {
           "type": "array",
           "items": {

@@ -26,6 +26,7 @@ input InheritClusterDetails {
 
 input ManualClusterDetails {
   masterUrl: String!
+  usageScope: UsageScopeInput
 
   type: ManualClusterDetailsAuthenticationType!
   usernameAndPassword: UsernameAndPasswordAuthentication
@@ -90,6 +91,7 @@ input UpdateInheritClusterDetails {
 
 input UpdateManualClusterDetails {
   masterUrl: String
+  usageScope: UsageScopeInput
   type: ManualClusterDetailsAuthenticationType
   usernameAndPassword: UpdateUsernameAndPasswordAuthentication
   serviceAccountToken: UpdateServiceAccountToken

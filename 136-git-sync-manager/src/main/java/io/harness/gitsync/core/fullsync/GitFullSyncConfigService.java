@@ -22,4 +22,6 @@ public interface GitFullSyncConfigService {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, GitFullSyncConfigRequestDTO dto);
 
   boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+
+  void deleteAll(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 }

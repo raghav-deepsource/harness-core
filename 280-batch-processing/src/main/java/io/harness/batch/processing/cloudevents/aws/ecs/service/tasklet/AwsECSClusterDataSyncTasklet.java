@@ -9,6 +9,7 @@ package io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet;
 
 import static io.harness.batch.processing.ccm.UtilizationInstanceType.ECS_CLUSTER;
 import static io.harness.batch.processing.ccm.UtilizationInstanceType.ECS_SERVICE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.beans.SettingAttribute.SettingCategory.CE_CONNECTOR;
 import static software.wings.settings.SettingVariableTypes.CE_AWS;
@@ -26,6 +27,7 @@ import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.E
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.ng.NGConnectorHelper;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.response.EcsUtilizationData;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.response.MetricValue;
+import io.harness.batch.processing.dao.intfc.ECSServiceDao;
 import io.harness.batch.processing.dao.intfc.InstanceDataDao;
 import io.harness.batch.processing.service.intfc.InstanceDataService;
 import io.harness.batch.processing.service.intfc.InstanceResourceService;
@@ -34,6 +36,7 @@ import io.harness.batch.processing.tasklet.util.InstanceMetaDataUtils;
 import io.harness.ccm.commons.beans.HarnessServiceInfo;
 import io.harness.ccm.commons.beans.InstanceState;
 import io.harness.ccm.commons.beans.InstanceType;
+import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.beans.Resource;
 import io.harness.ccm.commons.beans.billing.InstanceCategory;
 import io.harness.ccm.commons.constants.CloudProvider;
@@ -41,10 +44,14 @@ import io.harness.ccm.commons.constants.InstanceMetaDataConstants;
 import io.harness.ccm.commons.entities.batch.InstanceData;
 import io.harness.ccm.commons.entities.billing.CECloudAccount;
 import io.harness.ccm.commons.entities.billing.CECluster;
+import io.harness.ccm.commons.entities.ecs.ECSService;
 import io.harness.ccm.health.LastReceivedPublishedMessageDao;
 import io.harness.ccm.setup.CECloudAccountDao;
+import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
+import io.harness.delegate.beans.connector.CEFeatures;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.manage.ManagedExecutorService;
@@ -66,6 +73,7 @@ import com.amazonaws.services.ecs.model.Deployment;
 import com.amazonaws.services.ecs.model.DesiredStatus;
 import com.amazonaws.services.ecs.model.LaunchType;
 import com.amazonaws.services.ecs.model.Service;
+import com.amazonaws.services.ecs.model.Tag;
 import com.amazonaws.services.ecs.model.Task;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -74,9 +82,11 @@ import com.google.common.collect.Sets.SetView;
 import com.google.inject.Singleton;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -90,7 +100,6 @@ import java.util.concurrent.Future;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
@@ -104,6 +113,7 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
   @Autowired private CEClusterDao ceClusterDao;
   @Autowired private EcsMetricClient ecsMetricClient;
   @Autowired private InstanceDataDao instanceDataDao;
+  @Autowired private ECSServiceDao ecsServiceDao;
   @Autowired private CECloudAccountDao ceCloudAccountDao;
   @Autowired private NGConnectorHelper ngConnectorHelper;
   @Autowired private AwsECSHelperService awsECSHelperService;
@@ -113,14 +123,15 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
   @Autowired private InstanceResourceService instanceResourceService;
   @Autowired private CloudToHarnessMappingService cloudToHarnessMappingService;
   @Autowired private LastReceivedPublishedMessageDao lastReceivedPublishedMessageDao;
-  private final ExecutorService ecsSyncClusterExecutor = new ManagedExecutorService(Executors.newWorkStealingPool(2));
+  private final ExecutorService ecsSyncClusterExecutor = new ManagedExecutorService(Executors.newWorkStealingPool(3));
 
   private static final String ECS_OS_TYPE = "ecs.os-type";
 
   @Override
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
-    JobParameters parameters = chunkContext.getStepContext().getStepExecution().getJobParameters();
-    String accountId = parameters.getString(CCMJobConstants.ACCOUNT_ID);
+    final JobConstants jobConstants = CCMJobConstants.fromContext(chunkContext);
+    String accountId = jobConstants.getAccountId();
+    Instant startTime = Instant.ofEpochMilli(jobConstants.getJobStartTime());
     List<CECluster> ceClusters = ceClusterDao.getCECluster(accountId);
     if (CollectionUtils.isEmpty(ceClusters)) {
       return null;
@@ -137,7 +148,7 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
           AwsCrossAccountAttributes awsCrossArn = infraAccCrossArnMap.get(ceCluster.getInfraAccountId());
 
           log.info("Sync for cluster {}", ceCluster.getUuid());
-          syncECSClusterData(accountId, awsCrossArn, ceCluster);
+          syncECSClusterData(accountId, awsCrossArn, ceCluster, startTime);
           lastReceivedPublishedMessageDao.upsert(accountId, ceCluster.getUuid());
         }
 
@@ -159,16 +170,17 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
   }
 
   private void syncECSClusterData(
-      String accountId, AwsCrossAccountAttributes awsCrossAccountAttributes, CECluster ceCluster) {
+      String accountId, AwsCrossAccountAttributes awsCrossAccountAttributes, CECluster ceCluster, Instant startTime) {
     List<ContainerInstance> containerInstances = listContainerInstances(awsCrossAccountAttributes, ceCluster);
     log.debug("cluster {} Container instances {}", containerInstances, ceCluster);
 
     updateContainerInstance(accountId, ceCluster, awsCrossAccountAttributes, containerInstances);
     List<Service> services = listServices(awsCrossAccountAttributes, ceCluster.getClusterArn(), ceCluster.getRegion());
     Map<String, String> deploymentIdServiceMap = getDeploymentIdsForService(services);
+    Map<String, List<Tag>> serviceArnTagsMap = getServiceArnTagsMap(services);
     List<Task> tasks = listTask(awsCrossAccountAttributes, ceCluster.getClusterArn(), ceCluster.getRegion());
     log.debug("Task list {}", tasks);
-    updateTasks(accountId, ceCluster, tasks, deploymentIdServiceMap);
+    updateTasks(accountId, ceCluster, tasks, deploymentIdServiceMap, serviceArnTagsMap, startTime);
     publishUtilizationMetrics(awsCrossAccountAttributes, ceCluster, services);
   }
 
@@ -282,8 +294,8 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
   }
 
   @VisibleForTesting
-  void updateTasks(
-      String accountId, CECluster ceCluster, List<Task> tasks, Map<String, String> deploymentIdServiceMap) {
+  void updateTasks(String accountId, CECluster ceCluster, List<Task> tasks, Map<String, String> deploymentIdServiceMap,
+      Map<String, List<Tag>> serviceArnTagsMap, Instant startTime) {
     Instant stopTime = Instant.now();
     String clusterId = ceCluster.getUuid();
     String settingId = ceCluster.getParentAccountSettingId();
@@ -310,9 +322,17 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
           String taskId = getIdFromArn(task.getTaskArn());
           if (null != activeInstanceDataMap.get(taskId)) {
             InstanceData instanceData = activeInstanceDataMap.get(taskId);
+            ECSService ecsService = getECSService(accountId, clusterId, task, deploymentIdServiceMap);
             boolean updated = updateInstanceStopTimeForTask(instanceData, task);
-            if (updated) {
+            boolean updatedLabels = false;
+            // Labels will only be updated once in a day - If we don't have this updating labels every hour is costly
+            if (startTime.atZone(ZoneOffset.UTC).getHour() == 1) {
+              updatedLabels =
+                  updateLabels(instanceData, ecsService, task, ceCluster, serviceArnTagsMap, deploymentIdServiceMap);
+            }
+            if (updated || updatedLabels) {
               instanceDataDao.create(instanceData);
+              ecsServiceDao.create(ecsService);
             }
           } else {
             String clusterName = getIdFromArn(task.getClusterArn());
@@ -350,8 +370,9 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
             metaData.put(InstanceMetaDataConstants.CLOUD_PROVIDER, CloudProvider.AWS.name());
             metaData.put(InstanceMetaDataConstants.CLUSTER_TYPE, ClusterType.ECS.name());
             metaData.put(InstanceMetaDataConstants.LAUNCH_TYPE, task.getLaunchType());
+
             HarnessServiceInfo harnessServiceInfo = null;
-            if (null != task.getStartedBy() && null != deploymentIdServiceMap.get(task.getStartedBy())) {
+            if (serviceExistsForTask(task, deploymentIdServiceMap)) {
               String serviceArn = deploymentIdServiceMap.get(task.getStartedBy());
               String serviceName = getIdFromArn(serviceArn);
               metaData.put(InstanceMetaDataConstants.ECS_SERVICE_NAME, serviceName);
@@ -376,12 +397,42 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
                     .metaData(metaData)
                     .harnessServiceInfo(harnessServiceInfo)
                     .build();
+            ECSService ecsService = getECSService(accountId, clusterId, task, deploymentIdServiceMap);
 
             updateInstanceStopTimeForTask(instanceData, task);
+            updateLabels(instanceData, ecsService, task, ceCluster, serviceArnTagsMap, deploymentIdServiceMap);
             log.debug("Creating task {} ", taskId);
             instanceDataService.create(instanceData);
+            ecsServiceDao.create(ecsService);
           }
         });
+  }
+
+  private boolean updateLabels(InstanceData instanceData, ECSService ecsService, Task task, CECluster ceCluster,
+      Map<String, List<Tag>> serviceArnTagsMap, Map<String, String> deploymentIdServiceMap) {
+    Map<String, String> labels = new HashMap<>();
+    // Add Cluster Tags to the Task Labels
+    if (isNotEmpty(ceCluster.getLabels())) {
+      labels.putAll(ceCluster.getLabels());
+    }
+    // Add Task Level Tags
+    labels.putAll(task.getTags().stream().collect(Collectors.toMap(Tag::getKey, Tag::getValue)));
+
+    Map<String, String> serviceLabels = Collections.emptyMap();
+    if (serviceExistsForTask(task, deploymentIdServiceMap)) {
+      String serviceArn = deploymentIdServiceMap.get(task.getStartedBy());
+      // Fetch Service Tags and add to the Task Labels
+      List<Tag> serviceTagList = serviceArnTagsMap.get(serviceArn);
+      if (isNotEmpty(serviceTagList)) {
+        serviceLabels = serviceTagList.stream().collect(Collectors.toMap(Tag::getKey, Tag::getValue));
+        labels.putAll(serviceLabels);
+      }
+    }
+    instanceData.setLabels(labels);
+    if (null != ecsService) {
+      ecsService.setLabels(serviceLabels);
+    }
+    return true;
   }
 
   private boolean updateInstanceStopTimeForTask(InstanceData instanceData, Task task) {
@@ -395,6 +446,25 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
       return true;
     }
     return false;
+  }
+
+  ECSService getECSService(String accountId, String clusterId, Task task, Map<String, String> deploymentIdServiceMap) {
+    if (!serviceExistsForTask(task, deploymentIdServiceMap)) {
+      return null;
+    }
+    String serviceArn = deploymentIdServiceMap.get(task.getStartedBy());
+    String serviceName = getIdFromArn(serviceArn);
+    double memory = Integer.parseInt(task.getMemory());
+    double cpu = Integer.parseInt(task.getCpu());
+    Resource resource = Resource.builder().cpuUnits(cpu).memoryMb(memory).build();
+    return ECSService.builder()
+        .accountId(accountId)
+        .clusterId(clusterId)
+        .serviceArn(serviceArn)
+        .serviceName(serviceName)
+        .resource(resource)
+        .labels(Collections.emptyMap())
+        .build();
   }
 
   @VisibleForTesting
@@ -411,6 +481,10 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
     Optional<HarnessServiceInfo> harnessServiceInfo =
         cloudToHarnessMappingService.getHarnessServiceInfo(deploymentSummary);
     return harnessServiceInfo.orElse(null);
+  }
+
+  private boolean serviceExistsForTask(Task task, Map<String, String> deploymentIdServiceMap) {
+    return null != task.getStartedBy() && null != deploymentIdServiceMap.get(task.getStartedBy());
   }
 
   private Map<String, InstanceData> getInstanceDataMap(Set<String> instanceIds) {
@@ -502,6 +576,11 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
                     InstanceMetaDataConstants.INSTANCE_FAMILY, metaData),
                 InstanceMetaDataUtils.getValueForKeyFromInstanceMetaData(InstanceMetaDataConstants.REGION, metaData),
                 CloudProvider.AWS);
+            Map<String, String> labels = new HashMap<>();
+            if (isNotEmpty(ceCluster.getLabels())) {
+              labels.putAll(ceCluster.getLabels());
+            }
+            labels.putAll(containerInstance.getTags().stream().collect(Collectors.toMap(Tag::getKey, Tag::getValue)));
             if (null != totalResource) {
               Instant startInstant = containerInstance.getRegisteredAt().toInstant();
               InstanceData instanceData =
@@ -519,6 +598,7 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
                       .totalResource(totalResource)
                       .allocatableResource(resource)
                       .metaData(metaData)
+                      .labels(labels)
                       .build();
               log.debug("Creating container instance {} ", containerInstanceId);
               instanceDataService.create(instanceData);
@@ -551,6 +631,10 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
 
     return deploymentIdsForService.entrySet().stream().collect(
         HashMap::new, (m, v) -> v.getValue().forEach(k -> m.put(k, v.getKey())), Map::putAll);
+  }
+
+  private Map<String, List<Tag>> getServiceArnTagsMap(List<Service> services) {
+    return services.stream().collect(Collectors.toMap(Service::getServiceArn, Service::getTags));
   }
 
   private List<String> listTaskDesiredStatus() {
@@ -607,7 +691,9 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
         crossAccountAttributesMap.put(ceAwsConfig.getAwsMasterAccountId(), ceAwsConfig.getAwsCrossAccountAttributes());
       });
     }
-    List<ConnectorResponseDTO> nextGenConnectors = ngConnectorHelper.getNextGenConnectors(accountId);
+    List<ConnectorResponseDTO> nextGenConnectors =
+        ngConnectorHelper.getNextGenConnectors(accountId, Arrays.asList(ConnectorType.CE_AWS),
+            Arrays.asList(CEFeatures.VISIBILITY), Arrays.asList(ConnectivityStatus.SUCCESS));
     for (ConnectorResponseDTO connector : nextGenConnectors) {
       ConnectorInfoDTO connectorInfo = connector.getConnector();
       CEAwsConnectorDTO ceAwsConnectorDTO = (CEAwsConnectorDTO) connectorInfo.getConnectorConfig();

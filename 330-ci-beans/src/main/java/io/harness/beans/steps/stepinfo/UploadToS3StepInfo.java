@@ -68,18 +68,19 @@ public class UploadToS3StepInfo implements PluginCompatibleStep, WithConnectorRe
 
   // plugin settings
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> endpoint;
-  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> region;
+  @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> region;
   @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> bucket;
   @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> sourcePath;
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> target;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> stripPrefix;
 
   @Builder
   @ConstructorProperties({"identifier", "name", "retry", "connectorRef", "resources", "endpoint", "region", "bucket",
-      "sourcePath", "target", "runAsUser"})
+      "sourcePath", "target", "runAsUser", "stripPrefix"})
   public UploadToS3StepInfo(String identifier, String name, Integer retry, ParameterField<String> connectorRef,
       ContainerResource resources, ParameterField<String> endpoint, ParameterField<String> region,
       ParameterField<String> bucket, ParameterField<String> sourcePath, ParameterField<String> target,
-      ParameterField<Integer> runAsUser) {
+      ParameterField<Integer> runAsUser, ParameterField<String> stripPrefix) {
     this.identifier = identifier;
     this.name = name;
     this.retry = Optional.ofNullable(retry).orElse(DEFAULT_RETRY);
@@ -92,6 +93,7 @@ public class UploadToS3StepInfo implements PluginCompatibleStep, WithConnectorRe
     this.sourcePath = sourcePath;
     this.target = target;
     this.runAsUser = runAsUser;
+    this.stripPrefix = stripPrefix;
   }
 
   @Override

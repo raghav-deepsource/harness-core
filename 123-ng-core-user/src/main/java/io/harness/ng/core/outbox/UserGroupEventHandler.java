@@ -9,6 +9,7 @@ package io.harness.ng.core.outbox;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.utils.NGYamlUtils.getYamlString;
 
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 
@@ -28,6 +29,7 @@ import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.eventsframework.producer.Message;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ng.core.dto.UserGroupDTO;
+import io.harness.ng.core.dto.UserGroupRequest;
 import io.harness.ng.core.events.UserGroupCreateEvent;
 import io.harness.ng.core.events.UserGroupDeleteEvent;
 import io.harness.ng.core.events.UserGroupUpdateEvent;
@@ -82,14 +84,17 @@ public class UserGroupEventHandler implements OutboxEventHandler {
         objectMapper.readValue(outboxEvent.getEventData(), UserGroupCreateEvent.class);
     boolean publishedToRedis =
         publishEvent(userGroupCreateEvent.getUserGroup(), EventsFrameworkMetadataConstants.CREATE_ACTION);
-    AuditEntry auditEntry = AuditEntry.builder()
-                                .action(Action.CREATE)
-                                .module(ModuleType.CORE)
-                                .timestamp(outboxEvent.getCreatedAt())
-                                .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
-                                .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
-                                .insertId(outboxEvent.getId())
-                                .build();
+    AuditEntry auditEntry =
+        AuditEntry.builder()
+            .action(Action.CREATE)
+            .module(ModuleType.CORE)
+            .timestamp(outboxEvent.getCreatedAt())
+            .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
+            .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
+            .newYaml(
+                getYamlString(UserGroupRequest.builder().userGroupDTO(userGroupCreateEvent.getUserGroup()).build()))
+            .insertId(outboxEvent.getId())
+            .build();
     return publishedToRedis && auditClientService.publishAudit(auditEntry, globalContext);
   }
 
@@ -99,14 +104,19 @@ public class UserGroupEventHandler implements OutboxEventHandler {
         objectMapper.readValue(outboxEvent.getEventData(), UserGroupUpdateEvent.class);
     boolean publishedToRedis =
         publishEvent(userGroupUpdateEvent.getNewUserGroup(), EventsFrameworkMetadataConstants.UPDATE_ACTION);
-    AuditEntry auditEntry = AuditEntry.builder()
-                                .action(Action.UPDATE)
-                                .module(ModuleType.CORE)
-                                .timestamp(outboxEvent.getCreatedAt())
-                                .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
-                                .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
-                                .insertId(outboxEvent.getId())
-                                .build();
+    AuditEntry auditEntry =
+        AuditEntry.builder()
+            .action(Action.UPDATE)
+            .module(ModuleType.CORE)
+            .timestamp(outboxEvent.getCreatedAt())
+            .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
+            .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
+            .newYaml(
+                getYamlString(UserGroupRequest.builder().userGroupDTO(userGroupUpdateEvent.getNewUserGroup()).build()))
+            .oldYaml(
+                getYamlString(UserGroupRequest.builder().userGroupDTO(userGroupUpdateEvent.getOldUserGroup()).build()))
+            .insertId(outboxEvent.getId())
+            .build();
     return publishedToRedis && auditClientService.publishAudit(auditEntry, globalContext);
   }
 
@@ -116,14 +126,17 @@ public class UserGroupEventHandler implements OutboxEventHandler {
         objectMapper.readValue(outboxEvent.getEventData(), UserGroupDeleteEvent.class);
     boolean publishedToRedis =
         publishEvent(userGroupDeleteEvent.getUserGroup(), EventsFrameworkMetadataConstants.DELETE_ACTION);
-    AuditEntry auditEntry = AuditEntry.builder()
-                                .action(Action.DELETE)
-                                .module(ModuleType.CORE)
-                                .timestamp(outboxEvent.getCreatedAt())
-                                .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
-                                .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
-                                .insertId(outboxEvent.getId())
-                                .build();
+    AuditEntry auditEntry =
+        AuditEntry.builder()
+            .action(Action.DELETE)
+            .module(ModuleType.CORE)
+            .timestamp(outboxEvent.getCreatedAt())
+            .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
+            .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
+            .oldYaml(
+                getYamlString(UserGroupRequest.builder().userGroupDTO(userGroupDeleteEvent.getUserGroup()).build()))
+            .insertId(outboxEvent.getId())
+            .build();
     return publishedToRedis && auditClientService.publishAudit(auditEntry, globalContext);
   }
 

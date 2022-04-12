@@ -111,6 +111,20 @@ type ExecutionConnection {
   nodes: [Execution]
 }
 
+type Manifest {
+  #manifest UUID
+  id: String
+  #manifest name
+  name: String
+  description: String
+  #Date Time when manifest was created
+  createdAt: Long
+  #Versioon
+  version: String
+  # Manifest Source Id
+  applicationManifestId: String
+}
+
 # Type for workflow execution
 type WorkflowExecution implements Execution {
   # Workflow Execution Id
@@ -136,6 +150,8 @@ type WorkflowExecution implements Execution {
 
   # Status of the workflow
   status: ExecutionStatus
+
+  manifests: [Manifest]
 
   outcomes: OutcomeConnection @dataFetcher(name: outcomeConnection, contextFieldArgsMap: "{ \"executionId\": \"id\"}")
 

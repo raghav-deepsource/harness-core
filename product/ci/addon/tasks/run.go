@@ -138,9 +138,13 @@ func (r *runTask) execute(ctx context.Context, retryCount int32) (map[string]str
 		return nil, err
 	}
 
-	cmdArgs := []string{"-c", cmdToExecute}
+	shell, entrypointArg, err := r.getEntrypoint()
+	if err != nil {
+		return nil, err
+	}
+	cmdArgs := []string{entrypointArg, cmdToExecute}
 
-	cmd := r.cmdContextFactory.CmdContextWithSleep(ctx, cmdExitWaitTime, r.getShell(), cmdArgs...).
+	cmd := r.cmdContextFactory.CmdContextWithSleep(ctx, cmdExitWaitTime, shell, cmdArgs...).
 		WithStdout(r.procWriter).WithStderr(r.procWriter).WithEnvVarsMap(envVars)
 	err = runCmd(ctx, cmd, r.id, cmdArgs, retryCount, start, r.logMetrics, r.addonLogger)
 	if err != nil {
@@ -169,27 +173,68 @@ func (r *runTask) execute(ctx context.Context, retryCount int32) (map[string]str
 }
 
 func (r *runTask) getScript(ctx context.Context, outputVarFile string) (string, error) {
-	outputVarCmd := ""
-	for _, o := range r.envVarOutputs {
-		outputVarCmd += fmt.Sprintf("\necho %s $%s >> %s", o, o, outputVarFile)
+	outputVarCmd := r.getOutputVarCmd(r.envVarOutputs, outputVarFile)
+	resolvedCmd, err := resolveExprInCmd(r.command)
+	if err != nil {
+		return "", err
 	}
 
-	resolvedCmd, err := resolveExprInCmd(r.command)
+	earlyExitCmd, err := r.getEarlyExitCommand()
 	if err != nil {
 		return "", err
 	}
 
 	// Using set -xe instead of printing command via utils.GetLoggableCmd(command) since if ' is present in a command,
 	// echo on the command fails with an error.
-	command := fmt.Sprintf("set -xe\n%s %s", resolvedCmd, outputVarCmd)
+	command := fmt.Sprintf("%s%s %s", earlyExitCmd, resolvedCmd, outputVarCmd)
 	return command, nil
 }
 
-func (r *runTask) getShell() string {
+func (r *runTask) getEntrypoint() (string, string, error) {
 	if r.shellType == pb.ShellType_BASH {
-		return "bash"
+		return "bash", "-c", nil
+	} else if r.shellType == pb.ShellType_SH {
+		return "sh", "-c", nil
+	} else if r.shellType == pb.ShellType_POWERSHELL {
+		return "powershell", "-Command", nil
+	} else if r.shellType == pb.ShellType_PWSH {
+		return "pwsh", "-Command", nil
 	}
-	return "sh"
+	return "", "", fmt.Errorf("Unknown shell type: %s", r.shellType)
+}
+
+func (r *runTask) getEarlyExitCommand() (string, error) {
+	if r.shellType == pb.ShellType_BASH || r.shellType == pb.ShellType_SH {
+		return "set -xe\n", nil
+	} else if r.shellType == pb.ShellType_POWERSHELL || r.shellType == pb.ShellType_PWSH {
+		return "$ErrorActionPreference = 'Stop' \n", nil
+	}
+	return "", fmt.Errorf("Unknown shell type: %s", r.shellType)
+}
+
+func (r *runTask) getOutputVarCmd(outputVars []string, outputFile string) string {
+	isPsh := r.isPowershell()
+
+	cmd := ""
+	if isPsh {
+		cmd += fmt.Sprintf("\nNew-Item %s", outputFile)
+	}
+	for _, o := range outputVars {
+		if isPsh {
+			cmd += fmt.Sprintf("\n$val = \"%s $Env:%s\" \nAdd-Content -Path %s -Value $val", o, o, outputFile)
+		} else {
+			cmd += fmt.Sprintf("\necho \"%s $%s\" >> %s", o, o, outputFile)
+		}
+	}
+
+	return cmd
+}
+
+func (r *runTask) isPowershell() bool {
+	if r.shellType == pb.ShellType_POWERSHELL || r.shellType == pb.ShellType_PWSH {
+		return true
+	}
+	return false
 }
 
 func logCommandExecErr(log *zap.SugaredLogger, errMsg, stepID, args string, retryCount int32, startTime time.Time, err error) {

@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.OrchestrationWorkflowType.BUILD;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.pcf.ResizeStrategy.RESIZE_NEW_FIRST;
+import static io.harness.delegate.task.cloudformation.CloudformationBaseHelperImpl.CLOUDFORMATION_STACK_CREATE_BODY;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.SRINIVAS;
@@ -468,8 +469,7 @@ public class CloudFormationStateTest extends WingsBaseTest {
     assertThat(cloudFormationCreateStackRequest.getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(cloudFormationCreateStackRequest.getCommandName()).isEqualTo("Create Stack");
     assertThat(cloudFormationCreateStackRequest.getStackStatusesToMarkAsSuccess()).containsExactly(ROLLBACK_COMPLETE);
-    assertThat(cloudFormationCreateStackRequest.getCreateType())
-        .isEqualTo(CloudFormationCreateStackRequest.CLOUD_FORMATION_STACK_CREATE_BODY);
+    assertThat(cloudFormationCreateStackRequest.getCreateType()).isEqualTo(CLOUDFORMATION_STACK_CREATE_BODY);
     assertThat(cloudFormationCreateStackRequest.getData()).isEqualTo("Template Body");
     assertThat(cloudFormationCreateStackRequest.getTimeoutInMs()).isEqualTo(1000);
   }

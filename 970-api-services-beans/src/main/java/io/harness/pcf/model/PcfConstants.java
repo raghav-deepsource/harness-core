@@ -115,6 +115,10 @@ public interface PcfConstants {
   String INTERIM_APP_NAME_SUFFIX = DELIMITER + INTERIM;
   String INACTIVE_APP_NAME_SUFFIX = DELIMITER + HARNESS__INACTIVE__IDENTIFIER;
 
+  String INVALID_MANIFEST_MESSAGE = "Application Manifest cannot be blank or contain invalid characters";
+  String MULTIPLE_APPLICATION_MANIFEST_MESSAGE = "Multiple application manifest files found at %s level";
+  String MULTIPLE_AUTOSCALAR_MANIFEST_MESSAGE = "Multiple autoscalar manifest files found at %s level";
+
   static boolean isInterimApp(String applicationName) {
     return isNotEmpty(applicationName) && applicationName.endsWith(INTERIM_APP_NAME_SUFFIX);
   }

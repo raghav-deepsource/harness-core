@@ -17,10 +17,8 @@ import io.harness.pms.contracts.plan.ExpansionRequestType;
 import io.harness.pms.contracts.plan.JsonExpansionInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.sdk.PmsSdkInstance;
-import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,10 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @Slf4j
 public class ExpansionRequestsHelper {
-  @Inject PmsSdkInstanceService pmsSdkInstanceService;
-
-  public Map<ModuleType, Set<String>> getExpandableFieldsPerService() {
-    List<PmsSdkInstance> activeInstances = pmsSdkInstanceService.getActiveInstances();
+  public Map<ModuleType, Set<String>> getExpandableFieldsPerService(List<PmsSdkInstance> activeInstances) {
     Map<ModuleType, Set<String>> expandableFieldsPerService = new HashMap<>();
     activeInstances.forEach(sdkInstance -> {
       String sdkInstanceName = sdkInstance.getName();
@@ -62,8 +57,7 @@ public class ExpansionRequestsHelper {
     return expandableFieldsPerService;
   }
 
-  public Map<String, ModuleType> getTypeToService() {
-    List<PmsSdkInstance> activeInstances = pmsSdkInstanceService.getActiveInstances();
+  public Map<String, ModuleType> getTypeToService(List<PmsSdkInstance> activeInstances) {
     Map<String, ModuleType> typeToModule = new HashMap<>();
     activeInstances.forEach(sdkInstance -> {
       String sdkInstanceName = sdkInstance.getName();
@@ -77,10 +71,9 @@ public class ExpansionRequestsHelper {
     return typeToModule;
   }
 
-  public List<LocalFQNExpansionInfo> getLocalFQNRequestMetadata() {
+  public List<LocalFQNExpansionInfo> getLocalFQNRequestMetadata(List<PmsSdkInstance> activeInstances) {
     List<LocalFQNExpansionInfo> localFQNExpansionInfo = new ArrayList<>();
 
-    List<PmsSdkInstance> activeInstances = pmsSdkInstanceService.getActiveInstances();
     for (PmsSdkInstance sdkInstance : activeInstances) {
       String sdkInstanceName = sdkInstance.getName();
       ModuleType module = ModuleType.fromString(sdkInstanceName);

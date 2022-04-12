@@ -276,11 +276,13 @@ public class EventPublishHelper {
   private boolean isFirstRbacConfigInAccount(
       String accountId, String entityId, EntityType entityType, String userEmail) {
     if (EntityType.USER_GROUP == entityType) {
-      PageRequest<UserGroup> pageRequest = aPageRequest()
-                                               .addFilter("accountId", Operator.EQ, accountId)
-                                               .addFilter("createdBy.email", Operator.EQ, userEmail)
-                                               .addOrder(UserGroup.CREATED_AT_KEY, OrderType.ASC)
-                                               .build();
+      PageRequest<UserGroup> pageRequest =
+          aPageRequest()
+              .withLimit(Long.toString(userGroupService.getCountOfUserGroups(accountId)))
+              .addFilter("accountId", Operator.EQ, accountId)
+              .addFilter("createdBy.email", Operator.EQ, userEmail)
+              .addOrder(UserGroup.CREATED_AT_KEY, OrderType.ASC)
+              .build();
       PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, false);
       List<UserGroup> userGroups = pageResponse.getResponse();
       if (isEmpty(userGroups)) {

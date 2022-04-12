@@ -17,6 +17,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.lock.mongo.MongoPersistentLocker.LOCKS_STORE;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.microservice.NotifyEngineTarget.GENERAL;
+import static io.harness.persistence.HPersistence.ANALYTICS_STORE_NAME;
 import static io.harness.time.DurationUtils.durationTillDayTime;
 import static io.harness.waiter.OrchestrationNotifyEventListener.ORCHESTRATION;
 
@@ -664,6 +665,7 @@ public class WingsApplication extends Application<MainConfiguration> {
     }
 
     registerStores(configuration, injector);
+    registerDataStores(injector);
     if (configuration.getMongoConnectionFactory().getTraceMode() == TraceMode.ENABLED) {
       registerQueryTracer(injector);
     }
@@ -1106,6 +1108,13 @@ public class WingsApplication extends Application<MainConfiguration> {
         && !configuration.getEventsMongo().getUri().equals(configuration.getMongoConnectionFactory().getUri())) {
       persistence.register(Store.builder().name("events").build(), configuration.getEventsMongo().getUri());
     }
+  }
+
+  private void registerDataStores(Injector injector) {
+    AdvancedDatastore analyticsDataStore =
+        injector.getInstance(Key.get(AdvancedDatastore.class, Names.named("analyticsDatabase")));
+    final HPersistence persistence = injector.getInstance(HPersistence.class);
+    persistence.registerDatastore(ANALYTICS_STORE_NAME, analyticsDataStore);
   }
 
   private void registerAuditResponseFilter(Environment environment, Injector injector) {

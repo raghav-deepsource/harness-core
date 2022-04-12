@@ -1,0 +1,63 @@
+{
+  "data": {
+    "pairs": [{
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/api/v1/metrics"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "app.datadoghq.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "api_key" : [ {
+            "matcher" : "exact",
+            "value" : "api_key"
+          } ],
+          "application_key" : [ {
+            "matcher" : "exact",
+            "value" : "app_key"
+          }],
+          "from": [{
+            "matcher": "exact",
+            "value": "1527102292"
+          }]
+        },
+        "body" : []
+      },
+      "response": {
+        "status": 200,
+        "body": "{\"metrics\": [\"metric1\", \"metric2\", \"metric3\"]}",
+        "encodedBody" : false,
+        "templated" : false,
+        "headers" : {
+          "Cache-Control" : [ "no-store, no-cache, must-revalidate, max-age=0" ],
+          "Connection" : [ "Keep-Alive" ],
+          "Content-Length" : [ "27" ],
+          "Content-Type" : [ "application/json; charset=UTF-8" ],
+          "Date" : [ "Mon, 24 Jan 2022 11:24:36 GMT" ],
+          "Expires" : [ "Thu, 26 Oct 1978 00:00:00 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Server" : [ "dataddog" ],
+          "Vary" : [ "Cookie, Authorization" ],
+          "X-Content-Type-Options" : [ "nosniff" ],
+          "X-Frame-Options" : [ "SAMEORIGIN" ]
+        }
+      }
+    }]
+  },
+  "meta" : {
+    "schemaVersion" : "v5",
+    "hoverflyVersion" : "v1.1.5",
+    "timeExported" : "2022-01-24T12:32:23Z"
+  }
+}

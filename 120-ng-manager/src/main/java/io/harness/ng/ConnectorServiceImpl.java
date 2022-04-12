@@ -78,7 +78,6 @@ import com.google.protobuf.StringValue;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
@@ -188,8 +187,7 @@ public class ConnectorServiceImpl implements ConnectorService {
                 connectorHeartbeatTaskId.getId());
           }
         }
-        CompletableFuture.runAsync(
-            () -> instrumentationHelper.sendConnectorCreateEvent(connector.getConnectorInfo(), accountIdentifier));
+        instrumentationHelper.sendConnectorCreateEvent(connector.getConnectorInfo(), accountIdentifier);
         return connectorResponse;
       } else {
         throw new InvalidRequestException("Connector could not be created because we could not create the heartbeat");
@@ -290,7 +288,6 @@ public class ConnectorServiceImpl implements ConnectorService {
     validateTheConnectorTypeIsNotChanged(existingConnector.getConnectorType(), connectorInfo.getConnectorType(),
         accountIdentifier, connectorInfo.getOrgIdentifier(), connectorInfo.getProjectIdentifier(),
         connectorInfo.getIdentifier());
-    validateNameIsUnique(connectorInfo, accountIdentifier, existingConnector.getIdentifier());
   }
 
   private void validateNameIsUnique(ConnectorInfoDTO connectorInfo, String accountIdentifier, String identifier) {
@@ -377,17 +374,15 @@ public class ConnectorServiceImpl implements ConnectorService {
               getConnectorService(connector.getType())
                   .delete(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
           if (!isDefaultBranchConnector) {
-            CompletableFuture.runAsync(()
-                                           -> instrumentationHelper.sendConnectorDeleteEvent(orgIdentifier,
-                                               projectIdentifier, connectorIdentifier, accountIdentifier));
+            instrumentationHelper.sendConnectorDeleteEvent(
+                orgIdentifier, projectIdentifier, connectorIdentifier, accountIdentifier);
             return true;
           }
           if (isConnectorDeleted) {
             publishEvent(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, connector.getType(),
                 EventsFrameworkMetadataConstants.DELETE_ACTION);
-            CompletableFuture.runAsync(()
-                                           -> instrumentationHelper.sendConnectorDeleteEvent(orgIdentifier,
-                                               projectIdentifier, connectorIdentifier, accountIdentifier));
+            instrumentationHelper.sendConnectorDeleteEvent(
+                orgIdentifier, projectIdentifier, connectorIdentifier, accountIdentifier);
             return true;
           } else {
             PerpetualTaskId perpetualTaskId = connectorHeartbeatService.createConnectorHeatbeatTask(
@@ -615,8 +610,8 @@ public class ConnectorServiceImpl implements ConnectorService {
   }
 
   @Override
-  public ConnectorCatalogueResponseDTO getConnectorCatalogue() {
-    return defaultConnectorService.getConnectorCatalogue();
+  public ConnectorCatalogueResponseDTO getConnectorCatalogue(String accountIdentifier) {
+    return defaultConnectorService.getConnectorCatalogue(accountIdentifier);
   }
 
   @Override

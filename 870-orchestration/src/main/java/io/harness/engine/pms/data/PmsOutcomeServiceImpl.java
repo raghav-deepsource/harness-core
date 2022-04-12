@@ -204,7 +204,7 @@ public class PmsOutcomeServiceImpl implements PmsOutcomeService {
     try {
       Object value = evaluator.evaluateExpression(EngineExpressionEvaluator.createExpression(refObject.getName()));
       return OptionalOutcome.builder()
-          .found(true)
+          .found(value != null)
           .outcome(value == null ? null : RecastOrchestrationUtils.toJson(value))
           .build();
     } catch (UnresolvedExpressionsException | JexlException ignore) {

@@ -36,6 +36,7 @@ public final class EventsFrameworkConstants {
   public static final String INSTANCE_STATS = "instance_stats";
   public static final String GIT_FULL_SYNC_STREAM = "full_sync_stream";
   public static final String OBSERVER_EVENT_CHANNEL = "observer_event_channel";
+  public static final String GIT_SYNC_ENTITY_STREAM = "git_sync_entity_stream";
 
   // created for git sdk, dont use outside sdk.
   public static final String GIT_CONFIG_STREAM = "git_config_stream";
@@ -47,53 +48,61 @@ public final class EventsFrameworkConstants {
 
   // Pipeline Service Events
   public static final String PIPELINE_ORCHESTRATION_EVENT_TOPIC = "pipeline_orchestration";
-  public static final int PIPELINE_ORCHESTRATION_EVENT_BATCH_SIZE = 1;
+  public static final int PIPELINE_ORCHESTRATION_EVENT_BATCH_SIZE = 40;
   public static final int PIPELINE_ORCHESTRATION_EVENT_MAX_TOPIC_SIZE = 5000;
 
   public static final String PIPELINE_SDK_RESPONSE_EVENT_TOPIC = "pipeline_sdk_response";
   public static final int PIPELINE_SDK_RESPONSE_EVENT_MAX_TOPIC_SIZE = 5000;
+  public static final int SDK_RESPONSE_EVENT_BATCH_SIZE = 20;
 
   public static final String INITIATE_NODE_EVENT_TOPIC = "pipeline_initiate_node";
+  public static final int INITIATE_NODE_EVENT_BATCH_SIZE = 10;
   public static final int INITIATE_NODE_EVENT_MAX_TOPIC_SIZE = 5000;
 
   public static final String PIPELINE_PARTIAL_PLAN_RESPONSE = "pipeline_partial_plan_response";
   public static final int PIPELINE_PARTIAL_PLAN_RESPONSE_EVENT_MAX_TOPIC_SIZE = 5000;
+  public static final int PARTIAL_PLAN_EVENT_BATCH_SIZE = 20;
 
   public static final String PIPELINE_INTERRUPT_TOPIC = "pipeline_interrupt";
-  public static final int PIPELINE_INTERRUPT_BATCH_SIZE = 1;
+  public static final int PIPELINE_INTERRUPT_BATCH_SIZE = 20;
   public static final int PIPELINE_INTERRUPT_EVENT_MAX_TOPIC_SIZE = 1000;
 
   public static final String PIPELINE_FACILITATOR_EVENT_TOPIC = "pipeline_node_facilitation";
-  public static final int PIPELINE_FACILITATOR_EVENT_BATCH_SIZE = 1;
+  public static final int PIPELINE_FACILITATOR_EVENT_BATCH_SIZE = 20;
   public static final int PIPELINE_FACILITATOR_EVENT_MAX_TOPIC_SIZE = 5000;
 
   public static final String PIPELINE_NODE_START_EVENT_TOPIC = "pipeline_node_start";
-  public static final int PIPELINE_NODE_START_EVENT_BATCH_SIZE = 1;
+  public static final int PIPELINE_NODE_START_EVENT_BATCH_SIZE = 20;
   public static final int PIPELINE_NODE_START_EVENT_MAX_TOPIC_SIZE = 5000;
 
   public static final String PIPELINE_PROGRESS_EVENT_TOPIC = "pipeline_node_progress";
-  public static final int PIPELINE_PROGRESS_BATCH_SIZE = 1;
+  public static final int PIPELINE_PROGRESS_BATCH_SIZE = 20;
   public static final int PIPELINE_PROGRESS_MAX_TOPIC_SIZE = 5000;
 
   public static final String PIPELINE_NODE_ADVISE_EVENT_TOPIC = "pipeline_node_advise";
-  public static final int PIPELINE_NODE_ADVISE_BATCH_SIZE = 1;
+  public static final int PIPELINE_NODE_ADVISE_BATCH_SIZE = 20;
   public static final int PIPELINE_NODE_ADVISE_MAX_TOPIC_SIZE = 5000;
 
   public static final String PIPELINE_NODE_RESUME_EVENT_TOPIC = "pipeline_node_resume";
-  public static final int PIPELINE_NODE_RESUME_BATCH_SIZE = 1;
+  public static final int PIPELINE_NODE_RESUME_BATCH_SIZE = 20;
   public static final int PIPELINE_NODE_RESUME_MAX_TOPIC_SIZE = 5000;
+  public static final String PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER_CD =
+      "PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER_CD";
+  public static final String PIPELINE_EXECUTION_SUMMARY_CD_REDIS_KEY =
+      "DEBEZIUM_pmsMongo.pms-harness.planExecutionsSummary";
+  public static final String PIPELINE_EXECUTION_SUMMARY_CD_CONSUMER = "PIPELINE_EXECUTION_SUMMARY_CD_CONSUMER";
 
   public static final String START_PARTIAL_PLAN_CREATOR_EVENT_TOPIC = "pipeline_start_plan";
-  public static final int START_PARTIAL_PLAN_CREATOR_BATCH_SIZE = 1;
+  public static final int START_PARTIAL_PLAN_CREATOR_BATCH_SIZE = 20;
   public static final int START_PARTIAL_PLAN_CREATOR_MAX_TOPIC_SIZE = 5000;
 
   public static final String PLAN_NOTIFY_EVENT_PRODUCER = "plan_notify_event_producer";
   public static final String PLAN_NOTIFY_EVENT_TOPIC = "plan_notify_event";
-  public static final int PLAN_NOTIFY_EVENT_BATCH_SIZE = 1;
+  public static final int PLAN_NOTIFY_EVENT_BATCH_SIZE = 20;
   public static final int PLAN_NOTIFY_EVENT_MAX_TOPIC_SIZE = 5000;
 
   public static final String PMS_ORCHESTRATION_NOTIFY_EVENT = "pms_orchestration_notify_event";
-  public static final int PMS_ORCHESTRATION_NOTIFY_EVENT_BATCH_SIZE = 1;
+  public static final int PMS_ORCHESTRATION_NOTIFY_EVENT_BATCH_SIZE = 20;
   public static final int PMS_ORCHESTRATION_NOTIFY_EVENT_MAX_TOPIC_SIZE = 5000;
 
   public static final String CD_DEPLOYMENT_EVENT = "cd_deployment_event";
@@ -121,6 +130,7 @@ public final class EventsFrameworkConstants {
   public static final int GIT_BRANCH_HOOK_EVENT_STREAM_MAX_TOPIC_SIZE = 10000;
   public static final int GIT_CONFIG_STREAM_MAX_TOPIC_SIZE = 10000;
   public static final int FULL_SYNC_STREAM_MAX_TOPIC_SIZE = 10000;
+  public static final int ORCHESTRATION_LOG_MAX_TOPIC_SIZE = 100000;
 
   public static final Duration DEFAULT_MAX_PROCESSING_TIME = Duration.ofSeconds(10);
   public static final Duration ENTITY_CRUD_MAX_PROCESSING_TIME = Duration.ofSeconds(20);

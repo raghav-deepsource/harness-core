@@ -58,46 +58,52 @@ public class GovernanceServiceImpl implements GovernanceService {
   @Override
   public GovernanceMetadata evaluateGovernancePolicies(String expandedJson, String accountId, String orgIdentifier,
       String projectIdentifier, String action, String planExecutionId) {
-    if (!pmsFeatureFlagService.isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE)) {
-      return GovernanceMetadata.newBuilder()
-          .setDeny(false)
-          .setMessage(
-              String.format("FF: [%s] is disabled for account: [%s]", FeatureName.OPA_PIPELINE_GOVERNANCE, accountId))
-          .build();
-    }
-    log.info("Initiating policy check for pipeline with expanded JSON:\n" + expandedJson);
-
-    PipelineOpaEvaluationContext context;
+    long startTs = System.currentTimeMillis();
     try {
-      context = createEvaluationContext(expandedJson);
-    } catch (IOException ex) {
-      log.error("Could not create OPA evaluation context", ex);
-      return GovernanceMetadata.newBuilder()
-          .setDeny(true)
-          .setMessage(String.format("Could not create OPA context: [%s]", ex.getMessage()))
-          .build();
+      if (!pmsFeatureFlagService.isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE)) {
+        return GovernanceMetadata.newBuilder()
+            .setDeny(false)
+            .setMessage(
+                String.format("FF: [%s] is disabled for account: [%s]", FeatureName.OPA_PIPELINE_GOVERNANCE, accountId))
+            .build();
+      }
+      log.info("Initiating policy check for pipeline with expanded JSON:\n" + expandedJson);
+
+      PipelineOpaEvaluationContext context;
+      try {
+        context = createEvaluationContext(expandedJson);
+      } catch (IOException ex) {
+        log.error("Could not create OPA evaluation context", ex);
+        return GovernanceMetadata.newBuilder()
+            .setDeny(true)
+            .setMessage(String.format("Could not create OPA context: [%s]", ex.getMessage()))
+            .build();
+      }
+
+      OpaEvaluationResponseHolder response;
+      try {
+        YamlField pipelineField = YamlUtils.readTree(expandedJson);
+        String pipelineIdentifier =
+            pipelineField.getNode().getField(YAMLFieldNameConstants.PIPELINE).getNode().getIdentifier();
+        String pipelineName = pipelineField.getNode().getField(YAMLFieldNameConstants.PIPELINE).getNode().getName();
+        String entityString = getEntityString(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
+        String entityMetadata = getEntityMetadataString(
+            accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineName, planExecutionId);
+        String userIdentifier = getUserIdentifier();
+
+        response = SafeHttpCall.executeWithExceptions(
+            opaServiceClient.evaluateWithCredentials(OpaConstants.OPA_EVALUATION_TYPE_PIPELINE, accountId,
+                orgIdentifier, projectIdentifier, action, entityString, entityMetadata, userIdentifier, context));
+      } catch (Exception ex) {
+        log.error("Exception while evaluating OPA rules", ex);
+        throw new InvalidRequestException("Exception while evaluating OPA rules: " + ex.getMessage(), ex);
+      }
+
+      return mapResponseToMetadata(response);
+    } finally {
+      log.info("[PMS_Governance_Metadata] Time taken to evaluate governance policies: {}ms",
+          System.currentTimeMillis() - startTs);
     }
-
-    OpaEvaluationResponseHolder response;
-    try {
-      YamlField pipelineField = YamlUtils.readTree(expandedJson);
-      String pipelineIdentifier =
-          pipelineField.getNode().getField(YAMLFieldNameConstants.PIPELINE).getNode().getIdentifier();
-      String pipelineName = pipelineField.getNode().getField(YAMLFieldNameConstants.PIPELINE).getNode().getName();
-      String entityString = getEntityString(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
-      String entityMetadata = getEntityMetadataString(
-          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineName, planExecutionId);
-      String userIdentifier = getUserIdentifier();
-
-      response = SafeHttpCall.executeWithExceptions(
-          opaServiceClient.evaluateWithCredentials(OpaConstants.OPA_EVALUATION_TYPE_PIPELINE, accountId, orgIdentifier,
-              projectIdentifier, action, entityString, entityMetadata, userIdentifier, context));
-    } catch (Exception ex) {
-      log.error("Exception while evaluating OPA rules", ex);
-      throw new InvalidRequestException("Exception while evaluating OPA rules: " + ex.getMessage(), ex);
-    }
-
-    return mapResponseToMetadata(response);
   }
 
   private String getEntityString(String accountId, String orgIdentifier, String projectIdentifier,

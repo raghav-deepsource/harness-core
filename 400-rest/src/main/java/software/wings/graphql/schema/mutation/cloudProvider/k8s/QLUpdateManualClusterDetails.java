@@ -12,6 +12,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.utils.RequestField;
 
 import software.wings.graphql.schema.type.cloudProvider.k8s.QLManualClusterDetailsAuthenticationType;
+import software.wings.graphql.schema.type.secrets.QLUsageScope;
 import software.wings.security.PermissionAttribute;
 import software.wings.security.annotations.Scope;
 
@@ -32,4 +33,5 @@ public class QLUpdateManualClusterDetails {
   private RequestField<QLUpdateServiceAccountToken> serviceAccountToken;
   private RequestField<QLUpdateOIDCToken> oidcToken;
   private RequestField<QLUpdateNone> none;
+  private RequestField<QLUsageScope> usageScope;
 }

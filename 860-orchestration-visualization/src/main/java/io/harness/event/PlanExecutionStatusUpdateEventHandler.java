@@ -31,7 +31,6 @@ public class PlanExecutionStatusUpdateEventHandler {
     try {
       if (planExecution.getStatus() == Status.ERRORED) {
         // If plan Execution is ERRORED force generate the graph
-        // TODO: Here we need to regenrate Plan Execution Summary too. Till we do not have that at least regenerate the
         // graph. So that pipeline is failed
         log.info("[PMS_GRAPH]  Got Errored execution regenerating the graph final time");
         return graphGenerationService.buildOrchestrationGraph(planExecutionId);

@@ -12,11 +12,14 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.ExecutionStatus.SKIPPED;
 import static io.harness.beans.FeatureName.NEW_KUBECTL_VERSION;
 import static io.harness.beans.FeatureName.PRUNE_KUBERNETES_RESOURCES;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static software.wings.sm.StateExecutionData.StateExecutionDataBuilder.aStateExecutionData;
 import static software.wings.sm.StateType.K8S_DEPLOYMENT_ROLLING_ROLLBACK;
 
+import static com.google.common.base.MoreObjects.firstNonNull;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.OwnedBy;
@@ -29,9 +32,11 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.k8s.K8sCommandUnitConstants;
+import io.harness.k8s.model.K8sPod;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.tasks.ResponseData;
 
+import software.wings.api.InstanceElementListParam;
 import software.wings.api.RancherClusterElement;
 import software.wings.api.k8s.K8sContextElement;
 import software.wings.api.k8s.K8sHelmDeploymentElement;
@@ -44,6 +49,7 @@ import software.wings.delegatetasks.aws.AwsCommandHelper;
 import software.wings.helpers.ext.container.ContainerDeploymentManagerHelper;
 import software.wings.helpers.ext.k8s.request.K8sRollingDeployRollbackTaskParameters;
 import software.wings.helpers.ext.k8s.request.K8sTaskParameters;
+import software.wings.helpers.ext.k8s.response.K8sRollingDeployRollbackResponse;
 import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.AppService;
@@ -64,6 +70,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.reinert.jjschema.Attributes;
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -89,6 +96,7 @@ public class K8sRollingDeployRollback extends AbstractK8sState {
   @Inject private transient AwsCommandHelper awsCommandHelper;
   @Inject private transient FeatureFlagService featureFlagService;
 
+  private static final Integer DEFAULT_TIMEOUT_MINS = 10;
   public static final String K8S_DEPLOYMENT_ROLLING_ROLLBACK_COMMAND_NAME = "Rolling Deployment Rollback";
 
   @Getter @Setter @Attributes(title = "Timeout (Minutes)") @DefaultValue("10") private Integer stateTimeoutInMinutes;
@@ -123,7 +131,7 @@ public class K8sRollingDeployRollback extends AbstractK8sState {
       K8sContextElement k8sContextElement = context.getContextElement(ContextElementType.K8S);
       ContainerInfrastructureMapping infraMapping = k8sStateHelper.fetchContainerInfrastructureMapping(context);
 
-      if (k8sContextElement == null) {
+      if (isNull(k8sContextElement) || isEmpty(k8sContextElement.getReleaseName())) {
         return ExecutionResponse.builder()
             .executionStatus(SKIPPED)
             .stateExecutionData(aStateExecutionData().withErrorMsg("No context found for rollback. Skipping.").build())
@@ -140,7 +148,7 @@ public class K8sRollingDeployRollback extends AbstractK8sState {
               .releaseNumber(k8sContextElement.getReleaseNumber())
               .commandName(K8S_DEPLOYMENT_ROLLING_ROLLBACK_COMMAND_NAME)
               .k8sTaskType(K8sTaskType.DEPLOYMENT_ROLLING_ROLLBACK)
-              .timeoutIntervalInMin(stateTimeoutInMinutes)
+              .timeoutIntervalInMin(firstNonNull(stateTimeoutInMinutes, DEFAULT_TIMEOUT_MINS))
               .delegateSelectors((k8sContextElement.getDelegateSelectors() == null)
                       ? null
                       : new HashSet<>(k8sContextElement.getDelegateSelectors()))
@@ -193,9 +201,24 @@ public class K8sRollingDeployRollback extends AbstractK8sState {
         stateExecutionData.setHelmChartInfo(k8SHelmDeploymentElement.getPreviousDeployedHelmChart());
       }
 
+      K8sRollingDeployRollbackResponse k8sRollingRollbackResponse =
+          (K8sRollingDeployRollbackResponse) executionResponse.getK8sTaskResponse();
+      List<K8sPod> pods = Collections.emptyList();
+      if (k8sRollingRollbackResponse != null) {
+        pods = k8sRollingRollbackResponse.getK8sPodList();
+      }
+
+      InstanceElementListParam instanceElementListParam =
+          InstanceElementListParam.builder().instanceElements(fetchInstanceElementList(pods, true)).build();
+      stateExecutionData.setNewInstanceStatusSummaries(
+          fetchInstanceStatusSummaries(instanceElementListParam.getInstanceElements(), executionStatus));
+      saveInstanceInfoToSweepingOutput(context, fetchInstanceElementList(pods, true), fetchInstanceDetails(pods, true));
+
       return ExecutionResponse.builder()
           .executionStatus(executionStatus)
-          .stateExecutionData(context.getStateExecutionData())
+          .stateExecutionData(stateExecutionData)
+          .contextElement(instanceElementListParam)
+          .notifyElement(instanceElementListParam)
           .build();
     } catch (WingsException e) {
       throw e;

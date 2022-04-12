@@ -78,7 +78,8 @@ public interface EntityTypeConstants {
   String Verify = "Verify";
   String FlagConfiguration = "FlagConfiguration";
   String OPAPOLICIES = "GovernancePolicies";
-  String POLICY_STEP = "PolicyStep";
+  String POLICY_STEP = "Policy";
   String SERVICENOW_CREATE = "ServiceNowCreate";
   String SERVICENOW_UPDATE = "ServiceNowUpdate";
+  String ENVIRONMENT_GROUP = "EnvironmentGroup";
 }

@@ -8,19 +8,26 @@
 package io.harness.yaml.core.properties;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.pms.yaml.YamlNode;
+import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
+import lombok.Getter;
 import org.springframework.data.annotation.TypeAlias;
 
-@Value
+@Data
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @TypeAlias("io.harness.yaml.core.properties.NGProperties")
 @RecasterAlias("io.harness.yaml.core.properties.NGProperties")
 public class NGProperties {
-  @ApiModelProperty(dataType = "io.harness.yaml.core.properties.CIProperties") JsonNode ci;
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  String uuid;
+  @VariableExpression CIProperties ci;
 }

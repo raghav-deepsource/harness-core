@@ -825,7 +825,17 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
         if (!customThresholds.containsKey(threshold.getTransactionName())) {
           customThresholds.put(threshold.getTransactionName(), new HashMap<>());
         }
-        customThresholds.get(threshold.getTransactionName()).put(threshold.getMetricName(), threshold.getThresholds());
+        Map<String, TimeSeriesMetricDefinition> timeSeriesMetricDefinitionMap =
+            customThresholds.get(threshold.getTransactionName());
+        if (timeSeriesMetricDefinitionMap.containsKey(threshold.getMetricName())) {
+          TimeSeriesMetricDefinition existingTimeSeriesMetricDefinition =
+              timeSeriesMetricDefinitionMap.get(threshold.getMetricName());
+          // add custom threshold into existing object.
+          existingTimeSeriesMetricDefinition.getCustomThresholds().addAll(
+              threshold.getThresholds().getCustomThresholds());
+        } else {
+          timeSeriesMetricDefinitionMap.put(threshold.getMetricName(), threshold.getThresholds());
+        }
       }
     }
     return customThresholds;

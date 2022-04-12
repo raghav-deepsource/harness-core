@@ -22,6 +22,7 @@ delegateTokens {"name": "validUntil_1", "background": true, "expireAfterSeconds"
 delegateTokensNG {"name": "byAccountAndStatus", "background": true} {"accountId": 1, "owner": 1, "status": 1}
 delegateTokensNG {"name": "byAccountOwnerAndName", "unique": true} {"accountId": 1, "owner": 1, "name": 1}
 delegateTokensNG {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
+ecsService {"name": "unique_accountId_clusterId_serviceArn", "unique": true} {"accountId": 1, "clusterId": 1, "serviceArn": 1}
 gcpServiceAccount {"name": "account_id_service_account_email", "background": true} {"accountId": 1, "email": 1}
 gitProcessRequestSdk {"name": "accountId_repo_branch_commit_index", "background": true} {"accountId": 1, "repoUrl": 1, "branch": 1, "commitId": 1}
 instanceData {"name": "accountId_clusterId_instanceId_instanceState", "background": true} {"accountId": 1, "clusterId": 1, "instanceId": 1, "instanceState": 1}
@@ -48,6 +49,7 @@ k8sWorkloadRecommendation {"name": "unique_accountId_clusterId_namespace_workloa
 k8sYaml {"name": "accountId_hash", "background": true} {"accountId": 1, "hash": 1}
 k8sYaml {"name": "hash_1", "unique": true} {"hash": 1}
 lastReceivedPublishedMessage {"name": "no_dup", "unique": true} {"accountId": 1, "identifier": 1}
+notificationSetting {"name": "accountId_1", "background": true} {"accountId": 1}
 notifyQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 notifyQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
 notifyQueue {"name": "waitInstanceId_1", "unique": true} {"waitInstanceId": 1}

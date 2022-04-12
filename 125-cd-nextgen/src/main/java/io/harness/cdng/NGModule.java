@@ -28,6 +28,9 @@ import io.harness.cdng.buckets.resources.s3.S3ResourceService;
 import io.harness.cdng.buckets.resources.s3.S3ResourceServiceImpl;
 import io.harness.cdng.buckets.resources.service.GcsResourceService;
 import io.harness.cdng.buckets.resources.service.GcsResourceServiceImpl;
+import io.harness.cdng.envGroup.mappers.EnvironmentGroupFilterPropertiesMapper;
+import io.harness.cdng.envGroup.services.EnvironmentGroupService;
+import io.harness.cdng.envGroup.services.EnvironmentGroupServiceImpl;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.instance.info.InstanceInfoServiceImpl;
 import io.harness.cdng.jira.resources.service.JiraResourceService;
@@ -39,6 +42,8 @@ import io.harness.cdng.servicenow.resources.service.ServiceNowResourceServiceImp
 import io.harness.cdng.usage.impl.CDLicenseUsageImpl;
 import io.harness.cdng.yaml.CdYamlSchemaService;
 import io.harness.cdng.yaml.CdYamlSchemaServiceImpl;
+import io.harness.filter.FilterType;
+import io.harness.filter.mapper.FilterPropertiesMapper;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
 import io.harness.ng.core.NGCoreModule;
 import io.harness.ng.core.service.services.ServiceEntityService;
@@ -47,6 +52,7 @@ import io.harness.service.instance.InstanceService;
 import io.harness.service.instance.InstanceServiceImpl;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.multibindings.MapBinder;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.slf4j.Slf4j;
 
@@ -85,5 +91,11 @@ public class NGModule extends AbstractModule {
     bind(ServiceEntityService.class).to(ServiceEntityServiceImpl.class);
     bind(ServiceNowResourceService.class).to(ServiceNowResourceServiceImpl.class);
     bind(ArtifactoryResourceService.class).to(ArtifactoryResourceServiceImpl.class);
+    bind(EnvironmentGroupService.class).to(EnvironmentGroupServiceImpl.class);
+
+    MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
+        MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
+    filterPropertiesMapper.addBinding(FilterType.ENVIRONMENTGROUP.toString())
+        .to(EnvironmentGroupFilterPropertiesMapper.class);
   }
 }

@@ -9,13 +9,11 @@ package io.harness.gitsync.gittoharness;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.ExceptionUtils;
-import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.ChangeSet;
 import io.harness.gitsync.ChangeSets;
 import io.harness.gitsync.EntityInfo;
@@ -30,10 +28,11 @@ import io.harness.gitsync.ProcessingFailureStage;
 import io.harness.gitsync.ProcessingResponse;
 import io.harness.gitsync.beans.GitProcessRequest;
 import io.harness.gitsync.common.YamlProcessingLogContext;
+import io.harness.gitsync.common.utils.GitEntityFilePath;
+import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
 import io.harness.gitsync.dao.GitProcessingRequestService;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
-import io.harness.gitsync.interceptor.GitSyncConstants;
 import io.harness.gitsync.interceptor.GitSyncThreadDecorator;
 import io.harness.gitsync.logger.GitProcessingLogContext;
 import io.harness.lock.AcquiredLock;
@@ -43,6 +42,7 @@ import io.harness.manage.GlobalContextManager;
 import io.harness.manage.GlobalContextManager.GlobalContextGuard;
 import io.harness.ng.core.ValidationError;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -199,20 +199,15 @@ public class GitToHarnessSdkProcessorImpl implements GitToHarnessSdkProcessor {
     return false;
   }
 
-  private GitSyncBranchContext createGitEntityInfo(
+  @VisibleForTesting
+  protected GitSyncBranchContext createGitEntityInfo(
       String branch, String filePath, String yamlGitConfigId, String lastObjectId, String commitId) {
-    String[] pathSplited = emptyIfNull(filePath).split(GitSyncConstants.FOLDER_PATH);
-    if (pathSplited.length != 2) {
-      throw new InvalidRequestException(String.format(
-          "The path %s doesn't contain the .harness folder, thus this file won't be processed", filePath));
-    }
-    String folderPath = pathSplited[0] + GitSyncConstants.FOLDER_PATH;
-    filePath = pathSplited[1];
+    GitEntityFilePath rootFolderAndFilePath = GitSyncFilePathUtils.getRootFolderAndFilePath(filePath);
     return GitSyncBranchContext.builder()
         .gitBranchInfo(GitEntityInfo.builder()
                            .branch(branch)
-                           .folderPath(folderPath)
-                           .filePath(filePath)
+                           .folderPath(rootFolderAndFilePath.getRootFolder())
+                           .filePath(rootFolderAndFilePath.getFilePath())
                            .yamlGitConfigId(yamlGitConfigId)
                            .lastObjectId(lastObjectId)
                            .isSyncFromGit(true)

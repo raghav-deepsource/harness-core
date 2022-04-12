@@ -15,9 +15,11 @@ import io.harness.data.validator.EntityName;
 import io.harness.notification.bean.NotificationRules;
 import io.harness.plancreator.flowcontrol.FlowControlConfig;
 import io.harness.plancreator.stages.StageElementWrapperConfig;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.validator.NGRegexValidatorConstants;
+import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.properties.NGProperties;
 import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.core.variables.NGVariable;
@@ -29,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -54,26 +57,40 @@ public class PipelineInfoConfig {
   @ApiModelProperty(hidden = true)
   String uuid;
 
-  @NotNull @EntityName @Pattern(regexp = NGRegexValidatorConstants.NAME_PATTERN) String name;
-  @NotNull @EntityIdentifier @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN) String identifier;
+  @NotNull @EntityName @Pattern(regexp = NGRegexValidatorConstants.NAME_PATTERN) @VariableExpression String name;
+  @NotNull
+  @EntityIdentifier
+  @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN)
+  @VariableExpression
+  String identifier;
 
-  FlowControlConfig flowControl;
+  @VariableExpression(skipVariableExpression = true) FlowControlConfig flowControl;
 
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> description;
-  Map<String, String> tags;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @VariableExpression
+  ParameterField<String> description;
+  @VariableExpression Map<String, String> tags;
 
-  List<NGVariable> variables;
-  NGProperties properties;
+  @VariableExpression List<NGVariable> variables;
+  @VariableExpression NGProperties properties;
 
-  @Singular List<StageElementWrapperConfig> stages;
-  List<NotificationRules> notificationRules;
+  @NotNull
+  @Singular
+  @Size(min = 1)
+  @VariableExpression(skipVariableExpression = true)
+  List<StageElementWrapperConfig> stages;
+  @VariableExpression(skipVariableExpression = true) List<NotificationRules> notificationRules;
 
-  String orgIdentifier;
-  String projectIdentifier;
+  @VariableExpression(skipVariableExpression = true) String orgIdentifier;
+  @VariableExpression(skipVariableExpression = true) String projectIdentifier;
 
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @Pattern(regexp = NGRegexValidatorConstants.TIMEOUT_PATTERN)
+  @VariableExpression(skipVariableExpression = true)
   ParameterField<Timeout> timeout;
 
-  boolean allowStageExecutions;
+  @VariableExpression(skipVariableExpression = true) boolean allowStageExecutions;
+
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 }

@@ -109,6 +109,7 @@ public class TemplateFullGitSyncHelperTest extends CategoryTest {
   public void testGetAllEntitiesForFullSync() {
     Criteria criteria =
         templateServiceHelper.formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, null, false, null, false);
+    criteria = criteria.and(TemplateEntityKeys.yamlGitConfigRef).is(null);
     PageRequest pageRequest = PageRequest.of(0, 200, Sort.by(Sort.Direction.DESC, TemplateEntityKeys.lastUpdatedAt));
 
     Page<TemplateEntity> templateSetPages = new PageImpl<>(Collections.singletonList(templateEntity), pageRequest, 1);

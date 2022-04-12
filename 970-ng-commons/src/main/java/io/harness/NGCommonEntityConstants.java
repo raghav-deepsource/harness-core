@@ -70,6 +70,12 @@ public class NGCommonEntityConstants {
   public static final String IDENTIFIER_PARAM_MESSAGE = "Identifier for the Entity.";
   public static final String TAGS = "Tags";
   public static final String DESCRIPTION = "Description of the entity";
+  public static final String CREATED_AT_MESSAGE = "Time at which the entity was created";
+  public static final String UPDATED_AT_MESSAGE = "Time at which the entity was last updated";
+  public static final String NAME_PARAM_MESSAGE = "Name of the Entity";
+  public static final String COLOR_PARAM_MESSAGE = "Color Code for the Entity";
+  public static final String DELETED_PARAM_MESSAGE = "Deletion status for Entity";
+  public static final String VERSION_PARAM_MESSAGE = "Version of Entity";
 
   public static final String GCP_CONNECTOR_IDENTIFIER = "GCP Connector Identifier";
 
@@ -82,4 +88,7 @@ public class NGCommonEntityConstants {
   public static final String INTERNAL_SERVER_ERROR_CODE = "500";
   public static final String APPLICATION_JSON_MEDIA_TYPE = "application/json";
   public static final String APPLICATION_YAML_MEDIA_TYPE = "application/yaml";
+
+  // Environment Group
+  public static final String ENVIRONMENT_GROUP_KEY = "envGroupIdentifier";
 }

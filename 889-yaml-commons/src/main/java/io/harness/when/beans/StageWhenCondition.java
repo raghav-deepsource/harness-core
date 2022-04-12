@@ -13,10 +13,14 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlNode;
+import io.harness.yaml.core.VariableExpression;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.Value;
 
 @Value
@@ -24,6 +28,10 @@ import lombok.Value;
 @OwnedBy(PIPELINE)
 @RecasterAlias("io.harness.when.beans.StageWhenCondition")
 public class StageWhenCondition {
-  @NotNull WhenConditionStatus pipelineStatus;
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> condition;
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  String uuid;
+  @NotNull @VariableExpression WhenConditionStatus pipelineStatus;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @VariableExpression ParameterField<String> condition;
 }

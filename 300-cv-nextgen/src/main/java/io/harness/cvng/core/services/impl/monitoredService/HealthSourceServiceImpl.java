@@ -110,8 +110,8 @@ public class HealthSourceServiceImpl implements HealthSourceService {
 
   @Override
   public void update(String accountId, String orgIdentifier, String projectIdentifier, String environmentRef,
-      String serviceRef, String monitoredServiceIdentifier, String nameSpaceIdentifier,
-      Set<HealthSource> healthSources) {
+      String serviceRef, String monitoredServiceIdentifier, String nameSpaceIdentifier, Set<HealthSource> healthSources,
+      boolean isEnabled) {
     healthSources.forEach(healthSource -> {
       List<CVConfig> saved = cvConfigService.list(accountId, orgIdentifier, projectIdentifier,
           HealthSourceService.getNameSpacedIdentifier(nameSpaceIdentifier, healthSource.getIdentifier()));
@@ -120,6 +120,13 @@ public class HealthSourceServiceImpl implements HealthSourceService {
           HealthSourceService.getNameSpacedIdentifier(nameSpaceIdentifier, healthSource.getIdentifier()),
           healthSource.getName(), saved, metricPackService);
       cvConfigUpdateResult.getDeleted().forEach(cvConfig -> cvConfigService.delete(cvConfig.getUuid()));
+
+      for (CVConfig cvConfig : cvConfigUpdateResult.getAdded()) {
+        cvConfig.setEnabled(isEnabled);
+      }
+      for (CVConfig cvConfig : cvConfigUpdateResult.getUpdated()) {
+        cvConfig.setEnabled(isEnabled);
+      }
       cvConfigService.update(cvConfigUpdateResult.getUpdated());
       cvConfigService.save(cvConfigUpdateResult.getAdded());
     });

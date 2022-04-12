@@ -22,4 +22,5 @@ import lombok.experimental.FieldNameConstants;
 public class QLDeploymentPermissions {
   private Set<QLDeploymentFilterType> filterTypes;
   private Set<String> envIds;
+  private QLExecutableElementFilterInput executableElementFilter;
 }

@@ -9,6 +9,7 @@ package software.wings.scheduler;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.mongo.MongoUtils.setUnset;
@@ -233,33 +234,54 @@ public class LdapGroupSyncJobHelper {
     return wingsPersistence.findAndModify(query, updateOperations, new FindAndModifyOptions());
   }
 
-  private void syncUserGroupMembers(String accountId, Map<UserGroup, Set<User>> removedGroupMembers,
+  @VisibleForTesting
+  public void syncUserGroupMembers(String accountId, Map<UserGroup, Set<User>> removedGroupMembers,
       Map<LdapUserResponse, Set<UserGroup>> addedGroupMembers) {
-    removedGroupMembers.forEach((userGroup, users) -> userGroupService.removeMembers(userGroup, users, false, true));
+    if (isNotEmpty(removedGroupMembers)) {
+      log.info("LDAPIterator: users to be removed {}", removedGroupMembers);
+      removedGroupMembers.forEach((userGroup, users) -> userGroupService.removeMembers(userGroup, users, false, true));
+    }
+    if (isNotEmpty(addedGroupMembers)) {
+      for (Map.Entry<LdapUserResponse, Set<UserGroup>> entry : addedGroupMembers.entrySet()) {
+        LdapUserResponse ldapUserResponse = entry.getKey();
+        Set<UserGroup> userGroups = entry.getValue();
 
-    for (Map.Entry<LdapUserResponse, Set<UserGroup>> entry : addedGroupMembers.entrySet()) {
-      LdapUserResponse ldapUserResponse = entry.getKey();
-      Set<UserGroup> userGroups = entry.getValue();
+        try {
+          User user = userService.getUserByEmail(ldapUserResponse.getEmail());
+          log.info("LDAPIterator: user found from by email Id {} is {}", ldapUserResponse.getEmail(), user);
 
-      User user = userService.getUserByEmail(ldapUserResponse.getEmail());
-      if (featureFlagService.isEnabled(FeatureName.LDAP_SYNC_WITH_USERID, accountId)) {
-        user = userService.getUserByUserId(ldapUserResponse.getUserId());
-      }
-      if (user != null && userService.isUserAssignedToAccount(user, accountId)) {
-        log.info("LDAPIterator: user already assigned to account {}", accountId);
-        userService.addUserToUserGroups(accountId, user, Lists.newArrayList(userGroups), true, true);
-        log.info("LDAPIterator: adding user {} to groups {}  in accountId {}", user.getUuid(),
-            Lists.newArrayList(userGroups), accountId);
-      } else {
-        UserInvite userInvite = anUserInvite()
-                                    .withAccountId(accountId)
-                                    .withEmail(ldapUserResponse.getEmail())
-                                    .withName(ldapUserResponse.getName())
-                                    .withUserGroups(Lists.newArrayList(userGroups))
-                                    .withUserId(ldapUserResponse.getUserId())
-                                    .build();
-        log.info("LDAPIterator: creating user invite for account {} and user Invite {}", accountId, userInvite);
-        userService.inviteUser(userInvite, false, true);
+          if (featureFlagService.isEnabled(FeatureName.LDAP_SYNC_WITH_USERID, accountId)) {
+            user = userService.getUserByUserId(ldapUserResponse.getUserId());
+            log.info("LDAPIterator: Fetching user with user Id {}", ldapUserResponse.getUserId());
+          }
+          log.info("LDAPIterator: user found from system is {}", user);
+
+          if (user != null && userService.isUserAssignedToAccount(user, accountId)) {
+            log.info("LDAPIterator: user {} already assigned to account {}", user.getEmail(), accountId);
+            userService.addUserToUserGroups(accountId, user, Lists.newArrayList(userGroups), true, true);
+            log.info("LDAPIterator: adding user {} to groups {}  in accountId {}", user.getUuid(),
+                Lists.newArrayList(userGroups), accountId);
+          } else {
+            UserInvite userInvite = anUserInvite()
+                                        .withAccountId(accountId)
+                                        .withEmail(ldapUserResponse.getEmail())
+                                        .withName(ldapUserResponse.getName())
+                                        .withUserGroups(Lists.newArrayList(userGroups))
+                                        .withUserId(ldapUserResponse.getUserId())
+                                        .build();
+            log.info(
+                "LDAPIterator: creating user invite for account {} and user Invite {} and user Groups {} and externalUserId {}",
+                accountId, userInvite.getEmail(), Lists.newArrayList(userGroups), ldapUserResponse.getUserId());
+            userService.inviteUser(userInvite, false, true);
+          }
+        } catch (Exception e) {
+          if (ldapUserResponse != null && isNotEmpty(ldapUserResponse.getEmail())) {
+            log.error("LDAPIterator: could not sync user {} of account {} with error", ldapUserResponse.getEmail(),
+                accountId, e);
+          } else {
+            log.error("LDAPIterator: could not sync for account {} as email was not found ", accountId, e);
+          }
+        }
       }
     }
   }

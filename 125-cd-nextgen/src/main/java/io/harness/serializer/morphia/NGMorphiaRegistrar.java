@@ -12,14 +12,17 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.artifactsource.ArtifactSource;
 import io.harness.cdng.artifact.bean.artifactsource.DockerArtifactSource;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
+import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
+import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.InfraUseFromStage;
 import io.harness.cdng.infra.beans.K8sDirectInfraMapping;
 import io.harness.cdng.infra.beans.K8sGcpInfraMapping;
+import io.harness.cdng.infra.beans.PdcInfraMapping;
 import io.harness.cdng.infra.steps.InfraStepParameters;
 import io.harness.cdng.manifest.yaml.ManifestsOutcome;
 import io.harness.cdng.pipeline.executions.CDAccountExecutionMetadata;
@@ -43,11 +46,13 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     set.add(InfraMapping.class);
     set.add(K8sDirectInfraMapping.class);
     set.add(K8sGcpInfraMapping.class);
+    set.add(PdcInfraMapping.class);
     set.add(DockerArtifactSource.class);
     set.add(ArtifactSource.class);
     set.add(TerraformConfig.class);
     set.add(PollingDocument.class);
     set.add(CDAccountExecutionMetadata.class);
+    set.add(EnvironmentGroupEntity.class);
   }
 
   @Override
@@ -69,5 +74,6 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     h.put("cdng.infra.steps.InfraStepParameters", InfraStepParameters.class);
     h.put("io.harness.cdng.provision.terraform.TerraformConfig", TerraformConfig.class);
     h.put("io.harness.polling.bean.PollingDocument", PollingDocument.class);
+    h.put("io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig", CustomArtifactConfig.class);
   }
 }

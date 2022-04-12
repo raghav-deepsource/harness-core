@@ -6,8 +6,8 @@
  */
 
 package io.harness.gitsync.core.fullsync;
-
 import static io.harness.rule.OwnerRule.BHAVYA;
+import static io.harness.rule.OwnerRule.MEET;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -77,5 +77,15 @@ public class FullSyncJobServiceImplTest extends GitSyncTestBase {
     Optional<GitFullSyncJob> savedJob = fullSyncJobService.getRunningJob(ACCOUNT, ORG, PROJECT);
     assertThat(savedJob.isPresent()).isEqualTo(true);
     assertThat(savedJob.get().getTriggeredBy().getUsername()).isEqualTo(USER_NAME);
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testDeleteAll() {
+    save(GitFullSyncJob.SyncStatus.RUNNING);
+    fullSyncJobService.deleteAll(ACCOUNT, ORG, PROJECT);
+    Optional<GitFullSyncJob> savedJob = fullSyncJobService.getRunningJob(ACCOUNT, ORG, PROJECT);
+    assertThat(savedJob.isPresent()).isEqualTo(false);
   }
 }

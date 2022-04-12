@@ -311,8 +311,9 @@ public class KmsServiceImpl extends AbstractSecretServiceImpl implements KmsServ
       kmsEncryptorsRegistry.getKmsEncryptor(kmsConfig).encryptSecret(
           accountId, UUID.randomUUID().toString(), kmsConfig);
     } catch (WingsException e) {
-      String message = "Was not able to encrypt using given credentials. Please check your credentials and try again";
-      throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, message + e.getMessage(), USER);
+      String message = "Was not able to encrypt using given credentials. Please check your credentials and try again.";
+      throw new SecretManagementException(
+          SECRET_MANAGEMENT_ERROR, String.format("%s%n%s", message, e.getMessage()), USER);
     }
   }
 

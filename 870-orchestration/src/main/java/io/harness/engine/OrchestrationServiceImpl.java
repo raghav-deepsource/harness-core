@@ -35,7 +35,9 @@ public class OrchestrationServiceImpl implements OrchestrationService {
   @Override
   public PlanExecution startExecution(@Valid Plan plan, Map<String, String> setupAbstractions,
       ExecutionMetadata metadata, PlanExecutionMetadata planExecutionMetadata) {
+    long start = System.currentTimeMillis();
     Plan savedPlan = planService.save(plan);
+    log.info("[PMS_EXECUTE] PlanService plan save time {}ms", System.currentTimeMillis() - start);
     return executePlan(savedPlan, setupAbstractions, metadata, planExecutionMetadata);
   }
 

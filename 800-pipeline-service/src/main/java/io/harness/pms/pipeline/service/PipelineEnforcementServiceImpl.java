@@ -20,6 +20,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.pipeline.CommonStepInfo;
+import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.plan.creation.PlanCreatorServiceInfo;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.PmsSdkHelper;
@@ -38,9 +39,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
+@Slf4j
 public class PipelineEnforcementServiceImpl implements PipelineEnforcementService {
   private static final String DEPLOYMENT_EXCEEDED_KEY = "DeploymentExceeded";
   private static final String BUILD_EXCEEDED_KEY = "BuildExceeded";
@@ -83,35 +86,51 @@ public class PipelineEnforcementServiceImpl implements PipelineEnforcementServic
   }
 
   @Override
-  public void validateExecutionEnforcementsBasedOnStage(String accountId, YamlField pipelineField) {
-    Set<YamlField> stageFields = PipelineUtils.getStagesFieldFromPipeline(pipelineField);
-    Set<String> modules = new HashSet<>();
-    Set<YamlField> nonCachedStageYamlFields = new HashSet<>();
-    for (YamlField stageField : stageFields) {
-      if (stageTypeToModule.containsKey(stageField.getNode().getType())) {
-        modules.add(stageTypeToModule.get(stageField.getNode().getType()));
-      } else {
-        nonCachedStageYamlFields.add(stageField);
-      }
+  public void validateExecutionEnforcementsBasedOnStage(PipelineEntity pipelineEntity) {
+    long start = System.currentTimeMillis();
+    try {
+      Set<String> modules = pipelineEntity.getFilters().keySet();
+      validateExecutionFeatureRestrictions(pipelineEntity.getAccountId(), modules);
+    } finally {
+      log.info("[PMS_Enforcement] Validating enforcement on stages took time {}ms", System.currentTimeMillis() - start);
     }
+  }
 
-    if (!nonCachedStageYamlFields.isEmpty()) {
-      Map<String, PlanCreatorServiceInfo> services = pmsSdkHelper.getServices();
-      for (Map.Entry<String, PlanCreatorServiceInfo> planCreatorServiceInfoEntry : services.entrySet()) {
-        Map<String, Set<String>> supportedTypes = planCreatorServiceInfoEntry.getValue().getSupportedTypes();
-        for (YamlField stageField : stageFields) {
-          if (stageTypeToModule.containsKey(stageField.getNode().getType())) {
-            modules.add(stageTypeToModule.get(stageField.getNode().getType()));
-          } else {
-            if (PlanCreatorUtils.supportsField(supportedTypes, stageField)) {
-              modules.add(planCreatorServiceInfoEntry.getKey());
-              stageTypeToModule.put(stageField.getNode().getType(), planCreatorServiceInfoEntry.getKey());
+  @Override
+  public void validateExecutionEnforcementsBasedOnStage(String accountId, YamlField pipelineField) {
+    long start = System.currentTimeMillis();
+    try {
+      Set<YamlField> stageFields = PipelineUtils.getStagesFieldFromPipeline(pipelineField);
+      Set<String> modules = new HashSet<>();
+      Set<YamlField> nonCachedStageYamlFields = new HashSet<>();
+      for (YamlField stageField : stageFields) {
+        if (stageTypeToModule.containsKey(stageField.getNode().getType())) {
+          modules.add(stageTypeToModule.get(stageField.getNode().getType()));
+        } else {
+          nonCachedStageYamlFields.add(stageField);
+        }
+      }
+
+      if (!nonCachedStageYamlFields.isEmpty()) {
+        Map<String, PlanCreatorServiceInfo> services = pmsSdkHelper.getServices();
+        for (Map.Entry<String, PlanCreatorServiceInfo> planCreatorServiceInfoEntry : services.entrySet()) {
+          Map<String, Set<String>> supportedTypes = planCreatorServiceInfoEntry.getValue().getSupportedTypes();
+          for (YamlField stageField : stageFields) {
+            if (stageTypeToModule.containsKey(stageField.getNode().getType())) {
+              modules.add(stageTypeToModule.get(stageField.getNode().getType()));
+            } else {
+              if (PlanCreatorUtils.supportsField(supportedTypes, stageField)) {
+                modules.add(planCreatorServiceInfoEntry.getKey());
+                stageTypeToModule.put(stageField.getNode().getType(), planCreatorServiceInfoEntry.getKey());
+              }
             }
           }
         }
       }
+      validateExecutionFeatureRestrictions(accountId, modules);
+    } finally {
+      log.info("[PMS_Enforcement] Validating enforcement on stages took time {}ms", System.currentTimeMillis() - start);
     }
-    validateExecutionFeatureRestrictions(accountId, modules);
   }
 
   private void validateExecutionFeatureRestrictions(String accountId, Set<String> modules) {
@@ -140,6 +159,7 @@ public class PipelineEnforcementServiceImpl implements PipelineEnforcementServic
    */
   @Override
   public void validatePipelineExecutionRestriction(String accountId, Set<StepType> stepTypes) {
+    // Todo: Create a method in SdkStepsHelper and use it here. Cache this data.
     Map<String, Set<SdkStep>> sdkSteps = pmsSdkInstanceService.getSdkSteps();
     Multimap<String, String> featureRestrictionToStepNamesMap =
         getFeatureRestrictionMapFromUsedSteps(sdkSteps, stepTypes);

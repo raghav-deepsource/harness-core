@@ -45,4 +45,7 @@ public interface PMSInputSetService {
   void deleteInputSetsOnPipelineDeletion(PipelineEntity pipelineEntity);
 
   InputSetEntity updateGitFilePath(InputSetEntity inputSetEntity, String newFilePath);
+
+  boolean checkForInputSetsForPipeline(
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);
 }

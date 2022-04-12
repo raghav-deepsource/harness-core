@@ -32,12 +32,24 @@ public class PipelineCreateEvent implements Event {
   private String accountIdentifier;
   private String projectIdentifier;
   private PipelineEntity pipeline;
+  private Boolean isFromGit;
+
   public PipelineCreateEvent(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, PipelineEntity pipeline) {
     this.accountIdentifier = accountIdentifier;
     this.orgIdentifier = orgIdentifier;
     this.projectIdentifier = projectIdentifier;
     this.pipeline = pipeline;
+    this.isFromGit = false;
+  }
+
+  public PipelineCreateEvent(String orgIdentifier, String accountIdentifier, String projectIdentifier,
+      PipelineEntity pipeline, Boolean isFromGit) {
+    this.orgIdentifier = orgIdentifier;
+    this.accountIdentifier = accountIdentifier;
+    this.projectIdentifier = projectIdentifier;
+    this.pipeline = pipeline;
+    this.isFromGit = isFromGit;
   }
 
   @JsonIgnore

@@ -9,6 +9,21 @@ package io.harness.cvng.core.services.api;
 
 import io.harness.cvng.core.entities.SideKick.SideKickData;
 
+import java.time.Instant;
+import lombok.Builder;
+import lombok.Value;
+
 public interface SideKickExecutor<E extends SideKickData> {
   void execute(E sideKickInfo);
+
+  @Value
+  @Builder
+  class RetryData {
+    boolean shouldRetry;
+    Instant nextRetryTime;
+  }
+
+  default RetryData shouldRetry(int lastRetryCount) {
+    return RetryData.builder().shouldRetry(false).build();
+  }
 }

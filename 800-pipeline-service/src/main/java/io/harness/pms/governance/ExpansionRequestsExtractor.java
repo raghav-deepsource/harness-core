@@ -16,6 +16,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.pms.sdk.PmsSdkInstance;
+import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -37,6 +39,7 @@ import java.util.stream.Collectors;
 @Singleton
 public class ExpansionRequestsExtractor {
   @Inject ExpansionRequestsHelper expansionRequestsHelper;
+  @Inject PmsSdkInstanceService pmsSdkInstanceService;
 
   public Set<ExpansionRequest> fetchExpansionRequests(String pipelineYaml) {
     YamlNode pipelineNode;
@@ -47,13 +50,15 @@ public class ExpansionRequestsExtractor {
     }
     Stack<ModuleType> namespace = new Stack<>();
     namespace.push(ModuleType.PMS);
-    Map<ModuleType, Set<String>> expandableFieldsPerService = expansionRequestsHelper.getExpandableFieldsPerService();
-    Map<String, ModuleType> typeToService = expansionRequestsHelper.getTypeToService();
+    List<PmsSdkInstance> activeInstances = pmsSdkInstanceService.getActiveInstances();
+    Map<ModuleType, Set<String>> expandableFieldsPerService =
+        expansionRequestsHelper.getExpandableFieldsPerService(activeInstances);
+    Map<String, ModuleType> typeToService = expansionRequestsHelper.getTypeToService(activeInstances);
 
     Set<ExpansionRequest> serviceCalls = new HashSet<>();
     getServiceCalls(pipelineNode, expandableFieldsPerService, typeToService, namespace, serviceCalls);
-
-    List<LocalFQNExpansionInfo> localFQNRequestMetadata = expansionRequestsHelper.getLocalFQNRequestMetadata();
+    List<LocalFQNExpansionInfo> localFQNRequestMetadata =
+        expansionRequestsHelper.getLocalFQNRequestMetadata(activeInstances);
     if (EmptyPredicate.isNotEmpty(localFQNRequestMetadata)) {
       getFQNBasedServiceCalls(pipelineNode, localFQNRequestMetadata, serviceCalls);
     }

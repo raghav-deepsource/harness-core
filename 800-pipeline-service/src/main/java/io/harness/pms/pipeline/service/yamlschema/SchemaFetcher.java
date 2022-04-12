@@ -74,20 +74,23 @@ public class SchemaFetcher {
   }
 
   public YamlSchemaDetailsWrapper fetchSchemaDetail(String accountId, ModuleType moduleType) {
-    log.info("[PMS] Fetching schema information for {}", moduleType.name());
     try {
       SchemaCacheKey schemaCacheKey =
           SchemaCacheKey.builder().accountIdentifier(accountId).moduleType(moduleType).build();
       if (schemaDetailsCache.containsKey(schemaCacheKey)) {
+        log.info("[PMS_SCHEMA] Fetching schema information for {} from cache", moduleType.name());
         return SchemaCacheUtils.toYamlSchemaDetailsWrapper(schemaDetailsCache.get(schemaCacheKey));
       }
 
+      long start = System.currentTimeMillis();
       SchemaGetter schemaGetter = schemaGetterFactory.obtainGetter(accountId, moduleType);
       YamlSchemaDetailsWrapper yamlSchemaDetailsWrapper = schemaGetter.getSchemaDetails();
+      log.info("[PMS_SCHEMA] Fetching schema information for {} from remote with time took {}ms", moduleType.name(),
+          System.currentTimeMillis() - start);
       schemaDetailsCache.put(schemaCacheKey, SchemaCacheUtils.toYamlSchemaDetailCacheValue(yamlSchemaDetailsWrapper));
       return yamlSchemaDetailsWrapper;
     } catch (Exception e) {
-      log.warn(format("[PMS] Unable to get %s schema information", moduleType.name()), e);
+      log.warn(format("[PMS_SCHEMA] Unable to get %s schema information", moduleType.name()), e);
       return null;
     }
   }

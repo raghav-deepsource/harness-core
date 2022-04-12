@@ -20,8 +20,8 @@ import io.harness.cvng.beans.pagerduty.PagerDutyServicesRequest;
 import io.harness.cvng.beans.pagerduty.PagerdutyDeleteWebhookRequest;
 import io.harness.cvng.core.beans.OnboardingRequestDTO;
 import io.harness.cvng.core.beans.OnboardingResponseDTO;
+import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
-import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.entities.PagerDutyWebhook;
 import io.harness.cvng.core.entities.changeSource.PagerDutyChangeSource;
 import io.harness.cvng.core.services.api.OnboardingService;
@@ -66,7 +66,7 @@ public class PagerDutyServiceImpl implements PagerDutyService {
 
   @Override
   public void registerPagerDutyWebhook(
-      ServiceEnvironmentParams serviceEnvironmentParams, PagerDutyChangeSource pagerDutyChangeSource) {
+      MonitoredServiceParams monitoredServiceParams, PagerDutyChangeSource pagerDutyChangeSource) {
     String token = randomAlphabetic(20);
     String url = portalUrl.concat("cv/api/webhook/pagerduty/").concat(token);
     DataCollectionRequest request = PagerDutyRegisterWebhookRequest.builder()
@@ -77,19 +77,19 @@ public class PagerDutyServiceImpl implements PagerDutyService {
     OnboardingRequestDTO onboardingRequestDTO = OnboardingRequestDTO.builder()
                                                     .dataCollectionRequest(request)
                                                     .connectorIdentifier(pagerDutyChangeSource.getConnectorIdentifier())
-                                                    .accountId(serviceEnvironmentParams.getAccountIdentifier())
+                                                    .accountId(monitoredServiceParams.getAccountIdentifier())
                                                     .tracingId("pagerduty_register_" + randomAlphabetic(20))
-                                                    .orgIdentifier(serviceEnvironmentParams.getOrgIdentifier())
-                                                    .projectIdentifier(serviceEnvironmentParams.getProjectIdentifier())
+                                                    .orgIdentifier(monitoredServiceParams.getOrgIdentifier())
+                                                    .projectIdentifier(monitoredServiceParams.getProjectIdentifier())
                                                     .build();
 
     OnboardingResponseDTO response =
-        onboardingService.getOnboardingResponse(serviceEnvironmentParams.getAccountIdentifier(), onboardingRequestDTO);
+        onboardingService.getOnboardingResponse(monitoredServiceParams.getAccountIdentifier(), onboardingRequestDTO);
     final Gson gson = new Gson();
     Type type = new TypeToken<String>() {}.getType();
     String webhookId = gson.fromJson(JsonUtils.asJson(response.getResult()), type);
     webhookService.createPagerdutyWebhook(
-        serviceEnvironmentParams, token, webhookId, pagerDutyChangeSource.getIdentifier());
+        monitoredServiceParams, token, webhookId, pagerDutyChangeSource.getIdentifier());
   }
 
   @Override

@@ -15,6 +15,7 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.metrics.AutoMetricContext;
 import io.harness.metrics.beans.DelegateTaskMetricContext;
 import io.harness.metrics.beans.DelegateTaskResponseMetricContext;
+import io.harness.metrics.beans.DelegateTaskTypeMetricContext;
 import io.harness.metrics.beans.PerpetualTaskMetricContext;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.metrics.service.api.MetricService;
@@ -49,14 +50,19 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   public static final String PERPETUAL_TASK_PAUSE = "perpetual_task_pause";
   public static final String PERPETUAL_TASK_ASSIGNED = "perpetual_task_assigned";
   public static final String PERPETUAL_TASK_UNASSIGNED = "perpetual_task_unassigned";
+  public static final String TASK_TYPE_SUFFIX = "_by_type";
 
   @Inject private MetricService metricService;
   @Inject private DelegateTaskMetricContextBuilder metricContextBuilder;
 
   @Override
   public void recordDelegateTaskMetrics(DelegateTask task, String metricName) {
-    try (AutoMetricContext ignore = metricContextBuilder.getContext(task, DelegateTask.class)) {
+    try (AutoMetricContext ignore = new DelegateTaskMetricContext(task.getAccountId())) {
       metricService.incCounter(metricName);
+    }
+
+    try (AutoMetricContext ignore = new DelegateTaskTypeMetricContext(task.getData().getTaskType())) {
+      metricService.incCounter(metricName + TASK_TYPE_SUFFIX);
     }
   }
 

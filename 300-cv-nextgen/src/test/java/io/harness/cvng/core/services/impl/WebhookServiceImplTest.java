@@ -60,15 +60,15 @@ public class WebhookServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
   public void test_createPagerdutyWebhook() {
-    webhookService.createPagerdutyWebhook(context.getServiceEnvironmentParams(), token, webhookId, changeSourceId);
+    webhookService.createPagerdutyWebhook(context.getMonitoredServiceParams(), token, webhookId, changeSourceId);
 
     PagerDutyWebhook pagerDutyWebhook = (PagerDutyWebhook) hPersistence.createQuery(Webhook.class).get();
     assertThat(pagerDutyWebhook).isNotNull();
     assertThat(pagerDutyWebhook.getAccountId()).isEqualTo(context.getAccountId());
     assertThat(pagerDutyWebhook.getOrgIdentifier()).isEqualTo(context.getOrgIdentifier());
     assertThat(pagerDutyWebhook.getProjectIdentifier()).isEqualTo(context.getProjectIdentifier());
-    assertThat(pagerDutyWebhook.getServiceIdentifier()).isEqualTo(context.getServiceIdentifier());
-    assertThat(pagerDutyWebhook.getEnvIdentifier()).isEqualTo(context.getEnvIdentifier());
+    assertThat(pagerDutyWebhook.getMonitoredServiceIdentifier())
+        .isEqualTo(context.getMonitoredServiceParams().getMonitoredServiceIdentifier());
     assertThat(pagerDutyWebhook.getToken()).isEqualTo(token);
     assertThat(pagerDutyWebhook.getWebhookId()).isEqualTo(webhookId);
     assertThat(pagerDutyWebhook.getPagerdutyChangeSourceId()).isEqualTo(changeSourceId);
@@ -78,7 +78,7 @@ public class WebhookServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
   public void test_deleteWebhook() {
-    webhookService.createPagerdutyWebhook(context.getServiceEnvironmentParams(), token, webhookId, changeSourceId);
+    webhookService.createPagerdutyWebhook(context.getMonitoredServiceParams(), token, webhookId, changeSourceId);
 
     PagerDutyWebhook pagerDutyWebhook = (PagerDutyWebhook) hPersistence.createQuery(Webhook.class).get();
     assertThat(pagerDutyWebhook).isNotNull();
@@ -96,7 +96,7 @@ public class WebhookServiceImplTest extends CvNextGenTestBase {
     changeSource.setIdentifier(changeSourceId);
     hPersistence.save(changeSource);
 
-    webhookService.createPagerdutyWebhook(context.getServiceEnvironmentParams(), token, webhookId, changeSourceId);
+    webhookService.createPagerdutyWebhook(context.getMonitoredServiceParams(), token, webhookId, changeSourceId);
     PagerDutyWebhook pagerDutyWebhook = (PagerDutyWebhook) hPersistence.createQuery(Webhook.class).get();
     assertThat(pagerDutyWebhook).isNotNull();
 
@@ -133,7 +133,7 @@ public class WebhookServiceImplTest extends CvNextGenTestBase {
     changeSource.setIdentifier(changeSourceId);
     hPersistence.save(changeSource);
 
-    webhookService.createPagerdutyWebhook(context.getServiceEnvironmentParams(), token, webhookId, changeSourceId);
+    webhookService.createPagerdutyWebhook(context.getMonitoredServiceParams(), token, webhookId, changeSourceId);
     PagerDutyWebhook pagerDutyWebhook = (PagerDutyWebhook) hPersistence.createQuery(Webhook.class).get();
     assertThat(pagerDutyWebhook).isNotNull();
 

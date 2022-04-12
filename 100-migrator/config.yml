@@ -396,6 +396,8 @@ cg:
     analyticsEnabled: true
     connectionTimeout: 10000
     readTimeout: 30000
+    sleepInterval: 5000
+    retries: 6
 
   featureFlagConfig:
     featureFlagSystem: LOCAL
@@ -682,4 +684,9 @@ ngClientConfig:
   baseUrl: https://127.0.0.1:7090
 
 pipelineServiceClientConfig:
-  baseUrl: http://127.0.0.1:12001
+  baseUrl: http://127.0.0.1:12001/api/
+
+templateServiceClientConfig:
+  baseUrl: http://localhost:15001/api/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15

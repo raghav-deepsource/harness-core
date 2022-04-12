@@ -49,4 +49,5 @@ message ExpansionRequestMetadata {
   string projectId = 2;
   string orgId = 3;
   bytes gitSyncBranchContext = 4;
+  bytes yaml = 5;
 }

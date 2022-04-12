@@ -89,6 +89,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.FailsafeException;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CI)
@@ -175,6 +176,19 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
                        .k8sTaskResponse(k8sTaskResponse)
                        .build();
         }
+      } catch (FailsafeException ex) {
+        log.error("ApiException in processing CI K8 build setup task: {}", cik8BuildTaskParamsStr, ex);
+        String message = ex.getMessage();
+        if (ex.getCause() instanceof ApiException) {
+          String defaultMessage = ex.getMessage();
+          message = cik8JavaClientHandler.parseApiExceptionMessage(
+              ((ApiException) ex.getCause()).getResponseBody(), defaultMessage);
+        }
+        result = K8sTaskExecutionResponse.builder()
+                     .commandExecutionStatus(CommandExecutionStatus.FAILURE)
+                     .errorMessage(message)
+                     .k8sTaskResponse(k8sTaskResponse)
+                     .build();
       } catch (Exception ex) {
         log.error("Exception in processing CI K8 build setup task: {}", cik8BuildTaskParamsStr, ex);
         result = K8sTaskExecutionResponse.builder()

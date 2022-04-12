@@ -39,6 +39,7 @@ import io.harness.ng.core.ProjectIdentifier;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -101,6 +102,9 @@ public class YamlGitConfigResource {
       @RequestBody(
           required = true, description = "Details of Git Sync Config") @NotNull @Valid GitSyncConfigDTO request) {
     // todo(abhinav): when git sync comes at other level see for new permission
+
+    formatRequest(request);
+
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, request.getOrgIdentifier(), request.getProjectIdentifier()),
         Resource.of(ResourceTypes.PROJECT, request.getProjectIdentifier()), EDIT_PROJECT_PERMISSION);
@@ -133,6 +137,8 @@ public class YamlGitConfigResource {
   update(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam("accountIdentifier") @NotEmpty String accountId,
       @RequestBody(required = true,
           description = "Details of Git Sync Config") @NotNull @Valid GitSyncConfigDTO updateGitSyncConfigDTO) {
+    formatRequest(updateGitSyncConfigDTO);
+
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, updateGitSyncConfigDTO.getOrgIdentifier(),
                                                   updateGitSyncConfigDTO.getProjectIdentifier()),
         Resource.of(ResourceTypes.PROJECT, updateGitSyncConfigDTO.getProjectIdentifier()), EDIT_PROJECT_PERMISSION);
@@ -202,5 +208,12 @@ public class YamlGitConfigResource {
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) String organizationIdentifier) {
     return gitEnabledHelper.getGitEnabledDTO(projectIdentifier, organizationIdentifier, accountIdentifier);
+  }
+
+  @VisibleForTesting
+  protected void formatRequest(GitSyncConfigDTO gitSyncConfigDTO) {
+    gitSyncConfigDTO.setName(gitSyncConfigDTO.getName().trim());
+    gitSyncConfigDTO.setBranch(gitSyncConfigDTO.getBranch().trim());
+    gitSyncConfigDTO.setRepo(gitSyncConfigDTO.getRepo().trim());
   }
 }

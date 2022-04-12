@@ -7,6 +7,8 @@
 
 package io.harness.pms.helpers;
 
+import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
+
 import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.security.PrincipalHelper;
 import io.harness.security.dto.Principal;
@@ -21,9 +23,9 @@ public class TriggeredByHelper {
   public TriggeredBy getFromSecurityContext() {
     Principal principal = currentUserHelper.getPrincipalFromSecurityContext();
     return TriggeredBy.newBuilder()
-        .setUuid(PrincipalHelper.getUuid(principal))
-        .setIdentifier(PrincipalHelper.getUsername(principal))
-        .putExtraInfo("email", PrincipalHelper.getEmail(principal))
+        .setUuid(emptyIfNull(PrincipalHelper.getUuid(principal)))
+        .setIdentifier(emptyIfNull(PrincipalHelper.getUsername(principal)))
+        .putExtraInfo("email", emptyIfNull(PrincipalHelper.getEmail(principal)))
         .build();
   }
 }

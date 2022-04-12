@@ -1,0 +1,3 @@
+# Debezium Engine Module
+
+This module contains classes responsible for starting up the Debezium Engine to capture changes from the database. The service needs to create a consumer that has to be an implementation of DebeziumEngine.ChangeConsumer<ChangeEvent<String, String>> which will be notified of every change event. Also, the service needs to give debezium configurations in their config.yml which will contain the information about source database and other configs.

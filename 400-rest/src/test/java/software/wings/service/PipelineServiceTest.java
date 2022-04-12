@@ -33,6 +33,7 @@ import static software.wings.beans.EntityType.INFRASTRUCTURE_MAPPING;
 import static software.wings.beans.EntityType.SERVICE;
 import static software.wings.beans.EntityType.SSH_PASSWORD;
 import static software.wings.beans.EntityType.SSH_USER;
+import static software.wings.beans.EntityType.USER_GROUP;
 import static software.wings.beans.PhaseStep.PhaseStepBuilder.aPhaseStep;
 import static software.wings.beans.PhaseStepType.POST_DEPLOYMENT;
 import static software.wings.beans.PhaseStepType.PRE_DEPLOYMENT;
@@ -128,6 +129,7 @@ import software.wings.utils.WingsTestConstants.MockChecker;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import com.sun.istack.internal.NotNull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -136,7 +138,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -205,6 +206,8 @@ public class PipelineServiceTest extends WingsBaseTest {
                         .envIds(asList(ENV_ID))
                         .deploymentTypes(asList(DeploymentType.SSH))
                         .build());
+    when(workflowService.readWorkflowWithoutServices(APP_ID, WORKFLOW_ID))
+        .thenReturn(aWorkflow().orchestrationWorkflow(aCanaryOrchestrationWorkflow().build()).build());
     when(environmentService.obtainEnvironmentSummaries(APP_ID, asList(ENV_ID)))
         .thenReturn(
             asList(EnvSummary.builder().name(ENV_NAME).uuid(ENV_ID).environmentType(EnvironmentType.PROD).build()));
@@ -222,6 +225,8 @@ public class PipelineServiceTest extends WingsBaseTest {
 
     Pipeline pipeline = JsonUtils.asObject(PIPELINE, Pipeline.class);
     when(workflowService.readWorkflow(appId, workflowId))
+        .thenReturn(aWorkflow().orchestrationWorkflow(aCanaryOrchestrationWorkflow().build()).build());
+    when(workflowService.readWorkflowWithoutServices(appId, workflowId))
         .thenReturn(aWorkflow().orchestrationWorkflow(aCanaryOrchestrationWorkflow().build()).build());
 
     when(workflowService.stencilMap(any())).thenReturn(ImmutableMap.of("ENV_STATE", StateType.ENV_STATE));
@@ -246,6 +251,8 @@ public class PipelineServiceTest extends WingsBaseTest {
       String uuid = generateUuid();
       workflowIds.add(uuid);
       when(workflowService.readWorkflow(APP_ID, uuid))
+          .thenReturn(aWorkflow().orchestrationWorkflow(aCanaryOrchestrationWorkflow().build()).build());
+      when(workflowService.readWorkflowWithoutServices(APP_ID, uuid))
           .thenReturn(aWorkflow().orchestrationWorkflow(aCanaryOrchestrationWorkflow().build()).build());
 
       Map<String, Object> properties = new HashMap<>();
@@ -323,10 +330,12 @@ public class PipelineServiceTest extends WingsBaseTest {
     when(workflowService.stencilMap(any())).thenReturn(ImmutableMap.of("APPROVAL", APPROVAL));
     pipelineService.save(pipeline);
     ArgumentCaptor<String> userGroupIdCaptor = ArgumentCaptor.forClass(String.class);
-    verify(userGroupService, times(3)).addParentsReference(userGroupIdCaptor.capture(), any(), any(), any());
+    verify(userGroupService, times(3))
+        .addParentsReference(userGroupIdCaptor.capture(), any(), any(), any(), eq(EntityType.PIPELINE.name()));
     List<String> capturedUserGroupIds = userGroupIdCaptor.getAllValues();
     assertThat(capturedUserGroupIds).isEqualTo(Arrays.asList("userGroup2", "userGroup3", "userGroup1"));
-    verify(userGroupService, times(0)).removeParentsReference(any(), any(), any(), any());
+    verify(userGroupService, times(0))
+        .removeParentsReference(any(), any(), any(), any(), eq(EntityType.PIPELINE.name()));
   }
 
   @Test
@@ -380,8 +389,10 @@ public class PipelineServiceTest extends WingsBaseTest {
 
     ArgumentCaptor<String> addUserGroupIdCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> removeUserGroupIdCaptor = ArgumentCaptor.forClass(String.class);
-    verify(userGroupService, times(1)).addParentsReference(addUserGroupIdCaptor.capture(), any(), any(), any());
-    verify(userGroupService, times(1)).removeParentsReference(removeUserGroupIdCaptor.capture(), any(), any(), any());
+    verify(userGroupService, times(1))
+        .addParentsReference(addUserGroupIdCaptor.capture(), any(), any(), any(), eq(EntityType.PIPELINE.name()));
+    verify(userGroupService, times(1))
+        .removeParentsReference(removeUserGroupIdCaptor.capture(), any(), any(), any(), eq(EntityType.PIPELINE.name()));
     assertThat(addUserGroupIdCaptor.getValue()).isEqualTo("userGroup3");
     assertThat(removeUserGroupIdCaptor.getValue()).isEqualTo("userGroup1");
   }
@@ -698,7 +709,6 @@ public class PipelineServiceTest extends WingsBaseTest {
     assertThat(pipeline).isNotNull().hasFieldOrPropertyWithValue("uuid", PIPELINE_ID);
     assertThat(pipeline.getServices()).hasSize(1).extracting("uuid").isEqualTo(asList(SERVICE_ID));
     assertThat(pipeline.getServices()).hasSize(1).extracting("uuid").doesNotContain(asList("DISABLE_STEP_SERVICE_ID"));
-    assertThat(pipeline.getEnvIds()).hasSize(0).doesNotContain(ENV_ID);
     verify(wingsPersistence).getWithAppId(Pipeline.class, APP_ID, PIPELINE_ID);
   }
 
@@ -867,10 +877,11 @@ public class PipelineServiceTest extends WingsBaseTest {
     when(workflowExecutionService.runningExecutionsPresent(APP_ID, PIPELINE_ID)).thenReturn(false);
     assertThat(pipelineService.deletePipeline(APP_ID, PIPELINE_ID)).isTrue();
     ArgumentCaptor<String> userGroupIdCaptor = ArgumentCaptor.forClass(String.class);
-    verify(userGroupService, times(3)).removeParentsReference(userGroupIdCaptor.capture(), any(), any(), any());
+    verify(userGroupService, times(3))
+        .removeParentsReference(userGroupIdCaptor.capture(), any(), any(), any(), eq(EntityType.PIPELINE.name()));
     List<String> capturedUserGroupIds = userGroupIdCaptor.getAllValues();
     assertThat(capturedUserGroupIds).isEqualTo(Arrays.asList("userGroup2", "userGroup3", "userGroup1"));
-    verify(userGroupService, times(0)).addParentsReference(any(), any(), any(), any());
+    verify(userGroupService, times(0)).addParentsReference(any(), any(), any(), any(), eq(EntityType.PIPELINE.name()));
   }
 
   @Test(expected = WingsException.class)
@@ -1798,6 +1809,91 @@ public class PipelineServiceTest extends WingsBaseTest {
     Set<String> expectedUserGroups = new HashSet<>(Arrays.asList("userGroup1", "userGroup2", "userGroup3"));
     assertThat(actualUserGroups.size()).isEqualTo(3);
     assertThat(actualUserGroups).isEqualTo(expectedUserGroups);
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void test_getUserGroupsTemplatized() {
+    Map<String, Object> properties1 = new HashMap<>();
+    properties1.put("workflowId", WORKFLOW_ID);
+
+    PipelineStage stage1 = PipelineStage.builder()
+                               .pipelineStageElements(Collections.singletonList(
+                                   PipelineStageElement.builder()
+                                       .name("STAGE1")
+                                       .type(ENV_STATE.name())
+                                       .properties(properties1)
+                                       .workflowVariables(ImmutableMap.of("User_group", "userGroup1"))
+                                       .disable(false)
+                                       .build()))
+                               .build();
+    Map<String, Object> properties2 = new HashMap<>();
+    properties2.put("workflowId", WORKFLOW_ID + 2);
+    PipelineStage stage2 = PipelineStage.builder()
+                               .pipelineStageElements(Collections.singletonList(
+                                   PipelineStageElement.builder()
+                                       .name("STAGE2")
+                                       .type(ENV_STATE.name())
+                                       .properties(properties2)
+                                       .workflowVariables(ImmutableMap.of("User_group", "userGroup2,userGroup3"))
+                                       .disable(false)
+                                       .build()))
+                               .build();
+    Pipeline pipeline = preparePipeline(stage1, stage2);
+
+    Workflow workflow1 =
+        aWorkflow()
+            .orchestrationWorkflow(aCanaryOrchestrationWorkflow()
+                                       .withUserVariables(Collections.singletonList(
+                                           aVariable().name("User_group").entityType(USER_GROUP).build()))
+                                       .build())
+            .build();
+    Workflow workflow2 =
+        aWorkflow()
+            .orchestrationWorkflow(aCanaryOrchestrationWorkflow()
+                                       .withUserVariables(Collections.singletonList(
+                                           aVariable().name("User_group").entityType(USER_GROUP).build()))
+                                       .build())
+            .build();
+    when(workflowService.readWorkflowWithoutServices(APP_ID, WORKFLOW_ID)).thenReturn(workflow1);
+    when(workflowService.readWorkflowWithoutServices(APP_ID, WORKFLOW_ID + 2)).thenReturn(workflow2);
+
+    Set<String> actualUserGroups = pipelineService.getUserGroups(pipeline);
+    Set<String> expectedUserGroups = new HashSet<>(Arrays.asList("userGroup1", "userGroup2", "userGroup3"));
+    assertThat(actualUserGroups.size()).isEqualTo(3);
+    assertThat(actualUserGroups).isEqualTo(expectedUserGroups);
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void test_getUserGroupsApprovalTemplatized() {
+    Map<String, Object> properties1 = new HashMap<>();
+    properties1.put("templateExpressions",
+        Collections.singletonList(aVariable().name("${User_Group2}").entityType(USER_GROUP).build()));
+    PipelineStage stage1 = PipelineStage.builder()
+                               .pipelineStageElements(Collections.singletonList(PipelineStageElement.builder()
+                                                                                    .name("STAGE1")
+                                                                                    .type(APPROVAL.name())
+                                                                                    .properties(properties1)
+                                                                                    .disable(false)
+                                                                                    .build()))
+                               .build();
+    Map<String, Object> properties2 = new HashMap<>();
+    properties1.put("templateExpressions",
+        Collections.singletonList(aVariable().name("${User_Group2}").entityType(USER_GROUP).build()));
+    PipelineStage stage2 = PipelineStage.builder()
+                               .pipelineStageElements(Collections.singletonList(PipelineStageElement.builder()
+                                                                                    .name("STAGE2")
+                                                                                    .type(APPROVAL.name())
+                                                                                    .properties(properties2)
+                                                                                    .disable(false)
+                                                                                    .build()))
+                               .build();
+    Pipeline pipeline = preparePipeline(stage1, stage2);
+    Set<String> actualUserGroups = pipelineService.getUserGroups(pipeline);
+    assertThat(actualUserGroups).isEmpty();
   }
 
   private Pipeline getApprovalStagesPipeline() {

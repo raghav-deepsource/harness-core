@@ -26,7 +26,7 @@ public class KubernetesChangeSourceDemoDataGenerator implements ChangeSourceDemo
   @Inject private Clock clock;
   @Override
   public List<ChangeEventDTO> generate(KubernetesChangeSource changeSource) {
-    return generate(changeSource, "default", changeSource.getServiceIdentifier());
+    return generate(changeSource, "default", changeSource.getMonitoredServiceIdentifier());
   }
 
   public List<ChangeEventDTO> generate(KubernetesChangeSource changeSource, String namespace, String workload) {
@@ -37,8 +37,7 @@ public class KubernetesChangeSourceDemoDataGenerator implements ChangeSourceDemo
             .changeSourceIdentifier(changeSource.getIdentifier())
             .projectIdentifier(changeSource.getProjectIdentifier())
             .orgIdentifier(changeSource.getOrgIdentifier())
-            .serviceIdentifier(changeSource.getServiceIdentifier())
-            .envIdentifier(changeSource.getEnvIdentifier())
+            .monitoredServiceIdentifier(changeSource.getMonitoredServiceIdentifier())
             .eventTime(time.toEpochMilli())
             .type(ChangeSourceType.KUBERNETES)
             .metadata(

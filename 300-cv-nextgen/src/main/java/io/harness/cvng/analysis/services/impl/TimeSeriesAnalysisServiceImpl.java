@@ -20,7 +20,8 @@ import static io.harness.persistence.HQuery.excludeAuthority;
 import io.harness.cvng.analysis.beans.DeploymentTimeSeriesAnalysisDTO;
 import io.harness.cvng.analysis.beans.Risk;
 import io.harness.cvng.analysis.beans.ServiceGuardTimeSeriesAnalysisDTO;
-import io.harness.cvng.analysis.beans.TimeSeriesAnomalies;
+import io.harness.cvng.analysis.beans.ServiceGuardTxnMetricAnalysisDataDTO.MetricSumDTO;
+import io.harness.cvng.analysis.beans.TimeSeriesAnomaliesDTO;
 import io.harness.cvng.analysis.beans.TimeSeriesRecordDTO;
 import io.harness.cvng.analysis.entities.DeploymentTimeSeriesAnalysis;
 import io.harness.cvng.analysis.entities.LearningEngineTask;
@@ -29,7 +30,6 @@ import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskTy
 import io.harness.cvng.analysis.entities.TimeSeriesCanaryLearningEngineTask;
 import io.harness.cvng.analysis.entities.TimeSeriesCanaryLearningEngineTask.DeploymentVerificationTaskInfo;
 import io.harness.cvng.analysis.entities.TimeSeriesCumulativeSums;
-import io.harness.cvng.analysis.entities.TimeSeriesCumulativeSums.MetricSum;
 import io.harness.cvng.analysis.entities.TimeSeriesCumulativeSums.TimeSeriesCumulativeSumsKeys;
 import io.harness.cvng.analysis.entities.TimeSeriesLearningEngineTask;
 import io.harness.cvng.analysis.entities.TimeSeriesLoadTestLearningEngineTask;
@@ -45,6 +45,9 @@ import io.harness.cvng.analysis.services.api.TimeSeriesAnomalousPatternsService;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.beans.TimeSeriesMetricDefinition;
 import io.harness.cvng.core.entities.CVConfig;
+import io.harness.cvng.core.entities.MetricCVConfig;
+import io.harness.cvng.core.entities.VerificationTask;
+import io.harness.cvng.core.entities.VerificationTask.TaskType;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
@@ -341,7 +344,7 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
   }
 
   @Override
-  public Map<String, Map<String, List<MetricSum>>> getCumulativeSums(
+  public Map<String, Map<String, List<MetricSumDTO>>> getCumulativeSums(
       String verificationTaskId, Instant startTime, Instant endTime) {
     log.info(
         "Fetching cumulative sums for config: {}, startTime: {}, endTime: {}", verificationTaskId, startTime, endTime);
@@ -358,7 +361,7 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
   }
 
   @Override
-  public Map<String, Map<String, List<TimeSeriesAnomalies>>> getLongTermAnomalies(String verificationTaskId) {
+  public Map<String, Map<String, List<TimeSeriesAnomaliesDTO>>> getLongTermAnomalies(String verificationTaskId) {
     return timeSeriesAnomalousPatternsService.getLongTermAnomalies(verificationTaskId);
   }
 
@@ -459,8 +462,7 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
                                     .flatMap(x -> x.values().stream().filter(y -> y.getRisk() == Risk.NEED_ATTENTION))
                                     .count();
     heatMapService.updateRiskScore(cvConfig.getAccountId(), cvConfig.getOrgIdentifier(),
-        cvConfig.getProjectIdentifier(), cvConfig.getServiceIdentifier(), cvConfig.getEnvIdentifier(), cvConfig,
-        cvConfig.getCategory(), startTime, risk, anomalousMetricCount, 0);
+        cvConfig.getProjectIdentifier(), cvConfig, cvConfig.getCategory(), startTime, risk, anomalousMetricCount, 0);
     timeSeriesRecordService.updateRiskScores(cvConfigId, riskSummary);
   }
 
@@ -484,24 +486,47 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
 
   @Override
   public List<TimeSeriesMetricDefinition> getMetricTemplate(String verificationTaskId) {
-    Optional<String> cvConfig = verificationTaskService.maybeGetCVConfigId(verificationTaskId);
-    return cvConfig.map(s -> timeSeriesRecordService.getTimeSeriesMetricDefinitions(s)).orElse(new ArrayList<>());
+    VerificationTask verificationTask = verificationTaskService.get(verificationTaskId);
+    MetricCVConfig cvConfig = null;
+    if (verificationTask.getTaskInfo().getTaskType() == TaskType.DEPLOYMENT) {
+      cvConfig = (MetricCVConfig) verificationJobInstanceService.getEmbeddedCVConfig(
+          ((VerificationTask.DeploymentInfo) verificationTask.getTaskInfo()).getCvConfigId(),
+          ((VerificationTask.DeploymentInfo) verificationTask.getTaskInfo()).getVerificationJobInstanceId());
+    } else if (verificationTask.getTaskInfo().getTaskType() == TaskType.LIVE_MONITORING) {
+      cvConfig = (MetricCVConfig) cvConfigService.get(
+          ((VerificationTask.LiveMonitoringInfo) verificationTask.getTaskInfo()).getCvConfigId());
+    }
+    List<TimeSeriesMetricDefinition> timeSeriesMetricDefinitions = new ArrayList<>();
+    if (cvConfig != null) {
+      timeSeriesMetricDefinitions = timeSeriesRecordService.getTimeSeriesMetricDefinitions(cvConfig);
+    }
+    // in LE we pass metric identifier as the metric_name, as metric_name is the identifier for LE
+    // TODO: remove toLowerCase after the migration.
+    timeSeriesMetricDefinitions.forEach(timeSeriesMetricDefinition
+        -> timeSeriesMetricDefinition.setMetricName(timeSeriesMetricDefinition.getMetricIdentifier().toLowerCase()));
+    return timeSeriesMetricDefinitions;
   }
 
   @Override
   public List<TimeSeriesRecordDTO> getTimeSeriesRecordDTOs(
       String verificationTaskId, Instant startTime, Instant endTime) {
-    return timeSeriesRecordService.getTimeSeriesRecordDTOs(verificationTaskId, startTime, endTime);
+    List<TimeSeriesRecordDTO> timeSeriesRecordDTOS =
+        timeSeriesRecordService.getTimeSeriesRecordDTOs(verificationTaskId, startTime, endTime);
+    // in LE we pass metric identifier as the metric_name, as metric_name is the identifier for LE.
+    // TODO: remove toLowerCase after migration is successful
+    timeSeriesRecordDTOS.forEach(timeSeriesRecordDTO
+        -> timeSeriesRecordDTO.setMetricName(timeSeriesRecordDTO.getMetricIdentifier().toLowerCase()));
+    return timeSeriesRecordDTOS;
   }
 
   private TimeSeriesRiskSummary buildRiskSummary(
       ServiceGuardTimeSeriesAnalysisDTO analysisDTO, Instant startTime, Instant endTime) {
     List<TransactionMetricRisk> metricRiskList = new ArrayList<>();
     analysisDTO.getTxnMetricAnalysisData().forEach((txnName, metricMap) -> {
-      metricMap.forEach((metricName, metricData) -> {
+      metricMap.forEach((metricIdentifier, metricData) -> {
         TransactionMetricRisk metricRisk = TransactionMetricRisk.builder()
                                                .transactionName(txnName)
-                                               .metricName(metricName)
+                                               .metricIdentifier(metricIdentifier)
                                                .metricRisk(metricData.getRisk().getValue())
                                                .metricScore(metricData.getScore())
                                                .lastSeenTime(metricData.getLastSeenTime())
@@ -523,11 +548,11 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
     Map<String, Map<String, TimeSeriesCumulativeSums.MetricSum>> cumulativeSumsMap = new HashMap<>();
     analysisDTO.getTxnMetricAnalysisData().forEach((txnName, metricMap) -> {
       cumulativeSumsMap.put(txnName, new HashMap<>());
-      metricMap.forEach((metricName, metricSums) -> {
-        TimeSeriesCumulativeSums.MetricSum sums = metricSums.getCumulativeSums();
-        if (sums != null) {
-          sums.setMetricName(metricName);
-          cumulativeSumsMap.get(txnName).put(metricName, sums);
+      metricMap.forEach((metricIdentifier, metricSums) -> {
+        if (metricSums.getCumulativeSums() != null) {
+          TimeSeriesCumulativeSums.MetricSum sums = metricSums.getCumulativeSums().toMetricSum();
+          sums.setMetricIdentifier(metricIdentifier);
+          cumulativeSumsMap.get(txnName).put(metricIdentifier, sums);
         }
       });
     });
@@ -547,8 +572,8 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
     Map<String, Map<String, List<Double>>> shortTermHistoryMap = new HashMap<>();
     analysisDTO.getTxnMetricAnalysisData().forEach((txnName, metricMap) -> {
       shortTermHistoryMap.put(txnName, new HashMap<>());
-      metricMap.forEach((metricName, txnMetricData) -> {
-        shortTermHistoryMap.get(txnName).put(metricName, txnMetricData.getShortTermHistory());
+      metricMap.forEach((metricIdentifier, txnMetricData) -> {
+        shortTermHistoryMap.get(txnName).put(metricIdentifier, txnMetricData.getShortTermHistory());
       });
     });
 

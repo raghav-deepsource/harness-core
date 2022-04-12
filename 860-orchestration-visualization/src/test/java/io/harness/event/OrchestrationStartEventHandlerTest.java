@@ -19,7 +19,7 @@ import io.harness.beans.OrchestrationGraph;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.observers.beans.OrchestrationStartInfo;
-import io.harness.exception.InvalidRequestException;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -61,7 +61,7 @@ public class OrchestrationStartEventHandlerTest extends OrchestrationVisualizati
                                                                          .ambiance(event.getAmbiance())
                                                                          .planExecutionMetadata(planExecutionMetadata)
                                                                          .build()))
-        .isInstanceOf(InvalidRequestException.class);
+        .isInstanceOf(EntityNotFoundException.class);
   }
 
   @Test

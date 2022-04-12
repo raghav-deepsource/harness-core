@@ -109,6 +109,9 @@ public enum EntityType {
   SERVICE(ModuleType.CORE, EntityTypeConstants.SERVICE, IdentifierRef.class, EntityYamlRootNames.SERVICE),
   @JsonProperty(EntityTypeConstants.ENVIRONMENT)
   ENVIRONMENT(ModuleType.CORE, EntityTypeConstants.ENVIRONMENT, IdentifierRef.class, EntityYamlRootNames.ENVIRONMENT),
+  @JsonProperty(EntityTypeConstants.ENVIRONMENT_GROUP)
+  ENVIRONMENT_GROUP(ModuleType.CORE, EntityTypeConstants.ENVIRONMENT_GROUP, IdentifierRef.class,
+      EntityYamlRootNames.ENVIRONMENT_GROUP),
   @JsonProperty(EntityTypeConstants.INPUT_SETS)
   INPUT_SETS(ModuleType.CORE, EntityTypeConstants.INPUT_SETS, InputSetReference.class, EntityYamlRootNames.INPUT_SET,
       EntityYamlRootNames.OVERLAY_INPUT_SET),

@@ -33,6 +33,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.authenticationservice.recaptcha.ReCaptchaVerifier;
 import io.harness.beans.FeatureFlag;
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.eraro.ErrorCode;
@@ -40,6 +41,7 @@ import io.harness.eraro.ResponseMessage;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.ExceptionLogger;
 import io.harness.ng.core.common.beans.Generation;
@@ -168,6 +170,7 @@ public class UserResource {
   private MainConfiguration mainConfiguration;
   private AccountPasswordExpirationJob accountPasswordExpirationJob;
   private ReCaptchaVerifier reCaptchaVerifier;
+  private FeatureFlagService featureFlagService;
 
   private static final String BASIC = "Basic";
   private static final List<BugsnagTab> tab =
@@ -180,7 +183,7 @@ public class UserResource {
       TwoFactorAuthenticationManager twoFactorAuthenticationManager, Map<String, Cache<?, ?>> caches,
       HarnessUserGroupService harnessUserGroupService, UserGroupService userGroupService,
       MainConfiguration mainConfiguration, AccountPasswordExpirationJob accountPasswordExpirationJob,
-      ReCaptchaVerifier reCaptchaVerifier) {
+      ReCaptchaVerifier reCaptchaVerifier, FeatureFlagService featureFlagService) {
     this.userService = userService;
     this.authService = authService;
     this.accountService = accountService;
@@ -193,6 +196,7 @@ public class UserResource {
     this.mainConfiguration = mainConfiguration;
     this.accountPasswordExpirationJob = accountPasswordExpirationJob;
     this.reCaptchaVerifier = reCaptchaVerifier;
+    this.featureFlagService = featureFlagService;
   }
 
   /**
@@ -690,6 +694,9 @@ public class UserResource {
   @ExceptionMetered
   public RestResponse<User> forceLoginUsingHarnessPassword(
       @QueryParam("accountId") String accountId, LoginRequest loginBody) {
+    if (featureFlagService.isEnabled(FeatureName.DISABLE_LOCAL_LOGIN, accountId)) {
+      throw new InvalidRequestException(String.format("Local Login is not enabled for account {}", accountId));
+    }
     return new RestResponse<>(authenticationManager.loginUsingHarnessPassword(
         authenticationManager.extractToken(loginBody.getAuthorization(), BASIC), accountId));
   }

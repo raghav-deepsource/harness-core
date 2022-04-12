@@ -1,0 +1,5 @@
+name: AnalysisStateMachine
+identifier: analysis_state_machine
+labels:
+  - accountId
+  - analysisStateType

@@ -7,7 +7,7 @@
 
 package io.harness.pms.utils;
 
-import static io.harness.rule.OwnerRule.GARVIT;
+import static io.harness.rule.OwnerRule.PRASHANT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -28,32 +28,69 @@ import org.junit.experimental.categories.Category;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PmsGrpcClientUtilsTest extends CategoryTest {
   @Test
-  @Owner(developers = GARVIT)
+  @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
-  public void shouldRetryAndProcessException() {
+  public void shouldRetryAndProcessExceptionForUnavailable() {
     RuntimeException throwable = new StatusRuntimeException(Status.UNAVAILABLE);
-    ThrowingCall throwingCall1 = new ThrowingCall(throwable);
-    assertThatThrownBy(() -> PmsGrpcClientUtils.retryAndProcessException(throwingCall1::call, 0))
+    ThrowingCall throwingCall = new ThrowingCall(throwable);
+    assertThatThrownBy(() -> PmsGrpcClientUtils.retryAndProcessException(throwingCall::call, 0))
         .isInstanceOf(WingsException.class);
-    assertThat(throwingCall1.getCount()).isEqualTo(3);
+    assertThat(throwingCall.getCount()).isEqualTo(3);
+  }
 
-    throwable = new StatusRuntimeException(Status.UNKNOWN);
+  @Test
+  @Owner(developers = PRASHANT)
+  @Category(UnitTests.class)
+  public void shouldRetryAndProcessExceptionForUnknown() {
+    RuntimeException throwable = new StatusRuntimeException(Status.UNKNOWN);
     ThrowingCall throwingCall2 = new ThrowingCall(throwable);
     assertThatThrownBy(() -> PmsGrpcClientUtils.retryAndProcessException(throwingCall2::call, 0))
         .isInstanceOf(WingsException.class);
     assertThat(throwingCall2.getCount()).isEqualTo(3);
+  }
 
-    throwable = new StatusRuntimeException(Status.INTERNAL);
-    ThrowingCall throwingCall3 = new ThrowingCall(throwable);
-    assertThatThrownBy(() -> PmsGrpcClientUtils.retryAndProcessException(throwingCall3::call, 0))
+  @Test
+  @Owner(developers = PRASHANT)
+  @Category(UnitTests.class)
+  public void shouldRetryAndProcessExceptionForDeadlineExceeded() {
+    RuntimeException throwable = new StatusRuntimeException(Status.DEADLINE_EXCEEDED);
+    ThrowingCall throwingCall = new ThrowingCall(throwable);
+    assertThatThrownBy(() -> PmsGrpcClientUtils.retryAndProcessException(throwingCall::call, 0))
         .isInstanceOf(WingsException.class);
-    assertThat(throwingCall3.getCount()).isEqualTo(1);
+    assertThat(throwingCall.getCount()).isEqualTo(3);
+  }
 
-    throwable = new RuntimeException("error");
-    ThrowingCall throwingCall4 = new ThrowingCall(throwable);
-    assertThatThrownBy(() -> PmsGrpcClientUtils.retryAndProcessException(throwingCall4::call, 0))
+  @Test
+  @Owner(developers = PRASHANT)
+  @Category(UnitTests.class)
+  public void shouldRetryAndProcessExceptionForResourceExhausted() {
+    RuntimeException throwable = new StatusRuntimeException(Status.RESOURCE_EXHAUSTED);
+    ThrowingCall throwingCall = new ThrowingCall(throwable);
+    assertThatThrownBy(() -> PmsGrpcClientUtils.retryAndProcessException(throwingCall::call, 0))
         .isInstanceOf(WingsException.class);
-    assertThat(throwingCall4.getCount()).isEqualTo(1);
+    assertThat(throwingCall.getCount()).isEqualTo(3);
+  }
+
+  @Test
+  @Owner(developers = PRASHANT)
+  @Category(UnitTests.class)
+  public void shouldRetryAndProcessExceptionForInternal() {
+    RuntimeException throwable = new StatusRuntimeException(Status.INTERNAL);
+    ThrowingCall throwingCall = new ThrowingCall(throwable);
+    assertThatThrownBy(() -> PmsGrpcClientUtils.retryAndProcessException(throwingCall::call, 0))
+        .isInstanceOf(WingsException.class);
+    assertThat(throwingCall.getCount()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = PRASHANT)
+  @Category(UnitTests.class)
+  public void shouldRetryAndProcessExceptionForOther() {
+    RuntimeException throwable = new RuntimeException("error");
+    ThrowingCall throwingCall = new ThrowingCall(throwable);
+    assertThatThrownBy(() -> PmsGrpcClientUtils.retryAndProcessException(throwingCall::call, 0))
+        .isInstanceOf(WingsException.class);
+    assertThat(throwingCall.getCount()).isEqualTo(1);
   }
 
   private static class ThrowingCall {

@@ -44,6 +44,7 @@ public class DatadogMetricDataCollectionSLIInfoMapperTest extends CvNextGenTestB
     DatadogMetricCVConfig.MetricInfo metricInfo = DatadogMetricCVConfig.MetricInfo.builder()
                                                       .query(MOCKED_METRIC_QUERY)
                                                       .metricName(MOCKED_METRIC_NAME)
+                                                      .identifier(MOCKED_METRIC_NAME)
                                                       .metricType(TimeSeriesMetricType.INFRA)
                                                       .build();
     ServiceLevelIndicator serviceLevelIndicator =

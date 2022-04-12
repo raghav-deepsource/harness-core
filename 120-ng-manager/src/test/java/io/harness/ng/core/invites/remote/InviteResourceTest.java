@@ -31,6 +31,7 @@ import io.harness.ng.core.invites.dto.InviteDTO;
 import io.harness.ng.core.invites.dto.InviteOperationResponse;
 import io.harness.ng.core.invites.entities.Invite;
 import io.harness.ng.core.invites.mapper.InviteMapper;
+import io.harness.ng.core.user.service.NgUserService;
 import io.harness.rule.Owner;
 import io.harness.utils.PageUtils;
 
@@ -49,6 +50,7 @@ import org.springframework.data.domain.PageImpl;
 @OwnedBy(PL)
 public class InviteResourceTest extends CategoryTest {
   @Mock private InviteService inviteService;
+  @Mock private NgUserService ngUserService;
   @Mock private AccessControlClient accessControlClient;
   private final String accountIdentifier = randomAlphabetic(7);
   private final String orgIdentifier = randomAlphabetic(7);
@@ -62,7 +64,7 @@ public class InviteResourceTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    inviteResource = new InviteResource(inviteService, accessControlClient);
+    inviteResource = new InviteResource(inviteService, accessControlClient, ngUserService);
     invite = Invite.builder()
                  .accountIdentifier(accountIdentifier)
                  .orgIdentifier(orgIdentifier)

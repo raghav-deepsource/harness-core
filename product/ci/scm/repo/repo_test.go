@@ -8,9 +8,9 @@ package repo
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/harness/harness-core/commons/go/lib/logs"
@@ -23,7 +23,7 @@ func TestCreateWebhook(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(201)
-		content, _ := ioutil.ReadFile("testdata/webhook.json")
+		content, _ := os.ReadFile("testdata/webhook.json")
 		fmt.Fprint(w, string(content))
 	}))
 	defer ts.Close()
@@ -87,7 +87,7 @@ func TestListWebhooks(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(200)
-		content, _ := ioutil.ReadFile("testdata/webhooks.json")
+		content, _ := os.ReadFile("testdata/webhooks.json")
 		fmt.Fprint(w, string(content))
 	}))
 	defer ts.Close()

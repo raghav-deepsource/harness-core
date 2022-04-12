@@ -457,7 +457,7 @@ public class PcfSetupStateTest extends WingsBaseTest {
     // With workflowV2 flag = true
     doReturn(PcfManifestsPackage.builder().manifestYml(MANIFEST_YAML_CONTENT).build())
         .when(pcfStateHelper)
-        .generateManifestMap(any(), anyMap(), any(), anyString());
+        .generateManifestMap(any(), anyMap(), any(), anyString(), anyString());
 
     ExecutionResponse executionResponse = pcfSetupState.execute(context);
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
@@ -490,7 +490,7 @@ public class PcfSetupStateTest extends WingsBaseTest {
 
     doReturn(PcfManifestsPackage.builder().manifestYml(MANIFEST_YAML_CONTENT).build())
         .when(pcfStateHelper)
-        .generateManifestMap(any(), anyMap(), any(), anyString());
+        .generateManifestMap(any(), anyMap(), any(), anyString(), anyString());
 
     doReturn(DockerArtifactStream.builder().build()).when(artifactStreamService).get(any());
 
@@ -513,7 +513,7 @@ public class PcfSetupStateTest extends WingsBaseTest {
 
     doReturn(PcfManifestsPackage.builder().manifestYml(MANIFEST_YAML_CONTENT).build())
         .when(pcfStateHelper)
-        .generateManifestMap(any(), anyMap(), any(), anyString());
+        .generateManifestMap(any(), anyMap(), any(), anyString(), anyString());
 
     ExecutionResponse executionResponse = pcfSetupState.execute(context);
 
@@ -633,7 +633,7 @@ public class PcfSetupStateTest extends WingsBaseTest {
 
     doReturn(PcfManifestsPackage.builder().manifestYml(MANIFEST_YAML_CONTENT).build())
         .when(pcfStateHelper)
-        .generateManifestMap(any(), any(), any(), anyString());
+        .generateManifestMap(any(), any(), any(), anyString(), anyString());
 
     pcfSetupState.handleAsyncInternal(context, response);
     verify(activityService, times(0)).updateStatus("activityId", APP_ID, FAILED);
@@ -672,7 +672,7 @@ public class PcfSetupStateTest extends WingsBaseTest {
 
     doReturn(PcfManifestsPackage.builder().manifestYml(MANIFEST_YAML_CONTENT).build())
         .when(pcfStateHelper)
-        .generateManifestMap(any(), any(), any(), anyString());
+        .generateManifestMap(any(), any(), any(), anyString(), anyString());
 
     Map<K8sValuesLocation, Collection<String>> valuesFiles = new HashMap<>();
     valuesFiles.put(K8sValuesLocation.Service, Arrays.asList("Content"));

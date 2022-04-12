@@ -12,6 +12,9 @@ import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeEventMetadata;
 import io.harness.cvng.beans.change.ChangeSourceType;
 import io.harness.cvng.client.NextGenService;
+import io.harness.cvng.core.beans.params.MonitoredServiceParams;
+import io.harness.cvng.core.entities.MonitoredService;
+import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
 
@@ -19,14 +22,23 @@ import com.google.inject.Inject;
 
 public abstract class ChangeEventMetaDataTransformer<E extends Activity, M extends ChangeEventMetadata> {
   @Inject NextGenService nextGenService;
+  @Inject private MonitoredServiceService monitoredServiceService;
 
   public abstract E getEntity(ChangeEventDTO changeEventDTO);
 
   public final ChangeEventDTO getDTO(E activity) {
+    MonitoredService monitoredService = monitoredServiceService.getMonitoredService(
+        MonitoredServiceParams.builder()
+            .accountIdentifier(activity.getAccountId())
+            .orgIdentifier(activity.getOrgIdentifier())
+            .projectIdentifier(activity.getProjectIdentifier())
+            .monitoredServiceIdentifier(activity.getMonitoredServiceIdentifier())
+            .build());
     ServiceResponseDTO serviceResponseDTO = nextGenService.getService(activity.getAccountId(),
-        activity.getOrgIdentifier(), activity.getProjectIdentifier(), activity.getServiceIdentifier());
-    EnvironmentResponseDTO environmentResponseDTO = nextGenService.getEnvironment(activity.getAccountId(),
-        activity.getOrgIdentifier(), activity.getProjectIdentifier(), activity.getEnvironmentIdentifier());
+        activity.getOrgIdentifier(), activity.getProjectIdentifier(), monitoredService.getServiceIdentifier());
+    EnvironmentResponseDTO environmentResponseDTO =
+        nextGenService.getEnvironment(activity.getAccountId(), activity.getOrgIdentifier(),
+            activity.getProjectIdentifier(), monitoredService.getEnvironmentIdentifier()); // TODO: move to a env list
     String serviceName = serviceResponseDTO != null ? serviceResponseDTO.getName() : null;
     String environmentName = environmentResponseDTO != null ? environmentResponseDTO.getName() : null;
     return ChangeEventDTO.builder()
@@ -34,11 +46,11 @@ public abstract class ChangeEventMetaDataTransformer<E extends Activity, M exten
         .accountId(activity.getAccountId())
         .orgIdentifier(activity.getOrgIdentifier())
         .projectIdentifier(activity.getProjectIdentifier())
-        .serviceIdentifier(activity.getServiceIdentifier())
+        .serviceIdentifier(monitoredService.getServiceIdentifier())
         .serviceName(serviceName)
         .changeSourceIdentifier(activity.getChangeSourceIdentifier())
         .monitoredServiceIdentifier(activity.getMonitoredServiceIdentifier())
-        .envIdentifier(activity.getEnvironmentIdentifier())
+        .envIdentifier(monitoredService.getEnvironmentIdentifier())
         .environmentName(environmentName)
         .name(activity.getActivityName())
         .eventTime(activity.getEventTime().toEpochMilli())

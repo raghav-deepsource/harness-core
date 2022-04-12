@@ -12,6 +12,7 @@ import static io.harness.waiter.PmsNotifyEventListener.PMS_ORCHESTRATION;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.expressions.ExpressionEvaluatorProvider;
+import io.harness.event.OrchestrationLogConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.redis.RedisConfig;
 
@@ -44,4 +45,6 @@ public class OrchestrationModuleConfig {
   @Nullable String accountClientId;
   @Default
   OrchestrationRedisEventsConfig orchestrationRedisEventsConfig = OrchestrationRedisEventsConfig.builder().build();
+  @Default
+  OrchestrationLogConfiguration orchestrationLogConfiguration = OrchestrationLogConfiguration.builder().build();
 }

@@ -120,7 +120,7 @@ public class DatadogMetricDataCollectionInfoMapperTest extends CvNextGenTestBase
                                                       .metricType(TimeSeriesMetricType.INFRA)
                                                       .build();
     ServiceLevelIndicator serviceLevelIndicator =
-        ThresholdServiceLevelIndicator.builder().metric1(MOCKED_METRIC_NAME).build();
+        ThresholdServiceLevelIndicator.builder().metric1(MOCKED_METRIC_IDENTIFIER).build();
 
     DatadogMetricCVConfig datadogMetricCVConfig = builderFactory.datadogMetricCVConfigBuilder()
                                                       .metricInfoList(Arrays.asList(metricInfo))

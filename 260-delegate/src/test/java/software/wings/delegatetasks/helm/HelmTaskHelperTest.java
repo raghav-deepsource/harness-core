@@ -9,17 +9,17 @@ package software.wings.delegatetasks.helm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.delegate.task.helm.CustomManifestFetchTaskHelper.zipManifestDirectory;
 import static io.harness.delegate.task.helm.HelmTaskHelperBase.RESOURCE_DIR_BASE;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.k8s.model.HelmVersion.V2;
 import static io.harness.k8s.model.HelmVersion.V3;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
+import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.PRABU;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.RAGHVENDRA;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
-import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static software.wings.delegatetasks.helm.HelmTestConstants.ACCOUNT_ID;
@@ -60,13 +60,13 @@ import io.harness.beans.FileData;
 import io.harness.category.element.UnitTests;
 import io.harness.chartmuseum.ChartMuseumServer;
 import io.harness.delegate.beans.DelegateFileManagerBase;
-import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.task.helm.HelmChartInfo;
+import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.helm.HelmTaskHelperBase;
 import io.harness.exception.HelmClientException;
+import io.harness.exception.HelmClientRuntimeException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.filesystem.FileIo;
 import io.harness.helm.HelmCliCommandType;
 import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.model.HelmVersion;
@@ -96,7 +96,6 @@ import com.google.common.collect.ImmutableList;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -106,7 +105,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -153,13 +151,13 @@ public class HelmTaskHelperTest extends WingsBaseTest {
     doNothing()
         .when(helmTaskHelperBase)
         .addRepo("vault", "vault", "https://helm-server", "admin", "secret-text".toCharArray(), "/home", V3,
-            LONG_TIMEOUT_INTERVAL, false);
+            LONG_TIMEOUT_INTERVAL, "");
     helmTaskHelper.addRepo("vault", "vault", "https://helm-server", "admin", "secret-text".toCharArray(), "/home", V3,
         LONG_TIMEOUT_INTERVAL);
 
     verify(helmTaskHelperBase)
         .addRepo("vault", "vault", "https://helm-server", "admin", "secret-text".toCharArray(), "/home", V3,
-            LONG_TIMEOUT_INTERVAL, false);
+            LONG_TIMEOUT_INTERVAL, "");
   }
 
   @Test
@@ -213,6 +211,44 @@ public class HelmTaskHelperTest extends WingsBaseTest {
     assertThat(captor.getAllValues().get(2))
         .isEqualTo(
             "add helm repo. Executed commandv3/helm repo add vault https://helm-server --username admin --password *******");
+  }
+
+  @Test
+  @Owner(developers = ACHYUTH)
+  @Category(UnitTests.class)
+  public void testfetchChartFromHttpServerWithFFUseRepoFlagsAndDeleteTempDir() {
+    ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+
+    doReturn(new ProcessResult(0, new ProcessOutput(new byte[1])))
+        .when(helmTaskHelperBase)
+        .executeCommand(anyMap(), anyString(), anyString(), anyString(), anyLong(), eq(HelmCliCommandType.REPO_ADD));
+    helmTaskHelperBase.addRepo(
+        "vault", "vault", "https://helm-server", "admin", "secret-text".toCharArray(), "/home", V3, 9000L, "xyz/cache");
+
+    verify(helmTaskHelperBase, times(1))
+        .executeCommand(
+            anyMap(), captor.capture(), captor.capture(), captor.capture(), eq(9000L), eq(HelmCliCommandType.REPO_ADD));
+
+    assertThat(captor.getAllValues().get(0))
+        .contains(
+            "v3/helm repo add vault https://helm-server --username admin --password secret-text --repository-config");
+    assertThat(captor.getAllValues().get(1)).isEqualTo("/home");
+    assertThat(captor.getAllValues().get(2))
+        .contains(
+            "add helm repo. Executed commandv3/helm repo add vault https://helm-server --username admin --password ******* --repository-config");
+
+    doReturn(new ProcessResult(0, new ProcessOutput(null)))
+        .when(helmTaskHelperBase)
+        .executeCommand(anyMap(), anyString(), anyString(), anyString(), anyLong(), eq(HelmCliCommandType.FETCH));
+
+    assertThatCode(()
+                       -> helmTaskHelperBase.fetchChartFromRepo("repo", "repo display", "chart", "1.0.0", "/dir", V3,
+                           HelmCommandFlag.builder().build(), 90000, false, ""))
+        .doesNotThrowAnyException();
+
+    verify(helmTaskHelperBase, times(1))
+        .executeCommand(
+            anyMap(), captor.capture(), captor.capture(), captor.capture(), anyLong(), eq(HelmCliCommandType.FETCH));
   }
 
   @Test
@@ -537,19 +573,19 @@ public class HelmTaskHelperTest extends WingsBaseTest {
         .executeCommand(anyMap(), anyString(), anyString(), anyString(), anyLong(), eq(HelmCliCommandType.REPO_ADD));
 
     helmTaskHelperBase.addRepo(
-        "repo", "repo", "http://null-password-url", "username", null, "chart", V3, LONG_TIMEOUT_INTERVAL, false);
+        "repo", "repo", "http://null-password-url", "username", null, "chart", V3, LONG_TIMEOUT_INTERVAL, "");
     verify(helmTaskHelperBase)
         .executeCommand(anyMap(), eq("v3/helm repo add repo http://null-password-url --username username "),
             anyString(), anyString(), anyLong(), eq(HelmCliCommandType.REPO_ADD));
 
     helmTaskHelperBase.addRepo(
-        "repo", "repo", "http://repo-url", "username", emptyPassword, "chart", V3, LONG_TIMEOUT_INTERVAL, false);
+        "repo", "repo", "http://repo-url", "username", emptyPassword, "chart", V3, LONG_TIMEOUT_INTERVAL, "");
     verify(helmTaskHelperBase)
         .executeCommand(anyMap(), eq("v3/helm repo add repo http://repo-url --username username "), anyString(),
             anyString(), anyLong(), eq(HelmCliCommandType.REPO_ADD));
 
     helmTaskHelperBase.addRepo(
-        "repo", "repo", "http://repo-url", " ", passwordWithWhitespaces, "chart", V3, LONG_TIMEOUT_INTERVAL, false);
+        "repo", "repo", "http://repo-url", " ", passwordWithWhitespaces, "chart", V3, LONG_TIMEOUT_INTERVAL, "");
     verify(helmTaskHelperBase)
         .executeCommand(anyMap(), eq("v3/helm repo add repo http://repo-url  "), anyString(), anyString(), anyLong(),
             eq(HelmCliCommandType.REPO_ADD));
@@ -569,19 +605,19 @@ public class HelmTaskHelperTest extends WingsBaseTest {
         "repo", "repo", "http://null-password-url", "username", null, "chart", V3, LONG_TIMEOUT_INTERVAL);
     verify(helmTaskHelperBase)
         .addRepo(eq("repo"), eq("repo"), eq("http://null-password-url"), eq("username"), any(), eq("chart"), any(),
-            anyLong(), eq(false));
+            anyLong(), eq(""));
 
     helmTaskHelper.addRepo(
         "repo", "repo", "http://repo-url", "username", emptyPassword, "chart", V3, LONG_TIMEOUT_INTERVAL);
     verify(helmTaskHelperBase)
         .addRepo(eq("repo"), eq("repo"), eq("http://repo-url"), eq("username"), eq(emptyPassword), eq("chart"), any(),
-            anyLong(), eq(false));
+            anyLong(), eq(""));
 
     helmTaskHelper.addRepo(
         "repo", "repo", "http://repo-url", " ", passwordWithWhitespaces, "chart", V3, LONG_TIMEOUT_INTERVAL);
     verify(helmTaskHelperBase)
         .addRepo(eq("repo"), eq("repo"), eq("http://repo-url"), eq(" "), eq(passwordWithWhitespaces), eq("chart"),
-            any(), anyLong(), eq(false));
+            any(), anyLong(), eq(""));
   }
 
   @Test
@@ -1196,40 +1232,30 @@ public class HelmTaskHelperTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = TATHAGAT)
+  @Owner(developers = PRATYUSH)
   @Category(UnitTests.class)
-  public void testDownloadAndUnzipCustomSourceManifestFiles() throws IOException {
-    final String workingDirPath = "./repository/helm/work/ACTIVITY_ID";
-    final String sourceDirPath = "./repository/helm/source/manifests";
-    final String zipDirPath = "./repository/helm/zip/ACTIVITY_ID";
-    final String zipFilePath = format("%s/destZipFile.zip", zipDirPath);
-    final String fileId = "fileId";
+  public void testFailedtoFetchValuesYamlFromChart() throws Exception {
+    String valuesFileContent = "var: value";
+    String chartName = "chartName";
 
-    FileIo.createDirectoryIfDoesNotExist(workingDirPath);
-    FileIo.createDirectoryIfDoesNotExist(sourceDirPath);
-    Files.createFile(Paths.get(sourceDirPath, "test1.yaml"));
-    Files.createFile(Paths.get(sourceDirPath, "test2.yaml"));
-    FileIo.createDirectoryIfDoesNotExist(zipDirPath);
+    Map<String, List<String>> mapK8sValuesLocationToFilePaths = new HashMap<>();
+    mapK8sValuesLocationToFilePaths.put(K8sValuesLocation.ServiceOverride.name(), singletonList("values1.yaml"));
 
-    zipManifestDirectory(sourceDirPath, zipFilePath);
-    InputStream targetStream = FileUtils.openInputStream(new File(zipFilePath));
+    HelmChartConfigParams helmChartConfigParams =
+        HelmChartConfigParams.builder().chartName(chartName).chartVersion("0.1.0").build();
+    String workingDirectory = prepareChartDirectoryWithValuesFileForTest(chartName, valuesFileContent);
 
-    doReturn(targetStream)
-        .when(delegateFileManagerBase)
-        .downloadByFileId(FileBucket.CUSTOM_MANIFEST, fileId, ACCOUNT_ID);
+    doNothing().when(helmTaskHelper).initHelm(anyString(), any(HelmVersion.class), anyLong());
+    doReturn(new ProcessResult(1, new ProcessOutput("something went wrong executing command".getBytes())))
+        .when(helmTaskHelperBase)
+        .executeCommand(anyMap(), contains("helm/path fetch chartName --untar"), anyString(),
+            eq("fetch chart chartName"), anyLong(), any());
 
-    helmTaskHelper.downloadAndUnzipCustomSourceManifestFiles(workingDirPath, fileId, ACCOUNT_ID);
-
-    File destFile = new File(workingDirPath);
-    assertThat(destFile).exists();
-    String[] unzippedFiles = destFile.list((dir, name) -> !dir.isHidden());
-    assertThat(unzippedFiles).hasSize(1);
-    assertThat(unzippedFiles[0]).contains("manifests");
-    Path path = Paths.get(workingDirPath, unzippedFiles[0]);
-    File file = new File(path.toString());
-    assertThat(file.list()).contains("test1.yaml", "test2.yaml");
-    deleteDirectoryAndItsContentIfExists(workingDirPath);
-    deleteDirectoryAndItsContentIfExists(sourceDirPath);
-    deleteDirectoryAndItsContentIfExists(zipDirPath);
+    assertThatThrownBy(()
+                           -> helmTaskHelper.getValuesYamlFromChart(
+                               helmChartConfigParams, LONG_TIMEOUT_INTERVAL, null, mapK8sValuesLocationToFilePaths))
+        .isInstanceOf(HelmClientRuntimeException.class)
+        .hasMessageContaining("Failed to fetch chart")
+        .hasMessageContaining("something went wrong executing command");
   }
 }

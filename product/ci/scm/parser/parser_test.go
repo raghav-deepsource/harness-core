@@ -7,7 +7,7 @@ package parser
 
 import (
 	"context"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/golang/protobuf/jsonpb" //nolint:staticcheck //only used in test
@@ -19,7 +19,7 @@ import (
 )
 
 func TestParsePRWebhookPRSuccess(t *testing.T) {
-	data, _ := ioutil.ReadFile("testdata/pr.json")
+	data, _ := os.ReadFile("testdata/pr.json")
 	in := &pb.ParseWebhookRequest{
 		Body: string(data),
 		Header: &pb.Header{
@@ -39,18 +39,52 @@ func TestParsePRWebhookPRSuccess(t *testing.T) {
 	assert.Nil(t, err)
 
 	want := &pb.ParseWebhookResponse{}
-	raw, _ := ioutil.ReadFile("testdata/pr.json.golden")
+	raw, _ := os.ReadFile("testdata/pr.json.golden")
 	_ = jsonpb.UnmarshalString(string(raw), want)
 
 	if !proto.Equal(got, want) {
-		t.Errorf("Unexpected Results")
+		t.Errorf("Unexpected Results:\n")
+		t.Log(got)
+		t.Log(want)
+	}
+}
+
+func TestAzureParsePRWebhookPRSuccess(t *testing.T) {
+	data, _ := os.ReadFile("testdata/azure_pr.json")
+	in := &pb.ParseWebhookRequest{
+		Body: string(data),
+		Header: &pb.Header{
+			Fields: []*pb.Header_Pair{
+				{
+					Key:    "X-Github-Event",
+					Values: []string{"pull_request"},
+				},
+			},
+		},
+		Secret:   "",
+		Provider: pb.GitProvider_AZURE,
+	}
+
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	got, err := ParseWebhook(context.Background(), in, log.Sugar())
+	assert.Nil(t, err)
+
+	want := &pb.ParseWebhookResponse{}
+	raw, _ := os.ReadFile("testdata/azure_pr.json.golden")
+	jsonErr := jsonpb.UnmarshalString(string(raw), want)
+	if jsonErr != nil {
+		t.Errorf("JSON parsing error%s", jsonErr)
+	}
+
+	if !proto.Equal(got, want) {
+		t.Errorf("Unexpected Results:\n")
 		t.Log(got)
 		t.Log(want)
 	}
 }
 
 func TestParsePRWebhook_UnknownActionErr(t *testing.T) {
-	raw, _ := ioutil.ReadFile("testdata/pr.json")
+	raw, _ := os.ReadFile("testdata/pr.json")
 	in := &pb.ParseWebhookRequest{
 		Body: string(raw),
 		Header: &pb.Header{
@@ -71,7 +105,7 @@ func TestParsePRWebhook_UnknownActionErr(t *testing.T) {
 }
 
 func TestParsePRWebhook_UnknownErr(t *testing.T) {
-	raw, _ := ioutil.ReadFile("testdata/pr.err.json")
+	raw, _ := os.ReadFile("testdata/pr.err.json")
 	in := &pb.ParseWebhookRequest{
 		Body: string(raw),
 		Header: &pb.Header{
@@ -93,7 +127,7 @@ func TestParsePRWebhook_UnknownErr(t *testing.T) {
 }
 
 func TestParsePushWebhookPRSuccess(t *testing.T) {
-	data, _ := ioutil.ReadFile("testdata/push.json")
+	data, _ := os.ReadFile("testdata/push.json")
 	in := &pb.ParseWebhookRequest{
 		Body: string(data),
 		Header: &pb.Header{
@@ -114,7 +148,7 @@ func TestParsePushWebhookPRSuccess(t *testing.T) {
 	assert.NotNil(t, got.GetPush())
 
 	want := &pb.ParseWebhookResponse{}
-	raw, _ := ioutil.ReadFile("testdata/push.json.golden")
+	raw, _ := os.ReadFile("testdata/push.json.golden")
 	_ = jsonpb.UnmarshalString(string(raw), want)
 	if !proto.Equal(got, want) {
 		t.Errorf("Unexpected Results")
@@ -124,7 +158,7 @@ func TestParsePushWebhookPRSuccess(t *testing.T) {
 }
 
 func TestParseCommentWebhookSuccess(t *testing.T) {
-	data, _ := ioutil.ReadFile("testdata/comment.json")
+	data, _ := os.ReadFile("testdata/comment.json")
 	in := &pb.ParseWebhookRequest{
 		Body: string(data),
 		Header: &pb.Header{
@@ -145,7 +179,7 @@ func TestParseCommentWebhookSuccess(t *testing.T) {
 	assert.NotNil(t, got.GetComment())
 
 	want := &pb.ParseWebhookResponse{}
-	raw, _ := ioutil.ReadFile("testdata/comment.json.golden")
+	raw, _ := os.ReadFile("testdata/comment.json.golden")
 	_ = jsonpb.UnmarshalString(string(raw), want)
 
 	if !proto.Equal(got, want) {
@@ -156,7 +190,7 @@ func TestParseCommentWebhookSuccess(t *testing.T) {
 }
 
 func TestParseCreateBranch(t *testing.T) {
-	data, _ := ioutil.ReadFile("testdata/branch_create.json")
+	data, _ := os.ReadFile("testdata/branch_create.json")
 	in := &pb.ParseWebhookRequest{
 		Body: string(data),
 		Header: &pb.Header{
@@ -177,7 +211,7 @@ func TestParseCreateBranch(t *testing.T) {
 	assert.NotNil(t, got.GetBranch())
 
 	want := &pb.ParseWebhookResponse{}
-	raw, _ := ioutil.ReadFile("testdata/branch_create.json.golden")
+	raw, _ := os.ReadFile("testdata/branch_create.json.golden")
 	err = jsonpb.UnmarshalString(string(raw), want)
 
 	if !proto.Equal(got, want) {

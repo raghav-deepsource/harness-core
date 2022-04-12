@@ -14,7 +14,6 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.PlanCreationServiceGrpc;
-import io.harness.pms.contracts.plan.YamlFieldBlob;
 import io.harness.pms.plan.creation.PlanCreatorServiceInfo;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.yaml.YamlField;
@@ -26,7 +25,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -38,7 +36,6 @@ public class PmsSdkHelper {
 
   /**
    * Gets the list of registered services with their PlanCreatorServiceInfo object
-   * @return
    */
   public Map<String, PlanCreatorServiceInfo> getServices() {
     Map<String, Map<String, Set<String>>> sdkInstances = pmsSdkInstanceService.getInstanceNameToSupportedTypes();
@@ -55,35 +52,12 @@ public class PmsSdkHelper {
 
   /**
    * Checks if the service supports any of the dependency mentioned.
-   * @param serviceInfo
-   * @param dependencies
-   * @return
    */
-  public boolean containsSupportedDependency(
-      PlanCreatorServiceInfo serviceInfo, Map<String, YamlFieldBlob> dependencies) {
-    Map<String, Set<String>> supportedTypes = serviceInfo.getSupportedTypes();
-    Map<String, YamlFieldBlob> filteredDependencies =
-        dependencies.entrySet()
-            .stream()
-            .filter(entry -> {
-              try {
-                YamlField field = YamlField.fromFieldBlob(entry.getValue());
-                return PlanCreatorUtils.supportsField(supportedTypes, field);
-              } catch (Exception e) {
-                log.error("Invalid yaml field", e);
-                return false;
-              }
-            })
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-    return !EmptyPredicate.isEmpty(filteredDependencies);
-  }
-
   public boolean containsSupportedDependencyByYamlPath(PlanCreatorServiceInfo serviceInfo, Dependencies dependencies) {
     if (dependencies == null || EmptyPredicate.isEmpty(dependencies.getDependenciesMap())) {
       return false;
     }
 
-    Map<String, Set<String>> supportedTypes = serviceInfo.getSupportedTypes();
     YamlField fullYamlField;
     try {
       fullYamlField = YamlUtils.readTree(dependencies.getYaml());
@@ -96,17 +70,36 @@ public class PmsSdkHelper {
     return dependencies.getDependenciesMap()
         .entrySet()
         .stream()
-        .filter(entry -> {
-          try {
-            YamlField field = fullYamlField.fromYamlPath(entry.getValue());
-            return PlanCreatorUtils.supportsField(supportedTypes, field);
-          } catch (Exception e) {
-            log.error("Invalid yaml field", e);
-            return false;
-          }
-        })
+        .filter(entry -> containsSupportedSingleDependencyByYamlPath(serviceInfo, fullYamlField, entry))
         .map(Map.Entry::getKey)
         .findFirst()
         .isPresent();
+  }
+
+  /**
+   * Checks if the service supports any of the dependency mentioned.
+   */
+  public boolean containsSupportedSingleDependencyByYamlPath(
+      PlanCreatorServiceInfo serviceInfo, YamlField fullYamlField, Map.Entry<String, String> dependencyEntry) {
+    if (dependencyEntry == null) {
+      return false;
+    }
+    Map<String, Set<String>> supportedTypes = serviceInfo.getSupportedTypes();
+    try {
+      YamlField field = fullYamlField.fromYamlPath(dependencyEntry.getValue());
+      return PlanCreatorUtils.supportsField(supportedTypes, field);
+    } catch (Exception ex) {
+      String message = "Invalid yaml during plan creation for dependency path - " + dependencyEntry.getValue();
+      log.error(message, ex);
+      throw new InvalidRequestException(message);
+    }
+  }
+
+  public Dependencies createBatchDependency(Dependencies dependencies, Map<String, String> dependencyMap) {
+    return Dependencies.newBuilder()
+        .putAllDependencies(dependencyMap)
+        .putAllDependencyMetadata(dependencies.getDependencyMetadataMap())
+        .setYaml(dependencies.getYaml())
+        .build();
   }
 }

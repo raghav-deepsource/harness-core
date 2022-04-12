@@ -227,6 +227,6 @@ public class ServiceGuardTrendAnalysisStateExecutorTest extends CategoryTest {
     trendAnalysisState =
         (ServiceGuardTrendAnalysisState) serviceGuardTrendAnalysisStateExecutor.handleRetry(trendAnalysisState);
 
-    assertThat(trendAnalysisState.getStatus().name()).isEqualTo(AnalysisStatus.FAILED.name());
+    assertThat(trendAnalysisState.getStatus().name()).isEqualTo(AnalysisStatus.IGNORED.name());
   }
 }

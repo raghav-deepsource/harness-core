@@ -8,7 +8,10 @@
 package io.harness.gitsync.gitsyncerror.remote;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.gitsync.common.dtos.RepoProviders.BITBUCKET;
+import static io.harness.gitsync.common.dtos.RepoProviders.GITHUB;
 import static io.harness.rule.OwnerRule.BHAVYA;
+import static io.harness.rule.OwnerRule.DEEPAK;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -67,11 +70,13 @@ public class GitSyncErrorMapperTest extends GitSyncTestBase {
                                  .gitCommitId("commitId")
                                  .commitMessage("Message")
                                  .yamlContent(null)
+                                 .entityUrl("repoUrl/blob/A/test")
                                  .build();
 
     gitSyncError = GitSyncError.builder()
                        .accountIdentifier(accountIdentifier)
                        .repoUrl(repoUrl)
+                       .completeFilePath("test")
                        .branchName(branchName)
                        .errorType(errorType)
                        .status(status)
@@ -83,6 +88,7 @@ public class GitSyncErrorMapperTest extends GitSyncTestBase {
     gitSyncErrorDTO = GitSyncErrorDTO.builder()
                           .accountIdentifier(accountIdentifier)
                           .repoUrl(repoUrl)
+                          .completeFilePath("test")
                           .branchName(branchName)
                           .errorType(errorType)
                           .status(status)
@@ -131,5 +137,43 @@ public class GitSyncErrorMapperTest extends GitSyncTestBase {
     GitSyncErrorAggregateByCommitDTO dto =
         GitSyncErrorMapper.toGitSyncErrorAggregateByCommitDTO(gitSyncErrorAggregateByCommit);
     assertThat(dto).isEqualTo(gitSyncErrorAggregateByCommitDTO);
+  }
+
+  @Test
+  @Owner(developers = DEEPAK)
+  @Category(UnitTests.class)
+  public void getFilePathUrlTest() {
+    GitSyncError connectivityTypeGitSyncError = GitSyncError.builder()
+                                                    .accountIdentifier(accountIdentifier)
+                                                    .repoUrl(repoUrl)
+                                                    .branchName(branchName)
+                                                    .errorType(GitSyncErrorType.CONNECTIVITY_ISSUE)
+                                                    .build();
+    String filePathUrl = GitSyncErrorMapper.getFilePathUrl(connectivityTypeGitSyncError);
+    assertThat(filePathUrl).isEqualTo(null);
+
+    GitSyncError fullSyncGitError = GitSyncError.builder()
+                                        .accountIdentifier(accountIdentifier)
+                                        .repoUrl("https://github.com/harness/harness-core")
+                                        .branchName("master")
+                                        .completeFilePath(".harness/test/connector.yaml")
+                                        .errorType(GitSyncErrorType.FULL_SYNC)
+                                        .repoProvider(GITHUB)
+                                        .build();
+    String filePathUrlForGithub = GitSyncErrorMapper.getFilePathUrl(fullSyncGitError);
+    assertThat(filePathUrlForGithub)
+        .isEqualTo("https://github.com/harness/harness-core/blob/master/.harness/test/connector.yaml");
+
+    GitSyncError gittoHarnessError = GitSyncError.builder()
+                                         .accountIdentifier(accountIdentifier)
+                                         .repoUrl("https://bitbucket.org/harness/harness-core")
+                                         .branchName("master")
+                                         .completeFilePath(".harness/test/connector.yaml")
+                                         .errorType(GitSyncErrorType.GIT_TO_HARNESS)
+                                         .repoProvider(BITBUCKET)
+                                         .build();
+    String filePathUrlForBitbucket = GitSyncErrorMapper.getFilePathUrl(gittoHarnessError);
+    assertThat(filePathUrlForBitbucket)
+        .isEqualTo("https://bitbucket.org/harness/harness-core/src/master/.harness/test/connector.yaml");
   }
 }

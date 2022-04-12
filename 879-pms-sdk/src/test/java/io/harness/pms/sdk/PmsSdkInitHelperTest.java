@@ -103,7 +103,7 @@ public class PmsSdkInitHelperTest extends CategoryTest {
 
   private static class Dummy1 implements JsonExpansionHandler {
     @Override
-    public ExpansionResponse expand(JsonNode fieldValue, ExpansionRequestMetadata metadata) {
+    public ExpansionResponse expand(JsonNode fieldValue, ExpansionRequestMetadata metadata, String fqn) {
       return null;
     }
   }

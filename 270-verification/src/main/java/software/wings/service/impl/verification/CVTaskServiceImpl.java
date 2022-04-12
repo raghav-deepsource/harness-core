@@ -10,10 +10,10 @@ package software.wings.service.impl.verification;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static software.wings.common.VerificationConstants.CANARY_DAYS_TO_COLLECT;
+import static software.wings.delegatetasks.cv.CVConstants.CONTROL_HOST_NAME;
+import static software.wings.delegatetasks.cv.CVConstants.TEST_HOST_NAME;
 import static software.wings.service.impl.analysis.AnalysisComparisonStrategy.COMPARE_WITH_CURRENT;
 import static software.wings.service.impl.analysis.AnalysisComparisonStrategy.PREDICTIVE;
-import static software.wings.sm.states.DynatraceState.CONTROL_HOST_NAME;
-import static software.wings.sm.states.DynatraceState.TEST_HOST_NAME;
 
 import io.harness.beans.ExecutionStatus;
 import io.harness.entities.CVTask;

@@ -16,7 +16,7 @@ import io.harness.exception.WingsException;
 
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
-import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.function.Function;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +27,11 @@ import net.jodah.failsafe.RetryPolicy;
 @UtilityClass
 @Slf4j
 public class PmsGrpcClientUtils {
+  private static final int MAX_ATTEMPTS = 3;
+  private static final long INITIAL_DELAY_MS = 100;
+  private static final long MAX_DELAY_MS = 5000;
+  private static final long DELAY_FACTOR = 5;
+
   private static final RetryPolicy<Object> RETRY_POLICY = createRetryPolicy();
 
   public <T, R> R retryAndProcessException(Function<T, R> fn, T arg) {
@@ -53,18 +58,15 @@ public class PmsGrpcClientUtils {
       return new GeneralException(EmptyPredicate.isEmpty(ex.getStatus().getDescription())
               ? "Unknown grpc error while communicating with pipeline service"
               : ex.getStatus().getDescription());
-    } else if (ex.getStatus().getCode() == Status.Code.DEADLINE_EXCEEDED) {
-      return new GeneralException("Request to pipeline service timed out");
     }
-
     log.error("Error connecting to pipeline service. Is it running?", ex);
     return new GeneralException("Error connecting to pipeline service");
   }
 
   private RetryPolicy<Object> createRetryPolicy() {
     return new RetryPolicy<>()
-        .withDelay(Duration.ofMillis(750))
-        .withMaxAttempts(3)
+        .withBackoff(INITIAL_DELAY_MS, MAX_DELAY_MS, ChronoUnit.MILLIS, DELAY_FACTOR)
+        .withMaxAttempts(MAX_ATTEMPTS)
         .onFailedAttempt(event
             -> log.warn(
                 String.format("Pms sdk grpc retry attempt: %d", event.getAttemptCount()), event.getLastFailure()))
@@ -77,7 +79,9 @@ public class PmsGrpcClientUtils {
           }
           StatusRuntimeException statusRuntimeException = (StatusRuntimeException) throwable;
           return statusRuntimeException.getStatus().getCode() == Status.Code.UNAVAILABLE
-              || statusRuntimeException.getStatus().getCode() == Status.Code.UNKNOWN;
+              || statusRuntimeException.getStatus().getCode() == Status.Code.UNKNOWN
+              || statusRuntimeException.getStatus().getCode() == Status.Code.DEADLINE_EXCEEDED
+              || statusRuntimeException.getStatus().getCode() == Status.Code.RESOURCE_EXHAUSTED;
         });
   }
 }

@@ -40,6 +40,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
 import io.harness.ng.core.dto.UserGroupDTO;
+import io.harness.ng.core.dto.UserGroupRequest;
 import io.harness.ng.core.events.UserGroupCreateEvent;
 import io.harness.ng.core.events.UserGroupDeleteEvent;
 import io.harness.ng.core.events.UserGroupUpdateEvent;
@@ -51,8 +52,9 @@ import io.harness.ng.core.notification.SlackConfigDTO;
 import io.harness.outbox.OutboxEvent;
 import io.harness.rule.Owner;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +66,7 @@ import org.mockito.ArgumentCaptor;
 @OwnedBy(PL)
 public class UserGroupEventHandlerTest extends CategoryTest {
   private ObjectMapper objectMapper;
+  private ObjectMapper yamlMapper;
   private Producer producer;
   private AuditClientService auditClientService;
   private UserGroupEventHandler userGroupEventHandler;
@@ -71,6 +74,7 @@ public class UserGroupEventHandlerTest extends CategoryTest {
   @Before
   public void setup() {
     objectMapper = NG_DEFAULT_OBJECT_MAPPER;
+    yamlMapper = new YAMLMapper();
     producer = mock(Producer.class);
     auditClientService = mock(AuditClientService.class);
     userGroupEventHandler = spy(new UserGroupEventHandler(producer, auditClientService));
@@ -102,7 +106,7 @@ public class UserGroupEventHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = KARAN)
   @Category(UnitTests.class)
-  public void testCreate() throws JsonProcessingException {
+  public void testCreate() throws IOException {
     String accountIdentifier = randomAlphabetic(10);
     String orgIdentifier = randomAlphabetic(10);
     String identifier = randomAlphabetic(10);
@@ -146,6 +150,10 @@ public class UserGroupEventHandlerTest extends CategoryTest {
     assertNull(auditEntry.getResourceScope().getProjectIdentifier());
     assertEquals(Action.CREATE, auditEntry.getAction());
     assertEquals(ModuleType.CORE, auditEntry.getModule());
+    UserGroupDTO userGroupDTOFromYAML =
+        yamlMapper.readValue(auditEntry.getNewYaml(), UserGroupRequest.class).getUserGroupDTO();
+    assertEquals(userGroupDTOFromYAML, userGroupDTO);
+    assertNull(auditEntry.getOldYaml());
     assertEquals(outboxEvent.getCreatedAt().longValue(), auditEntry.getTimestamp());
     assertNull(auditEntry.getEnvironment());
   }
@@ -153,7 +161,7 @@ public class UserGroupEventHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = KARAN)
   @Category(UnitTests.class)
-  public void testUpdate() throws JsonProcessingException {
+  public void testUpdate() throws IOException {
     String accountIdentifier = randomAlphabetic(10);
     String orgIdentifier = randomAlphabetic(10);
     String identifier = randomAlphabetic(10);
@@ -199,6 +207,12 @@ public class UserGroupEventHandlerTest extends CategoryTest {
     assertNull(auditEntry.getResourceScope().getProjectIdentifier());
     assertEquals(Action.UPDATE, auditEntry.getAction());
     assertEquals(ModuleType.CORE, auditEntry.getModule());
+    UserGroupDTO newUserGroupDTOFromYAML =
+        yamlMapper.readValue(auditEntry.getNewYaml(), UserGroupRequest.class).getUserGroupDTO();
+    assertEquals(newUserGroupDTOFromYAML, newUserGroupDTO);
+    UserGroupDTO oldUserGroupDTOFromYAML =
+        yamlMapper.readValue(auditEntry.getOldYaml(), UserGroupRequest.class).getUserGroupDTO();
+    assertEquals(oldUserGroupDTOFromYAML, oldUserGroupDTO);
     assertEquals(outboxEvent.getCreatedAt().longValue(), auditEntry.getTimestamp());
     assertNull(auditEntry.getEnvironment());
   }
@@ -206,7 +220,7 @@ public class UserGroupEventHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = KARAN)
   @Category(UnitTests.class)
-  public void testDelete() throws JsonProcessingException {
+  public void testDelete() throws IOException {
     String accountIdentifier = randomAlphabetic(10);
     String orgIdentifier = randomAlphabetic(10);
     String identifier = randomAlphabetic(10);
@@ -250,6 +264,9 @@ public class UserGroupEventHandlerTest extends CategoryTest {
     assertNull(auditEntry.getResourceScope().getProjectIdentifier());
     assertEquals(Action.DELETE, auditEntry.getAction());
     assertEquals(ModuleType.CORE, auditEntry.getModule());
+    UserGroupDTO userGroupDTOFromYAML =
+        yamlMapper.readValue(auditEntry.getOldYaml(), UserGroupRequest.class).getUserGroupDTO();
+    assertEquals(userGroupDTOFromYAML, userGroupDTO);
     assertEquals(outboxEvent.getCreatedAt().longValue(), auditEntry.getTimestamp());
     assertNull(auditEntry.getEnvironment());
   }

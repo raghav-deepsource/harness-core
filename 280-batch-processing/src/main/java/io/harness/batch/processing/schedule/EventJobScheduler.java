@@ -135,6 +135,11 @@ public class EventJobScheduler {
     runCloudEfficiencyEventJobs(BatchJobBucket.OUT_OF_CLUSTER, true);
   }
 
+  @Scheduled(cron = "0 30 * ? * *") // 0 */10 * * * ?   for testing
+  public void runCloudEfficiencyOutOfClusterECSJobs() {
+    runCloudEfficiencyEventJobs(BatchJobBucket.OUT_OF_CLUSTER_ECS, true);
+  }
+
   private void runCloudEfficiencyEventJobs(BatchJobBucket batchJobBucket, boolean runningMode) {
     accountShardService.getCeEnabledAccounts().forEach(account
         -> jobs.stream()

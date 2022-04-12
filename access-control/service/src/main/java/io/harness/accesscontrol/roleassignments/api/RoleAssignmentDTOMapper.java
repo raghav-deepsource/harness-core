@@ -48,6 +48,7 @@ public class RoleAssignmentDTOMapper {
         .roleAssignment(RoleAssignmentDTO.builder()
                             .identifier(object.getIdentifier())
                             .principal(PrincipalDTO.builder()
+                                           .scopeLevel(object.getPrincipalScopeLevel())
                                            .identifier(object.getPrincipalIdentifier())
                                            .type(object.getPrincipalType())
                                            .build())
@@ -65,8 +66,11 @@ public class RoleAssignmentDTOMapper {
   public static RoleAssignmentDTO toDTO(RoleAssignment object) {
     return RoleAssignmentDTO.builder()
         .identifier(object.getIdentifier())
-        .principal(
-            PrincipalDTO.builder().identifier(object.getPrincipalIdentifier()).type(object.getPrincipalType()).build())
+        .principal(PrincipalDTO.builder()
+                       .scopeLevel(object.getPrincipalScopeLevel())
+                       .identifier(object.getPrincipalIdentifier())
+                       .type(object.getPrincipalType())
+                       .build())
         .resourceGroupIdentifier(object.getResourceGroupIdentifier())
         .roleIdentifier(object.getRoleIdentifier())
         .disabled(object.isDisabled())
@@ -85,6 +89,7 @@ public class RoleAssignmentDTOMapper {
                     ? "role_assignment_".concat(CryptoUtils.secureRandAlphaNumString(20))
                     : object.getIdentifier())
             .principalIdentifier(object.getPrincipal().getIdentifier())
+            .principalScopeLevel(object.getPrincipal().getScopeLevel())
             .principalType(object.getPrincipal().getType())
             .resourceGroupIdentifier(object.getResourceGroupIdentifier())
             .roleIdentifier(object.getRoleIdentifier())
@@ -108,6 +113,7 @@ public class RoleAssignmentDTOMapper {
                       .stream()
                       .map(principalDTO
                           -> Principal.builder()
+                                 .principalScopeLevel(principalDTO.getScopeLevel())
                                  .principalType(principalDTO.getType())
                                  .principalIdentifier(principalDTO.getIdentifier())
                                  .build())

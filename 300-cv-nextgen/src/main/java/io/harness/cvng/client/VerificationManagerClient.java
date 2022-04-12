@@ -71,8 +71,8 @@ public interface VerificationManagerClient {
       @Query("requestGuid") String requestGuid, @Body SplunkConnectorDTO splunkConnectorDTO);
 
   @POST("account/validate-delegate-token")
-  Call<RestResponse<Boolean>> authenticateDelegateRequest(
-      @Query("accountId") String accountId, @Query("delegateToken") String delegateToken);
+  Call<RestResponse<Boolean>> authenticateDelegateRequest(@Query("accountId") String accountId,
+      @Query("delegateToken") String delegateToken, @Query("delegateId") String delegateId);
 
   @POST(KUBERNETES_RESOURCE + "/namespaces")
   Call<RestResponse<List<String>>> getKubernetesNamespaces(@Query("accountId") String accountId,

@@ -506,8 +506,8 @@ public class K8sStepHelperTest extends CategoryTest {
     String valueFile2 = "file2";
     List<String> valuesFiles = asList(valueFile1, valueFile2);
 
-    doReturn(valueFile1).when(engineExpressionService).renderExpression(any(), eq(valueFile1));
-    doReturn(valueFile2).when(engineExpressionService).renderExpression(any(), eq(valueFile2));
+    doReturn(valueFile1).when(engineExpressionService).renderExpression(any(), eq(valueFile1), anyBoolean());
+    doReturn(valueFile2).when(engineExpressionService).renderExpression(any(), eq(valueFile2), anyBoolean());
 
     List<String> renderedValuesFiles = k8sStepHelper.renderValues(
         OpenshiftManifestOutcome.builder().build(), Ambiance.newBuilder().build(), valuesFiles);
@@ -849,8 +849,8 @@ public class K8sStepHelperTest extends CategoryTest {
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
     ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
-    verify(kryoSerializer).asDeflatedBytes(taskParametersArgumentCaptor.capture());
-    TaskParameters taskParameters = taskParametersArgumentCaptor.getValue();
+    verify(kryoSerializer, times(2)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
+    TaskParameters taskParameters = taskParametersArgumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(HelmValuesFetchRequest.class);
     HelmValuesFetchRequest helmValuesFetchRequest = (HelmValuesFetchRequest) taskParameters;
     assertThat(helmValuesFetchRequest.getTimeout()).isNotNull();
@@ -926,7 +926,7 @@ public class K8sStepHelperTest extends CategoryTest {
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
     ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
-    verify(kryoSerializer, times(2)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
+    verify(kryoSerializer, times(3)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
     TaskParameters taskParameters = taskParametersArgumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(HelmValuesFetchRequest.class);
     HelmValuesFetchRequest helmValuesFetchRequest = (HelmValuesFetchRequest) taskParameters;
@@ -999,8 +999,8 @@ public class K8sStepHelperTest extends CategoryTest {
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
     ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
-    verify(kryoSerializer).asDeflatedBytes(taskParametersArgumentCaptor.capture());
-    TaskParameters taskParameters = taskParametersArgumentCaptor.getValue();
+    verify(kryoSerializer, times(2)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
+    TaskParameters taskParameters = taskParametersArgumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(HelmValuesFetchRequest.class);
     HelmValuesFetchRequest helmValuesFetchRequest = (HelmValuesFetchRequest) taskParameters;
     assertThat(helmValuesFetchRequest.getTimeout()).isNotNull();

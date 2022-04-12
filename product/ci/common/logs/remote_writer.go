@@ -25,6 +25,7 @@ import (
 
 const (
 	defaultLimit    = 5242880 // 5MB
+	maxLineLimit    = 71680   // 70KB
 	defaultInterval = 1 * time.Second
 	defaultLevel    = "info"
 	messageKey      = "msg"
@@ -105,7 +106,7 @@ func (b *RemoteWriter) Convert(p string) *stream.Line {
 		// If the message is not in JSON, just use the bytes as the `Message` field
 		return &stream.Line{
 			Level:     defaultLevel,
-			Message:   p,
+			Message:   truncate(p, maxLineLimit),
 			Number:    b.num,
 			Timestamp: time.Now(),
 			Args:      args,
@@ -117,7 +118,7 @@ func (b *RemoteWriter) Convert(p string) *stream.Line {
 	}
 	return &stream.Line{
 		Level:     fmt.Sprintf("%v", level),
-		Message:   fmt.Sprintf("%v", msg),
+		Message:   truncate(fmt.Sprintf("%v", msg), maxLineLimit),
 		Number:    b.num,
 		Timestamp: time.Now(),
 		Args:      args,
@@ -365,6 +366,14 @@ func splitLast(p []byte) ([]byte, []byte) {
 	first := s[:last+1]
 	second := s[last+1:]
 	return []byte(first), []byte(second)
+}
+
+// truncates a string to the given length
+func truncate(inp string, to int) string {
+	if len(inp) > to {
+		return inp[:to] + "... (log line truncated)"
+	}
+	return inp
 }
 
 func split(p []byte) []string {

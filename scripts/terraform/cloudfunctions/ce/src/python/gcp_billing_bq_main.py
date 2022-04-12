@@ -361,8 +361,8 @@ def ingest_into_unified(jsonData):
                 region,zone,gcpBillingAccountId,cloudProvider, discount, labels)
                 SELECT service.description AS product, cost AS cost, service.description AS gcpProduct, sku.id AS gcpSkuId,
                      sku.description AS gcpSkuDescription, TIMESTAMP_TRUNC(usage_start_time, DAY) as startTime, project.id AS gcpProjectId,
-                     location.region AS region, location.zone AS zone, billing_account_id AS gcpBillingAccountId, "GCP" AS cloudProvider, credits.amount as discount, labels AS labels
-                FROM `%s.%s` LEFT JOIN UNNEST(credits) as credits
+                     location.region AS region, location.zone AS zone, billing_account_id AS gcpBillingAccountId, "GCP" AS cloudProvider, (SELECT SUM(c.amount) FROM UNNEST(credits) c) as discount, labels AS labels
+                FROM `%s.%s`
                 WHERE DATE(_PARTITIONTIME) >= DATE_SUB(@run_date, INTERVAL %s DAY) AND DATE(usage_start_time) <= DATE_SUB(CAST(FORMAT_DATE('%%Y-%%m-%%d', @run_date) AS DATE), INTERVAL 1 DAY) AND
                      DATE(usage_start_time) >= DATE_SUB(CAST(FORMAT_DATE('%%Y-%%m-%%d', @run_date) AS DATE), INTERVAL %s DAY) ;
         """ % ( jsonData["datasetName"], jsonData["interval"], jsonData["billingAccountIds"], jsonData["datasetName"], jsonData["datasetName"],
@@ -395,9 +395,8 @@ def ingest_into_preaggregated(jsonData):
            INSERT INTO `%s.preAggregated` (cost, gcpProduct,gcpSkuId,gcpSkuDescription,
              startTime,gcpProjectId,region,zone,gcpBillingAccountId,cloudProvider, discount) SELECT SUM(cost) AS cost, service.description AS gcpProduct,
              sku.id AS gcpSkuId, sku.description AS gcpSkuDescription, TIMESTAMP_TRUNC(usage_start_time, DAY) as startTime, project.id AS gcpProjectId,
-             location.region AS region, location.zone AS zone, billing_account_id AS gcpBillingAccountId, "GCP" AS cloudProvider, SUM(credits.amount) as
-             discount
-           FROM `%s.%s` LEFT JOIN UNNEST(credits) as credits
+             location.region AS region, location.zone AS zone, billing_account_id AS gcpBillingAccountId, "GCP" AS cloudProvider, SUM(IFNULL((SELECT SUM(c.amount) FROM UNNEST(credits) c), 0)) as discount
+           FROM `%s.%s`
            WHERE DATE(_PARTITIONTIME) >= DATE_SUB(@run_date, INTERVAL %s DAY) AND DATE(usage_start_time) <= DATE_SUB(CAST(FORMAT_DATE('%%Y-%%m-%%d', @run_date) AS DATE), INTERVAL 1 DAY) AND
              DATE(usage_start_time) >= DATE_SUB(CAST(FORMAT_DATE('%%Y-%%m-%%d', @run_date) AS DATE), INTERVAL %s DAY)
            GROUP BY service.description, sku.id, sku.description, startTime, project.id, location.region, location.zone, billing_account_id;
@@ -428,10 +427,10 @@ def get_unique_billingaccount_id(jsonData):
     # Get unique billingAccountIds from main gcp table
     print_("Getting unique billingAccountIds from %s" % jsonData["tableName"])
     query = """  SELECT DISTINCT(billing_account_id) as billing_account_id FROM `%s.%s.%s` 
-            WHERE DATE(_PARTITIONTIME) >= DATE_SUB(@run_date, INTERVAL 10 DAY) AND DATE(usage_start_time) >= DATE_SUB(@run_date , INTERVAL 3 DAY);
+            WHERE DATE(_PARTITIONTIME) >= DATE_SUB(@run_date, INTERVAL 10 DAY);
             """ % (PROJECTID, jsonData["datasetName"], jsonData["tableName"])
     # Configure the query job.
-    job_config = bigquery.QueryJobConfig(
+    job_config = bigquery.QueryJobConfig(   
         query_parameters=[
             bigquery.ScalarQueryParameter(
                 "run_date",
@@ -453,7 +452,7 @@ def get_unique_billingaccount_id(jsonData):
         print_("  Failed to retrieve distinct billingAccountIds", "WARN")
         jsonData["billingAccountIds"] = ""
         raise e
-    print_("  Found unique billingAccountIds %s" % billingAccountIds)
+    print_("  Found unique billingAccountIds %s" % jsonData.get("billingAccountIds"))
 
 def ingest_data_to_costagg(jsonData):
     ds = "%s.%s" % (PROJECTID, jsonData["datasetName"])

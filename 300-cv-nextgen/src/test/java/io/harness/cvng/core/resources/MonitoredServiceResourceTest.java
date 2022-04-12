@@ -10,13 +10,16 @@ package io.harness.cvng.core.resources;
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
+import static io.harness.rule.OwnerRule.KAPIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
+import io.harness.cvng.CVNGTestConstants;
 import io.harness.cvng.beans.CVMonitoringCategory;
+import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
@@ -24,6 +27,12 @@ import io.harness.cvng.core.beans.monitoredService.MetricDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.PrometheusHealthSourceSpec;
+import io.harness.cvng.core.beans.params.MonitoredServiceParams;
+import io.harness.cvng.core.entities.CVConfig;
+import io.harness.cvng.core.services.api.CVConfigService;
+import io.harness.cvng.core.services.api.CVNGLogService;
+import io.harness.cvng.core.services.api.MetricPackService;
+import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
@@ -32,9 +41,12 @@ import io.harness.rule.ResourceTestRule;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.GenericType;
@@ -53,6 +65,11 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
   @Inject private MonitoredServiceService monitoredServiceService;
   private BuilderFactory builderFactory;
   private static MonitoredServiceResource monitoredServiceResource = new MonitoredServiceResource();
+  @Inject MetricPackService metricPackService;
+  @Inject CVNGLogService cvngLogService;
+  @Inject private VerificationTaskService verificationTaskService;
+  @Inject private CVConfigService cvConfigService;
+  private MonitoredServiceDTO monitoredServiceDTO;
 
   @ClassRule
   public static final ResourceTestRule RESOURCES =
@@ -61,6 +78,10 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
   public void setup() {
     injector.injectMembers(monitoredServiceResource);
     builderFactory = BuilderFactory.getDefault();
+    metricPackService.createDefaultMetricPackAndThresholds(builderFactory.getContext().getAccountId(),
+        builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier());
+    monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder().build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
   }
 
   @Test
@@ -287,6 +308,92 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
     Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).get();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.readEntity(String.class)).contains("\"totalItems\":3");
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testGetMonitoredServiceLogs() {
+    Instant startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().minusSeconds(5);
+    Instant endTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant();
+    MonitoredServiceParams monitoredServiceParams =
+        MonitoredServiceParams.builderWithProjectParams(builderFactory.getContext().getProjectParams())
+            .monitoredServiceIdentifier(monitoredServiceDTO.getIdentifier())
+            .build();
+    List<String> cvConfigIds =
+        cvConfigService.list(monitoredServiceParams).stream().map(CVConfig::getUuid).collect(Collectors.toList());
+    List<String> verificationTaskIds = verificationTaskService.getServiceGuardVerificationTaskIds(
+        builderFactory.getContext().getAccountId(), cvConfigIds);
+
+    List<CVNGLogDTO> cvngLogDTOs =
+        IntStream.range(0, 3)
+            .mapToObj(index -> builderFactory.executionLogDTOBuilder().traceableId(verificationTaskIds.get(0)).build())
+            .collect(Collectors.toList());
+    cvngLogService.save(cvngLogDTOs);
+
+    WebTarget webTarget =
+        RESOURCES.client()
+            .target("http://localhost:9998/monitored-service/" + monitoredServiceDTO.getIdentifier() + "/logs")
+            .queryParam("accountId", builderFactory.getContext().getAccountId())
+            .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+            .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+            .queryParam("logType", "ExecutionLog")
+            .queryParam("startTime", startTime.toEpochMilli())
+            .queryParam("endTime", endTime.toEpochMilli())
+            .queryParam("pageNumber", 0)
+            .queryParam("pageSize", 10);
+
+    Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).get();
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(response.readEntity(String.class)).contains("\"totalItems\":1");
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testGetMonitoredServiceLogs_withIncorrectLogType() {
+    Instant startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().minusSeconds(5);
+    Instant endTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant();
+    WebTarget webTarget =
+        RESOURCES.client()
+            .target("http://localhost:9998/monitored-service/" + monitoredServiceDTO.getIdentifier() + "/logs")
+            .queryParam("accountId", builderFactory.getContext().getAccountId())
+            .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+            .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+            .queryParam("logType", "executionlog")
+            .queryParam("startTime", startTime.toEpochMilli())
+            .queryParam("endTime", endTime.toEpochMilli())
+            .queryParam("pageNumber", 0)
+            .queryParam("pageSize", 10);
+
+    Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).get();
+    assertThat(response.getStatus()).isEqualTo(400);
+    assertThat(response.readEntity(String.class)).contains("Failed to convert query param logType to CVNGLogType");
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testGetMonitoredServiceLogs_withNoMonitoredService() {
+    Instant startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().minusSeconds(5);
+    Instant endTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant();
+    WebTarget webTarget = RESOURCES.client()
+                              .target("http://localhost:9998/monitored-service/"
+                                  + "monitoredServiceIdentifier"
+                                  + "/logs")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                              .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                              .queryParam("logType", "ExecutionLog")
+                              .queryParam("startTime", startTime.toEpochMilli())
+                              .queryParam("endTime", endTime.toEpochMilli())
+                              .queryParam("pageNumber", 0)
+                              .queryParam("pageSize", 10);
+
+    Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).get();
+    assertThat(response.getStatus()).isEqualTo(404);
+    assertThat(response.readEntity(String.class))
+        .contains("Monitored Service with identifier monitoredServiceIdentifier not found.");
   }
 
   private static String convertToJson(String yamlString) {

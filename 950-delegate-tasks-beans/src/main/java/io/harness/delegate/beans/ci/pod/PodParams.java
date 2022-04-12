@@ -31,6 +31,12 @@ public abstract class PodParams<T extends ContainerParams> implements NestedAnno
   private List<HostAliasParams> hostAliasParamsList;
   private Integer runAsUser;
   private String serviceAccountName;
+  private Boolean automountServiceAccountToken;
+  private Map<String, String> nodeSelector;
+  private List<PodToleration> tolerations;
+  private List<PodVolume> volumes;
+  private String runtime;
+  private String priorityClassName;
 
   public abstract PodParams.Type getType();
 

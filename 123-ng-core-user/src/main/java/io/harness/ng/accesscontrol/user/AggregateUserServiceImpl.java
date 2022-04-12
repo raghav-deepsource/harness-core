@@ -110,10 +110,11 @@ public class AggregateUserServiceImpl implements AggregateUserService {
   }
 
   @Override
-  public UserAggregateDTO getAggregatedUser(Scope scope, String userId) {
-    Optional<UserMetadataDTO> user = ngUserService.getUserMetadata(userId);
+  public Optional<UserAggregateDTO> getAggregatedUser(Scope scope, String userId) {
+    Optional<UserMetadataDTO> user =
+        ngUserService.isUserAtScope(userId, scope) ? ngUserService.getUserMetadata(userId) : Optional.empty();
     if (!user.isPresent()) {
-      return null;
+      return Optional.empty();
     }
 
     RoleAssignmentFilterDTO roleAssignmentFilterDTO =
@@ -125,7 +126,7 @@ public class AggregateUserServiceImpl implements AggregateUserService {
         scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), roleAssignmentFilterDTO)
                                                           .getOrDefault(userId, Collections.emptyList());
 
-    return UserAggregateDTO.builder().roleAssignmentMetadata(roleAssignments).user(user.get()).build();
+    return Optional.of(UserAggregateDTO.builder().roleAssignmentMetadata(roleAssignments).user(user.get()).build());
   }
 
   private Map<String, List<RoleAssignmentMetadataDTO>> getPrincipalRoleAssignmentMap(String accountIdentifier,

@@ -981,17 +981,23 @@ public class AccountServiceImpl implements AccountService {
                           .project("delegateConfiguration", true)
                           .get();
 
-    if (account.getDelegateConfiguration() == null) {
-      account = wingsPersistence.createQuery(Account.class, excludeAuthorityCount)
-                    .filter(AccountKeys.uuid, GLOBAL_ACCOUNT_ID)
-                    .project("delegateConfiguration", true)
-                    .get();
-      return account.getDelegateConfiguration();
+    if (account.getDelegateConfiguration() != null) {
+      if (account.getDelegateConfiguration().getValidUntil() == null) {
+        log.warn("The delegate configuration for account [{}] doesn't have valid until field.", accountId);
+      }
+
+      if (account.getDelegateConfiguration().getValidUntil() != null
+          && account.getDelegateConfiguration().getValidUntil() < System.currentTimeMillis()) {
+        log.info("We can cleanup old record for delegate configuration for account [{}]", accountId);
+      } else {
+        return account.getDelegateConfiguration();
+      }
     }
-    return DelegateConfiguration.builder()
-        .accountVersion(true)
-        .delegateVersions(account.getDelegateConfiguration().getDelegateVersions())
-        .build();
+    account = wingsPersistence.createQuery(Account.class, excludeAuthorityCount)
+                  .filter(AccountKeys.uuid, GLOBAL_ACCOUNT_ID)
+                  .project("delegateConfiguration", true)
+                  .get();
+    return account.getDelegateConfiguration();
   }
 
   @Override

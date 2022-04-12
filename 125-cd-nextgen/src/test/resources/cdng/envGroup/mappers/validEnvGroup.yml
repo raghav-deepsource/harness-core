@@ -1,0 +1,14 @@
+{
+  "environmentGroup": {
+    "name": "envGroup",
+    "identifier": "envGroup",
+    "orgIdentifier": "validOrgId",
+    "projectIdentifier": "validProId",
+    "description": "This is the group description",
+    "tags": {},
+    "envIdentifiers": [
+        "env1",
+        "env2"
+    ]
+  }
+}

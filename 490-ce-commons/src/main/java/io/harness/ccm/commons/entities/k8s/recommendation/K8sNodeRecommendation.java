@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.beans.recommendation.K8sServiceProvider;
 import io.harness.ccm.commons.beans.recommendation.NodePoolId;
 import io.harness.ccm.commons.beans.recommendation.NodePoolId.NodePoolIdKeys;
+import io.harness.ccm.commons.beans.recommendation.TotalResourceUsage;
 import io.harness.ccm.commons.beans.recommendation.models.RecommendClusterRequest;
 import io.harness.ccm.commons.beans.recommendation.models.RecommendationResponse;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -72,6 +73,8 @@ public final class K8sNodeRecommendation
   K8sServiceProvider currentServiceProvider;
 
   RecommendationResponse recommendation;
+
+  TotalResourceUsage totalResourceUsage;
 
   long createdAt;
   long lastUpdatedAt;

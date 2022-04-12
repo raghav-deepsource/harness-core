@@ -1,0 +1,10 @@
+name: Task health source duration metrics
+identifier: task_health_source_duration_metric
+metricGroup: health_source_configuration
+metrics:
+  - metricName: verification_job_instance_health_source_extra_time
+    metricDefinition: Time taken to finish a health source for the task from the time when it becomes elligible to finish.
+    type: Duration
+    distribution: [ 0m, 15s, 30s, 1m, 2m, 4m, 8m, 16m, 32m]
+    unit: "ms"
+

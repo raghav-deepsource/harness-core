@@ -36,6 +36,10 @@ public class ShellScriptTask extends AbstractDelegateRunnableTask {
 
   @Override
   public CommandExecutionResult run(TaskParameters parameters) {
+    ShellScriptParameters scriptParameters = (ShellScriptParameters) parameters;
+    log.info("Shell script task parameters: accountId - {}, appId - {}, workingDir - {}, activityId - {}",
+        scriptParameters.getAccountId(), scriptParameters.getAppId(), scriptParameters.getWorkingDirectory(),
+        scriptParameters.getActivityId());
     return shellScriptTaskHandler.handle((ShellScriptParameters) parameters);
   }
 

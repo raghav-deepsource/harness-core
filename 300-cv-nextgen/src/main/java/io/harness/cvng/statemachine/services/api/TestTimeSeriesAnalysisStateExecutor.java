@@ -8,6 +8,8 @@
 package io.harness.cvng.statemachine.services.api;
 
 import io.harness.cvng.statemachine.beans.AnalysisInput;
+import io.harness.cvng.statemachine.beans.AnalysisState;
+import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.statemachine.entities.TestTimeSeriesAnalysisState;
 
 import java.util.List;
@@ -21,5 +23,15 @@ public class TestTimeSeriesAnalysisStateExecutor extends TimeSeriesAnalysisState
   @Override
   public void handleFinalStatuses(TestTimeSeriesAnalysisState analysisState) {
     timeSeriesAnalysisService.logDeploymentVerificationProgress(analysisState.getInputs(), analysisState.getStatus());
+  }
+
+  @Override
+  public AnalysisState handleRetry(TestTimeSeriesAnalysisState analysisState) {
+    if (analysisState.getRetryCount() >= getMaxRetry()) {
+      analysisState.setStatus(AnalysisStatus.FAILED);
+    } else {
+      return handleRerun(analysisState);
+    }
+    return analysisState;
   }
 }

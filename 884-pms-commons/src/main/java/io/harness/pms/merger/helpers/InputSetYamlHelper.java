@@ -55,6 +55,25 @@ public class InputSetYamlHelper {
     }
   }
 
+  public String setPipelineComponent(String inputSetYaml, String pipelineComponent) {
+    try {
+      if (EmptyPredicate.isEmpty(inputSetYaml)) {
+        return inputSetYaml;
+      }
+      JsonNode node = YamlUtils.readTree(inputSetYaml).getNode().getCurrJsonNode();
+      ObjectNode innerMap = (ObjectNode) node.get("inputSet");
+      if (innerMap == null) {
+        log.error("Yaml provided is not an input set yaml. Yaml:\n" + inputSetYaml);
+        throw new InvalidRequestException("Yaml provided is not an input set yaml.");
+      }
+      innerMap.set("pipeline", YamlUtils.readTree(pipelineComponent).getNode().getCurrJsonNode().get("pipeline"));
+      return YamlUtils.write(node).replace("---\n", "");
+    } catch (IOException e) {
+      log.error("Input set yaml is invalid. Yaml:\n" + inputSetYaml);
+      throw new InvalidYamlException("Input set yaml is invalid", e);
+    }
+  }
+
   public String getStringField(String yaml, String fieldName, String rootNode) {
     JsonNode node = (new YamlConfig(yaml)).getYamlMap();
     JsonNode innerMap = node.get(rootNode);

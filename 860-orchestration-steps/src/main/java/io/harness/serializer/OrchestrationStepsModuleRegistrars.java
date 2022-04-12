@@ -59,7 +59,6 @@ public class OrchestrationStepsModuleRegistrars {
       ImmutableSet.<Class<? extends KryoRegistrar>>builder()
           .addAll(OrchestrationRegistrars.kryoRegistrars)
           .add(OrchestrationStepsKryoRegistrar.class)
-          .add(PipelineServiceUtilKryoRegistrar.class)
           .add(YamlKryoRegistrar.class)
           .add(NGCoreBeansKryoRegistrar.class)
           .add(DelegateServiceBeansKryoRegistrar.class)
@@ -70,6 +69,7 @@ public class OrchestrationStepsModuleRegistrars {
           .addAll(RbacCoreRegistrars.kryoRegistrars)
           .addAll(NGCoreClientRegistrars.kryoRegistrars)
           .addAll(DelegateTaskRegistrars.kryoRegistrars)
+          .addAll(NGCommonModuleRegistrars.kryoRegistrars)
           .build();
 
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
@@ -81,6 +81,7 @@ public class OrchestrationStepsModuleRegistrars {
           .addAll(RbacCoreRegistrars.morphiaRegistrars)
           .addAll(NGCoreClientRegistrars.morphiaRegistrars)
           .addAll(DelegateTaskRegistrars.morphiaRegistrars)
+          .addAll(NGCommonModuleRegistrars.morphiaRegistrars)
           .build();
 
   public static final ImmutableSet<Class<? extends TypeConverter>> morphiaConverters =
@@ -91,6 +92,7 @@ public class OrchestrationStepsModuleRegistrars {
   public static final ImmutableList<Class<? extends Converter<?, ?>>> springConverters =
       ImmutableList.<Class<? extends Converter<?, ?>>>builder()
           .addAll(OrchestrationRegistrars.springConverters)
+          .addAll(NGCommonModuleRegistrars.springConverters)
           .build();
 
   public static final ImmutableList<YamlSchemaRootClass> yamlSchemaRegistrars =

@@ -1,0 +1,5 @@
+name: Health Source Configuration
+identifier: health_source_configuration
+labels:
+  - accountId
+  - dataSource

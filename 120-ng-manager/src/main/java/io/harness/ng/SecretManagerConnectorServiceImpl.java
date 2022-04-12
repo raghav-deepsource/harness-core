@@ -267,8 +267,8 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   }
 
   @Override
-  public ConnectorCatalogueResponseDTO getConnectorCatalogue() {
-    return defaultConnectorService.getConnectorCatalogue();
+  public ConnectorCatalogueResponseDTO getConnectorCatalogue(String accountIdentifier) {
+    return defaultConnectorService.getConnectorCatalogue(accountIdentifier);
   }
 
   @Override

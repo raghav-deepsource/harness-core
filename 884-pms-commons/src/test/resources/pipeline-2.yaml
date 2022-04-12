@@ -8,9 +8,7 @@ pipeline:
         type: Deployment
         spec:
           serviceConfig:
-            service:
-              identifier: manager
-              name: manager
+            serviceRef: thisOne
             serviceDefinition:
               type: Kubernetes
               spec:
@@ -28,9 +26,7 @@ pipeline:
                             paths:
                               - a.yaml
           infrastructure:
-            environment:
-              identifier: stagingInfra
-              type: PreProduction
+            environmentRef: thisOne
             infrastructureDefinition:
               type: KubernetesDirect
               spec:

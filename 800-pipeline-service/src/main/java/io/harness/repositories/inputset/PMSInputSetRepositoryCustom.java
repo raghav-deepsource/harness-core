@@ -46,4 +46,7 @@ public interface PMSInputSetRepositoryCustom {
   InputSetEntity delete(InputSetEntity entityToDelete, InputSetYamlDTO yamlDTO);
 
   UpdateResult deleteAllInputSetsWhenPipelineDeleted(Query query, Update update);
+
+  boolean existsByAccountIdAndOrgIdentifierAndProjectIdentifierAndPipelineIdentifierAndDeletedNot(
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, boolean notDeleted);
 }

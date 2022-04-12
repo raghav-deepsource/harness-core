@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
-public abstract class BaseCreatorService<R extends CreatorResponse, M> {
+public abstract class BaseCreatorService<R extends CreatorResponse, M, N> {
   public Map<String, YamlField> getInitialDependencies(Map<String, YamlFieldBlob> dependencyBlobs) {
     Map<String, YamlField> initialDependencies = new HashMap<>();
 
@@ -47,7 +47,7 @@ public abstract class BaseCreatorService<R extends CreatorResponse, M> {
     return initialDependencies;
   }
 
-  public R processNodesRecursively(Dependencies initialDependencies, M metadata, R finalResponse) {
+  public R processNodesRecursively(Dependencies initialDependencies, M metadata, R finalResponse, N request) {
     if (isEmpty(initialDependencies.getDependenciesMap())) {
       return finalResponse;
     }
@@ -56,7 +56,7 @@ public abstract class BaseCreatorService<R extends CreatorResponse, M> {
                                             .setYaml(initialDependencies.getYaml())
                                             .putAllDependencies(initialDependencies.getDependenciesMap());
     while (!dependencies.getDependenciesMap().isEmpty()) {
-      processNodes(dependencies, finalResponse, metadata);
+      processNodes(dependencies, finalResponse, metadata, request);
       for (Map.Entry<String, String> entry : initialDependencies.getDependenciesMap().entrySet()) {
         dependencies.removeDependencies(entry.getKey());
       }
@@ -71,7 +71,7 @@ public abstract class BaseCreatorService<R extends CreatorResponse, M> {
     return finalResponse;
   }
 
-  private void processNodes(Dependencies.Builder dependencies, R finalResponse, M metadata) {
+  private void processNodes(Dependencies.Builder dependencies, R finalResponse, M metadata, N request) {
     List<String> yamlPathList = new ArrayList<>(dependencies.getDependenciesMap().values());
     String currentYaml = dependencies.getYaml();
     dependencies.clearDependencies();
@@ -91,7 +91,7 @@ public abstract class BaseCreatorService<R extends CreatorResponse, M> {
       } catch (IOException e) {
         log.error("Invalid yaml field", e);
       }
-      R response = processNodeInternal(metadata, yamlField);
+      R response = processNodeInternal(metadata, yamlField, request);
 
       if (response == null) {
         // do not add template yaml fields as dependency.
@@ -100,7 +100,7 @@ public abstract class BaseCreatorService<R extends CreatorResponse, M> {
         }
         continue;
       }
-      mergeResponses(finalResponse, response);
+      mergeResponses(finalResponse, response, dependencies);
       finalResponse.addResolvedDependency(currentYaml, yamlField.getNode().getUuid(), yamlPath);
       if (isNotEmpty(response.getDependencies().getDependenciesMap())) {
         for (Map.Entry<String, String> entry : response.getDependencies().getDependenciesMap().entrySet()) {
@@ -110,7 +110,7 @@ public abstract class BaseCreatorService<R extends CreatorResponse, M> {
     }
   }
 
-  public abstract R processNodeInternal(M metadata, YamlField yamlField);
+  public abstract R processNodeInternal(M metadata, YamlField yamlField, N request);
 
-  public abstract void mergeResponses(R finalResponse, R response);
+  public abstract void mergeResponses(R finalResponse, R response, Dependencies.Builder dependencies);
 }

@@ -29,19 +29,30 @@ echo "STEP 2: Setting Git Username and Password"
 git config --global user.name "${BOT_USER}"
 git config --global user.email "${BOT_EMAIL}"
 
-echo "STEP 3: Checking out Master to local repo."
-git fetch origin refs/heads/master; git checkout master && git branch
+git fetch --unshallow
 
-echo "STEP 4: Checking if Master branch is ahead of Develop branch"
-MASTER_TO_DEVELOP=$($GIT_COMMAND develop..master)
-echo "INFO: Diff: $MASTER_TO_DEVELOP"
-if [ ! -z "$MASTER_TO_DEVELOP" ]; then
-    echo "ERROR: Line $LINENO: Master branch is ahead of Develop branches. Exiting..."
+#BT-988: Merge Pre-QA validated changes to merge to master
+if [ -z "${MANUAL_TRIGGER}" ] ; then
+  pre_qa_content=$(wget https://stress.harness.io/api/version -q -O -)
+  gitCommit=$(echo "$pre_qa_content" | jq -r '.resource.versionInfo.gitCommit')
+  git branch temp_branch $gitCommit
+else
+  git checkout -b temp_branch develop
+fi
+
+echo "STEP 3: Checking out Master to local repo."
+git checkout master && git branch
+
+echo "STEP 4: Checking if Master branch is ahead of temp branch"
+MASTER_TO_TEMP_BRANCH=$($GIT_COMMAND temp_branch..master)
+echo "INFO: Diff: $MASTER_TO_TEMP_BRANCH"
+if [ ! -z "$MASTER_TO_TEMP_BRANCH" ]; then
+    echo "ERROR: Line $LINENO: Master branch is ahead of temp. Exiting..."
     exit 1
 fi
 
-echo "STEP 4: Rebasing develop branch to Master branch"
-git rebase develop #If we fire command in STEP 3
+echo "STEP 4: Rebasing temp_branch branch to Master branch"
+git rebase temp_branch #If we fire command in STEP 3
 print_err "$?" "Rebasing"
 
 # git rebase develop master #Does git checkout master and git rebase develop
@@ -49,16 +60,16 @@ print_err "$?" "Rebasing"
 
 #NOTE: Both commands in STEP 5 should give empty results to make sure that both have same commits.
 echo "STEP 5: Matching the commits in master and develop"
-MASTER_TO_DEVELOP=$($GIT_COMMAND develop..master)
-DEVELOP_TO_MASTER=$($GIT_COMMAND master..develop)
+MASTER_TO_TEMP=$($GIT_COMMAND temp_branch..master)
+TEMP_TO_MASTER=$($GIT_COMMAND master..temp_branch)
 
-if [ ! -z "$MASTER_TO_DEVELOP" ] && [ ! -z "$MASTER_TO_DEVELOP" ]; then
+if [ ! -z "$MASTER_TO_TEMP" ] && [ ! -z "$TEMP_TO_MASTER" ]; then
     echo "ERROR: Line $LINENO: Master and Develop branches are not identical after rebasing. Exiting..."
     exit 1
 fi
 
 echo "STEP 6: Pushing to target branch: master"
-if [ -z "$MASTER_TO_DEVELOP" ] && [ -z "$MASTER_TO_DEVELOP" ]; then
+if [ -z "$MASTER_TO_TEMP" ] && [ -z "$TEMP_TO_MASTER" ]; then
     git push origin master
     print_err "$?" "Push to Master"
 fi

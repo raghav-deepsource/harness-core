@@ -29,4 +29,6 @@ public interface FullSyncJobService {
       String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
   Optional<GitFullSyncJob> getRunningJob(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+
+  void deleteAll(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 }

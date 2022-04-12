@@ -616,6 +616,7 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
         Artifact.class, anArtifact().withAppId(app.getUuid()).withDisplayName(ARTIFACT_NAME).build());
     ExecutionArgs executionArgs = new ExecutionArgs();
     executionArgs.setArtifacts(asList(artifact));
+    executionArgs.setWorkflowType(WorkflowType.PIPELINE);
 
     WorkflowExecutionUpdateFake callback = new WorkflowExecutionUpdateFake();
     WorkflowExecution execution =
@@ -2486,8 +2487,10 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
   @Owner(developers = GARVIT)
   @Category(UnitTests.class)
   public void testTriggerPipelineResumeExecution() {
+    ExecutionArgs executionArgs = new ExecutionArgs();
+    executionArgs.setWorkflowType(WorkflowType.PIPELINE);
     WorkflowExecution workflowExecution =
-        WorkflowExecution.builder().accountId(account.getUuid()).executionArgs(new ExecutionArgs()).build();
+        WorkflowExecution.builder().accountId(account.getUuid()).executionArgs(executionArgs).build();
     Pipeline pipeline =
         Pipeline.builder()
             .uuid(PIPELINE_ID)
@@ -2516,8 +2519,10 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
   @Owner(developers = VIKAS_S)
   @Category(UnitTests.class)
   public void testTriggerPipelineResumeExecutionWithStageName() {
+    ExecutionArgs executionArgs = new ExecutionArgs();
+    executionArgs.setWorkflowType(WorkflowType.PIPELINE);
     WorkflowExecution workflowExecution =
-        WorkflowExecution.builder().accountId(account.getUuid()).executionArgs(new ExecutionArgs()).build();
+        WorkflowExecution.builder().accountId(account.getUuid()).executionArgs(executionArgs).build();
     String stageName = "stageName";
     int parallelIndex = 1;
     Pipeline pipeline =

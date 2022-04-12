@@ -175,17 +175,7 @@ public class ExecutionController {
     return null;
   }
 
-  public void populateExecutionArgs(Map<String, String> variableValues, List<Artifact> artifacts,
-      QLStartExecutionInput triggerExecutionInput, MutationContext mutationContext, ExecutionArgs executionArgs,
-      List<HelmChart> helmCharts) {
-    executionArgs.setArtifacts(artifacts);
-    executionArgs.setExecutionCredential(aSSHExecutionCredential().withExecutionType(SSH).build());
-    executionArgs.setExcludeHostsWithSameArtifact(triggerExecutionInput.isExcludeHostsWithSameArtifact());
-    executionArgs.setNotes(triggerExecutionInput.getNotes());
-    executionArgs.setTargetToSpecificHosts(triggerExecutionInput.isTargetToSpecificHosts());
-    executionArgs.setHosts(triggerExecutionInput.getSpecificHosts());
-    executionArgs.setWorkflowVariables(variableValues);
-    executionArgs.setHelmCharts(helmCharts);
+  public void setCreatedByTypeInExecutionArgs(MutationContext mutationContext, ExecutionArgs executionArgs) {
     if (mutationContext.getDataFetchingEnvironment() != null
         && mutationContext.getDataFetchingEnvironment().getContext() != null) {
       GraphQLContext graphQLContext = mutationContext.getDataFetchingEnvironment().getContext();
@@ -197,6 +187,20 @@ public class ExecutionController {
         executionArgs.setTriggeringApiKeyId(graphQLContext.get("triggeredById"));
       }
     }
+  }
+
+  public void populateExecutionArgs(Map<String, String> variableValues, List<Artifact> artifacts,
+      QLStartExecutionInput triggerExecutionInput, MutationContext mutationContext, ExecutionArgs executionArgs,
+      List<HelmChart> helmCharts) {
+    executionArgs.setArtifacts(artifacts);
+    executionArgs.setExecutionCredential(aSSHExecutionCredential().withExecutionType(SSH).build());
+    executionArgs.setExcludeHostsWithSameArtifact(triggerExecutionInput.isExcludeHostsWithSameArtifact());
+    executionArgs.setNotes(triggerExecutionInput.getNotes());
+    executionArgs.setTargetToSpecificHosts(triggerExecutionInput.isTargetToSpecificHosts());
+    executionArgs.setHosts(triggerExecutionInput.getSpecificHosts());
+    executionArgs.setWorkflowVariables(variableValues);
+    executionArgs.setHelmCharts(helmCharts);
+    setCreatedByTypeInExecutionArgs(mutationContext, executionArgs);
   }
 
   private Artifact getArtifactFromId(QLArtifactIdInput artifactId, Service service) {

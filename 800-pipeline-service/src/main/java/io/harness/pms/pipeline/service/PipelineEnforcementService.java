@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.yaml.YamlField;
 
 import java.util.Map;
@@ -33,4 +34,6 @@ public interface PipelineEnforcementService {
   void validatePipelineExecutionRestriction(String accountId, Set<StepType> stepTypes);
 
   void validateExecutionEnforcementsBasedOnStage(String accountId, YamlField pipelineField);
+
+  void validateExecutionEnforcementsBasedOnStage(PipelineEntity pipelineEntity);
 }

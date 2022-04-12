@@ -77,6 +77,8 @@ public interface SettingsService extends OwnedByAccount, OwnedBySettingAttribute
 
   SettingAttribute get(String varId);
 
+  SettingAttribute getWithRbac(String id);
+
   SettingAttribute getByAccount(String accountId, String varId);
 
   SettingAttribute getByAccountAndId(String accountId, String settingId);

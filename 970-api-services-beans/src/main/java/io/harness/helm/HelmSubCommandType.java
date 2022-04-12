@@ -9,6 +9,7 @@ package io.harness.helm;
 
 import static io.harness.k8s.model.HelmVersion.V2;
 import static io.harness.k8s.model.HelmVersion.V3;
+import static io.harness.k8s.model.HelmVersion.V380;
 
 import io.harness.k8s.model.HelmVersion;
 
@@ -18,19 +19,19 @@ import lombok.Getter;
 
 @Getter
 public enum HelmSubCommandType {
-  INSTALL(ImmutableSet.of(HelmCliCommandType.INSTALL.name()), ImmutableSet.of(V2, V3)),
-  UPGRADE(ImmutableSet.of(HelmCliCommandType.UPGRADE.name()), ImmutableSet.of(V2, V3)),
-  ROLLBACK(ImmutableSet.of(HelmCliCommandType.ROLLBACK.name()), ImmutableSet.of(V2, V3)),
-  HISTORY(ImmutableSet.of(HelmCliCommandType.RELEASE_HISTORY.name()), ImmutableSet.of(V2, V3)),
+  INSTALL(ImmutableSet.of(HelmCliCommandType.INSTALL.name()), ImmutableSet.of(V2, V3, V380)),
+  UPGRADE(ImmutableSet.of(HelmCliCommandType.UPGRADE.name()), ImmutableSet.of(V2, V3, V380)),
+  ROLLBACK(ImmutableSet.of(HelmCliCommandType.ROLLBACK.name()), ImmutableSet.of(V2, V3, V380)),
+  HISTORY(ImmutableSet.of(HelmCliCommandType.RELEASE_HISTORY.name()), ImmutableSet.of(V2, V3, V380)),
   DELETE(ImmutableSet.of(HelmCliCommandType.DELETE_RELEASE.name()), ImmutableSet.of(V2)),
-  UNINSTALL(ImmutableSet.of(HelmCliCommandType.DELETE_RELEASE.name()), ImmutableSet.of(V3)),
-  LIST(ImmutableSet.of(HelmCliCommandType.LIST_RELEASE.name()), ImmutableSet.of(V2, V3)),
-  VERSION(ImmutableSet.of(HelmCliCommandType.VERSION.name()), ImmutableSet.of(V2, V3)),
-  PULL(ImmutableSet.of(HelmCliCommandType.FETCH.name()), ImmutableSet.of(V3)),
+  UNINSTALL(ImmutableSet.of(HelmCliCommandType.DELETE_RELEASE.name()), ImmutableSet.of(V3, V380)),
+  LIST(ImmutableSet.of(HelmCliCommandType.LIST_RELEASE.name()), ImmutableSet.of(V2, V3, V380)),
+  VERSION(ImmutableSet.of(HelmCliCommandType.VERSION.name()), ImmutableSet.of(V2, V3, V380)),
+  PULL(ImmutableSet.of(HelmCliCommandType.FETCH.name()), ImmutableSet.of(V3, V380)),
   FETCH(ImmutableSet.of(HelmCliCommandType.FETCH.name()), ImmutableSet.of(V2)),
   TEMPLATE(
       ImmutableSet.of(HelmCliCommandType.RENDER_CHART.name(), HelmCliCommandType.RENDER_SPECIFIC_CHART_FILE.name()),
-      ImmutableSet.of(V2, V3));
+      ImmutableSet.of(V2, V3, V380));
 
   private final Set<String> commandTypes;
   private final Set<HelmVersion> helmVersions;

@@ -9,6 +9,7 @@ package io.harness.cvng.core.services.api;
 
 import static io.harness.cvng.core.services.impl.DatadogServiceImpl.MAX_METRIC_TAGS_COUNT;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.PAVIC;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -17,39 +18,41 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.harness.CategoryTest;
+import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.beans.DataCollectionRequest;
 import io.harness.cvng.beans.DataCollectionRequestType;
-import io.harness.cvng.beans.MetricPackDTO;
 import io.harness.cvng.core.beans.OnboardingRequestDTO;
 import io.harness.cvng.core.beans.OnboardingResponseDTO;
 import io.harness.cvng.core.beans.TimeSeriesSampleDTO;
 import io.harness.cvng.core.beans.datadog.DatadogDashboardDTO;
 import io.harness.cvng.core.beans.datadog.DatadogDashboardDetail;
+import io.harness.cvng.core.beans.datadog.MetricTagResponseDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
-import io.harness.cvng.core.services.impl.DatadogServiceImpl;
 import io.harness.delegate.beans.connector.datadog.DatadogConnectorDTO;
 import io.harness.ng.beans.PageResponse;
 import io.harness.rule.Owner;
 
+import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
-public class DatadogServiceImplTest extends CategoryTest {
+public class DatadogServiceImplTest extends CvNextGenTestBase {
   private static final int PAGE_SIZE = 5;
   private static final String FILTER = "Datadog";
   private static final String MOCKED_DASHBOARD_ID = "mocked_dashboard_id";
@@ -74,20 +77,20 @@ public class DatadogServiceImplTest extends CategoryTest {
       Arrays.asList("activeMetric1", "activeMetric2", "activeMetric3");
 
   @Mock private OnboardingService mockedOnboardingService;
-  @InjectMocks private DatadogService classUnderTest = new DatadogServiceImpl();
+  @Inject private DatadogService classUnderTest;
   private ProjectParams mockedProjectParams;
   private String connectorIdentifier;
   @Captor private ArgumentCaptor<OnboardingRequestDTO> requestCaptor;
 
   @Before
-  public void setup() {
+  public void setup() throws IllegalAccessException {
     mockedProjectParams = ProjectParams.builder()
                               .accountIdentifier(generateUuid())
                               .orgIdentifier(generateUuid())
                               .projectIdentifier(generateUuid())
                               .build();
     connectorIdentifier = generateUuid();
-    MockitoAnnotations.initMocks(this);
+    FieldUtils.writeField(classUnderTest, "onboardingService", mockedOnboardingService, true);
   }
 
   @Test
@@ -152,15 +155,65 @@ public class DatadogServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = KAMAL)
+  @Category(UnitTests.class)
+  public void testGetMetricTagsResponse() {
+    List<String> mockMetricTags =
+        IntStream.range(0, 3000).mapToObj(String::valueOf).map(tag -> tag + ":" + tag).collect(Collectors.toList());
+    Set<String> tagKeys = IntStream.range(0, 3000).mapToObj(String::valueOf).collect(Collectors.toSet());
+    when(mockedOnboardingService.getOnboardingResponse(eq(mockedProjectParams.getAccountIdentifier()), any()))
+        .thenReturn(OnboardingResponseDTO.builder().result(mockMetricTags).build());
+
+    MetricTagResponseDTO metricTagResponseDTO = classUnderTest.getMetricTagsResponse(
+        mockedProjectParams, connectorIdentifier, MOCKED_METRIC_NAME, null, generateUuid());
+
+    testMetricsListRequest(DataCollectionRequestType.DATADOG_METRIC_TAGS, metricTagResponseDTO.getMetricTags(),
+        mockMetricTags.stream().limit(MAX_METRIC_TAGS_COUNT).collect(Collectors.toList()));
+    assertThat(metricTagResponseDTO.getTagKeys().size()).isEqualTo(MAX_METRIC_TAGS_COUNT);
+    for (String tagKey : metricTagResponseDTO.getTagKeys()) {
+      assertThat(tagKeys).contains(tagKey);
+    }
+  }
+  @Test
+  @Owner(developers = KAMAL)
+  @Category(UnitTests.class)
+  public void testGetMetricTagsResponse_withFilter() {
+    List<String> mockMetricTags = Arrays.asList("Key1:value1", "key2:value2", "key3:value3");
+    Set<String> tagKeys = new HashSet<>(Arrays.asList("Key1", "key2", "key3"));
+    when(mockedOnboardingService.getOnboardingResponse(eq(mockedProjectParams.getAccountIdentifier()), any()))
+        .thenReturn(OnboardingResponseDTO.builder().result(mockMetricTags).build());
+
+    MetricTagResponseDTO metricTagResponseDTO = classUnderTest.getMetricTagsResponse(
+        mockedProjectParams, connectorIdentifier, MOCKED_METRIC_NAME, "key1", generateUuid());
+    assertThat(metricTagResponseDTO)
+        .isEqualTo(MetricTagResponseDTO.builder().metricTags(Arrays.asList("Key1:value1")).tagKeys(tagKeys).build());
+  }
+
+  @Test
   @Owner(developers = PAVIC)
   @Category(UnitTests.class)
   public void testGetActiveMetrics() {
     when(mockedOnboardingService.getOnboardingResponse(eq(mockedProjectParams.getAccountIdentifier()), any()))
         .thenReturn(OnboardingResponseDTO.builder().result(mockedActiveMetrics).build());
 
-    List<String> metricTags = classUnderTest.getActiveMetrics(mockedProjectParams, connectorIdentifier, generateUuid());
+    List<String> metricTags =
+        classUnderTest.getActiveMetrics(mockedProjectParams, connectorIdentifier, null, generateUuid());
 
     testMetricsListRequest(DataCollectionRequestType.DATADOG_ACTIVE_METRICS, metricTags, mockedActiveMetrics);
+  }
+
+  @Test
+  @Owner(developers = KAMAL)
+  @Category(UnitTests.class)
+  public void testGetActiveMetrics_withFilter() {
+    when(mockedOnboardingService.getOnboardingResponse(eq(mockedProjectParams.getAccountIdentifier()), any()))
+        .thenReturn(OnboardingResponseDTO.builder().result(mockedActiveMetrics).build());
+
+    List<String> metricTags =
+        classUnderTest.getActiveMetrics(mockedProjectParams, connectorIdentifier, "metric1", generateUuid());
+
+    assertThat(metricTags).hasSize(1);
+    assertThat(metricTags).isEqualTo(Collections.singletonList("activeMetric1"));
   }
 
   @Test
@@ -213,10 +266,6 @@ public class DatadogServiceImplTest extends CategoryTest {
     mockedResponse.put("title", name);
     mockedResponse.put("url", path);
     return mockedResponse;
-  }
-
-  private static List<MetricPackDTO> createMockMetricPacks() {
-    return Arrays.asList(MetricPackDTO.builder().build(), MetricPackDTO.builder().build());
   }
 
   private static List<Map<String, Object>> createMockedDashboardDetailsResponse() {

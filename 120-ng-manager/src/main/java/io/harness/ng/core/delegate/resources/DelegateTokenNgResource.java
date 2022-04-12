@@ -18,9 +18,10 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.DelegateGroupListing;
 import io.harness.delegate.beans.DelegateTokenDetails;
 import io.harness.delegate.beans.DelegateTokenStatus;
-import io.harness.ng.core.delegate.client.DelegateTokenNgClient;
+import io.harness.ng.core.delegate.client.DelegateNgManagerCgManagerClient;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.remote.client.RestClientUtils;
@@ -53,7 +54,7 @@ import lombok.extern.slf4j.Slf4j;
 @Consumes({"application/json"})
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
-@Tag(name = "Delegate Token Ng Resource", description = "Contains APIs related to Delegate NG Token management")
+@Tag(name = "Delegate Token Resource", description = "Contains APIs related to Delegate Token management")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request",
     content =
     {
@@ -68,22 +69,21 @@ import lombok.extern.slf4j.Slf4j;
     })
 
 public class DelegateTokenNgResource {
-  private final DelegateTokenNgClient delegateTokenClient;
+  private final DelegateNgManagerCgManagerClient delegateTokenClient;
   private final AccessControlClient accessControlClient;
 
   @Inject
-  public DelegateTokenNgResource(DelegateTokenNgClient delegateTokenClient, AccessControlClient accessControlClient) {
+  public DelegateTokenNgResource(
+      DelegateNgManagerCgManagerClient delegateTokenClient, AccessControlClient accessControlClient) {
     this.delegateTokenClient = delegateTokenClient;
     this.accessControlClient = accessControlClient;
   }
 
-  // TODO: ARPIT implement a separate rbac for token (create/view/revoke)
-
   @POST
   @Timed
   @ExceptionMetered
-  @ApiOperation(value = "Creates Delegate NG Token", nickname = "createDelegateToken")
-  @Operation(operationId = "createDelegateToken", summary = "Creates Delegate NG Token.",
+  @ApiOperation(value = "Creates Delegate Token", nickname = "createDelegateToken")
+  @Operation(operationId = "createDelegateToken", summary = "Creates Delegate Token.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default", description = "A created Token.")
@@ -105,8 +105,8 @@ public class DelegateTokenNgResource {
   @PUT
   @Timed
   @ExceptionMetered
-  @ApiOperation(value = "Revokes Delegate NG Token", nickname = "revokeDelegateToken")
-  @Operation(operationId = "revokeDelegateToken", summary = "Revokes Delegate Ng Token.",
+  @ApiOperation(value = "Revokes Delegate Token", nickname = "revokeDelegateToken")
+  @Operation(operationId = "revokeDelegateToken", summary = "Revokes Delegate Token.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -129,9 +129,9 @@ public class DelegateTokenNgResource {
   @GET
   @Timed
   @ExceptionMetered
-  @ApiOperation(value = "Get Delegate NG Tokens", nickname = "getDelegateTokens")
+  @ApiOperation(value = "Get Delegate Tokens", nickname = "getDelegateTokens")
   @Operation(operationId = "getDelegateTokens",
-      summary = "Retrieves Delegate Ng Tokens by Account, Organization, Project, status and name.",
+      summary = "Retrieves Delegate Tokens by Account, Organization, Project and status.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -151,5 +151,31 @@ public class DelegateTokenNgResource {
         Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_VIEW_PERMISSION);
     return new RestResponse<>(RestClientUtils.getResponse(
         delegateTokenClient.getTokens(accountIdentifier, orgIdentifier, projectIdentifier, status)));
+  }
+
+  @GET
+  @Path("/delegate-groups")
+  @Timed
+  @ExceptionMetered
+  @ApiOperation(value = "Get Delegate Groups", nickname = "getDelegateGroupsUsingToken")
+  @Operation(operationId = "getDelegateGroupsUsingToken",
+      summary = "Lists delegate groups that are using the specified delegate token.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "A list of delegate groups that are usign the specified token.")
+      })
+  public RestResponse<DelegateGroupListing>
+  list(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+           NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Parameter(description = "Delegate Token name") @QueryParam("delegateTokenName") String delegateTokenName) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_VIEW_PERMISSION);
+    return new RestResponse<>(RestClientUtils.getResponse(delegateTokenClient.getDelegateGroupsUsingToken(
+        accountIdentifier, orgIdentifier, projectIdentifier, delegateTokenName)));
   }
 }

@@ -21,6 +21,7 @@ import static io.harness.beans.ExecutionStatus.PAUSED;
 import static io.harness.beans.ExecutionStatus.PAUSING;
 import static io.harness.beans.ExecutionStatus.PREPARING;
 import static io.harness.beans.ExecutionStatus.QUEUED;
+import static io.harness.beans.ExecutionStatus.REJECTED;
 import static io.harness.beans.ExecutionStatus.RUNNING;
 import static io.harness.beans.ExecutionStatus.STARTING;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
@@ -29,6 +30,7 @@ import static io.harness.beans.ExecutionStatus.activeStatuses;
 import static io.harness.beans.ExecutionStatus.isActiveStatus;
 import static io.harness.beans.FeatureName.HELM_CHART_AS_ARTIFACT;
 import static io.harness.beans.FeatureName.NEW_DEPLOYMENT_FREEZE;
+import static io.harness.beans.FeatureName.PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION;
 import static io.harness.beans.FeatureName.RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION;
 import static io.harness.beans.FeatureName.WEBHOOK_TRIGGER_AUTHORIZATION;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
@@ -256,6 +258,7 @@ import software.wings.exception.InvalidBaselineConfigurationException;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.infra.AwsAmiInfrastructure;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.security.ExecutableElementsFilter;
 import software.wings.security.UserThreadLocal;
 import software.wings.service.ArtifactStreamHelper;
 import software.wings.service.impl.WorkflowTree.WorkflowTreeBuilder;
@@ -1257,6 +1260,15 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     return workflowExecution;
   }
 
+  @Override
+  public String getPipelineExecutionId(String appId, String workflowExecutionId) {
+    return wingsPersistence.createQuery(WorkflowExecution.class)
+        .filter("_id", workflowExecutionId)
+        .project(WorkflowExecutionKeys.pipelineExecutionId, true)
+        .get()
+        .getPipelineExecutionId();
+  }
+
   private void populateNodeHierarchy(
       WorkflowExecution workflowExecution, boolean includeGraph, boolean includeStatus, boolean upToDate) {
     if (includeGraph) {
@@ -1390,6 +1402,10 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     boolean shouldAuthorizeExecution = trigger == null && user != null;
     if (shouldAuthorizeExecution) {
       deploymentAuthHandler.authorizePipelineExecution(appId, pipelineId);
+      if (featureFlagService.isEnabled(PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION, accountId)) {
+        deploymentAuthHandler.authorizeExecutableDeployableInEnv(
+            new HashSet<>(pipeline.getEnvIds()), appId, pipelineId, ExecutableElementsFilter.FilterType.PIPELINE);
+      }
       if (isNotEmpty(pipeline.getEnvIds())) {
         pipeline.getEnvIds().forEach(s -> authService.checkIfUserAllowedToDeployPipelineToEnv(appId, s));
       }
@@ -1607,6 +1623,11 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     boolean isDirectExecution = trigger == null && user != null && isEmpty(pipelineExecutionId);
     if (isDirectExecution) {
       deploymentAuthHandler.authorizeWorkflowExecution(appId, workflowId);
+      //      if (featureFlagService.isEnabled(PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION, accountId)) {
+      // enable when it is ready
+      //        deploymentAuthHandler.authorizeExecutableDeployableInEnv(
+      //            Collections.singleton(envId), appId, workflowId, ExecutableElementsFilter.FilterType.WORKFLOW);
+      //      }
       authService.checkIfUserAllowedToDeployWorkflowToEnv(appId, envId);
     }
 
@@ -1841,9 +1862,6 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
   }
 
   private void sendEvent(Application app, ExecutionArgs executionArgs, WorkflowExecution execution) {
-    if (!featureFlagService.isEnabled(FeatureName.APP_TELEMETRY, app.getAccountId())) {
-      return;
-    }
     if (PIPELINE.equals(executionArgs.getWorkflowType())) {
       PipelineSummary summary = execution.getPipelineSummary();
       if (summary != null) {
@@ -4639,7 +4657,8 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
             instanceStatusSummaries.addAll(kubernetesSteadyStateCheckExecutionData.getNewInstanceStatusSummaries());
           }
         } else if (nextStateType == StateType.K8S_DEPLOYMENT_ROLLING || nextStateType == StateType.K8S_CANARY_DEPLOY
-            || nextStateType == StateType.K8S_BLUE_GREEN_DEPLOY || nextStateType == StateType.K8S_SCALE) {
+            || nextStateType == StateType.K8S_BLUE_GREEN_DEPLOY || nextStateType == StateType.K8S_SCALE
+            || nextStateType == StateType.K8S_DEPLOYMENT_ROLLING_ROLLBACK) {
           StateExecutionData stateExecutionData = next.fetchStateExecutionData();
           if (stateExecutionData instanceof K8sStateExecutionData) {
             K8sStateExecutionData k8sStateExecutionData = (K8sStateExecutionData) stateExecutionData;
@@ -5971,7 +5990,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
         pipelineExecution.getPipelineStageExecutions()
             .stream()
             .flatMap(pipelineStageExecution -> pipelineStageExecution.getWorkflowExecutions().stream())
-            .filter(execution -> execution.getStatus() == FAILED)
+            .filter(execution -> execution.getStatus() == FAILED || execution.getStatus() == REJECTED)
             .forEach(execution
                 -> execution.setFailureDetails(fetchFailureDetails(execution.getAppId(), execution.getUuid())));
       }

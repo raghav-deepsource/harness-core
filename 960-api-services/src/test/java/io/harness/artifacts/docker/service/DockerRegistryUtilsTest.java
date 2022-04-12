@@ -83,7 +83,7 @@ public class DockerRegistryUtilsTest extends CategoryTest {
         .thenReturn(Response.success(getDockerImageManifestResponse(
             "{\"architecture\":\"amd64\",\"config\":{\"Labels\":{\"maintainer\":\"NGINX Docker Maintainers <docker-maint@nginx.com>\",\"please\":\"work\"}}}")))
         .thenReturn(Response.success(getDockerImageManifestResponse(
-            "{\"architecture\":\"amd64\",\"container_config\":{\"Labels\":{\"appname\":\"python-hello\",\"author\":\"deepakputhraya\"}},\"config\":{\"Labels\":{\"appname\":\"hello-world\",\"author\":\"deepakputhraya\",\"version\":\"4.0\"}}}")))
+            "{\"architecture\":\"amd64\",\"container_config\":{\"Labels\":{\"app.name\":\"python-hello\",\"author\":\"deepakputhraya\"}},\"config\":{\"Labels\":{\"app.name\":\"hello-world\",\"author\":\"deepakputhraya\",\"version\":\"4.0\"}}}")))
         .thenReturn(Response.success(getDockerImageManifestResponse(
             "{\"architecture\":\"amd64\",\"container_config\":{\"Labels\":{\"maintainer\":\"docker-maint@nginx.com\",\"please\":\"work\"}}}")));
     when(dockerRegistryRestClient.getImageManifest(any(), any(), any())).thenReturn(requestCall);
@@ -103,7 +103,7 @@ public class DockerRegistryUtilsTest extends CategoryTest {
     assertThat(labelsMap.get(1)).hasSize(3);
     assertThat(labelsMap.get(1))
         .isEqualTo(ImmutableMap.<String, String>builder()
-                       .put("appname", "python-hello")
+                       .put("app.name", "python-hello")
                        .put("author", "deepakputhraya")
                        .put("version", "4.0")
                        .build());

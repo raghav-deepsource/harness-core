@@ -10,7 +10,9 @@ package io.harness.delegate.configuration;
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.event.client.impl.EventPublisherConstants;
 
+import java.util.Optional;
 import lombok.Builder;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
@@ -66,5 +68,9 @@ public class DelegateConfiguration {
       return accountSecret;
     }
     return delegateToken;
+  }
+
+  public String getQueueFilePath() {
+    return Optional.ofNullable(queueFilePath).orElse(EventPublisherConstants.DEFAULT_QUEUE_FILE_PATH);
   }
 }

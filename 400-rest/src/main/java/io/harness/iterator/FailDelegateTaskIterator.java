@@ -51,10 +51,11 @@ import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateTaskService;
-import io.harness.workers.background.AccountLevelEntityProcessController;
 
 import software.wings.beans.Account;
 import software.wings.beans.Account.AccountKeys;
+import software.wings.beans.AccountStatus;
+import software.wings.beans.LicenseInfo.LicenseInfoKeys;
 import software.wings.beans.TaskType;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.service.intfc.AccountService;
@@ -116,7 +117,10 @@ public class FailDelegateTaskIterator implements MongoPersistenceIterator.Handle
             .targetInterval(Duration.ofSeconds(DELEGATE_TASK_FAIL_TIMEOUT))
             .acceptableNoAlertDelay(Duration.ofSeconds(45))
             .acceptableExecutionTime(Duration.ofSeconds(30))
-            .entityProcessController(new AccountLevelEntityProcessController(accountService))
+            .filterExpander(query
+                -> query.or(query.criteria(AccountKeys.licenseInfo).doesNotExist(),
+                    query.criteria(AccountKeys.licenseInfo + "." + LicenseInfoKeys.accountStatus)
+                        .equal(AccountStatus.ACTIVE)))
             .handler(this)
             .schedulingType(MongoPersistenceIterator.SchedulingType.REGULAR)
             .persistenceProvider(persistenceProvider)

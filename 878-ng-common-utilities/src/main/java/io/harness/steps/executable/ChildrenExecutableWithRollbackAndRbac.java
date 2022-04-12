@@ -9,11 +9,11 @@ package io.harness.steps.executable;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.plancreator.steps.common.rollback.RollbackUtility;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
-import io.harness.rollback.RollbackUtility;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;

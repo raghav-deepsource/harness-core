@@ -46,7 +46,7 @@ public class CIPmsPipelineYamlTest extends CiBeansTestBase {
     assertThat(ngPipelineActual).isNotNull();
 
     NGProperties properties = ngPipelineActual.getPipelineInfoConfig().getProperties();
-    CIProperties ciProperties = YamlPipelineUtils.read(properties.getCi().toString(), CIProperties.class);
+    CIProperties ciProperties = properties.getCi();
     log.info(ciProperties.toString());
 
     List<StageElementWrapperConfig> stages = ngPipelineActual.getPipelineInfoConfig().getStages();

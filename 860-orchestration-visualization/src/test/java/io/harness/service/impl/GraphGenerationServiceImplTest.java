@@ -24,9 +24,12 @@ import io.harness.category.element.UnitTests;
 import io.harness.dto.OrchestrationGraphDTO;
 import io.harness.engine.events.OrchestrationEventEmitter;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
+import io.harness.execution.PlanExecutionMetadata;
+import io.harness.plan.NodeType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ExecutionMode;
@@ -43,8 +46,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -61,9 +66,13 @@ public class GraphGenerationServiceImplTest extends OrchestrationVisualizationTe
   @Inject private GraphVertexConverter graphVertexConverter;
   @InjectMocks @Inject private GraphGenerationService graphGenerationService;
   @Mock private OrchestrationEventEmitter eventEmitter;
+  @Mock private PlanExecutionMetadataService planExecutionMetadataService;
 
+  @Before
   public void setup() {
     Mockito.doNothing().when(eventEmitter).emitEvent(any());
+    Mockito.when(planExecutionMetadataService.findByPlanExecutionId(any()))
+        .thenReturn(Optional.of(PlanExecutionMetadata.builder().build()));
   }
 
   @Test
@@ -75,10 +84,12 @@ public class GraphGenerationServiceImplTest extends OrchestrationVisualizationTe
         NodeExecution.builder()
             .uuid(generateUuid())
             .status(Status.SUCCEEDED)
-            .ambiance(Ambiance.newBuilder()
-                          .setPlanExecutionId(planExecution.getUuid())
-                          .addAllLevels(Collections.singletonList(Level.newBuilder().setSetupId("node1_plan").build()))
-                          .build())
+            .ambiance(
+                Ambiance.newBuilder()
+                    .setPlanExecutionId(planExecution.getUuid())
+                    .addAllLevels(Collections.singletonList(
+                        Level.newBuilder().setSetupId("node1_plan").setNodeType(NodeType.PLAN_NODE.name()).build()))
+                    .build())
             .mode(ExecutionMode.SYNC)
             .nodeId("node1_plan")
             .name("name")

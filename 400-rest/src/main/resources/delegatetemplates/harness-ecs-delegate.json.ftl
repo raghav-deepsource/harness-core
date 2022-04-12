@@ -67,21 +67,19 @@
           "value": "${watcherStorageUrl}"
         },
         {
-          "name": "REMOTE_WATCHER_URL_CDN",
-          "value": "${remoteWatcherUrlCdn}"
-        },
-        {
           "name": "CF_PLUGIN_HOME",
           "value": ""
         },
-        {
-          "name": "USE_CDN",
-          "value": "${useCdn}"
-        },
+        <#if useCdn == "true">
         {
           "name": "CDN_URL",
           "value": "${cdnUrl}"
         },
+        {
+          "name": "REMOTE_WATCHER_URL_CDN",
+          "value": "${remoteWatcherUrlCdn}"
+        },
+        </#if>
         {
           "name": "JRE_VERSION",
           "value": "${jreVersion}"

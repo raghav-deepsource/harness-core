@@ -1,0 +1,4 @@
+name: DelegateTaskType
+identifier: delegate_task_type
+labels:
+  - taskType

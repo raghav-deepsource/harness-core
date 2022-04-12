@@ -36,6 +36,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.invites.remote.InviteAcceptResponse;
 import io.harness.mongo.MongoConfig;
@@ -320,6 +321,19 @@ public class InviteServiceImpl implements InviteService {
         completeInvite(inviteOpt);
         return resourceUrl;
       }
+    }
+  }
+
+  @Override
+  public String getInviteLinkFromInviteId(String accountIdentifier, String inviteId) {
+    Invite invite = getInvite(inviteId, false).<InvalidRequestException>orElseThrow(() -> {
+      throw new InvalidRequestException("Invalid or Expired Invite Id");
+    });
+    try {
+      return isNgAuthUIEnabled ? getAcceptInviteUrl(invite) : getInvitationMailEmbedUrl(invite);
+    } catch (URISyntaxException | UnsupportedEncodingException e) {
+      log.error("URL format incorrect. Cannot create invite link. InviteId: " + invite.getId(), e);
+      throw new UnexpectedException("Could not create invite link. Unexpectedly failed due to malformed URL.");
     }
   }
 

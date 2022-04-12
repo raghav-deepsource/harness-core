@@ -46,6 +46,8 @@ import io.harness.cdng.creator.variables.K8sStepVariableCreator;
 import io.harness.cdng.provision.terraform.variablecreator.TerraformStepsVariableCreator;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
+import io.harness.plancreator.steps.StepGroupPMSPlanCreator;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
@@ -100,6 +102,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new ManifestsPlanCreator());
     planCreators.add(new IndividualManifestPlanCreator());
     planCreators.add(new CDStepsPlanCreator());
+    planCreators.add(new StepGroupPMSPlanCreator());
+    planCreators.add(new ParallelPlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }

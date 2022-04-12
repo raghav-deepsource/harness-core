@@ -36,6 +36,7 @@ import io.harness.engine.pms.tasks.NgDelegate2TaskExecutor;
 import io.harness.exception.ServiceNowException;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
@@ -55,7 +56,6 @@ import io.harness.waiter.WaitNotifyEngine;
 import software.wings.beans.TaskType;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -157,10 +157,11 @@ public class ServiceNowApprovalHelperServiceImplTest extends CategoryTest {
   }
 
   private ServiceNowApprovalInstance getServiceNowApprovalInstance(Ambiance ambiance) {
+    TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("sel1");
     ServiceNowApprovalInstance instance =
         ServiceNowApprovalInstance.builder()
             .ticketNumber("ticketNumber")
-            .delegateSelectors(ParameterField.<List<String>>builder().build())
+            .delegateSelectors(ParameterField.createValueField(Collections.singletonList(taskSelectorYaml)))
             .connectorRef("connectorRed")
             .approvalCriteria(
                 CriteriaSpecWrapperDTO.builder().criteriaSpecDTO(KeyValuesCriteriaSpecDTO.builder().build()).build())

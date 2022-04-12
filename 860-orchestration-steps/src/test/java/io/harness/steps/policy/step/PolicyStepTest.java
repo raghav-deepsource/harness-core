@@ -22,12 +22,12 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.network.SafeHttpCall;
 import io.harness.opaclient.OpaServiceClient;
 import io.harness.opaclient.model.OpaEvaluationResponseHolder;
+import io.harness.opaclient.model.OpaPolicySetEvaluationResponse;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.steps.policy.PolicyStepSpecParameters;
@@ -35,6 +35,7 @@ import io.harness.steps.policy.custom.CustomPolicyStepSpec;
 import io.harness.steps.policy.step.outcome.PolicyStepOutcome;
 import io.harness.steps.policy.step.outcome.PolicyStepOutcomeMapper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -134,7 +135,7 @@ public class PolicyStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExecuteSyncWithApplicationFailure() throws IOException {
     String payload = "{\"this\" : \"that\"}";
-    YamlField payloadObj = YamlUtils.readTree(payload);
+    JsonNode payloadObj = YamlUtils.readTree(payload).getNode().getCurrJsonNode();
     PolicyStepSpecParameters policyStepSpecParameters =
         PolicyStepSpecParameters.builder()
             .policySets(ParameterField.createValueField(projLevelPolicySet))
@@ -158,7 +159,7 @@ public class PolicyStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExecuteSyncWithPolicyNotFoundError() throws IOException {
     String payload = "{\"this\" : \"that\"}";
-    YamlField payloadObj = YamlUtils.readTree(payload);
+    JsonNode payloadObj = YamlUtils.readTree(payload).getNode().getCurrJsonNode();
     PolicyStepSpecParameters policyStepSpecParameters =
         PolicyStepSpecParameters.builder()
             .policySets(ParameterField.createValueField(projLevelPolicySet))
@@ -186,7 +187,7 @@ public class PolicyStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExecuteSyncWithEvaluationFailure() throws IOException {
     String payload = "{\"this\" : \"that\"}";
-    YamlField payloadObj = YamlUtils.readTree(payload);
+    JsonNode payloadObj = YamlUtils.readTree(payload).getNode().getCurrJsonNode();
     PolicyStepSpecParameters policyStepSpecParameters =
         PolicyStepSpecParameters.builder()
             .policySets(ParameterField.createValueField(projLevelPolicySet))
@@ -199,14 +200,19 @@ public class PolicyStepTest extends CategoryTest {
     when(opaServiceClient.evaluateWithCredentialsByID(accountId, orgId, projectId, urlPolicySets, payloadObj))
         .thenReturn(request);
 
-    OpaEvaluationResponseHolder evaluationResponse = OpaEvaluationResponseHolder.builder().status("error").build();
+    OpaEvaluationResponseHolder evaluationResponse =
+        OpaEvaluationResponseHolder.builder()
+            .status("error")
+            .details(Collections.singletonList(
+                OpaPolicySetEvaluationResponse.builder().status("error").name("myName").build()))
+            .build();
     when(SafeHttpCall.executeWithErrorMessage(request)).thenReturn(evaluationResponse);
     when(PolicyStepOutcomeMapper.toOutcome(evaluationResponse))
         .thenReturn(PolicyStepOutcome.builder().status("error").build());
     StepResponse stepResponse = policyStep.executeSync(ambiance, stepParameters, null, null);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
     assertThat(stepResponse.getFailureInfo().getFailureData(0).getMessage())
-        .isEqualTo("Some Policies were not adhered to.");
+        .isEqualTo("The following Policy Set was not adhered to: myName");
   }
 
   @Test
@@ -214,7 +220,7 @@ public class PolicyStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExecuteSyncWithEvaluationSuccess() throws IOException {
     String payload = "{\"this\" : \"that\"}";
-    YamlField payloadObj = YamlUtils.readTree(payload);
+    JsonNode payloadObj = YamlUtils.readTree(payload).getNode().getCurrJsonNode();
     PolicyStepSpecParameters policyStepSpecParameters =
         PolicyStepSpecParameters.builder()
             .policySets(ParameterField.createValueField(projLevelPolicySet))

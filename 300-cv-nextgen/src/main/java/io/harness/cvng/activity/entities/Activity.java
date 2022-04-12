@@ -13,7 +13,7 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotation.StoreIn;
 import io.harness.cvng.activity.beans.ActivityVerificationSummary;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity.KubernetesClusterActivityKeys;
-import io.harness.cvng.activity.entities.KubernetesClusterActivity.ServiceEnvironment.ServiceEnvironmentKeys;
+import io.harness.cvng.activity.entities.KubernetesClusterActivity.RelatedAppMonitoredService.ServiceEnvironmentKeys;
 import io.harness.cvng.beans.activity.ActivityDTO;
 import io.harness.cvng.beans.activity.ActivityDTO.VerificationJobRuntimeDetails;
 import io.harness.cvng.beans.activity.ActivityType;
@@ -94,15 +94,7 @@ public abstract class Activity
                 .field(ActivityKeys.projectIdentifier)
                 .field(ActivityKeys.activityStartTime)
                 .build(),
-            CompoundMongoIndex.builder()
-                .name("change_event_app_service_query_index")
-                .field(ActivityKeys.accountId)
-                .field(ActivityKeys.orgIdentifier)
-                .field(ActivityKeys.projectIdentifier)
-                .field(ActivityKeys.serviceIdentifier)
-                .field(ActivityKeys.environmentIdentifier)
-                .field(ActivityKeys.eventTime)
-                .build(),
+
             CompoundMongoIndex.builder()
                 .name("change_event_app_service_query_indexv2")
                 .field(ActivityKeys.accountId)
@@ -111,16 +103,7 @@ public abstract class Activity
                 .field(ActivityKeys.monitoredServiceIdentifier)
                 .field(ActivityKeys.eventTime)
                 .build(),
-            CompoundMongoIndex.builder()
-                .name("change_event_event_time_sort_query_index")
-                .field(ActivityKeys.accountId)
-                .field(ActivityKeys.orgIdentifier)
-                .field(ActivityKeys.projectIdentifier)
-                .field(ActivityKeys.eventTime)
-                .field(ActivityKeys.environmentIdentifier)
-                .field(ActivityKeys.serviceIdentifier)
-                .field(ActivityKeys.type)
-                .build(),
+
             CompoundMongoIndex.builder()
                 .name("change_event_event_time_sort_query_indexv2")
                 .field(ActivityKeys.accountId)
@@ -128,18 +111,6 @@ public abstract class Activity
                 .field(ActivityKeys.projectIdentifier)
                 .field(ActivityKeys.eventTime)
                 .field(ActivityKeys.monitoredServiceIdentifier)
-                .field(ActivityKeys.type)
-                .build(),
-            CompoundMongoIndex.builder()
-                .name("change_event_event_time_sort_query_infra_service_index")
-                .field(ActivityKeys.accountId)
-                .field(ActivityKeys.orgIdentifier)
-                .field(ActivityKeys.projectIdentifier)
-                .field(ActivityKeys.eventTime)
-                .field(KubernetesClusterActivityKeys.relatedAppServices + "."
-                    + ServiceEnvironmentKeys.environmentIdentifier)
-                .field(
-                    KubernetesClusterActivityKeys.relatedAppServices + "." + ServiceEnvironmentKeys.serviceIdentifier)
                 .field(ActivityKeys.type)
                 .build(),
             CompoundMongoIndex.builder()
@@ -169,18 +140,6 @@ public abstract class Activity
                 .rangeField(ActivityKeys.eventTime)
                 .build(),
             CompoundMongoIndex.builder()
-                .name("change_event_infra_service_query_index")
-                .field(ActivityKeys.accountId)
-                .field(ActivityKeys.orgIdentifier)
-                .field(ActivityKeys.projectIdentifier)
-                .field(
-                    KubernetesClusterActivityKeys.relatedAppServices + "." + ServiceEnvironmentKeys.serviceIdentifier)
-                .field(KubernetesClusterActivityKeys.relatedAppServices + "."
-                    + ServiceEnvironmentKeys.environmentIdentifier)
-                .field(ActivityKeys.eventTime)
-                .sparse(true)
-                .build(),
-            CompoundMongoIndex.builder()
                 .name("change_event_infra_service_query_indexv2")
                 .field(ActivityKeys.accountId)
                 .field(ActivityKeys.orgIdentifier)
@@ -199,8 +158,6 @@ public abstract class Activity
 
   @NotNull private ActivityType type;
   @NotNull private String accountId;
-  @Deprecated private String serviceIdentifier;
-  @NotNull @Deprecated private String environmentIdentifier;
   String monitoredServiceIdentifier;
   @NotNull private String projectIdentifier;
   @NotNull private String orgIdentifier;
@@ -243,8 +200,6 @@ public abstract class Activity
     setAccountId(activityDTO.getAccountIdentifier());
     setProjectIdentifier(activityDTO.getProjectIdentifier());
     setOrgIdentifier(activityDTO.getOrgIdentifier());
-    setServiceIdentifier(activityDTO.getServiceIdentifier());
-    setEnvironmentIdentifier(activityDTO.getEnvironmentIdentifier());
     setActivityName(activityDTO.getName());
     setVerificationJobRuntimeDetails(activityDTO.getVerificationJobRuntimeDetails() == null
             ? null
@@ -301,8 +256,7 @@ public abstract class Activity
       return query.filter(ActivityKeys.accountId, activity.getAccountId())
           .filter(ActivityKeys.orgIdentifier, activity.getOrgIdentifier())
           .filter(ActivityKeys.projectIdentifier, activity.getProjectIdentifier())
-          .filter(ActivityKeys.serviceIdentifier, activity.getServiceIdentifier())
-          .filter(ActivityKeys.environmentIdentifier, activity.getEnvironmentIdentifier());
+          .filter(ActivityKeys.monitoredServiceIdentifier, activity.getMonitoredServiceIdentifier());
     }
 
     protected StringJoiner getKeyBuilder(Activity activity) {
@@ -310,8 +264,7 @@ public abstract class Activity
           .add(activity.getAccountId())
           .add(activity.getOrgIdentifier())
           .add(activity.getProjectIdentifier())
-          .add(activity.getServiceIdentifier())
-          .add(activity.getEnvironmentIdentifier())
+          .add(activity.getMonitoredServiceIdentifier())
           .add(activity.getType().name());
     }
 
@@ -319,10 +272,9 @@ public abstract class Activity
       updateOperations.set(ActivityKeys.accountId, activity.getAccountId())
           .set(ActivityKeys.orgIdentifier, activity.getOrgIdentifier())
           .set(ActivityKeys.projectIdentifier, activity.getProjectIdentifier())
-          .set(ActivityKeys.serviceIdentifier, activity.getServiceIdentifier())
-          .set(ActivityKeys.environmentIdentifier, activity.getEnvironmentIdentifier())
           .set(ActivityKeys.activityStartTime, activity.getActivityStartTime())
           .set(ActivityKeys.type, activity.getType());
+
       if (activity.getEventTime() != null) {
         updateOperations.set(ActivityKeys.eventTime, activity.getEventTime());
       }

@@ -71,11 +71,11 @@ public abstract class LogClusterStateExecutor<T extends LogClusterState> extends
               == statusTaskMap.get(LearningEngineTask.ExecutionStatus.SUCCESS).size()) {
         log.info("All worker tasks have succeeded.");
         return AnalysisStatus.TRANSITION;
+      } else if (statusTaskMap.containsKey(LearningEngineTask.ExecutionStatus.RUNNING)
+          || statusTaskMap.containsKey(LearningEngineTask.ExecutionStatus.QUEUED)) {
+        return AnalysisStatus.RUNNING;
       } else {
-        if (statusTaskMap.containsKey(LearningEngineTask.ExecutionStatus.RUNNING)
-            || statusTaskMap.containsKey(LearningEngineTask.ExecutionStatus.QUEUED)) {
-          return AnalysisStatus.RUNNING;
-        }
+        return AnalysisStatus.RETRY;
       }
     }
     return AnalysisStatus.TRANSITION;
@@ -83,8 +83,11 @@ public abstract class LogClusterStateExecutor<T extends LogClusterState> extends
 
   @Override
   public AnalysisState handleRerun(T analysisState) {
-    // TODO: To be implemented
-    return null;
+    analysisState.setRetryCount(analysisState.getRetryCount() + 1);
+    log.info("In log clustering for Inputs {}, cleaning up worker task. Old taskIDs: {}", analysisState.getInputs(),
+        analysisState.getWorkerTaskIds());
+    analysisState.setWorkerTaskIds(new HashSet<>());
+    return execute(analysisState);
   }
 
   @Override
@@ -96,11 +99,5 @@ public abstract class LogClusterStateExecutor<T extends LogClusterState> extends
   public AnalysisState handleSuccess(T analysisState) {
     analysisState.setStatus(AnalysisStatus.SUCCESS);
     return analysisState;
-  }
-
-  @Override
-  public AnalysisState handleRetry(T analysisState) {
-    // TODO: To be implemented
-    return null;
   }
 }

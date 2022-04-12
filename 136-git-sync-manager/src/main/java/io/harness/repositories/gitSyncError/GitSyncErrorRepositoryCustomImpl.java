@@ -73,4 +73,9 @@ public class GitSyncErrorRepositoryCustomImpl implements GitSyncErrorRepositoryC
   public UpdateResult upsert(Criteria criteria, Update update) {
     return mongoTemplate.upsert(query(criteria), update, GitSyncError.class);
   }
+
+  @Override
+  public List<GitSyncError> deleteAll(Criteria criteria) {
+    return mongoTemplate.findAllAndRemove(query(criteria), GitSyncError.class);
+  }
 }

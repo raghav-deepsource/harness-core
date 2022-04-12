@@ -7,9 +7,6 @@
 
 package io.harness.batch.processing.writer;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.utils.RestCallToNGManagerClientUtils.execute;
-
 import static software.wings.beans.SettingAttribute.SettingCategory.CE_CONNECTOR;
 import static software.wings.settings.SettingVariableTypes.CE_AZURE;
 
@@ -18,20 +15,17 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.batch.processing.BatchProcessingException;
 import io.harness.batch.processing.ccm.AzureStorageSyncRecord;
 import io.harness.batch.processing.ccm.CCMJobConstants;
+import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.ng.NGConnectorHelper;
 import io.harness.batch.processing.service.impl.AzureStorageSyncServiceImpl;
-import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.delegate.beans.connector.CEFeatures;
-import io.harness.delegate.beans.connector.CcmConnectorFilter;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ceazure.BillingExportSpecDTO;
 import io.harness.delegate.beans.connector.ceazure.CEAzureConnectorDTO;
 import io.harness.ff.FeatureFlagService;
-import io.harness.filter.FilterType;
-import io.harness.ng.beans.PageResponse;
 
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.ce.CEAzureConfig;
@@ -39,6 +33,7 @@ import software.wings.beans.ce.CEAzureConfig;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.JobParameters;
@@ -54,6 +49,7 @@ public class AzureStorageSyncEventWriter extends EventWriter implements ItemWrit
   @Autowired private AzureStorageSyncServiceImpl azureStorageSyncService;
   @Autowired private ConnectorResourceClient connectorResourceClient;
   @Autowired private FeatureFlagService featureFlagService;
+  @Autowired private NGConnectorHelper ngConnectorHelper;
   private JobParameters parameters;
 
   @BeforeStep
@@ -110,24 +106,8 @@ public class AzureStorageSyncEventWriter extends EventWriter implements ItemWrit
   }
 
   public boolean syncNextGenContainers(String accountId) {
-    List<ConnectorResponseDTO> nextGenConnectors = new ArrayList<>();
-    PageResponse<ConnectorResponseDTO> response = null;
-    ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
-        ConnectorFilterPropertiesDTO.builder()
-            .types(Arrays.asList(ConnectorType.CE_AZURE))
-            .ccmConnectorFilter(CcmConnectorFilter.builder().featuresEnabled(Arrays.asList(CEFeatures.BILLING)).build())
-            .build();
-    connectorFilterPropertiesDTO.setFilterType(FilterType.CONNECTOR);
-    int page = 0;
-    int size = 100;
-    do {
-      response = execute(connectorResourceClient.listConnectors(
-          accountId, null, null, page, size, connectorFilterPropertiesDTO, false));
-      if (response != null && isNotEmpty(response.getContent())) {
-        nextGenConnectors.addAll(response.getContent());
-      }
-      page++;
-    } while (response != null && isNotEmpty(response.getContent()));
+    List<ConnectorResponseDTO> nextGenConnectors = ngConnectorHelper.getNextGenConnectors(
+        accountId, Arrays.asList(ConnectorType.CE_AZURE), Arrays.asList(CEFeatures.BILLING), Collections.emptyList());
     log.info("Processing batch size of {} in AzureStorageSyncEventWriter (From NG)", nextGenConnectors.size());
     return syncAzureContainers(nextGenConnectors, accountId);
   }
@@ -135,22 +115,26 @@ public class AzureStorageSyncEventWriter extends EventWriter implements ItemWrit
   public boolean syncAzureContainers(List<ConnectorResponseDTO> connectorResponses, String accountId) {
     boolean areAllSyncSuccessful = true;
     for (ConnectorResponseDTO connector : connectorResponses) {
-      CEAzureConnectorDTO ceAzureConnectorDTO = (CEAzureConnectorDTO) connector.getConnector().getConnectorConfig();
-      if (ceAzureConnectorDTO != null && ceAzureConnectorDTO.getBillingExportSpec() != null) {
-        AzureStorageSyncRecord azureStorageSyncRecord =
-            AzureStorageSyncRecord.builder()
-                .accountId(accountId)
-                .settingId(connector.getConnector().getIdentifier())
-                .containerName(ceAzureConnectorDTO.getBillingExportSpec().getContainerName())
-                .directoryName(ceAzureConnectorDTO.getBillingExportSpec().getDirectoryName())
-                .subscriptionId(ceAzureConnectorDTO.getSubscriptionId())
-                .storageAccountName(ceAzureConnectorDTO.getBillingExportSpec().getStorageAccountName())
-                .tenantId(ceAzureConnectorDTO.getTenantId())
-                .reportName(ceAzureConnectorDTO.getBillingExportSpec().getReportName())
-                .build();
-        log.info("azureStorageSyncRecord {}", azureStorageSyncRecord);
-        boolean isSuccessfulSync = azureStorageSyncService.syncContainer(azureStorageSyncRecord);
-        areAllSyncSuccessful = areAllSyncSuccessful && isSuccessfulSync;
+      try {
+        CEAzureConnectorDTO ceAzureConnectorDTO = (CEAzureConnectorDTO) connector.getConnector().getConnectorConfig();
+        if (ceAzureConnectorDTO != null && ceAzureConnectorDTO.getBillingExportSpec() != null) {
+          AzureStorageSyncRecord azureStorageSyncRecord =
+              AzureStorageSyncRecord.builder()
+                  .accountId(accountId)
+                  .settingId(connector.getConnector().getIdentifier())
+                  .containerName(ceAzureConnectorDTO.getBillingExportSpec().getContainerName())
+                  .directoryName(ceAzureConnectorDTO.getBillingExportSpec().getDirectoryName())
+                  .subscriptionId(ceAzureConnectorDTO.getSubscriptionId())
+                  .storageAccountName(ceAzureConnectorDTO.getBillingExportSpec().getStorageAccountName())
+                  .tenantId(ceAzureConnectorDTO.getTenantId())
+                  .reportName(ceAzureConnectorDTO.getBillingExportSpec().getReportName())
+                  .build();
+          log.info("azureStorageSyncRecord {}", azureStorageSyncRecord);
+          boolean isSuccessfulSync = azureStorageSyncService.syncContainer(azureStorageSyncRecord);
+          areAllSyncSuccessful = areAllSyncSuccessful && isSuccessfulSync;
+        }
+      } catch (Exception ex) {
+        log.error("Exception syncing azure report", ex);
       }
     }
     return areAllSyncSuccessful;

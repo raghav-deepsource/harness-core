@@ -72,6 +72,7 @@ public class PMSPipelineServiceHelper {
     FilterCreatorMergeServiceResponse filtersAndStageCount = filterCreatorMergeService.getPipelineInfo(pipelineEntity);
     PipelineEntity newEntity = pipelineEntity.withStageCount(filtersAndStageCount.getStageCount())
                                    .withStageNames(filtersAndStageCount.getStageNames());
+    newEntity.getFilters().clear();
     if (isNotEmpty(filtersAndStageCount.getFilters())) {
       filtersAndStageCount.getFilters().forEach((key, value) -> newEntity.getFilters().put(key, Document.parse(value)));
     }

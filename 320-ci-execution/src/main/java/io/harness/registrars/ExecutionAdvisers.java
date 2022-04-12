@@ -21,9 +21,6 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.CI)
 public class ExecutionAdvisers {
   public Map<AdviserType, Class<? extends Adviser>> getEngineAdvisers() {
-    Map<AdviserType, Class<? extends Adviser>> advisersMap =
-        new HashMap<>(OrchestrationAdviserRegistrar.getEngineAdvisers());
-    advisersMap.putAll(PipelineServiceUtilAdviserRegistrar.getEngineAdvisers());
-    return advisersMap;
+    return new HashMap<>(PipelineServiceUtilAdviserRegistrar.getEngineAdvisers());
   }
 }

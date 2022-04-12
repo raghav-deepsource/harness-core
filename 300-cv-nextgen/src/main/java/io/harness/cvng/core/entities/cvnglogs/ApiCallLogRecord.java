@@ -43,6 +43,8 @@ public class ApiCallLogRecord extends CVNGLogRecord {
   private List<ApiCallLogField> responses;
   private Instant requestTime;
   private Instant responseTime;
+  private static final int ERROR_RESPONSE_CODE = 400;
+  private static final String RESPONSE_NAME = "Status Code";
 
   public void addFieldToRequest(ApiCallLogField field) {
     Preconditions.checkNotNull(field, "Api call log request field is null.");
@@ -118,6 +120,16 @@ public class ApiCallLogRecord extends CVNGLogRecord {
     getRequests().forEach(logRecord -> apiCallLogDTO.addFieldToRequest(toApiCallLogDTOField(logRecord)));
     getResponses().forEach(logRecord -> apiCallLogDTO.addFieldToResponse(toApiCallLogDTOField(logRecord)));
     return apiCallLogDTO;
+  }
+
+  @Override
+  public boolean isErrorLog() {
+    for (ApiCallLogField response : responses) {
+      if (response.getName().equals(RESPONSE_NAME)) {
+        return Integer.parseInt(response.getValue()) >= ERROR_RESPONSE_CODE;
+      }
+    }
+    return false;
   }
 
   private ApiCallLogDTOField toApiCallLogDTOField(ApiCallLogField apiCallLogField) {

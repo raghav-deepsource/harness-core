@@ -70,7 +70,8 @@ public class JiraCreateStep extends TaskExecutableWithRollbackAndRbac<JiraTaskNG
             .action(JiraActionNG.CREATE_ISSUE)
             .projectKey(specParameters.getProjectKey().getValue())
             .issueType(specParameters.getIssueType().getValue())
-            .delegateSelectors(StepUtils.getDelegateSelectorList(specParameters.getDelegateSelectors()))
+            .delegateSelectors(
+                StepUtils.getDelegateSelectorListFromTaskSelectorYaml(specParameters.getDelegateSelectors()))
             .fields(JiraStepUtils.processJiraFieldsInParameters(specParameters.getFields()));
     return jiraStepHelperService.prepareTaskRequest(paramsBuilder, ambiance,
         specParameters.getConnectorRef().getValue(), stepParameters.getTimeout().getValue(), "Jira Task: Create Issue");

@@ -22,6 +22,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
+import io.harness.beans.SecretManagerConfig;
 import io.harness.data.encoding.EncodingUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.SecretDetail;
@@ -141,8 +142,11 @@ public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManage
     }
 
     EncryptedDataDetail encryptedDataDetail = nonLocalEncryptedDetails.get(0);
-    String encryptionConfigUuid = encryptedDataDetail.getEncryptionConfig().getUuid();
-    encryptionConfigs.put(encryptionConfigUuid, encryptedDataDetail.getEncryptionConfig());
+    String encryptionConfigUuid = generateUuid();
+    SecretManagerConfig encryptionConfig = (SecretManagerConfig) encryptedDataDetail.getEncryptionConfig();
+    encryptionConfig.setUuid(encryptionConfigUuid);
+
+    encryptionConfigs.put(encryptionConfigUuid, encryptionConfig);
 
     SecretDetail secretDetail = SecretDetail.builder()
                                     .configUuid(encryptionConfigUuid)

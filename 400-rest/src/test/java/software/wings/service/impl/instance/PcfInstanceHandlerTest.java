@@ -12,10 +12,12 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ADWAIT;
+import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.ANKIT;
 import static io.harness.rule.OwnerRule.IVAN;
 
 import static software.wings.api.PhaseStepExecutionData.PhaseStepExecutionDataBuilder.aPhaseStepExecutionData;
+import static software.wings.service.impl.instance.InstanceSyncFlow.ITERATOR;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.ACCOUNT_ID;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.APP_ID;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.APP_NAME;
@@ -44,11 +46,13 @@ import static java.util.Arrays.asList;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anySet;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -63,6 +67,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
 import io.harness.delegate.task.pcf.response.CfInstanceSyncResponse;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.pcf.PcfAppNotFoundException;
@@ -597,6 +602,39 @@ public class PcfInstanceHandlerTest extends WingsBaseTest {
     status = pcfInstanceHandler.getStatus(infrastructureMapping, cfCommandExecutionResponse);
     assertFalse(status.isSuccess());
     assertFalse(status.isRetryable());
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testGetApplicationInfoFailure() throws PcfAppNotFoundException {
+    String accountId = "kmpySmUISimoRrJL6NL73w";
+    String appId = "7PicE_WxSs6s1W04zxzEEQ";
+    String appName = "TestApp";
+
+    Instance instance1 = Instance.builder()
+                             .accountId(accountId)
+                             .appId(appId)
+                             .appName(appName)
+                             .instanceInfo(PcfInstanceInfo.builder().pcfApplicationName(appName).build())
+                             .build();
+    Instance instance2 = Instance.builder()
+                             .accountId(accountId)
+                             .appId(appId)
+                             .appName(appName)
+                             .instanceInfo(PcfInstanceInfo.builder().pcfApplicationName(appName).build())
+                             .build();
+    List<Instance> instances = asList(instance1, instance2);
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+
+    doThrow(new PcfAppNotFoundException("App not found"))
+        .when(pcfHelperService)
+        .getApplicationDetails(
+            anyString(), anyString(), anyString(), any(PcfConfig.class), any(CfCommandExecutionResponse.class));
+
+    assertThatThrownBy(() -> pcfInstanceHandler.syncInstances("appId", "infraMappingId", ITERATOR))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Failed to instance sync for PCF Application Name: TestApp");
   }
 
   @Test

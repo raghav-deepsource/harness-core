@@ -8,11 +8,14 @@
 package software.wings.scheduler;
 
 import static io.harness.rule.OwnerRule.ADWAIT;
+import static io.harness.rule.OwnerRule.ARPIT;
 
+import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.ManagerConfiguration.Builder.aManagerConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -29,6 +32,7 @@ import software.wings.WingsBaseTest;
 import software.wings.app.MainConfiguration;
 import software.wings.beans.DelegateConnection;
 import software.wings.beans.alert.AlertType;
+import software.wings.beans.alert.DelegatesDownAlert;
 import software.wings.helpers.ext.mail.SmtpConfig;
 import software.wings.service.intfc.AlertService;
 import software.wings.service.intfc.DelegateService;
@@ -36,6 +40,8 @@ import software.wings.utils.EmailHelperUtils;
 
 import com.google.inject.Inject;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
@@ -123,5 +129,58 @@ public class AlertCheckJobTest extends WingsBaseTest {
     verify(alertService).openAlert(any(), any(), captor.capture(), any());
     AlertType alertType = captor.getValue();
     assertThat(alertType).isEqualTo(AlertType.INVALID_SMTP_CONFIGURATION);
+  }
+
+  @Test
+  @Owner(developers = ARPIT)
+  @Category(UnitTests.class)
+  public void shouldOpenAlertWhenEveryDelegateInGroupIsDown() {
+    String delegateGroupName = "delegateGroupName";
+
+    long lastHeartbeatDisconnected = System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(10);
+
+    Delegate delegate1 = Delegate.builder()
+                             .accountId(ACCOUNT_ID)
+                             .hostName("host1")
+                             .delegateGroupName(delegateGroupName)
+                             .lastHeartBeat(lastHeartbeatDisconnected)
+                             .build();
+    persistence.save(delegate1);
+
+    Delegate delegate2 = Delegate.builder()
+                             .accountId(ACCOUNT_ID)
+                             .hostName("host2")
+                             .delegateGroupName(delegateGroupName)
+                             .lastHeartBeat(lastHeartbeatDisconnected)
+                             .build();
+    persistence.save(delegate2);
+
+    List<Delegate> delegates = Arrays.asList(delegate1, delegate2);
+
+    alertCheckJob.processDelegateWhichBelongsToGroup(ACCOUNT_ID, delegates);
+
+    verify(alertService, times(1))
+        .openAlert(eq(ACCOUNT_ID), eq(GLOBAL_APP_ID), eq(AlertType.DelegatesDown),
+            eq(DelegatesDownAlert.builder().accountId(ACCOUNT_ID).delegateGroupName(delegateGroupName).build()));
+  }
+
+  @Test
+  @Owner(developers = ARPIT)
+  @Category(UnitTests.class)
+  public void shouldCloseAlertWhenDelegateWithGroupIsActive() {
+    String delegateGroupName = "delegateGroupName";
+    long lastHeartbeatConnected = System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(2);
+    Delegate delegate = Delegate.builder()
+                            .accountId(ACCOUNT_ID)
+                            .hostName("host1")
+                            .delegateGroupName(delegateGroupName)
+                            .lastHeartBeat(lastHeartbeatConnected)
+                            .build();
+    persistence.save(delegate);
+    List<Delegate> delegates = Collections.singletonList(delegate);
+    alertCheckJob.processDelegateWhichBelongsToGroup(ACCOUNT_ID, delegates);
+    verify(alertService, times(1))
+        .closeAlert(eq(ACCOUNT_ID), eq(GLOBAL_APP_ID), eq(AlertType.DelegatesDown),
+            eq(DelegatesDownAlert.builder().accountId(ACCOUNT_ID).delegateGroupName(delegateGroupName).build()));
   }
 }

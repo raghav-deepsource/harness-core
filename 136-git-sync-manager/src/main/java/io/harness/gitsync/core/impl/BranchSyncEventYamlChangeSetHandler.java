@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.gitsync.common.beans.BranchSyncStatus.SYNCED;
 import static io.harness.gitsync.common.beans.BranchSyncStatus.SYNCING;
 import static io.harness.gitsync.common.beans.BranchSyncStatus.UNSYNCED;
+import static io.harness.gitsync.common.helper.RepoProviderHelper.getRepoProviderType;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -24,6 +25,7 @@ import io.harness.gitsync.common.beans.YamlChangeSetEventType;
 import io.harness.gitsync.common.beans.YamlChangeSetStatus;
 import io.harness.gitsync.common.dtos.GitToHarnessProcessMsvcStepResponse;
 import io.harness.gitsync.common.dtos.GitToHarnessProgressDTO;
+import io.harness.gitsync.common.dtos.RepoProviders;
 import io.harness.gitsync.common.helper.GitConnectivityExceptionHelper;
 import io.harness.gitsync.common.helper.GitToHarnessProgressHelper;
 import io.harness.gitsync.common.service.GitBranchService;
@@ -36,6 +38,7 @@ import io.harness.gitsync.gitsyncerror.service.GitSyncErrorService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Arrays;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -94,7 +97,7 @@ public class BranchSyncEventYamlChangeSetHandler implements YamlChangeSetHandler
       log.info("Starting branch sync for the branch [{}]", branch);
       GitToHarnessProcessMsvcStepResponse gitToHarnessProcessMsvcStepResponse =
           gitBranchSyncService.processBranchSyncEvent(yamlGitConfigDTOList.get(0), yamlChangeSetDTO.getBranch(),
-              yamlChangeSetDTO.getAccountId(), branchSyncMetadata.getFileToBeExcluded(),
+              yamlChangeSetDTO.getAccountId(), getFilesToBeExcluded(branchSyncMetadata),
               yamlChangeSetDTO.getChangesetId(), gitToHarnessProgressRecord.getUuid());
       if (gitToHarnessProcessMsvcStepResponse.getGitToHarnessProgressStatus().isSuccessStatus()) {
         gitBranchService.updateBranchSyncStatus(yamlChangeSetDTO.getAccountId(), repoURL, branch, SYNCED);
@@ -110,7 +113,8 @@ public class BranchSyncEventYamlChangeSetHandler implements YamlChangeSetHandler
       log.error("Error encountered while syncing the branch [{}]", branch, ex);
       String gitConnectivityErrorMessage = GitConnectivityExceptionHelper.getErrorMessage(ex);
       if (isNotEmpty(gitConnectivityErrorMessage)) {
-        recordConnectivityErrors(accountIdentifier, repoURL, gitConnectivityErrorMessage);
+        RepoProviders repoProvider = getRepoProviderType(yamlGitConfigDTOList);
+        recordConnectivityErrors(accountIdentifier, repoURL, gitConnectivityErrorMessage, repoProvider);
       }
       gitBranchService.updateBranchSyncStatus(yamlChangeSetDTO.getAccountId(), repoURL, branch, SYNCED);
       // TODO adding it here for safer side as of now. Ideally should be part of step service to mark it
@@ -123,7 +127,15 @@ public class BranchSyncEventYamlChangeSetHandler implements YamlChangeSetHandler
     }
   }
 
-  private void recordConnectivityErrors(String accountId, String repo, String errorMessage) {
-    gitSyncErrorService.recordConnectivityError(accountId, repo, errorMessage);
+  private List<String> getFilesToBeExcluded(BranchSyncMetadata branchSyncMetadata) {
+    if (isNotEmpty(branchSyncMetadata.getFileToBeExcluded())) {
+      return Arrays.asList(branchSyncMetadata.getFileToBeExcluded());
+    }
+    return branchSyncMetadata.getFilesToBeExcluded();
+  }
+
+  private void recordConnectivityErrors(
+      String accountId, String repo, String errorMessage, RepoProviders repoProvider) {
+    gitSyncErrorService.saveConnectivityError(accountId, repo, errorMessage, repoProvider);
   }
 }

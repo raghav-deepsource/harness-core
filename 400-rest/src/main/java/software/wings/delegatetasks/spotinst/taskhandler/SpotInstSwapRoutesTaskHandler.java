@@ -219,9 +219,9 @@ public class SpotInstSwapRoutesTaskHandler extends SpotInstTaskHandler {
         awsElbHelperServiceDelegate.getAmazonElasticLoadBalancingClientV2(Regions.fromName(region), awsConfig);
 
     awsElbHelperServiceDelegate.modifyListenerRule(
-        client, details.getProdListenerArn(), details.getProdRuleArn(), prodTargetGroup, logCallback);
+        client, details.getProdListenerArn(), details.getProdRuleArn(), stageTargetGroup, logCallback);
     awsElbHelperServiceDelegate.modifyListenerRule(
-        client, details.getStageListenerArn(), details.getStageRuleArn(), stageTargetGroup, logCallback);
+        client, details.getStageListenerArn(), details.getStageRuleArn(), prodTargetGroup, logCallback);
   }
 
   private void restoreDefaultRulesRoutesIfChanged(LoadBalancerDetailsForBGDeployment lbDetail,

@@ -38,6 +38,7 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.api.ContainerServiceData;
 import software.wings.beans.AwsConfig;
+import software.wings.beans.InstanceUnitType;
 import software.wings.beans.command.EcsResizeParams;
 import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.beans.container.AwsAutoScalarConfig;
@@ -347,12 +348,31 @@ public class EcsDeployCommandTaskHelperTest extends WingsBaseTest {
     assertThat(registerTaskDefinitionRequest.getMemory()).isEqualTo(null);
   }
 
+  @Test
   @Owner(developers = ARVIND)
   @Category(UnitTests.class)
   public void testEmptyEcsDeployRollbackDataFetchResponse() {
     EcsDeployRollbackDataFetchResponse response = helper.getEmptyEcsDeployRollbackDataFetchResponse();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     assertThat(response.getOutput()).isEqualTo(StringUtils.EMPTY);
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void testGetDownsizeByAmount() {
+    assertThat(helper.getDownsizeByAmount(ContextData.builder().blueGreen(true).build(), 15, 5, 0)).isEqualTo(0);
+    assertThat(
+        helper.getDownsizeByAmount(ContextData.builder()
+                                       .resizeParams(anEcsResizeParams()
+                                                         .withDownsizeInstanceCount(100)
+                                                         .withFixedInstances(5)
+                                                         .withUseFixedInstances(true)
+                                                         .withDownsizeInstanceUnitType(InstanceUnitType.PERCENTAGE)
+                                                         .build())
+                                       .build(),
+            15, 5, 0))
+        .isEqualTo(10);
   }
 
   @Test

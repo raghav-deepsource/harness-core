@@ -15,6 +15,8 @@ import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.user.remote.dto.UserAggregateDTO;
 
+import java.util.Optional;
+
 @OwnedBy(PL)
 public interface AggregateUserService {
   PageResponse<UserAggregateDTO> getAggregatedUsers(Scope scope, String searchTerm, PageRequest pageRequest);
@@ -22,5 +24,5 @@ public interface AggregateUserService {
   PageResponse<UserAggregateDTO> getAggregatedUsers(
       Scope scope, ACLAggregateFilter aclAggregateFilter, PageRequest pageRequest);
 
-  UserAggregateDTO getAggregatedUser(Scope scope, String userId);
+  Optional<UserAggregateDTO> getAggregatedUser(Scope scope, String userId);
 }

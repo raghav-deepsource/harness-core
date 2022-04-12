@@ -13,5 +13,4 @@ public class ExpansionKeysConstants {
   public static final String SERVICE_REF = "serviceRef";
   public static final String INFRASTRUCTURE = "infrastructure";
   public static final String ENVIRONMENT_REF = "environmentRef";
-  public static final String MONITORED_SERVICE_DELIMITER = "_";
 }

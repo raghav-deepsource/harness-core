@@ -19,6 +19,7 @@ import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollback;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -76,7 +77,7 @@ public class ShellScriptStep extends TaskExecutableWithRollback<ShellScriptTaskR
     String taskName = TaskType.SHELL_SCRIPT_TASK_NG.getDisplayName();
     return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
         singletonList(ShellScriptTaskNG.COMMAND_UNIT), taskName,
-        StepUtils.getTaskSelectors(shellScriptStepParameters.getDelegateSelectors()),
+        TaskSelectorYaml.toTaskSelector(shellScriptStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
   }
 

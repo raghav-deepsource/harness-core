@@ -331,7 +331,8 @@ public class NGTriggerResource {
   }
 
   @GET
-  @Operation(operationId = "generateWebhookToken", summary = "Generates random webhook token for new triggers.",
+  @Operation(hidden = true, operationId = "generateWebhookToken",
+      summary = "Generates random webhook token for new triggers.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.

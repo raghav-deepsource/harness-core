@@ -88,6 +88,7 @@ import software.wings.features.api.UsageLimitedFeature;
 import software.wings.scheduler.LdapGroupSyncJobHelper;
 import software.wings.security.AppFilter;
 import software.wings.security.EnvFilter;
+import software.wings.security.ExecutableElementsFilter;
 import software.wings.security.Filter;
 import software.wings.security.GenericEntityFilter;
 import software.wings.security.PermissionAttribute;
@@ -226,12 +227,17 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   private void checkUserGroupsCountWithinLimit(String accountId) {
-    int maxNumberOfUserGroupsAllowed = rbacFeature.getMaxUsageAllowedForAccount(accountId);
-    int numberOfUserGroupsOfAccount = list(accountId, aPageRequest().build(), false).getResponse().size();
+    long maxNumberOfUserGroupsAllowed = rbacFeature.getMaxUsageAllowedForAccount(accountId);
+    long numberOfUserGroupsOfAccount = getCountOfUserGroups(accountId);
     if (numberOfUserGroupsOfAccount >= maxNumberOfUserGroupsAllowed) {
       throw new WingsException(ErrorCode.USAGE_LIMITS_EXCEEDED,
           String.format("Cannot create more than %d user groups", maxNumberOfUserGroupsAllowed), WingsException.USER);
     }
+  }
+  @Override
+  public long getCountOfUserGroups(String accountId) {
+    notNullCheck(UserGroupKeys.accountId, accountId, USER);
+    return wingsPersistence.createQuery(UserGroup.class).filter(UserGroupKeys.accountId, accountId).count();
   }
 
   @Override
@@ -653,16 +659,17 @@ public class UserGroupServiceImpl implements UserGroupService {
     }
   }
 
-  public void addParentsReference(String userGroupId, String accountId, String appId, String pipelineId) {
+  public void addParentsReference(
+      String userGroupId, String accountId, String appId, String entityId, String entityType) {
     UserGroup userGroup = Optional.ofNullable(mongoPersistence.get(UserGroup.class, userGroupId)).orElse(null);
     if (userGroup == null) {
       // log statement for userGroups which are deleted but are being referenced in a pipeline
-      log.error("UserGroup does not exist but pipeline with id {} and appId {} is referencing it", pipelineId, appId);
+      log.error("UserGroup does not exist but pipeline with id {} and appId {} is referencing it", entityId, appId);
       return;
     }
     userGroup.addParent(UserGroupEntityReference.builder()
-                            .entityType("PIPELINE")
-                            .id(pipelineId)
+                            .entityType(entityType)
+                            .id(entityId)
                             .appId(appId)
                             .accountId(accountId)
                             .build());
@@ -671,16 +678,17 @@ public class UserGroupServiceImpl implements UserGroupService {
     mongoPersistence.update(userGroup, ops);
   }
 
-  public void removeParentsReference(String userGroupId, String accountId, String appId, String pipelineId) {
+  public void removeParentsReference(
+      String userGroupId, String accountId, String appId, String entityId, String entityType) {
     UserGroup userGroup = Optional.ofNullable(mongoPersistence.get(UserGroup.class, userGroupId)).orElse(null);
     if (userGroup == null) {
       // log statement for userGroups which are deleted but are being referenced in a pipeline
-      log.error("UserGroup does not exist but pipeline with id {} and appId {} is referencing it", pipelineId, appId);
+      log.error("UserGroup does not exist but pipeline with id {} and appId {} is referencing it", entityId, appId);
       return;
     }
     userGroup.removeParent(UserGroupEntityReference.builder()
-                               .entityType("PIPELINE")
-                               .id(pipelineId)
+                               .entityType(entityType)
+                               .id(entityId)
                                .appId(appId)
                                .accountId(accountId)
                                .build());
@@ -839,6 +847,7 @@ public class UserGroupServiceImpl implements UserGroupService {
   @Override
   public List<UserGroup> listByAccountId(String accountId, User user, boolean loadUsers) {
     PageRequestBuilder pageRequest = aPageRequest()
+                                         .withLimit(Long.toString(getCountOfUserGroups(accountId)))
                                          .addFilter(UserGroupKeys.accountId, Operator.EQ, accountId)
                                          .addFilter(UserGroupKeys.memberIds, Operator.HAS, user.getUuid());
     return list(accountId, pageRequest.build(), loadUsers).getResponse();
@@ -846,7 +855,9 @@ public class UserGroupServiceImpl implements UserGroupService {
 
   @Override
   public List<UserGroup> listByAccountId(String accountId) {
-    PageRequestBuilder pageRequest = aPageRequest().addFilter(UserGroupKeys.accountId, Operator.EQ, accountId);
+    PageRequestBuilder pageRequest = aPageRequest()
+                                         .withLimit(Long.toString(getCountOfUserGroups(accountId)))
+                                         .addFilter(UserGroupKeys.accountId, Operator.EQ, accountId);
     return list(accountId, pageRequest.build(), true).getResponse();
   }
 
@@ -1099,6 +1110,15 @@ public class UserGroupServiceImpl implements UserGroupService {
           includeCurrentPermission = false;
         }
       }
+      if (filter instanceof ExecutableElementsFilter && ((ExecutableElementsFilter) filter).getFilter().getIds() != null
+          && ((ExecutableElementsFilter) filter).getFilter().getIds().removeIf(entityIds::contains)) {
+        isModified = true;
+        if (isEmpty(((ExecutableElementsFilter) filter).getFilter().getIds())
+            && GenericEntityFilter.FilterType.SELECTED.equals(
+                ((ExecutableElementsFilter) filter).getFilter().getFilterType())) {
+          includeCurrentPermission = false;
+        }
+      }
       if (includeCurrentPermission) {
         newAppPermissions.add(permission);
       }
@@ -1128,6 +1148,7 @@ public class UserGroupServiceImpl implements UserGroupService {
   @Override
   public List<UserGroup> getUserGroupsBySsoId(String accountId, String ssoId) {
     PageRequest<UserGroup> pageRequest = aPageRequest()
+                                             .withLimit(Long.toString(getCountOfUserGroups(accountId)))
                                              .addFilter(UserGroupKeys.accountId, Operator.EQ, accountId)
                                              .addFilter(UserGroupKeys.isSsoLinked, Operator.EQ, true)
                                              .addFilter(UserGroupKeys.linkedSsoId, Operator.EQ, ssoId)
@@ -1189,7 +1210,8 @@ public class UserGroupServiceImpl implements UserGroupService {
     if (isEmpty(userIds)) {
       return emptyList();
     }
-    PageRequestBuilder pageRequest = aPageRequest().addFilter(UserGroup.ID_KEY2, Operator.IN, userIds);
+    PageRequestBuilder pageRequest =
+        aPageRequest().withLimit(Integer.toString(userIds.length)).addFilter(UserGroup.ID_KEY2, Operator.IN, userIds);
     return list(userInvite.getAccountId(), pageRequest.build(), true).getResponse();
   }
 

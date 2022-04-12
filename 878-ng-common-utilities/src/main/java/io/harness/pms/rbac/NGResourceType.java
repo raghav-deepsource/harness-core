@@ -20,4 +20,5 @@ public class NGResourceType {
   public final String ENVIRONMENT = "ENVIRONMENT";
   public final String CONNECTOR = "CONNECTOR";
   public final String SECRETS = "SECRET";
+  public final String ENVIRONMENT_GROUP = "ENVIRONMENT_GROUP";
 }

@@ -12,12 +12,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.NodeExecution;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface PmsExecutionSummaryService {
-  void regenerateStageLayoutGraph(String planExecutionId);
+  void regenerateStageLayoutGraph(String planExecutionId, List<NodeExecution> nodeExecutions);
   void updateEndTs(String planExecutionId, NodeExecution nodeExecution);
   void update(String planExecutionId, NodeExecution nodeExecution);
   void update(String planExecutionId, Update update);

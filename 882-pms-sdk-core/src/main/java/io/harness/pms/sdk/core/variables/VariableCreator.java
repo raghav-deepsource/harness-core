@@ -14,7 +14,14 @@ import io.harness.pms.yaml.YamlField;
 import java.util.Map;
 import java.util.Set;
 
-public interface VariableCreator {
+public interface VariableCreator<T> {
   Map<String, Set<String>> getSupportedTypes();
   VariableCreationResponse createVariablesForField(VariableCreationContext ctx, YamlField field);
+  default VariableCreationResponse createVariablesForFieldV2(VariableCreationContext ctx, T field) {
+    return VariableCreationResponse.builder().build();
+  }
+
+  default Class<T> getFieldClass() {
+    return null;
+  }
 }

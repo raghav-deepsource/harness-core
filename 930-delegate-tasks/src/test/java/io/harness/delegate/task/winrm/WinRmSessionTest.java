@@ -8,16 +8,21 @@
 package io.harness.delegate.task.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.task.winrm.WinRmSession.FILE_CACHE_TYPE;
+import static io.harness.delegate.task.winrm.WinRmSession.KERBEROS_CACHE_NAME_ENV;
+import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.TMACARI;
 
+import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyMapOf;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -36,6 +41,7 @@ import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 import io.harness.ssh.SshHelperUtils;
 
+import com.google.common.collect.ImmutableMap;
 import com.jcraft.jsch.JSchException;
 import io.cloudsoft.winrm4j.client.ShellCommand;
 import io.cloudsoft.winrm4j.client.WinRmClient;
@@ -43,12 +49,16 @@ import io.cloudsoft.winrm4j.client.WinRmClientBuilder;
 import io.cloudsoft.winrm4j.client.WinRmClientContext;
 import io.cloudsoft.winrm4j.winrm.WinRmTool;
 import io.cloudsoft.winrm4j.winrm.WinRmToolResponse;
+import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -96,7 +106,8 @@ public class WinRmSessionTest extends CategoryTest {
                              .authenticationScheme(AuthenticationScheme.KERBEROS)
                              .build();
     PowerMockito
-        .when(SshHelperUtils.executeLocalCommand(anyString(), any(LogCallback.class), any(Writer.class), anyBoolean()))
+        .when(SshHelperUtils.executeLocalCommand(
+            anyString(), any(LogCallback.class), any(Writer.class), anyBoolean(), anyMapOf(String.class, String.class)))
         .thenReturn(true);
     winRmSession = new WinRmSession(winRmSessionConfig, logCallback);
 
@@ -104,9 +115,11 @@ public class WinRmSessionTest extends CategoryTest {
 
     PowerMockito.verifyStatic(io.harness.ssh.SshHelperUtils.class);
     ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
-    SshHelperUtils.generateTGT(captor.capture(), anyString(), anyString(), eq(logCallback));
+    SshHelperUtils.generateTGT(
+        captor.capture(), anyString(), anyString(), eq(logCallback), anyMapOf(String.class, String.class));
     assertThat(captor.getValue()).isEqualTo("TestUser@KRB.LOCAL");
-    SshHelperUtils.executeLocalCommand(anyString(), eq(logCallback), eq(writer), eq(false));
+    SshHelperUtils.executeLocalCommand(
+        anyString(), eq(logCallback), eq(writer), eq(false), anyMapOf(String.class, String.class));
   }
 
   @Test
@@ -123,11 +136,13 @@ public class WinRmSessionTest extends CategoryTest {
                              .authenticationScheme(AuthenticationScheme.KERBEROS)
                              .build();
     PowerMockito
-        .when(SshHelperUtils.executeLocalCommand(anyString(), any(LogCallback.class), any(Writer.class), anyBoolean()))
+        .when(SshHelperUtils.executeLocalCommand(
+            anyString(), any(LogCallback.class), any(Writer.class), anyBoolean(), anyMapOf(String.class, String.class)))
         .thenReturn(true);
     winRmSession = new WinRmSession(winRmSessionConfig, logCallback);
     PowerMockito.verifyStatic(VerificationModeFactory.times(1));
-    SshHelperUtils.executeLocalCommand(anyString(), any(LogCallback.class), any(Writer.class), anyBoolean());
+    SshHelperUtils.executeLocalCommand(
+        anyString(), any(LogCallback.class), any(Writer.class), anyBoolean(), anyMapOf(String.class, String.class));
   }
 
   @Test
@@ -144,7 +159,8 @@ public class WinRmSessionTest extends CategoryTest {
                              .authenticationScheme(AuthenticationScheme.KERBEROS)
                              .build();
     PowerMockito
-        .when(SshHelperUtils.executeLocalCommand(anyString(), any(LogCallback.class), any(Writer.class), anyBoolean()))
+        .when(SshHelperUtils.executeLocalCommand(
+            anyString(), any(LogCallback.class), any(Writer.class), anyBoolean(), anyMapOf(String.class, String.class)))
         .thenReturn(false);
     try {
       winRmSession = new WinRmSession(winRmSessionConfig, logCallback);
@@ -167,7 +183,8 @@ public class WinRmSessionTest extends CategoryTest {
                              .authenticationScheme(AuthenticationScheme.KERBEROS)
                              .build();
     PowerMockito
-        .when(SshHelperUtils.executeLocalCommand(anyString(), any(LogCallback.class), any(Writer.class), anyBoolean()))
+        .when(SshHelperUtils.executeLocalCommand(
+            anyString(), any(LogCallback.class), any(Writer.class), anyBoolean(), anyMapOf(String.class, String.class)))
         .thenReturn(true);
     winRmSession = new WinRmSession(winRmSessionConfig, logCallback);
 
@@ -190,7 +207,8 @@ public class WinRmSessionTest extends CategoryTest {
                              .authenticationScheme(AuthenticationScheme.KERBEROS)
                              .build();
     PowerMockito
-        .when(SshHelperUtils.executeLocalCommand(anyString(), any(LogCallback.class), any(Writer.class), anyBoolean()))
+        .when(SshHelperUtils.executeLocalCommand(
+            anyString(), any(LogCallback.class), any(Writer.class), anyBoolean(), anyMapOf(String.class, String.class)))
         .thenReturn(true);
     winRmSession = new WinRmSession(winRmSessionConfig, logCallback);
 
@@ -205,7 +223,8 @@ public class WinRmSessionTest extends CategoryTest {
   public void testGetUserPrincipalWithUsernameNull() throws JSchException {
     PowerMockito.mockStatic(SshHelperUtils.class);
     PowerMockito
-        .when(SshHelperUtils.executeLocalCommand(anyString(), any(LogCallback.class), any(Writer.class), anyBoolean()))
+        .when(SshHelperUtils.executeLocalCommand(
+            anyString(), any(LogCallback.class), any(Writer.class), anyBoolean(), anyMapOf(String.class, String.class)))
         .thenReturn(true);
     winRmSessionConfig = io.harness.delegate.task.winrm.WinRmSessionConfig.builder()
                              .domain("KRB.LOCAL")
@@ -226,7 +245,8 @@ public class WinRmSessionTest extends CategoryTest {
   public void testGetUserPrincipalWithDomainNull() throws JSchException {
     PowerMockito.mockStatic(SshHelperUtils.class);
     PowerMockito
-        .when(SshHelperUtils.executeLocalCommand(anyString(), any(LogCallback.class), any(Writer.class), anyBoolean()))
+        .when(SshHelperUtils.executeLocalCommand(
+            anyString(), any(LogCallback.class), any(Writer.class), anyBoolean(), anyMapOf(String.class, String.class)))
         .thenReturn(true);
     winRmSessionConfig = io.harness.delegate.task.winrm.WinRmSessionConfig.builder()
                              .skipCertChecks(true)
@@ -247,7 +267,8 @@ public class WinRmSessionTest extends CategoryTest {
   public void testAutoClosable() throws JSchException {
     PowerMockito.mockStatic(SshHelperUtils.class);
     PowerMockito
-        .when(SshHelperUtils.executeLocalCommand(anyString(), any(LogCallback.class), any(Writer.class), anyBoolean()))
+        .when(SshHelperUtils.executeLocalCommand(
+            anyString(), any(LogCallback.class), any(Writer.class), anyBoolean(), anyMapOf(String.class, String.class)))
         .thenReturn(true);
     winRmSessionConfig = io.harness.delegate.task.winrm.WinRmSessionConfig.builder()
                              .domain("KRB.LOCAL")
@@ -316,6 +337,52 @@ public class WinRmSessionTest extends CategoryTest {
     winRmSession.executeCommandsList(commandsList, writer, error, false, null);
     verify(winRmTool).executeCommand(commands);
     verifyZeroInteractions(shell);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testCreateWinRMSessionWithUniqueCacheFile() throws Exception {
+    PowerMockito.mockStatic(SshHelperUtils.class);
+    PowerMockito
+        .when(SshHelperUtils.executeLocalCommand(
+            anyString(), any(LogCallback.class), any(Writer.class), anyBoolean(), anyMapOf(String.class, String.class)))
+        .thenReturn(true);
+
+    WinRmSessionConfig sessionConfig = WinRmSessionConfig.builder()
+                                           .executionId("harnessExecutionId")
+                                           .authenticationScheme(AuthenticationScheme.KERBEROS)
+                                           .useKerberosUniqueCacheFile(true)
+                                           .username("user")
+                                           .password("password")
+                                           .hostname("harness.internal")
+                                           .domain("harness")
+                                           .port(1234)
+                                           .environment(ImmutableMap.of("CUSTOM", "value"))
+                                           .build();
+
+    File sessionCacheFile = new File(sessionConfig.getSessionCacheFilePath().toString());
+    try (WinRmSession session = new WinRmSession(sessionConfig, logCallback)) {
+      // Create dummy file that will simulate kinit behavior
+      Files.write(sessionConfig.getSessionCacheFilePath(), "credentials***".getBytes(StandardCharsets.UTF_8));
+      assertThat(sessionCacheFile).exists();
+      PyWinrmArgs args = on(session).get("args");
+      assertThat(args).isNotNull();
+      Map<String, String> expectedEnvMap = ImmutableMap.of("CUSTOM", "value", KERBEROS_CACHE_NAME_ENV,
+          format("%s:%s", FILE_CACHE_TYPE, sessionConfig.getSessionCacheFilePath()));
+      assertThat(args.getEnvironmentMap()).containsExactlyInAnyOrderEntriesOf(expectedEnvMap);
+    }
+
+    // session cache file should be deleted after session close
+    assertThat(sessionCacheFile).doesNotExist();
+
+    PowerMockito.verifyStatic(SshHelperUtils.class);
+    ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
+    SshHelperUtils.generateTGT(anyString(), anyString(), anyString(), eq(logCallback), captor.capture());
+    Map<String, String> passedEnvVariables = captor.getValue();
+    assertThat(passedEnvVariables)
+        .containsExactlyInAnyOrderEntriesOf(ImmutableMap.of(
+            KERBEROS_CACHE_NAME_ENV, format("%s:%s", FILE_CACHE_TYPE, sessionConfig.getSessionCacheFilePath())));
   }
 
   private void setupMocks(List<String> commands, ShellCommand shell, WinRmTool winRmTool, PyWinrmArgs pyWinrmArgs)

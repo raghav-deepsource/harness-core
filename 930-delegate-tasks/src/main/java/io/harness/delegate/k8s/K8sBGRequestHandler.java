@@ -22,7 +22,6 @@ import static io.harness.k8s.manifest.ManifestHelper.getPrimaryService;
 import static io.harness.k8s.manifest.ManifestHelper.getServices;
 import static io.harness.k8s.manifest.ManifestHelper.getStageService;
 import static io.harness.k8s.manifest.ManifestHelper.getWorkloadsForCanaryAndBG;
-import static io.harness.k8s.manifest.VersionUtils.addRevisionNumber;
 import static io.harness.k8s.manifest.VersionUtils.markVersionedResources;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.LogLevel.ERROR;
@@ -67,6 +66,9 @@ import io.harness.k8s.model.Release.Status;
 import io.harness.k8s.model.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+
+import software.wings.beans.LogColor;
+import software.wings.beans.LogWeight;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
@@ -118,11 +120,13 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
     manifestFilesDirectory = Paths.get(k8sDelegateTaskParams.getWorkingDirectory(), MANIFEST_FILES_DIR).toString();
     final long timeoutInMillis = getTimeoutMillisFromMinutes(k8sBGDeployRequest.getTimeoutIntervalInMin());
 
+    LogCallback executionLogCallback = k8sTaskHelperBase.getLogCallback(
+        logStreamingTaskClient, FetchFiles, k8sBGDeployRequest.isShouldOpenFetchFilesLogStream(), commandUnitsProgress);
+    executionLogCallback.saveExecutionLog(
+        color("\nStarting Kubernetes Blue-Greeen Deployment", LogColor.White, LogWeight.Bold));
+
     k8sTaskHelperBase.fetchManifestFilesAndWriteToDirectory(k8sBGDeployRequest.getManifestDelegateConfig(),
-        manifestFilesDirectory,
-        k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, FetchFiles,
-            k8sBGDeployRequest.isShouldOpenFetchFilesLogStream(), commandUnitsProgress),
-        timeoutInMillis, k8sBGDeployRequest.getAccountId());
+        manifestFilesDirectory, executionLogCallback, timeoutInMillis, k8sBGDeployRequest.getAccountId());
 
     init(k8sBGDeployRequest, k8sDelegateTaskParams,
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Init, true, commandUnitsProgress));
@@ -334,7 +338,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
 
     if (!skipResourceVersioning) {
       executionLogCallback.saveExecutionLog("\nVersioning resources.");
-      addRevisionNumber(resources, currentRelease.getNumber());
+      k8sTaskHelperBase.addRevisionNumber(resources, currentRelease.getNumber());
     }
     managedWorkload = getManagedWorkload(resources);
     managedWorkload.appendSuffixInName('-' + stageColor);

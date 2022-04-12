@@ -13,7 +13,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
+import io.harness.pms.inputset.InputSetSchemaConstants;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
+import io.harness.pms.pipeline.PipelineResourceConstants;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -33,19 +35,21 @@ import lombok.Value;
 @ApiModel("InputSetSummaryResponse")
 @Schema(name = "InputSetSummaryResponse", description = "This is the view of the Input Set Summary.")
 public class InputSetSummaryResponseDTOPMS {
-  String identifier;
-  String name;
-  String pipelineIdentifier;
-  String description;
-  InputSetEntityType inputSetType;
-  Map<String, String> tags;
-  @JsonIgnore Long version;
-  EntityGitDetails gitDetails;
-  Long createdAt;
-  Long lastUpdatedAt;
-  Boolean isOutdated;
+  @Schema(description = InputSetSchemaConstants.INPUT_SET_ID_MESSAGE) String identifier;
+  @Schema(description = InputSetSchemaConstants.INPUT_SET_NAME_MESSAGE) String name;
+  @Schema(description = InputSetSchemaConstants.PIPELINE_ID_FOR_INPUT_SET_PARAM_MESSAGE) String pipelineIdentifier;
+  @Schema(description = InputSetSchemaConstants.INPUT_SET_DESCRIPTION_MESSAGE) String description;
+  @Schema(description = InputSetSchemaConstants.INPUT_SET_TYPE_MESSAGE) InputSetEntityType inputSetType;
+  @Schema(description = InputSetSchemaConstants.INPUT_SET_TAGS_MESSAGE) Map<String, String> tags;
+  @Schema(description = InputSetSchemaConstants.INPUT_SET_VERSION_MESSAGE) @JsonIgnore Long version;
+  @Schema(description = PipelineResourceConstants.GIT_DETAILS_MESSAGE) EntityGitDetails gitDetails;
+  @Schema(description = PipelineResourceConstants.CREATED_AT_MESSAGE) Long createdAt;
+  @Schema(description = PipelineResourceConstants.UPDATED_AT_MESSAGE) Long lastUpdatedAt;
+  @Schema(description = InputSetSchemaConstants.INPUT_SET_OUTDATED_MESSAGE) Boolean isOutdated;
+  @Schema(description = InputSetSchemaConstants.INPUT_SET_ERROR_WRAPPER_MESSAGE)
   InputSetErrorWrapperDTOPMS inputSetErrorDetails;
+  @Schema(description = InputSetSchemaConstants.OVERLAY_INPUT_SET_ERROR_MAP_MESSAGE)
   Map<String, String> overlaySetErrorDetails;
-  EntityValidityDetails entityValidityDetails;
-  Set<String> modules;
+  @Schema(description = PipelineResourceConstants.GIT_VALIDITY_MESSAGE) EntityValidityDetails entityValidityDetails;
+  @Schema(description = InputSetSchemaConstants.INPUT_SET_MODULES_MESSAGE) Set<String> modules;
 }

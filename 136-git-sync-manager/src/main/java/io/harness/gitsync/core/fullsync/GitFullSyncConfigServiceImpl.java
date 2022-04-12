@@ -103,6 +103,11 @@ public class GitFullSyncConfigServiceImpl implements GitFullSyncConfigService {
     return false;
   }
 
+  @Override
+  public void deleteAll(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    gitFullSyncConfigRepository.deleteAll(getCriteria(accountIdentifier, orgIdentifier, projectIdentifier));
+  }
+
   private Criteria getCriteria(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     return Criteria.where(GitFullSyncConfigKeys.accountIdentifier)
         .is(accountIdentifier)

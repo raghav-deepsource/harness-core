@@ -57,6 +57,16 @@ public class DeploymentLogClusterStateExecutor extends LogClusterStateExecutor<D
   }
 
   @Override
+  public AnalysisState handleRetry(DeploymentLogClusterState analysisState) {
+    if (analysisState.getRetryCount() >= getMaxRetry()) {
+      analysisState.setStatus(AnalysisStatus.FAILED);
+    } else {
+      return handleRerun(analysisState);
+    }
+    return analysisState;
+  }
+
+  @Override
   public void handleFinalStatuses(DeploymentLogClusterState analysisState) {
     logClusterService.logDeploymentVerificationProgress(
         analysisState.getInputs(), analysisState.getStatus(), analysisState.getClusterLevel());

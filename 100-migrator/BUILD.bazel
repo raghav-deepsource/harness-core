@@ -101,6 +101,35 @@ java_binary(
     ],
 )
 
+java_library(
+    name = "tests",
+    testonly = True,
+    srcs = glob(["src/test/**/*.java"]),
+    data = [
+        "//100-migrator/src/test/resources:resource",
+    ],
+    resources = [
+        "//100-migrator/src/test/resources:resource",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "module",
+        "//960-persistence:supporter-test",
+        "//980-commons:tests",
+        "//990-commons-test:module",
+        "@maven//:io_dropwizard_dropwizard_testing",
+        "@maven//:io_github_benas_random_beans",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_powermock_powermock_api_mockito",
+        "@maven//:org_powermock_powermock_core",
+        "@maven//:org_powermock_powermock_module_junit4",
+    ],
+)
+
+run_tests()
+
 run_analysis()
 
 exports_files([

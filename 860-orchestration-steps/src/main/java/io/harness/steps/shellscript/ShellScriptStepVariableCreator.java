@@ -14,7 +14,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.plan.YamlOutputProperties;
 import io.harness.pms.contracts.plan.YamlProperties;
 import io.harness.pms.sdk.core.pipeline.variables.GenericStepVariableCreator;
-import io.harness.pms.sdk.core.pipeline.variables.VariableCreatorHelper;
+import io.harness.pms.sdk.core.variables.VariableCreatorHelper;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.Set;
 
 @OwnedBy(PIPELINE)
-public class ShellScriptStepVariableCreator extends GenericStepVariableCreator {
+public class ShellScriptStepVariableCreator extends GenericStepVariableCreator<ShellScriptStepNode> {
   @Override
   public Set<String> getSupportedStepTypes() {
     return Collections.singleton(StepSpecTypeConstants.SHELL_SCRIPT);

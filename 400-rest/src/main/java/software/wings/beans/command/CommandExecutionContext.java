@@ -103,6 +103,7 @@ public class CommandExecutionContext implements ExecutionCapabilityDemander {
   private boolean executeOnDelegate;
   private boolean disableWinRMCommandEncodingFFSet; // DISABLE_WINRM_COMMAND_ENCODING
   private boolean disableWinRMEnvVariables; // stop passing service variables as env variables
+  private boolean useWinRMKerberosUniqueCacheFile;
   private List<String> delegateSelectors;
 
   // new fields for multi artifact
@@ -179,10 +180,11 @@ public class CommandExecutionContext implements ExecutionCapabilityDemander {
       ContainerResizeParams containerResizeParams, Map<String, String> metadata,
       CommandExecutionData commandExecutionData, Integer timeout, String deploymentType,
       List<EncryptedDataDetail> artifactServerEncryptedDataDetails, boolean inlineSshCommand, boolean executeOnDelegate,
-      boolean disableWinRMCommandEncodingFFSet, boolean disableWinRMEnvVariables, List<String> delegateSelectors,
-      Map<String, Artifact> multiArtifactMap, Map<String, ArtifactStreamAttributes> artifactStreamAttributesMap,
-      boolean multiArtifact, Map<String, List<EncryptedDataDetail>> artifactServerEncryptedDataDetailsMap,
-      String artifactFileName, SSHVaultConfig sshVaultConfig) {
+      boolean disableWinRMCommandEncodingFFSet, boolean disableWinRMEnvVariables,
+      boolean useWinRMKerberosUniqueCacheFile, List<String> delegateSelectors, Map<String, Artifact> multiArtifactMap,
+      Map<String, ArtifactStreamAttributes> artifactStreamAttributesMap, boolean multiArtifact,
+      Map<String, List<EncryptedDataDetail>> artifactServerEncryptedDataDetailsMap, String artifactFileName,
+      SSHVaultConfig sshVaultConfig) {
     this.accountId = accountId;
     this.envId = envId;
     this.host = host;
@@ -222,6 +224,7 @@ public class CommandExecutionContext implements ExecutionCapabilityDemander {
     this.executeOnDelegate = executeOnDelegate;
     this.disableWinRMCommandEncodingFFSet = disableWinRMCommandEncodingFFSet;
     this.disableWinRMEnvVariables = disableWinRMEnvVariables;
+    this.useWinRMKerberosUniqueCacheFile = useWinRMKerberosUniqueCacheFile;
     this.delegateSelectors = delegateSelectors;
     this.multiArtifactMap = multiArtifactMap;
     this.artifactStreamAttributesMap = artifactStreamAttributesMap;
@@ -280,6 +283,7 @@ public class CommandExecutionContext implements ExecutionCapabilityDemander {
         .useKeyTab(winrmConnectionAttributes.isUseKeyTab())
         .keyTabFilePath(winrmConnectionAttributes.getKeyTabFilePath())
         .useNoProfile(winrmConnectionAttributes.isUseNoProfile())
+        .useKerberosUniqueCacheFile(useWinRMKerberosUniqueCacheFile)
         .build();
   }
 

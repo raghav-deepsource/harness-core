@@ -13,8 +13,8 @@ import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeSourceType;
 import io.harness.cvng.beans.change.PagerDutyEventMetaData;
 import io.harness.cvng.core.beans.PagerDutyWebhookEvent;
+import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
-import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.entities.PagerDutyWebhook;
 import io.harness.cvng.core.entities.PagerDutyWebhook.PagerDutyWebhookKeys;
 import io.harness.cvng.core.entities.Webhook;
@@ -33,17 +33,17 @@ public class WebhookServiceImpl implements WebhookService {
 
   @Override
   public void createPagerdutyWebhook(
-      ServiceEnvironmentParams serviceEnvironmentParams, String token, String webhookId, String changeSourceId) {
-    PagerDutyWebhook pagerDutyWebhook = PagerDutyWebhook.builder()
-                                            .accountId(serviceEnvironmentParams.getAccountIdentifier())
-                                            .orgIdentifier(serviceEnvironmentParams.getOrgIdentifier())
-                                            .projectIdentifier(serviceEnvironmentParams.getProjectIdentifier())
-                                            .serviceIdentifier(serviceEnvironmentParams.getServiceIdentifier())
-                                            .envIdentifier(serviceEnvironmentParams.getEnvironmentIdentifier())
-                                            .pagerdutyChangeSourceId(changeSourceId)
-                                            .token(token)
-                                            .webhookId(webhookId)
-                                            .build();
+      MonitoredServiceParams monitoredServiceParams, String token, String webhookId, String changeSourceId) {
+    PagerDutyWebhook pagerDutyWebhook =
+        PagerDutyWebhook.builder()
+            .accountId(monitoredServiceParams.getAccountIdentifier())
+            .orgIdentifier(monitoredServiceParams.getOrgIdentifier())
+            .projectIdentifier(monitoredServiceParams.getProjectIdentifier())
+            .monitoredServiceIdentifier(monitoredServiceParams.getMonitoredServiceIdentifier())
+            .pagerdutyChangeSourceId(changeSourceId)
+            .token(token)
+            .webhookId(webhookId)
+            .build();
     hPersistence.save(pagerDutyWebhook);
   }
 
@@ -91,8 +91,7 @@ public class WebhookServiceImpl implements WebhookService {
                                         .accountId(webhook.getAccountId())
                                         .orgIdentifier(webhook.getOrgIdentifier())
                                         .projectIdentifier(webhook.getProjectIdentifier())
-                                        .serviceIdentifier(webhook.getServiceIdentifier())
-                                        .envIdentifier(webhook.getEnvIdentifier())
+                                        .monitoredServiceIdentifier(webhook.getMonitoredServiceIdentifier())
                                         .type(ChangeSourceType.PAGER_DUTY)
                                         .eventTime(eventMetaData.getTriggeredAt().toEpochMilli())
                                         .metadata(eventMetaData)

@@ -65,6 +65,8 @@ public class ExplanationException extends WingsException {
   public static String EXPLANATION_MISSING_BRANCH = "Provided branch '%s' doesn't exist in the git repository";
   public static String EXPLANATION_MISSING_REFERENCE = "Provided reference '%s' doesn't exist in the git repository";
   public static String EXPLANATION_GIT_FILE_NOT_FOUND = "Provided file path doesn't exist";
+  public static String EXPLANATION_SCM_INVALID_REQUEST =
+      "Delegate wasn’t able to download or run SCM service which interacts with Git provider";
 
   public static String URL_NOT_FOUND = "Provided URL path does not exist.";
   public static String AUTHORIZATION_FAILURE = "Provided credentials are unauthorized.";

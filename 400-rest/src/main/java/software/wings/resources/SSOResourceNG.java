@@ -29,6 +29,7 @@ import io.harness.secretmanagers.SecretManagerConfigService;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import software.wings.beans.sso.OauthSettings;
+import software.wings.beans.sso.SamlSettings;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.authentication.LoginTypeResponse;
 import software.wings.security.authentication.LoginTypeResponse.LoginTypeResponseBuilder;
@@ -111,6 +112,14 @@ public class SSOResourceNG {
   @ExceptionMetered
   public RestResponse<SSOConfig> deleteOauthSettings(@QueryParam("accountId") String accountId) {
     return new RestResponse<>(ssoService.deleteOauthConfiguration(accountId));
+  }
+
+  @GET
+  @Path("get-saml-settings")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<SamlSettings> getSamlSetting(@QueryParam("accountId") String accountId) {
+    return new RestResponse<>(ssoService.getSamlSettings(accountId));
   }
 
   @POST

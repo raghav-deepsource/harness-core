@@ -25,6 +25,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
@@ -246,10 +247,10 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         + "  stages:\n";
     String stage1 = "  - stage:\n"
         + "      identifier: \"s1\"\n"
-        + "      name: \"<+input>\"\n";
+        + "      myField: \"<+input>\"\n";
     String stage2 = "  - stage:\n"
         + "      identifier: \"s2\"\n"
-        + "      name: \"<+input>\"\n";
+        + "      myField: \"<+input>\"\n";
     String pipelineYaml = pipelineStart + stage1 + stage2;
 
     PipelineEntity pipelineEntity = PipelineEntity.builder().yaml(pipelineYaml).build();
@@ -316,6 +317,48 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
   }
 
   @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testGetInputSetTemplateResponseDTOWithNoRuntime() {
+    doReturn(Optional.empty()).when(pmsPipelineService).get(accountId, orgId, projectId, pipelineId, false);
+    assertThatThrownBy(
+        () -> validateAndMergeHelper.getInputSetTemplateResponseDTO(accountId, orgId, projectId, pipelineId, null))
+        .isInstanceOf(InvalidRequestException.class);
+    String pipelineYamlWithNoRuntime = getPipelineYamlWithNoRuntime();
+    PipelineEntity pipelineEntityWithNoRuntime =
+        PipelineEntity.builder().yaml(pipelineYamlWithNoRuntime).filters(Collections.singletonMap("pms", null)).build();
+    doReturn(Optional.of(pipelineEntityWithNoRuntime))
+        .when(pmsPipelineService)
+        .get(accountId, orgId, projectId, "no_runtime", false);
+    doReturn(false).when(pmsInputSetService).checkForInputSetsForPipeline(accountId, orgId, projectId, "no_runtime");
+    InputSetTemplateResponseDTOPMS responseWithNoRuntime =
+        validateAndMergeHelper.getInputSetTemplateResponseDTO(accountId, orgId, projectId, "no_runtime", null);
+    assertThat(responseWithNoRuntime.getHasInputSets()).isFalse();
+    assertThat(responseWithNoRuntime.getModules()).containsExactly("pms");
+    assertThat(responseWithNoRuntime.getReplacedExpressions()).isNull();
+    assertThat(responseWithNoRuntime.getInputSetTemplateYaml()).isNullOrEmpty();
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testGetInputSetTemplateResponseDTOWithRuntime() {
+    String pipelineYamlWithRuntime = getPipelineYamlWithRuntime();
+    PipelineEntity pipelineEntityWithRuntime =
+        PipelineEntity.builder().yaml(pipelineYamlWithRuntime).filters(Collections.singletonMap("pms", null)).build();
+    doReturn(Optional.of(pipelineEntityWithRuntime))
+        .when(pmsPipelineService)
+        .get(accountId, orgId, projectId, "has_runtime", false);
+    doReturn(true).when(pmsInputSetService).checkForInputSetsForPipeline(accountId, orgId, projectId, "has_runtime");
+    InputSetTemplateResponseDTOPMS responseWithNoRuntime =
+        validateAndMergeHelper.getInputSetTemplateResponseDTO(accountId, orgId, projectId, "has_runtime", null);
+    assertThat(responseWithNoRuntime.getHasInputSets()).isTrue();
+    assertThat(responseWithNoRuntime.getModules()).containsExactly("pms");
+    assertThat(responseWithNoRuntime.getReplacedExpressions()).isNull();
+    assertThat(responseWithNoRuntime.getInputSetTemplateYaml()).isEqualTo(getRuntimeTemplate());
+  }
+
+  @Test
   @Owner(developers = VED)
   @Category(UnitTests.class)
   public void testForLengthCheckOnOverlayInputSetIdentifiers() {
@@ -361,5 +404,80 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
   private String addPipelineIdentifier(String yaml) {
     String pipelineId = "  pipelineIdentifier: n2\n";
     return yaml + pipelineId;
+  }
+
+  private String getPipelineYamlWithNoRuntime() {
+    return "pipeline:\n"
+        + "  name: no runtime\n"
+        + "  identifier: no_runtime\n"
+        + "  projectIdentifier: namantest\n"
+        + "  orgIdentifier: default\n"
+        + "  stages:\n"
+        + "  - stage:\n"
+        + "      name: a1\n"
+        + "      identifier: a1\n"
+        + "      type: Approval\n"
+        + "      spec:\n"
+        + "        execution:\n"
+        + "          steps:\n"
+        + "          - step:\n"
+        + "              name: Approval\n"
+        + "              identifier: approval\n"
+        + "              type: HarnessApproval\n"
+        + "              timeout: 1d\n"
+        + "              spec:\n"
+        + "                approvalMessage: Please review\n"
+        + "                includePipelineExecutionHistory: true\n"
+        + "                approvers:\n"
+        + "                  minimumCount: 1\n"
+        + "                  disallowPipelineExecutor: false\n"
+        + "                  userGroups:\n"
+        + "                  - account.Dashboards\n";
+  }
+
+  private String getPipelineYamlWithRuntime() {
+    return "pipeline:\n"
+        + "  name: has runtime\n"
+        + "  identifier: has_runtime\n"
+        + "  projectIdentifier: namantest\n"
+        + "  orgIdentifier: default\n"
+        + "  stages:\n"
+        + "  - stage:\n"
+        + "      name: a1\n"
+        + "      identifier: a1\n"
+        + "      type: Approval\n"
+        + "      spec:\n"
+        + "        execution:\n"
+        + "          steps:\n"
+        + "          - step:\n"
+        + "              name: Approval\n"
+        + "              identifier: approval\n"
+        + "              type: HarnessApproval\n"
+        + "              timeout: 1d\n"
+        + "              spec:\n"
+        + "                approvalMessage: <+input>\n"
+        + "                includePipelineExecutionHistory: true\n"
+        + "                approvers:\n"
+        + "                  minimumCount: 1\n"
+        + "                  disallowPipelineExecutor: false\n"
+        + "                  userGroups:\n"
+        + "                  - account.Dashboards\n";
+  }
+
+  private String getRuntimeTemplate() {
+    return "pipeline:\n"
+        + "  identifier: \"has_runtime\"\n"
+        + "  stages:\n"
+        + "  - stage:\n"
+        + "      identifier: \"a1\"\n"
+        + "      type: \"Approval\"\n"
+        + "      spec:\n"
+        + "        execution:\n"
+        + "          steps:\n"
+        + "          - step:\n"
+        + "              identifier: \"approval\"\n"
+        + "              type: \"HarnessApproval\"\n"
+        + "              spec:\n"
+        + "                approvalMessage: \"<+input>\"\n";
   }
 }

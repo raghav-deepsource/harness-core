@@ -16,12 +16,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CvNextGenCommonsTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.beans.DataCollectionInfo;
+import io.harness.reflection.CodeUtils;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -75,7 +78,10 @@ public class CvNextGenCommonsBeansKryoRegistrarTest extends CvNextGenCommonsTest
     // traverse all fields of that class.
     for (Field field : clazz.getDeclaredFields()) {
       field.setAccessible(true);
-      final Class<?> type = field.getType();
+      Class<?> type = field.getType();
+      if (Collection.class.isAssignableFrom(type)) {
+        type = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
+      }
       if (classesInvolved.contains(type)) {
         continue;
       }
@@ -92,6 +98,11 @@ public class CvNextGenCommonsBeansKryoRegistrarTest extends CvNextGenCommonsTest
   public boolean checkIfClassShouldBeTraversed(Class<?> clazz) {
     // Generating only for harness classes hence checking if package is software.wings or io.harness.
     if (clazz.getCanonicalName() == null) {
+      return false;
+    }
+    final String location = CodeUtils.location(clazz);
+    final String currentLocation = CodeUtils.location(CvNextGenCommonsBeansKryoRegistrar.class);
+    if (!currentLocation.equals(location)) {
       return false;
     }
     return !clazz.isPrimitive()

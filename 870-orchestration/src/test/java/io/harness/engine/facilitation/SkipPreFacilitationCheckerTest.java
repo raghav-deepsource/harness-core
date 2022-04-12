@@ -23,9 +23,11 @@ import io.harness.category.element.UnitTests;
 import io.harness.engine.ExecutionCheck;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.utils.PmsLevelUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.PlanExecutionMetadata;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ExecutionMode;
@@ -38,6 +40,7 @@ import io.harness.pms.expression.EngineExpressionService;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import java.util.Optional;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -47,13 +50,16 @@ import org.mockito.Mock;
 public class SkipPreFacilitationCheckerTest extends OrchestrationTestBase {
   @Mock EngineExpressionService engineExpressionService;
   @Mock OrchestrationEngine engine;
-  @Inject NodeExecutionService nodeExecutionService;
+  @Mock PlanExecutionMetadataService planExecutionMetadataService;
+  @Inject @InjectMocks NodeExecutionService nodeExecutionService;
   @Inject @InjectMocks SkipPreFacilitationChecker checker;
 
   @Test
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   public void performCheckWhenConditionFalse() {
+    when(planExecutionMetadataService.findByPlanExecutionId(any()))
+        .thenReturn(Optional.of(PlanExecutionMetadata.builder().build()));
     String skipCondition = "<+pipeline.name>==\"name\"";
     String nodeExecutionId = generateUuid();
     PlanNode planNode = PlanNode.builder()
@@ -93,6 +99,8 @@ public class SkipPreFacilitationCheckerTest extends OrchestrationTestBase {
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   public void performCheckWhenConditionTrue() {
+    when(planExecutionMetadataService.findByPlanExecutionId(any()))
+        .thenReturn(Optional.of(PlanExecutionMetadata.builder().build()));
     String skipCondition = "<+pipeline.name>==\"name\"";
     PlanNode planNode = PlanNode.builder()
                             .uuid(generateUuid())
@@ -140,6 +148,8 @@ public class SkipPreFacilitationCheckerTest extends OrchestrationTestBase {
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   public void performCheckWhenConditionException() {
+    when(planExecutionMetadataService.findByPlanExecutionId(any()))
+        .thenReturn(Optional.of(PlanExecutionMetadata.builder().build()));
     String skipCondition = "<+pipeline.name>==\"name\"";
     String nodeExecutionId = generateUuid();
     PlanNode planNode = PlanNode.builder()

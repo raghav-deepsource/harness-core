@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -24,6 +25,10 @@ public class CompletableFutures<T> {
 
   public void supplyAsync(Supplier<T> supplier) {
     completableFutures.add(CompletableFuture.supplyAsync(supplier, executor));
+  }
+
+  public void supplyAsyncExceptionally(Supplier<T> supplier, Function<Throwable, ? extends T> throwableFn) {
+    completableFutures.add(CompletableFuture.supplyAsync(supplier, executor).exceptionally(throwableFn));
   }
 
   public CompletableFuture<List<T>> allOf() {

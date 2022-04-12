@@ -30,6 +30,8 @@ import static java.util.stream.Collectors.toSet;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.aws.AWSCloudformationClientImpl;
+import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.container.ContainerInfo;
 import io.harness.container.ContainerInfo.Status;
@@ -125,6 +127,7 @@ import org.jetbrains.annotations.NotNull;
 @OwnedBy(CDP)
 @TargetModule(_930_DELEGATE_TASKS)
 public class EcsContainerServiceImpl implements EcsContainerService {
+  @Inject private AWSCloudformationClientImpl awsCFService = new AWSCloudformationClientImpl();
   @Inject private AwsHelperService awsHelperService = new AwsHelperService();
   @Inject private TimeLimiter timeLimiter;
   @Inject private AwsMetadataApiHelper awsMetadataApiHelper;
@@ -139,7 +142,7 @@ public class EcsContainerServiceImpl implements EcsContainerService {
    * Create cluster.
    */
   public void createCluster() {
-    awsHelperService.createStack(AWS_DEFAULT_REGION,
+    awsCFService.createStack(AWS_DEFAULT_REGION,
         new CreateStackRequest()
             .withStackName("EC2ContainerService-demo")
             .withTemplateBody("AWSTemplateFormatVersion: '2010-09-09'\n"
@@ -461,17 +464,17 @@ public class EcsContainerServiceImpl implements EcsContainerService {
                     .withParameterValue("us-east-1e,us-east-1c,us-east-1d,us-east-1a"),
                 new Parameter().withParameterKey("VpcCidr").withParameterValue("10.0.0.0/16"),
                 new Parameter().withParameterKey("VpcId").withParameterValue("vpc-84a9bfe0")),
-        AwsConfig.builder()
+        AwsInternalConfig.builder()
             .accessKey("AKIAJLEKM45P4PO5QUFQ".toCharArray())
             .secretKey("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".toCharArray())
             .build());
 
     Stack stack;
     while (!"CREATE_COMPLETE".equals(
-        (stack = awsHelperService
+        (stack = awsCFService
                      .describeStacks(AWS_DEFAULT_REGION,
                          new DescribeStacksRequest().withStackName("EC2ContainerService-test2"),
-                         AwsConfig.builder()
+                         AwsInternalConfig.builder()
                              .accessKey("AKIAJLEKM45P4PO5QUFQ".toCharArray())
                              .secretKey("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".toCharArray())
                              .build())
@@ -488,7 +491,7 @@ public class EcsContainerServiceImpl implements EcsContainerService {
    * Destroy cluster.
    */
   public void destroyCluster() {
-    awsHelperService.createStack(AWS_DEFAULT_REGION,
+    awsCFService.createStack(AWS_DEFAULT_REGION,
         new CreateStackRequest()
             .withStackName("EC2ContainerService-test2")
             .withTemplateBody("AWSTemplateFormatVersion: '2010-09-09'\n"
@@ -810,17 +813,17 @@ public class EcsContainerServiceImpl implements EcsContainerService {
                     .withParameterValue("us-east-1e,us-east-1c,us-east-1d,us-east-1a"),
                 new Parameter().withParameterKey("VpcCidr").withParameterValue("10.0.0.0/16"),
                 new Parameter().withParameterKey("VpcId").withParameterValue("vpc-84a9bfe0")),
-        AwsConfig.builder()
+        AwsInternalConfig.builder()
             .accessKey("AKIAJLEKM45P4PO5QUFQ".toCharArray())
             .secretKey("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".toCharArray())
             .build());
 
     Stack stack;
     while (!"CREATE_COMPLETE".equals(
-        (stack = awsHelperService
+        (stack = awsCFService
                      .describeStacks(AWS_DEFAULT_REGION,
                          new DescribeStacksRequest().withStackName("EC2ContainerService-test2"),
-                         AwsConfig.builder()
+                         AwsInternalConfig.builder()
                              .accessKey("AKIAJLEKM45P4PO5QUFQ".toCharArray())
                              .secretKey("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".toCharArray())
                              .build())

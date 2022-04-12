@@ -19,7 +19,9 @@ import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.core.beans.HealthSourceQueryType;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.MetricResponseMapping;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NewRelicHealthSourceSpec.NewRelicMetricDefinition;
+import io.harness.cvng.core.entities.NewRelicCVConfig.NewRelicMetricInfo;
 import io.harness.cvng.core.services.CVNextGenConstants;
+import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
 import io.harness.cvng.core.utils.analysisinfo.DevelopmentVerificationTransformer;
 import io.harness.cvng.core.utils.analysisinfo.LiveMonitoringTransformer;
 import io.harness.cvng.core.utils.analysisinfo.SLIMetricTransformer;
@@ -29,6 +31,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -46,7 +49,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 @FieldNameConstants(innerTypeName = "NewRelicCVConfigKeys")
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class NewRelicCVConfig extends MetricCVConfig {
+public class NewRelicCVConfig extends MetricCVConfig<NewRelicMetricInfo> {
   private String applicationName;
   private long applicationId;
   private String groupName;
@@ -84,6 +87,35 @@ public class NewRelicCVConfig extends MetricCVConfig {
         "CVConfig should have either application based setup or custom metric setup or both.");
   }
 
+  @Override
+  public boolean isSLIEnabled() {
+    if (!getMetricPack().getIdentifier().equals(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)) {
+      return false;
+    }
+    return AnalysisInfoUtility.anySLIEnabled(metricInfos);
+  }
+
+  @Override
+  public boolean isLiveMonitoringEnabled() {
+    if (!getMetricPack().getIdentifier().equals(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)) {
+      return true;
+    }
+    return AnalysisInfoUtility.anyLiveMonitoringEnabled(metricInfos);
+  }
+
+  @Override
+  public boolean isDeploymentVerificationEnabled() {
+    if (!getMetricPack().getIdentifier().equals(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)) {
+      return true;
+    }
+    return AnalysisInfoUtility.anyDeploymentVerificationEnabled(metricInfos);
+  }
+
+  @Override
+  public Optional<String> maybeGetGroupName() {
+    return Optional.ofNullable(groupName);
+  }
+
   public static class NewRelicCVConfigUpdatableEntity
       extends MetricCVConfigUpdatableEntity<NewRelicCVConfig, NewRelicCVConfig> {
     @Override
@@ -92,6 +124,9 @@ public class NewRelicCVConfig extends MetricCVConfig {
       setCommonOperations(updateOperations, newRelicCVConfig);
       updateOperations.set(NewRelicCVConfigKeys.applicationName, newRelicCVConfig.getApplicationName())
           .set(NewRelicCVConfigKeys.applicationId, newRelicCVConfig.getApplicationId());
+      if (newRelicCVConfig.getMetricInfos() != null) {
+        updateOperations.set(NewRelicCVConfigKeys.metricInfos, newRelicCVConfig.getMetricInfos());
+      }
     }
   }
 
@@ -142,7 +177,6 @@ public class NewRelicCVConfig extends MetricCVConfig {
   @SuperBuilder
   @FieldDefaults(level = AccessLevel.PRIVATE)
   public static class NewRelicMetricInfo extends AnalysisInfo {
-    String metricName;
     String nrql;
     TimeSeriesMetricType metricType;
     MetricResponseMapping responseMapping;

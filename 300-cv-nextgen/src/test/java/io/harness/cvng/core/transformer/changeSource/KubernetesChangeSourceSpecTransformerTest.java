@@ -46,8 +46,6 @@ public class KubernetesChangeSourceSpecTransformerTest extends CvNextGenTestBase
         .isEqualTo(((KubernetesChangeSourceSpec) changeSourceDTO.getSpec()).getConnectorRef());
     assertThat(changeSource.getAccountId()).isEqualTo(builderFactory.getContext().getAccountId());
     assertThat(changeSource.getProjectIdentifier()).isEqualTo(builderFactory.getContext().getProjectIdentifier());
-    assertThat(changeSource.getServiceIdentifier()).isEqualTo(builderFactory.getContext().getServiceIdentifier());
-    assertThat(changeSource.getEnvIdentifier()).isEqualTo(builderFactory.getContext().getEnvIdentifier());
     assertThat(changeSource.getMonitoredServiceIdentifier())
         .isEqualTo(builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier());
     assertThat(changeSource.isEnabled()).isTrue();

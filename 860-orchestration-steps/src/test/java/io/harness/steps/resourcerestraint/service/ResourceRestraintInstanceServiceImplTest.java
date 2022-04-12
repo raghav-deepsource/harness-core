@@ -12,10 +12,16 @@ import static io.harness.distribution.constraint.Consumer.State.ACTIVE;
 import static io.harness.distribution.constraint.Consumer.State.BLOCKED;
 import static io.harness.distribution.constraint.Consumer.State.FINISHED;
 import static io.harness.rule.OwnerRule.ALEXEI;
+import static io.harness.rule.OwnerRule.PRASHANT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.OrchestrationStepsTestBase;
@@ -40,15 +46,18 @@ import io.harness.rule.Owner;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance;
 import io.harness.testlib.RealMongo;
 
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import io.fabric8.utils.Lists;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ResourceRestraintInstanceServiceImplTest extends OrchestrationStepsTestBase {
@@ -58,7 +67,7 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
 
   @Mock private PlanExecutionService planExecutionService;
   @Mock private NodeExecutionService nodeExecutionService;
-  @Inject @InjectMocks private ResourceRestraintInstanceService resourceRestraintInstanceService;
+  @Inject @InjectMocks @Spy private ResourceRestraintInstanceService resourceRestraintInstanceService;
 
   @Test
   @Owner(developers = ALEXEI)
@@ -321,5 +330,43 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
     assertThat(savedInstance).isNotNull();
 
     return savedInstance;
+  }
+
+  @Test
+  @Owner(developers = PRASHANT)
+  @Category(UnitTests.class)
+  public void testProcessRestraintBlockedInstance() {
+    ResourceRestraintInstance instance = getResourceRestraint(BLOCKED);
+    resourceRestraintInstanceService.processRestraint(instance);
+    verify(resourceRestraintInstanceService)
+        .updateBlockedConstraints(Sets.newHashSet(instance.getResourceRestraintId()));
+  }
+
+  @Test
+  @Owner(developers = PRASHANT)
+  @Category(UnitTests.class)
+  public void testProcessRestraintActiveInstance() {
+    ResourceRestraintInstance instance = getResourceRestraint(ACTIVE);
+    Set<String> constraintIds = Sets.newHashSet(instance.getResourceRestraintId());
+    doNothing().when(resourceRestraintInstanceService).updateBlockedConstraints(constraintIds);
+    doReturn(true).when(resourceRestraintInstanceService).updateActiveConstraintsForInstance(eq(instance));
+    resourceRestraintInstanceService.processRestraint(instance);
+    verify(resourceRestraintInstanceService).updateActiveConstraintsForInstance(eq(instance));
+    verify(resourceRestraintInstanceService).updateBlockedConstraints(constraintIds);
+  }
+
+  @Test
+  @Owner(developers = PRASHANT)
+  @Category(UnitTests.class)
+  public void testActiveInstance_WhenNoInstancesAreUpdated() {
+    ResourceRestraintInstance instance = getResourceRestraint(ACTIVE);
+    doReturn(false).when(resourceRestraintInstanceService).updateActiveConstraintsForInstance(eq(instance));
+    resourceRestraintInstanceService.processRestraint(instance);
+    verify(resourceRestraintInstanceService, never())
+        .updateBlockedConstraints(Sets.newHashSet(instance.getResourceRestraintId()));
+  }
+
+  private ResourceRestraintInstance getResourceRestraint(State state) {
+    return ResourceRestraintInstance.builder().resourceRestraintId(generateUuid()).state(state).build();
   }
 }

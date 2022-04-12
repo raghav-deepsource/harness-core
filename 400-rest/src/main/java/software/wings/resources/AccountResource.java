@@ -519,9 +519,9 @@ public class AccountResource {
   @Timed
   @ExceptionMetered
   @LearningEngineAuth
-  public RestResponse<Boolean> validateDelegateToken(
-      @QueryParam("accountId") @NotEmpty String accountId, @QueryParam("delegateToken") @NotNull String delegateToken) {
-    authService.validateDelegateToken(accountId, substringAfter(delegateToken, "Delegate "));
+  public RestResponse<Boolean> validateDelegateToken(@QueryParam("accountId") @NotEmpty String accountId,
+      @QueryParam("delegateToken") @NotNull String delegateToken, @QueryParam("delegateId") String delegateId) {
+    authService.validateDelegateToken(accountId, substringAfter(delegateToken, "Delegate "), delegateId, false);
     return new RestResponse<>(true);
   }
 
@@ -660,6 +660,26 @@ public class AccountResource {
       return RestResponse.Builder.aRestResponse()
           .withResponseMessages(
               Lists.newArrayList(ResponseMessage.builder().message("User not allowed to query licenses").build()))
+          .build();
+    }
+  }
+
+  @POST
+  @Path("{accountId}/reset-cache")
+  public RestResponse<Boolean> resetCache(@PathParam("accountId") String accountId) {
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+
+    if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      authService.evictUserPermissionAndRestrictionCacheForAccount(accountId, true, true);
+      log.info("Reset cache successful for account id {}", accountId);
+      return new RestResponse<>(Boolean.TRUE);
+    } else {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(
+              Lists.newArrayList(ResponseMessage.builder().message("User not allowed to reset cache").build()))
           .build();
     }
   }

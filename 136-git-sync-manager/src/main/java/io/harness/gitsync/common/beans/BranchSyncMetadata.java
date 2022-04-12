@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 
@@ -21,5 +22,6 @@ public class BranchSyncMetadata implements EventMetadata {
   String projectIdentifier;
   String orgIdentifier;
   String yamlGitConfigId;
-  String fileToBeExcluded;
+  @Deprecated String fileToBeExcluded;
+  List<String> filesToBeExcluded;
 }

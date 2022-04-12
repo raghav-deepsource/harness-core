@@ -41,6 +41,8 @@ import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.beans.DelegateSize;
 import io.harness.delegate.beans.DelegateSizeDetails;
+import io.harness.delegate.beans.DelegateToken;
+import io.harness.delegate.beans.DelegateTokenStatus;
 import io.harness.delegate.filter.DelegateFilterPropertiesDTO;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
 import io.harness.exception.InvalidRequestException;
@@ -236,6 +238,7 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
                           .activelyConnected(delegate3.getLastHeartBeat()
                               > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME.toMillis())
                           .hostName(delegate3.getHostName())
+                          .tokenActive(true)
                           .build());
       }
     }
@@ -1158,6 +1161,8 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
                             .delegateTokenName("test")
                             .build();
     persistence.save(delegate);
+    persistence.save(
+        DelegateToken.builder().accountId(TEST_ACCOUNT_ID).name("test").status(DelegateTokenStatus.ACTIVE).build());
 
     DelegateGroupListing delegateGroupListing =
         delegateSetupService.listDelegateGroupDetails(TEST_ACCOUNT_ID, null, null, "test");

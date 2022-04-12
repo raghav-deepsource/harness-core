@@ -14,6 +14,7 @@ import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.pms.contracts.execution.Status.FAILED;
 import static io.harness.pms.contracts.execution.Status.SUCCEEDED;
+import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ANSHUL;
 
@@ -196,6 +197,27 @@ public class K8sBGSwapServicesStepTest extends CategoryTest {
                 bgSwapServicesStepFqn + "." + OutcomeExpressionConstants.K8S_BG_SWAP_SERVICES_OUTCOME));
 
     TaskRequest taskRequest = k8sBGSwapServicesStep.obtainTask(ambiance, stepElementParameters, stepInputPackage);
+    assertThat(taskRequest).isNotNull();
+    assertThat(taskRequest.getSkipTaskRequest()).isNotNull();
+    assertThat(taskRequest.getSkipTaskRequest().getMessage()).isEqualTo(SKIP_BG_SWAP_SERVICES_STEP_EXECUTION);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testObtainTaskInRollbackWhenSwapServicesIsMissingFromPipeline() {
+    Ambiance ambiance = getAmbianceForRollback();
+    K8sBGSwapServicesStepParameters stepParams =
+        K8sBGSwapServicesStepParameters.infoBuilder().blueGreenStepFqn(bgStepFqn).build();
+    StepElementParameters stepElementParams =
+        StepElementParameters.builder().spec(stepParams).timeout(ParameterField.createValueField("10m")).build();
+    OptionalOutcome optionalOutcome = OptionalOutcome.builder().found(false).build();
+    doReturn(optionalOutcome)
+        .when(outcomeService)
+        .resolveOptional(ambiance,
+            RefObjectUtils.getOutcomeRefObject("null." + OutcomeExpressionConstants.K8S_BG_SWAP_SERVICES_OUTCOME));
+
+    TaskRequest taskRequest = k8sBGSwapServicesStep.obtainTask(ambiance, stepElementParams, stepInputPackage);
     assertThat(taskRequest).isNotNull();
     assertThat(taskRequest.getSkipTaskRequest()).isNotNull();
     assertThat(taskRequest.getSkipTaskRequest().getMessage()).isEqualTo(SKIP_BG_SWAP_SERVICES_STEP_EXECUTION);

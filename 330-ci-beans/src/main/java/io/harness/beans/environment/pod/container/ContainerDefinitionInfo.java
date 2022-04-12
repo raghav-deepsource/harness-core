@@ -38,7 +38,7 @@ public class ContainerDefinitionInfo {
   Map<String, String> envVars;
   Map<String, String> envVarsWithSecretRef;
   List<SecretNGVariable> secretVariables;
-  private boolean privileged;
+  private Boolean privileged;
   private Integer runAsUser;
   private String imagePullPolicy;
 }

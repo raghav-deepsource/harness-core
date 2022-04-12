@@ -18,25 +18,31 @@ import io.harness.ng.core.environment.beans.EnvironmentBasicInfo;
 import io.harness.ng.core.environment.dto.EnvironmentRequestDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
+import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class EnvironmentMapper {
   public Environment toEnvironmentEntity(String accountId, EnvironmentRequestDTO environmentRequestDTO) {
-    return Environment.builder()
-        .identifier(environmentRequestDTO.getIdentifier())
-        .accountId(accountId)
-        .orgIdentifier(environmentRequestDTO.getOrgIdentifier())
-        .projectIdentifier(environmentRequestDTO.getProjectIdentifier())
-        .name(environmentRequestDTO.getName())
-        .color(Optional.ofNullable(environmentRequestDTO.getColor()).orElse(HARNESS_BLUE))
-        .description(environmentRequestDTO.getDescription())
-        .type(environmentRequestDTO.getType())
-        .tags(convertToList(environmentRequestDTO.getTags()))
-        .build();
+    Environment environment = Environment.builder()
+                                  .identifier(environmentRequestDTO.getIdentifier())
+                                  .accountId(accountId)
+                                  .orgIdentifier(environmentRequestDTO.getOrgIdentifier())
+                                  .projectIdentifier(environmentRequestDTO.getProjectIdentifier())
+                                  .name(environmentRequestDTO.getName())
+                                  .color(Optional.ofNullable(environmentRequestDTO.getColor()).orElse(HARNESS_BLUE))
+                                  .description(environmentRequestDTO.getDescription())
+                                  .type(environmentRequestDTO.getType())
+                                  .tags(convertToList(environmentRequestDTO.getTags()))
+                                  .build();
+    NGEnvironmentConfig ngEnvironmentConfig = NGEnvironmentEntityMapper.toNGEnvironmentConfig(environment);
+    environment.setYaml(NGEnvironmentEntityMapper.toYaml(ngEnvironmentConfig));
+    return environment;
   }
 
   public EnvironmentResponseDTO writeDTO(Environment environment) {
@@ -52,6 +58,7 @@ public class EnvironmentMapper {
         .deleted(environment.getDeleted())
         .tags(convertToMap(environment.getTags()))
         .version(environment.getVersion())
+        .yaml(environment.getYaml())
         .build();
   }
 
@@ -75,5 +82,9 @@ public class EnvironmentMapper {
         .tags(convertToMap(environment.getTags()))
         .color(environment.getColor())
         .build();
+  }
+
+  public static List<EnvironmentResponse> toResponseWrapper(List<Environment> envList) {
+    return envList.stream().map(env -> toResponseWrapper(env)).collect(Collectors.toList());
   }
 }

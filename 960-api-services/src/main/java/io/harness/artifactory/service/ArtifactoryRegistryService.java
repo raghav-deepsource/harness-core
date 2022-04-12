@@ -61,12 +61,4 @@ public interface ArtifactoryRegistryService {
    * @return boolean validate
    */
   boolean validateCredentials(ArtifactoryConfigRequest toArtifactoryInternalConfig);
-
-  /**
-   * Verifies the Artifact Tag Manifest exists
-   * @param lastSuccessfulBuild       artifact build details
-   * @param artifactoryConfig         the artifactory config
-   */
-  boolean verifyArtifactManifestUrl(
-      BuildDetailsInternal lastSuccessfulBuild, ArtifactoryConfigRequest artifactoryConfig);
 }

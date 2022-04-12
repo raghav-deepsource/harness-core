@@ -91,7 +91,8 @@ public enum QLTaskGroup implements QLEnum {
   CUSTOM_MANIFEST_FETCH_TASK,
   TERRAFORM_NG,
   CE,
-  SERVICENOW_NG;
+  SERVICENOW_NG,
+  CLOUDFORMATION_NG;
 
   @Override
   public String getStringValue() {

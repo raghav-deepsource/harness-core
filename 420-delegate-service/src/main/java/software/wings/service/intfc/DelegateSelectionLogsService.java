@@ -45,4 +45,6 @@ public interface DelegateSelectionLogsService {
   DelegateSelectionLogResponse fetchTaskSelectionLogsData(String accountId, String taskId);
 
   Optional<DelegateSelectionLogParams> fetchSelectedDelegateForTask(String accountId, String taskId);
+
+  void logDelegateTaskInfo(DelegateTask delegateTask);
 }

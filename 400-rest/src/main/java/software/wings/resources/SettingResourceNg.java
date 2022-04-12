@@ -87,7 +87,7 @@ public class SettingResourceNg {
     SmtpConfig smtpConfig = (SmtpConfig) variable.getValue();
     SecretManagerConfig secretManagerConfig = secretManagerConfigService.getDefaultSecretManager(accountId);
     SecretText secretText = new SecretText();
-    String password = new String(smtpConfig.getPassword());
+    String password = (smtpConfig.getPassword() == null) ? "" : new String(smtpConfig.getPassword());
     secretText.setValue(password);
     String secretName = variable.getName() + "-" + accountId + "-SmtpSecret";
     secretText.setName(secretName);
@@ -170,7 +170,7 @@ public class SettingResourceNg {
     SecretManagerConfig secretManagerConfig =
         secretManagerConfigService.getDefaultSecretManager(variable.getAccountId());
     SecretText secretText = new SecretText();
-    String password = new String(smtpConfig.getPassword());
+    String password = (smtpConfig.getPassword() == null) ? "" : new String(smtpConfig.getPassword());
     secretText.setValue(password);
     String secretName = variable.getName() + "-" + variable.getAccountId() + "-SmtpSecret";
     secretText.setName(secretName);

@@ -38,6 +38,7 @@ import io.harness.steps.policy.custom.CustomPolicyStepSpec;
 import io.harness.steps.policy.step.outcome.PolicyStepOutcome;
 import io.harness.steps.policy.step.outcome.PolicyStepOutcomeMapper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
@@ -86,8 +87,9 @@ public class PolicyStep implements SyncExecutable<StepElementParameters> {
     OpaEvaluationResponseHolder opaEvaluationResponseHolder;
     try {
       String policySetsQueryParam = PolicyStepHelper.getPolicySetsStringForQueryParam(policySets);
+      JsonNode payloadObject = YamlUtils.readTree(payload).getNode().getCurrJsonNode();
       opaEvaluationResponseHolder = SafeHttpCall.executeWithErrorMessage(opaServiceClient.evaluateWithCredentialsByID(
-          accountId, orgIdentifier, projectIdentifier, policySetsQueryParam, YamlUtils.readTree(payload)));
+          accountId, orgIdentifier, projectIdentifier, policySetsQueryParam, payloadObject));
     } catch (InvalidRequestException ex) {
       return PolicyStepHelper.buildPolicyEvaluationErrorStepResponse(ex.getMessage());
     } catch (Exception ex) {
@@ -103,8 +105,9 @@ public class PolicyStep implements SyncExecutable<StepElementParameters> {
                                   .build();
 
     if (opaEvaluationResponseHolder.getStatus().equals(OpaConstants.OPA_STATUS_ERROR)) {
-      return PolicyStepHelper.buildFailureStepResponse(ErrorCode.POLICY_EVALUATION_FAILURE,
-          "Some Policies were not adhered to.", FailureType.POLICY_EVALUATION_FAILURE, stepOutcome);
+      String errorMessage = PolicyStepHelper.buildPolicyEvaluationFailureMessage(opaEvaluationResponseHolder);
+      return PolicyStepHelper.buildFailureStepResponse(
+          ErrorCode.POLICY_EVALUATION_FAILURE, errorMessage, FailureType.POLICY_EVALUATION_FAILURE, stepOutcome);
     }
     return StepResponse.builder().status(Status.SUCCEEDED).stepOutcome(stepOutcome).build();
   }

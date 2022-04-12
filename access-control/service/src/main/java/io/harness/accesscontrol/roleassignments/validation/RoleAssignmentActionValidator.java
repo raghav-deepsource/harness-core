@@ -14,6 +14,7 @@ import static io.harness.accesscontrol.resources.resourcegroups.HarnessResourceG
 import static io.harness.accesscontrol.roles.HarnessRoleConstants.ACCOUNT_ADMIN_ROLE;
 import static io.harness.accesscontrol.roles.HarnessRoleConstants.ORGANIZATION_ADMIN_ROLE;
 import static io.harness.accesscontrol.roles.HarnessRoleConstants.PROJECT_ADMIN_ROLE;
+import static io.harness.accesscontrol.scopes.core.ScopeHelper.toParentScope;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.accesscontrol.common.validation.ValidationResult;
@@ -140,8 +141,11 @@ public class RoleAssignmentActionValidator implements HarnessActionValidator<Rol
     if (!PrincipalType.USER_GROUP.equals(roleAssignment.getPrincipalType())) {
       return true;
     }
+    Scope scope = toParentScope(scopeService.buildScopeFromScopeIdentifier(roleAssignment.getScopeIdentifier()),
+        roleAssignment.getPrincipalScopeLevel());
+    String principalScopeIdentifier = scope == null ? roleAssignment.getScopeIdentifier() : scope.toString();
     Optional<UserGroup> userGroup =
-        userGroupService.get(roleAssignment.getPrincipalIdentifier(), roleAssignment.getScopeIdentifier());
+        userGroupService.get(roleAssignment.getPrincipalIdentifier(), principalScopeIdentifier);
     return userGroup.isPresent() && isNotEmpty(userGroup.get().getUsers());
   }
 }

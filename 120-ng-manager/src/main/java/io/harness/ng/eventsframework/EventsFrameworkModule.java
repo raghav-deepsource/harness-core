@@ -18,6 +18,9 @@ import static io.harness.eventsframework.EventsFrameworkConstants.GIT_PR_EVENT_S
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_PUSH_EVENT_STREAM;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_PUSH_EVENT_STREAM_MAX_TOPIC_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.INSTANCE_STATS;
+import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_EXECUTION_SUMMARY_CD_CONSUMER;
+import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_EXECUTION_SUMMARY_CD_REDIS_KEY;
+import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER_CD;
 import static io.harness.eventsframework.EventsFrameworkConstants.WEBHOOK_EVENTS_STREAM;
 import static io.harness.eventsframework.EventsFrameworkConstants.WEBHOOK_EVENTS_STREAM_MAX_TOPIC_SIZE;
 
@@ -31,6 +34,7 @@ import io.harness.eventsframework.impl.noop.NoOpProducer;
 import io.harness.eventsframework.impl.redis.GitAwareRedisProducer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
 import io.harness.eventsframework.impl.redis.RedisProducer;
+import io.harness.eventsframework.impl.redis.RedisSerialConsumer;
 import io.harness.eventsframework.impl.redis.RedisUtils;
 import io.harness.redis.RedisConfig;
 
@@ -71,10 +75,6 @@ public class EventsFrameworkModule extends AbstractModule {
           .toInstance(NoOpProducer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME));
       bind(Consumer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.ENTITY_ACTIVITY))
-          .toInstance(
-              NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
-      bind(Consumer.class)
-          .annotatedWith(Names.named(EventsFrameworkConstants.HARNESS_TO_GIT_PUSH))
           .toInstance(
               NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
       bind(Producer.class)
@@ -162,11 +162,6 @@ public class EventsFrameworkModule extends AbstractModule {
           .toInstance(RedisConsumer.of(EventsFrameworkConstants.ENTITY_ACTIVITY, NG_MANAGER.getServiceId(),
               redissonClient, EventsFrameworkConstants.ENTITY_ACTIVITY_MAX_PROCESSING_TIME,
               EventsFrameworkConstants.ENTITY_ACTIVITY_READ_BATCH_SIZE, redisConfig.getEnvNamespace()));
-      bind(Consumer.class)
-          .annotatedWith(Names.named(EventsFrameworkConstants.HARNESS_TO_GIT_PUSH))
-          .toInstance(RedisConsumer.of(EventsFrameworkConstants.HARNESS_TO_GIT_PUSH, NG_MANAGER.getServiceId(),
-              redissonClient, EventsFrameworkConstants.HARNESS_TO_GIT_PUSH_MAX_PROCESSING_TIME,
-              EventsFrameworkConstants.HARNESS_TO_GIT_PUSH_READ_BATCH_SIZE, redisConfig.getEnvNamespace()));
       // todo(abhinav): move this to git sync manager if it is carved out.
       bind(Producer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.GIT_CONFIG_STREAM))
@@ -233,6 +228,11 @@ public class EventsFrameworkModule extends AbstractModule {
           .toInstance(RedisProducer.of(EventsFrameworkConstants.CD_DEPLOYMENT_EVENT, redissonClient,
               EventsFrameworkConstants.CD_DEPLOYMENT_EVENT_MAX_TOPIC_SIZE, NG_MANAGER.getServiceId(),
               redisConfig.getEnvNamespace()));
+      bind(Consumer.class)
+          .annotatedWith(Names.named(PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER_CD))
+          .toInstance(RedisSerialConsumer.of(PIPELINE_EXECUTION_SUMMARY_CD_REDIS_KEY, NG_MANAGER.getServiceId(),
+              PIPELINE_EXECUTION_SUMMARY_CD_CONSUMER, redissonClient,
+              EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME, redisConfig.getEnvNamespace()));
     }
   }
 }

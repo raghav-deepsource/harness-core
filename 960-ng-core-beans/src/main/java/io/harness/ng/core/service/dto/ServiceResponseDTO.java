@@ -20,7 +20,7 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Schema(name = "ServiceResponse", description = "This is the Service entity defined in Harness")
+@Schema(name = "ServiceResponseDetails", description = "This is the Service entity defined in Harness")
 public class ServiceResponseDTO {
   String accountId;
   String identifier;

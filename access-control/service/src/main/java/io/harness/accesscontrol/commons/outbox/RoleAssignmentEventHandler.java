@@ -7,10 +7,14 @@
 
 package io.harness.accesscontrol.commons.outbox;
 
+import static io.harness.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
 import static io.harness.accesscontrol.roleassignments.events.RoleAssignmentCreateEvent.ROLE_ASSIGNMENT_CREATE_EVENT;
 import static io.harness.accesscontrol.roleassignments.events.RoleAssignmentDeleteEvent.ROLE_ASSIGNMENT_DELETE_EVENT;
 import static io.harness.accesscontrol.roleassignments.events.RoleAssignmentUpdateEvent.ROLE_ASSIGNMENT_UPDATE_EVENT;
 import static io.harness.accesscontrol.scopes.harness.ScopeMapper.fromDTO;
+import static io.harness.accesscontrol.scopes.harness.ScopeMapper.toDTO;
+import static io.harness.accesscontrol.scopes.harness.ScopeMapper.toParams;
+import static io.harness.accesscontrol.scopes.harness.ScopeMapper.toParentScopeParams;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.utils.NGYamlUtils.getYamlString;
@@ -40,6 +44,8 @@ import io.harness.ng.core.ResourceConstants;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxEventHandler;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.ServicePrincipal;
 import io.harness.serviceaccount.ServiceAccountDTO;
 import io.harness.serviceaccount.remote.ServiceAccountClient;
 import io.harness.usermembership.remote.UserMembershipClient;
@@ -77,6 +83,7 @@ public class RoleAssignmentEventHandler implements OutboxEventHandler {
   @Override
   public boolean handle(OutboxEvent outboxEvent) {
     try {
+      SecurityContextBuilder.setContext(new ServicePrincipal(ACCESS_CONTROL_SERVICE.getServiceId()));
       switch (outboxEvent.getEventType()) {
         case ROLE_ASSIGNMENT_CREATE_EVENT:
           return handleRoleAssignmentCreateEvent(outboxEvent);
@@ -88,10 +95,13 @@ public class RoleAssignmentEventHandler implements OutboxEventHandler {
           throw new InvalidArgumentsException(String.format("Not supported event type %s", outboxEvent.getEventType()));
       }
     } catch (IOException exception) {
+      SecurityContextBuilder.unsetCompleteContext();
       log.error(
           String.format("IOException occurred during handling outbox event of type %s", outboxEvent.getEventType()),
           exception);
       return false;
+    } finally {
+      SecurityContextBuilder.unsetCompleteContext();
     }
   }
 
@@ -164,9 +174,13 @@ public class RoleAssignmentEventHandler implements OutboxEventHandler {
       case USER:
         return getUserResourceDTO(scopeDTO, roleAssignmentDTO.getPrincipal().getIdentifier());
       case USER_GROUP:
-        return getUserGroupResourceDTO(scopeDTO, roleAssignmentDTO.getPrincipal().getIdentifier());
+        return getUserGroupResourceDTO(
+            toDTO(toParentScopeParams(toParams(scopeDTO), roleAssignmentDTO.getPrincipal().getScopeLevel())),
+            roleAssignmentDTO.getPrincipal().getIdentifier());
       case SERVICE_ACCOUNT:
-        return getServiceAccountResourceDTO(scopeDTO, roleAssignmentDTO.getPrincipal().getIdentifier());
+        return getServiceAccountResourceDTO(
+            toDTO(toParentScopeParams(toParams(scopeDTO), roleAssignmentDTO.getPrincipal().getScopeLevel())),
+            roleAssignmentDTO.getPrincipal().getIdentifier());
       default:
         throw new InvalidArgumentsException(String.format(
             "Not supported principal type %s in role assignment audits.", roleAssignmentDTO.getPrincipal().getType()));

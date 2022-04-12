@@ -79,6 +79,7 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -164,6 +165,9 @@ public class ServiceResourceV2 {
         NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity.get());
         serviceEntity.get().setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
       }
+    } else {
+      throw new NotFoundException(String.format("Service with identifier [%s] in project [%s], org [%s] not found",
+          serviceIdentifier, projectIdentifier, orgIdentifier));
     }
     return ResponseDTO.newResponse(version, serviceEntity.map(ServiceElementMapper::toResponseWrapper).orElse(null));
   }

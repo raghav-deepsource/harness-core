@@ -18,6 +18,7 @@ import io.harness.persistence.HPersistence;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -28,34 +29,48 @@ import org.mongodb.morphia.query.UpdateOperations;
 public class BusinessMappingDao {
   @Inject private HPersistence hPersistence;
 
-  public boolean save(BusinessMapping businessMapping) {
-    return hPersistence.save(businessMapping) != null;
+  public BusinessMapping save(BusinessMapping businessMapping) {
+    hPersistence.save(businessMapping);
+    return businessMapping;
   }
 
   public BusinessMapping update(BusinessMapping businessMapping) {
-    Query query = hPersistence.createQuery(BusinessMapping.class)
-                      .field(BusinessMappingKeys.accountId)
-                      .equal(businessMapping.getAccountId())
-                      .field(BusinessMappingKeys.uuid)
-                      .equal(businessMapping.getUuid());
+    Query<BusinessMapping> query = hPersistence.createQuery(BusinessMapping.class)
+                                       .field(BusinessMappingKeys.accountId)
+                                       .equal(businessMapping.getAccountId())
+                                       .field(BusinessMappingKeys.uuid)
+                                       .equal(businessMapping.getUuid());
 
-    UpdateOperations<BusinessMapping> updateOperations =
-        hPersistence.createUpdateOperations(BusinessMapping.class)
-            .set(BusinessMappingKeys.name, businessMapping.getName())
-            .set(BusinessMappingKeys.accountId, businessMapping.getAccountId())
-            .set(BusinessMappingKeys.costTargets, businessMapping.getCostTargets())
-            .set(BusinessMappingKeys.sharedCosts, businessMapping.getSharedCosts());
+    hPersistence.update(query, getUpdateOperations(businessMapping));
+    return businessMapping;
+  }
 
-    hPersistence.update(query, updateOperations);
-    return (BusinessMapping) query.asList().get(0);
+  private UpdateOperations<BusinessMapping> getUpdateOperations(BusinessMapping businessMapping) {
+    UpdateOperations<BusinessMapping> updateOperations = hPersistence.createUpdateOperations(BusinessMapping.class);
+
+    setUnsetUpdateOperations(updateOperations, BusinessMappingKeys.name, businessMapping.getName());
+    setUnsetUpdateOperations(updateOperations, BusinessMappingKeys.costTargets, businessMapping.getCostTargets());
+    setUnsetUpdateOperations(updateOperations, BusinessMappingKeys.sharedCosts, businessMapping.getSharedCosts());
+    setUnsetUpdateOperations(
+        updateOperations, BusinessMappingKeys.unallocatedCost, businessMapping.getUnallocatedCost());
+
+    return updateOperations;
+  }
+
+  private void setUnsetUpdateOperations(UpdateOperations<BusinessMapping> updateOperations, String key, Object value) {
+    if (Objects.nonNull(value)) {
+      updateOperations.set(key, value);
+    } else {
+      updateOperations.unset(key);
+    }
   }
 
   public boolean delete(String uuid, String accountId) {
-    Query query = hPersistence.createQuery(BusinessMapping.class)
-                      .field(BusinessMappingKeys.accountId)
-                      .equal(accountId)
-                      .field(BusinessMappingKeys.uuid)
-                      .equal(uuid);
+    Query<BusinessMapping> query = hPersistence.createQuery(BusinessMapping.class)
+                                       .field(BusinessMappingKeys.accountId)
+                                       .equal(accountId)
+                                       .field(BusinessMappingKeys.uuid)
+                                       .equal(uuid);
 
     return hPersistence.delete(query);
   }

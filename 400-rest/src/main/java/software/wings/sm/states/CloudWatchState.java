@@ -12,10 +12,10 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.waiter.OrchestrationNotifyEventListener.ORCHESTRATION;
 
+import static software.wings.delegatetasks.cv.CVConstants.CONTROL_HOST_NAME;
+import static software.wings.delegatetasks.cv.CVConstants.TEST_HOST_NAME;
 import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
 import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
-import static software.wings.sm.states.DynatraceState.CONTROL_HOST_NAME;
-import static software.wings.sm.states.DynatraceState.TEST_HOST_NAME;
 
 import static java.util.Collections.singletonList;
 
@@ -53,7 +53,7 @@ import com.github.reinert.jjschema.Attributes;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import com.hazelcast.util.Preconditions;
+import com.hazelcast.internal.util.Preconditions;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

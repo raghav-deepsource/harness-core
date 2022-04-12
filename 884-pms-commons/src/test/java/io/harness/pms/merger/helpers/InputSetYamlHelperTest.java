@@ -46,6 +46,26 @@ public class InputSetYamlHelperTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
+  public void testSetPipelineComponent() {
+    String yaml1 = getInputSetYaml(true);
+    String newPipelineComponent = "pipeline:\n"
+        + "  name: n2\n"
+        + "  identifier: n2\n"
+        + "  description: something here";
+    String newYaml = InputSetYamlHelper.setPipelineComponent(yaml1, newPipelineComponent);
+    String newExpectedYaml = "inputSet:\n"
+        + "  name: \"n1\"\n"
+        + "  identifier: \"n1\"\n"
+        + "  pipeline:\n"
+        + "    name: \"n2\"\n"
+        + "    identifier: \"n2\"\n"
+        + "    description: \"something here\"\n";
+    assertThat(newYaml).isEqualTo(newExpectedYaml);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
   public void testGetStringField() {
     String yaml1 = getPipelineYaml();
     assertThat(InputSetYamlHelper.getStringField(yaml1, "name", "pipeline")).isEqualTo("n2");

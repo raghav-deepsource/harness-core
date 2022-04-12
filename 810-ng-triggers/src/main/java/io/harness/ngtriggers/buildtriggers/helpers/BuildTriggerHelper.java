@@ -28,6 +28,7 @@ import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.pipeline.PMSPipelineResponseDTO;
+import io.harness.pms.pipeline.TemplatesResolvedPipelineResponseDTO;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.polling.contracts.BuildInfo;
 import io.harness.polling.contracts.DockerHubPayload;
@@ -64,6 +65,15 @@ public class BuildTriggerHelper {
         ngTriggerEntity.getProjectIdentifier(), null, null, false));
 
     return response != null ? Optional.of(response.getYamlPipeline()) : Optional.empty();
+  }
+
+  public Optional<String> fetchResolvedTemplatesPipelineForTrigger(NGTriggerEntity ngTriggerEntity) {
+    TemplatesResolvedPipelineResponseDTO response =
+        NGRestUtils.getResponse(pipelineServiceClient.getResolvedTemplatesPipelineByIdentifier(
+            ngTriggerEntity.getTargetIdentifier(), ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
+            ngTriggerEntity.getProjectIdentifier(), null, null, false));
+
+    return response != null ? Optional.of(response.getResolvedTemplatesPipelineYaml()) : Optional.empty();
   }
 
   public Map<String, JsonNode> fetchTriggerBuildSpecMap(NGTriggerEntity ngTriggerEntity) throws IOException {

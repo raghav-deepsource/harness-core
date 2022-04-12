@@ -76,9 +76,7 @@ public class TemplateFullGitSyncHelper {
     Page<TemplateEntity> pagedTemplatesList = null;
     List<TemplateEntity> templateEntities = new LinkedList<>();
     do {
-      Criteria criteria = templateServiceHelper.formCriteria(entityScope.getAccountId(),
-          StringValueUtils.getStringFromStringValue(entityScope.getOrgId()),
-          StringValueUtils.getStringFromStringValue(entityScope.getProjectId()), null, null, false, null, false);
+      Criteria criteria = getCriteriaForFullSync(entityScope);
       PageRequest pageRequest = PageRequest.of(pagedTemplatesList == null ? 0 : pagedTemplatesList.getNumber() + 1, 200,
           Sort.by(Sort.Direction.DESC, TemplateEntityKeys.lastUpdatedAt));
       pagedTemplatesList = templateService.list(criteria, pageRequest, entityScope.getAccountId(),
@@ -88,6 +86,13 @@ public class TemplateFullGitSyncHelper {
     } while (pagedTemplatesList.hasNext());
 
     return templateEntities;
+  }
+
+  private Criteria getCriteriaForFullSync(EntityScopeInfo entityScope) {
+    Criteria criteria = templateServiceHelper.formCriteria(entityScope.getAccountId(),
+        StringValueUtils.getStringFromStringValue(entityScope.getOrgId()),
+        StringValueUtils.getStringFromStringValue(entityScope.getProjectId()), null, null, false, null, false);
+    return criteria.and(TemplateEntityKeys.yamlGitConfigRef).is(null);
   }
 
   public NGTemplateConfig doFullGitSync(EntityDetailProtoDTO entityDetailProtoDTO) {

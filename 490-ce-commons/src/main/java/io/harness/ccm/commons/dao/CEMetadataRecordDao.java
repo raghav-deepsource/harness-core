@@ -66,6 +66,11 @@ public class CEMetadataRecordDao {
       updateOperations.set(CEMetadataRecordKeys.azureDataPresent, ceMetadataRecord.getAzureDataPresent());
     }
 
+    if (null != ceMetadataRecord.getSegmentDataReadyEventSent()) {
+      updateOperations.set(
+          CEMetadataRecordKeys.segmentDataReadyEventSent, ceMetadataRecord.getSegmentDataReadyEventSent());
+    }
+
     if (null != ceMetadataRecord.getApplicationDataPresent()) {
       updateOperations.set(CEMetadataRecordKeys.applicationDataPresent, ceMetadataRecord.getApplicationDataPresent());
     }

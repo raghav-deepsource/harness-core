@@ -141,6 +141,7 @@ public class NewRelicHealthSourceSpec extends MetricHealthSourceSpec {
                                               .groupName(definitionList.get(0).getGroupName())
                                               .category(definitionList.get(0).getRiskProfile().getCategory())
                                               .monitoredServiceIdentifier(monitoredServiceIdentifier)
+                                              .customQuery(true)
                                               .build();
       newRelicCVConfig.populateFromMetricDefinitions(
           newRelicMetricDefinitions, newRelicMetricDefinitions.get(0).getRiskProfile().getCategory());

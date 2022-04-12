@@ -87,6 +87,8 @@ import software.wings.graphql.schema.type.permissions.QLAppPermission.QLAppPermi
 import software.wings.graphql.schema.type.permissions.QLDeploymentFilterType;
 import software.wings.graphql.schema.type.permissions.QLDeploymentPermissions;
 import software.wings.graphql.schema.type.permissions.QLEnvPermissions;
+import software.wings.graphql.schema.type.permissions.QLExecutableElementFilterInput;
+import software.wings.graphql.schema.type.permissions.QLExecutableElementType;
 import software.wings.graphql.schema.type.permissions.QLGroupPermissions;
 import software.wings.graphql.schema.type.permissions.QLPermissionType;
 import software.wings.graphql.schema.type.permissions.QLPermissionsFilterType;
@@ -100,6 +102,7 @@ import software.wings.graphql.schema.type.permissions.QLWorkflowFilterType;
 import software.wings.graphql.schema.type.permissions.QLWorkflowPermissions;
 import software.wings.security.AppFilter;
 import software.wings.security.EnvFilter;
+import software.wings.security.ExecutableElementsFilter;
 import software.wings.security.Filter;
 import software.wings.security.GenericEntityFilter;
 import software.wings.security.PermissionAttribute.Action;
@@ -357,7 +360,37 @@ public class UserGroupPermissionsController {
         }
       }
     }
-    return WorkflowFilter.builder().ids(deploymentPermissions.getEnvIds()).filterTypes(filterTypes).build();
+    if (deploymentPermissions.getExecutableElementFilter() == null) {
+      return EnvFilter.builder().ids(deploymentPermissions.getEnvIds()).filterTypes(filterTypes).build();
+    } else {
+      return createDeploymentFilterWithExecutableElement(filterTypes, deploymentPermissions);
+    }
+  }
+
+  private Filter createDeploymentFilterWithExecutableElement(
+      Set<String> filterTypes, QLDeploymentPermissions deploymentPermissions) {
+    final QLExecutableElementFilterInput executableElementFilter = deploymentPermissions.getExecutableElementFilter();
+    final QLExecutableElementType executableElementType = executableElementFilter.getExecutableElementType();
+    String elementType = executableElementType == QLExecutableElementType.WORKFLOW
+        ? ExecutableElementsFilter.FilterType.WORKFLOW
+        : ExecutableElementsFilter.FilterType.PIPELINE;
+    final QLPermissionsFilterType executableElementFilterType =
+        executableElementFilter.getExecutableElementFilterType();
+    if (executableElementFilterType != null && isNotEmpty(executableElementFilter.getIds())) {
+      throw new InvalidRequestException("Cannot set both Ids and ALL in executable element filter");
+    }
+    String executableElementFilterTypeValue = executableElementFilterType == null
+        ? GenericEntityFilter.FilterType.SELECTED
+        : GenericEntityFilter.FilterType.ALL;
+    return ExecutableElementsFilter.executableBuilder()
+        .executableElementType(elementType)
+        .filter(GenericEntityFilter.builder()
+                    .filterType(executableElementFilterTypeValue)
+                    .ids(executableElementFilter.getIds())
+                    .build())
+        .envIds(deploymentPermissions.getEnvIds())
+        .envTypes(filterTypes)
+        .build();
   }
 
   private Filter createPipelineFilter(QLPipelinePermissions pipelinePermissions) {
@@ -690,6 +723,23 @@ public class UserGroupPermissionsController {
   }
 
   private QLDeploymentPermissions createDeploymentFilterOutput(EnvFilter envPermissions) {
+    QLExecutableElementFilterInput executableElementsFilter = null;
+    if (envPermissions instanceof ExecutableElementsFilter) {
+      final GenericEntityFilter filter = ((ExecutableElementsFilter) envPermissions).getFilter();
+      final String executableElementFilterType =
+          ((ExecutableElementsFilter) envPermissions).getExecutableElementFilterType();
+      final QLExecutableElementType executableElementFilterTypeValue =
+          executableElementFilterType.equals(ExecutableElementsFilter.FilterType.WORKFLOW)
+          ? QLExecutableElementType.WORKFLOW
+          : QLExecutableElementType.PIPELINE;
+      QLPermissionsFilterType filterType =
+          filter.getFilterType().equals(GenericEntityFilter.FilterType.ALL) ? QLPermissionsFilterType.ALL : null;
+      executableElementsFilter = QLExecutableElementFilterInput.builder()
+                                     .executableElementFilterType(filterType)
+                                     .executableElementType(executableElementFilterTypeValue)
+                                     .ids(filter.getIds())
+                                     .build();
+    }
     if (isEmpty(envPermissions.getIds())) {
       EnumSet<QLDeploymentFilterType> filterTypes = EnumSet.noneOf(QLDeploymentFilterType.class);
       if (isEmpty(envPermissions.getFilterTypes())) {
@@ -703,9 +753,17 @@ public class UserGroupPermissionsController {
           filterTypes.add(QLDeploymentFilterType.NON_PRODUCTION_ENVIRONMENTS);
         }
       }
-      return QLDeploymentPermissions.builder().envIds(envPermissions.getIds()).filterTypes(filterTypes).build();
+
+      return QLDeploymentPermissions.builder()
+          .executableElementFilter(executableElementsFilter)
+          .envIds(envPermissions.getIds())
+          .filterTypes(filterTypes)
+          .build();
     }
-    return QLDeploymentPermissions.builder().envIds(envPermissions.getIds()).build();
+    return QLDeploymentPermissions.builder()
+        .executableElementFilter(executableElementsFilter)
+        .envIds(envPermissions.getIds())
+        .build();
   }
 
   private QLPipelinePermissions createPipelineFilterOutput(EnvFilter envPermissions) {

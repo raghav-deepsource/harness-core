@@ -61,11 +61,11 @@ import org.junit.experimental.categories.Category;
 
 public class ChronicleEventAppenderTest extends CategoryTest {
   private final String QUEUE_FILE_PATH = "../eventQueue"
-      + "/" + UUID.randomUUID().toString();
+      + "/" + UUID.randomUUID();
   private final String SERVER_NAME = InProcessServerBuilder.generateName();
   private final AtomicInteger messagesPublished = new AtomicInteger();
 
-  private Injector injector = Guice.createInjector(
+  private final Injector injector = Guice.createInjector(
       Modules
           .override(
               new AppenderModule(AppenderModule.Config.builder().queueFilePath(QUEUE_FILE_PATH).build(), () -> ""),

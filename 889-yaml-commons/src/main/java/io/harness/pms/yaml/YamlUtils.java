@@ -78,6 +78,16 @@ public class YamlUtils {
     return new YamlField(rootYamlNode);
   }
 
+  public YamlField readTree(Object obj, String currentFieldName, YamlNode parentNode) {
+    try {
+      JsonNode currentJsonNode = mapper.valueToTree(obj);
+      YamlNode currentYamlNode = new YamlNode(currentFieldName, currentJsonNode, parentNode);
+      return new YamlField(currentYamlNode);
+    } catch (Exception e) {
+      throw new InvalidRequestException("Couldn't convert object to Yaml", e);
+    }
+  }
+
   public YamlField toByteString(String content) throws IOException {
     JsonNode rootJsonNode = mapper.readTree(content);
     YamlNode rootYamlNode = new YamlNode(rootJsonNode);
@@ -201,13 +211,19 @@ public class YamlUtils {
   }
 
   public String injectUuid(String content) throws IOException {
+    YamlField yamlField = injectUuidInYamlField(content);
+    return yamlField.getNode().toString();
+  }
+
+  public YamlField injectUuidInYamlField(String content) throws IOException {
     JsonNode rootJsonNode = mapper.readTree(content);
     if (rootJsonNode == null) {
-      return content;
+      return null;
     }
 
     injectUuid(rootJsonNode);
-    return rootJsonNode.toString();
+    YamlNode rootYamlNode = new YamlNode(rootJsonNode);
+    return new YamlField(rootYamlNode);
   }
 
   private void injectUuid(JsonNode node) {
@@ -302,7 +318,6 @@ public class YamlUtils {
 
   public String getStageFqnPath(YamlNode yamlNode) {
     List<String> qualifiedNames = getQualifiedNameList(yamlNode, "pipeline");
-    StringBuilder response = new StringBuilder();
     if (qualifiedNames.size() <= 2) {
       return String.join(".", qualifiedNames);
     }

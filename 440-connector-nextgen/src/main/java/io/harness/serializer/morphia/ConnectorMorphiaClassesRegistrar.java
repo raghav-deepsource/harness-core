@@ -26,7 +26,15 @@ import io.harness.connector.entities.embedded.awskmsconnector.AwsKmsIamCredentia
 import io.harness.connector.entities.embedded.awskmsconnector.AwsKmsManualCredential;
 import io.harness.connector.entities.embedded.awskmsconnector.AwsKmsStsCredential;
 import io.harness.connector.entities.embedded.awssecretmanager.AwsSecretManagerConnector;
+import io.harness.connector.entities.embedded.azureconnector.AzureConfig;
+import io.harness.connector.entities.embedded.azureconnector.AzureManualCredential;
 import io.harness.connector.entities.embedded.azurekeyvaultconnector.AzureKeyVaultConnector;
+import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoApiAccess;
+import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoConnector;
+import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoHttpAuthentication;
+import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoSshAuthentication;
+import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoTokenApiAccess;
+import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoUsernameToken;
 import io.harness.connector.entities.embedded.bitbucketconnector.BitbucketConnector;
 import io.harness.connector.entities.embedded.bitbucketconnector.BitbucketHttpAuthentication;
 import io.harness.connector.entities.embedded.bitbucketconnector.BitbucketSshAuthentication;
@@ -81,6 +89,7 @@ import io.harness.connector.entities.embedded.newrelicconnector.NewRelicConnecto
 import io.harness.connector.entities.embedded.nexusconnector.NexusConnector;
 import io.harness.connector.entities.embedded.nexusconnector.NexusUserNamePasswordAuthentication;
 import io.harness.connector.entities.embedded.pagerduty.PagerDutyConnector;
+import io.harness.connector.entities.embedded.pdcconnector.PhysicalDataCenterConnector;
 import io.harness.connector.entities.embedded.prometheusconnector.PrometheusConnector;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowConnector;
 import io.harness.connector.entities.embedded.splunkconnector.SplunkConnector;
@@ -107,6 +116,7 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(AppDynamicsConnector.class);
     set.add(SplunkConnector.class);
     set.add(DockerConnector.class);
+    set.add(PhysicalDataCenterConnector.class);
     set.add(GcpConfig.class);
     set.add(AwsConfig.class);
     set.add(CEAwsConfig.class);
@@ -130,6 +140,8 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(CustomHealthConnector.class);
     set.add(ServiceNowConnector.class);
     set.add(ErrorTrackingConnector.class);
+    set.add(AzureConfig.class);
+    set.add(AzureRepoConnector.class);
   }
 
   @Override
@@ -185,5 +197,13 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     h.put("connector.entities.embedded.helm.HttpHelmUsernamePasswordAuthentication",
         HttpHelmUsernamePasswordAuthentication.class);
     h.put("connector.entities.embedded.gcpccm.GcpBillingExportDetails", GcpBillingExportDetails.class);
+    h.put("connector.entities.embedded.azureconnector.AzureManualCredential", AzureManualCredential.class);
+    h.put("connector.entities.embedded.azurerepoconnector.AzureRepoAppApiAccess", AzureRepoApiAccess.class);
+    h.put("connector.entities.embedded.azurerepoconnector.AzureRepoTokenApiAccess", AzureRepoTokenApiAccess.class);
+    h.put(
+        "connector.entities.embedded.azurerepoconnector.AzureRepoSshAuthentication", AzureRepoSshAuthentication.class);
+    h.put("connector.entities.embedded.azurerepoconnector.AzureRepoHttpAuthentication",
+        AzureRepoHttpAuthentication.class);
+    h.put("connector.entities.embedded.azurerepoconnector.AzureRepoUsernameToken", AzureRepoUsernameToken.class);
   }
 }

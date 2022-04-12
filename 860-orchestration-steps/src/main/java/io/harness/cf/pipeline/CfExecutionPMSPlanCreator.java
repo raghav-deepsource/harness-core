@@ -12,7 +12,7 @@ import static io.harness.advisers.retry.RetryAdviserWithRollback.ADVISER_TYPE;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.plancreator.beans.OrchestrationConstants;
+import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
@@ -78,10 +78,10 @@ public class CfExecutionPMSPlanCreator extends ChildrenPlanCreator<ExecutionElem
                                         .build();
     return PlanNode.builder()
         .uuid(ctx.getCurrentField().getNode().getUuid())
-        .identifier(OrchestrationConstants.EXECUTION_NODE_IDENTIFIER)
+        .identifier(NGCommonUtilPlanCreationConstants.EXECUTION_NODE_IDENTIFIER)
         .stepType(NGSectionStep.STEP_TYPE)
         .group(StepOutcomeGroup.EXECUTION.name())
-        .name(OrchestrationConstants.EXECUTION_NODE_NAME)
+        .name(NGCommonUtilPlanCreationConstants.EXECUTION_NODE_NAME)
         .stepParameters(stepParameters)
         .facilitatorObtainment(
             FacilitatorObtainment.newBuilder()

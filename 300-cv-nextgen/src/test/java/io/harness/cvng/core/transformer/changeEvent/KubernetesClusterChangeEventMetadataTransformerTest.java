@@ -10,39 +10,31 @@ package io.harness.cvng.core.transformer.changeEvent;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
 
+import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.KubernetesChangeEventMetadata;
-import io.harness.cvng.client.NextGenService;
-import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
-import io.harness.ng.core.service.dto.ServiceResponseDTO;
+import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.rule.Owner;
 
-import org.apache.commons.lang3.reflect.FieldUtils;
+import com.google.inject.Inject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.Mockito;
 
-public class KubernetesClusterChangeEventMetadataTransformerTest {
-  KubernetesClusterChangeEventMetadataTransformer transformer;
+public class KubernetesClusterChangeEventMetadataTransformerTest extends CvNextGenTestBase {
+  @Inject KubernetesClusterChangeEventMetadataTransformer transformer;
   BuilderFactory builderFactory;
-  NextGenService nextGenService;
+  @Inject private MonitoredServiceService monitoredServiceService;
 
   @Before
   public void setup() throws IllegalAccessException {
-    transformer = new KubernetesClusterChangeEventMetadataTransformer();
-    nextGenService = Mockito.mock(NextGenService.class);
-    FieldUtils.writeField(transformer, "nextGenService", nextGenService, true);
-    Mockito.when(nextGenService.getService(any(), any(), any(), any()))
-        .thenReturn(ServiceResponseDTO.builder().name("serviceName").build());
-    Mockito.when(nextGenService.getEnvironment(any(), any(), any(), any()))
-        .thenReturn(EnvironmentResponseDTO.builder().name("environmentName").build());
     builderFactory = BuilderFactory.getDefault();
+    monitoredServiceService.createDefault(builderFactory.getProjectParams(),
+        builderFactory.getContext().getServiceIdentifier(), builderFactory.getContext().getEnvIdentifier());
   }
 
   @Test

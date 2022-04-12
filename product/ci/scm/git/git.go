@@ -7,6 +7,7 @@ package git
 
 import (
 	"context"
+	"net/url"
 	"strings"
 	"time"
 
@@ -200,20 +201,32 @@ func GetLatestCommit(ctx context.Context, request *pb.GetLatestCommitRequest, lo
 		return nil, err
 	}
 
-	ref, err := gitclient.GetValidRef(*request.Provider, request.GetRef(), request.GetBranch())
+	branch := request.GetBranch()
+	if client.Driver == scm.DriverGitlab {
+		branch = url.QueryEscape(branch)
+	}
+
+	ref, err := gitclient.GetValidRef(*request.Provider, request.GetRef(), branch)
 	if err != nil {
 		log.Errorw("GetLatestCommit failure, bad ref/branch", "provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "ref", ref, "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
 		return nil, err
 	}
-	if request.GetBranch() != "" && strings.Contains(ref, "/") {
-		switch client.Driver {
-		case scm.DriverBitbucket,
-			scm.DriverStash:
+
+	switch client.Driver {
+	case scm.DriverBitbucket,
+		scm.DriverStash:
+		if branch != "" && strings.Contains(ref, "/") {
 			ref = scm.TrimRef(ref)
 			branch, _, err := client.Git.FindBranch(ctx, request.GetSlug(), ref)
 			if err == nil {
 				ref = branch.Sha
 			}
+		}
+	case scm.DriverAzure:
+		// Azure doesnt support getting a commit by ref/branch name. So we get the latest commit from the branch using the root folder.
+		contents, _, err := client.Contents.List(ctx, request.GetSlug(), "", ref, scm.ListOptions{})
+		if err == nil {
+			ref = contents[0].Sha
 		}
 	}
 
@@ -445,6 +458,44 @@ func GetUserRepos(ctx context.Context, request *pb.GetUserReposRequest, log *zap
 		Pagination: &pb.PageResponse{
 			Next: int32(response.Page.Next),
 		},
+	}
+	return out, nil
+}
+
+func GetUserRepo(ctx context.Context, request *pb.GetUserRepoRequest, log *zap.SugaredLogger) (out *pb.GetUserRepoResponse, err error) {
+	start := time.Now()
+	log.Infow("GetUserRepos starting")
+
+	client, err := gitclient.GetGitClient(*request.GetProvider(), log)
+	if err != nil {
+		log.Errorw("GetUserRepo failure", "bad provider", gitclient.GetProvider(*request.GetProvider()), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+		return nil, err
+	}
+
+	repo, response, err := client.Repositories.Find(ctx, request.GetSlug())
+	if err != nil {
+		log.Errorw("GetUserRepo failure", "provider", gitclient.GetProvider(*request.GetProvider()), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+		// this is a hard error with no response
+		if response == nil {
+			return nil, err
+		}
+
+		out = &pb.GetUserRepoResponse{
+			Status: int32(response.Status),
+			Error:  err.Error(),
+		}
+		return out, nil
+	}
+
+	repository, err := converter.ConvertRepo(repo)
+	if err != nil {
+		log.Errorw("GetUserRepo convert repo failure", "provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+		return nil, err
+	}
+	log.Infow("GetUserRepo success", "elapsed_time_ms", utils.TimeSince(start))
+	out = &pb.GetUserRepoResponse{
+		Status: int32(response.Status),
+		Repo:   repository,
 	}
 	return out, nil
 }

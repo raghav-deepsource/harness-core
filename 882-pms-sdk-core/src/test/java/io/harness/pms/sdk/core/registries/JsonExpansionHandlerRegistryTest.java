@@ -70,7 +70,7 @@ public class JsonExpansionHandlerRegistryTest extends PmsSdkCoreTestBase {
     int something;
 
     @Override
-    public ExpansionResponse expand(JsonNode fieldValue, ExpansionRequestMetadata metadata) {
+    public ExpansionResponse expand(JsonNode fieldValue, ExpansionRequestMetadata metadata, String fqn) {
       return null;
     }
   }

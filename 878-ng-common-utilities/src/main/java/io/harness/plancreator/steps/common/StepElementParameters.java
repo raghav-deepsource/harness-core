@@ -11,9 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotation.RecasterAlias;
-import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.annotations.dev.TargetModule;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
@@ -32,8 +30,6 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @TypeAlias("stepElementParameters")
-// TODO this should go to yaml commons
-@TargetModule(HarnessModule._884_PMS_COMMONS)
 @RecasterAlias("io.harness.plancreator.steps.common.StepElementParameters")
 public class StepElementParameters implements StepParameters {
   String uuid;

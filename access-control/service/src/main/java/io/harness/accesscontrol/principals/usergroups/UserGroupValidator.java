@@ -8,12 +8,15 @@
 package io.harness.accesscontrol.principals.usergroups;
 
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
+import static io.harness.accesscontrol.scopes.core.ScopeHelper.toParentScope;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.accesscontrol.common.validation.ValidationResult;
 import io.harness.accesscontrol.principals.Principal;
 import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.principals.PrincipalValidator;
+import io.harness.accesscontrol.scopes.core.Scope;
+import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.google.inject.Inject;
@@ -26,10 +29,12 @@ import javax.validation.executable.ValidateOnExecution;
 @ValidateOnExecution
 public class UserGroupValidator implements PrincipalValidator {
   private final UserGroupService userGroupService;
+  private final ScopeService scopeService;
 
   @Inject
-  public UserGroupValidator(UserGroupService userGroupService) {
+  public UserGroupValidator(UserGroupService userGroupService, ScopeService scopeService) {
     this.userGroupService = userGroupService;
+    this.scopeService = scopeService;
   }
 
   @Override
@@ -39,8 +44,11 @@ public class UserGroupValidator implements PrincipalValidator {
 
   @Override
   public ValidationResult validatePrincipal(Principal principal, String scopeIdentifier) {
+    Scope scope =
+        toParentScope(scopeService.buildScopeFromScopeIdentifier(scopeIdentifier), principal.getPrincipalScopeLevel());
+    String principalScopeIdentifier = scope == null ? scopeIdentifier : scope.toString();
     String identifier = principal.getPrincipalIdentifier();
-    Optional<UserGroup> userGroupOptional = userGroupService.get(identifier, scopeIdentifier);
+    Optional<UserGroup> userGroupOptional = userGroupService.get(identifier, principalScopeIdentifier);
     if (userGroupOptional.isPresent()) {
       return ValidationResult.builder().valid(true).build();
     }

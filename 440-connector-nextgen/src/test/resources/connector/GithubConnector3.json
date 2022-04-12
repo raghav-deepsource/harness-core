@@ -1,0 +1,31 @@
+{
+  "connector": {
+    "name": "connector_test_2",
+    "identifier": "connector_test_2",
+    "description": "second description",
+    "orgIdentifier": "default",
+    "projectIdentifier": "dev_sample",
+    "type": "Github",
+    "spec": {
+      "url": "https://github.com/wings-software",
+      "validationRepo": "bug-bash-git-harness",
+      "authentication": {
+        "type": "Http",
+        "spec": {
+          "type": "UsernameToken",
+          "spec": {
+            "tokenRef": "devmittalciv16_pass"
+          }
+        }
+      },
+      "apiAccess": {
+        "type": "Token",
+        "spec": {
+          "tokenRef": "devmittalciv16_pass"
+        }
+      },
+      "executeOnDelegate": false,
+      "type": "Account"
+    }
+  }
+}

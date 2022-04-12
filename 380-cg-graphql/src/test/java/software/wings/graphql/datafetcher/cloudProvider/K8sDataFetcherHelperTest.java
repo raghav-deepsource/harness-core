@@ -9,12 +9,16 @@ package software.wings.graphql.datafetcher.cloudProvider;
 
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.IGOR;
+import static io.harness.rule.OwnerRule.SHUBHAM_MAHESHWARI;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 
+import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.USER_NAME;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
@@ -33,8 +37,14 @@ import software.wings.graphql.schema.mutation.cloudProvider.k8s.QLUpdateK8sCloud
 import software.wings.graphql.schema.mutation.cloudProvider.k8s.QLUpdateManualClusterDetails;
 import software.wings.graphql.schema.mutation.cloudProvider.k8s.QLUpdateUsernameAndPasswordAuthentication;
 import software.wings.graphql.schema.mutation.cloudProvider.k8s.QLUsernameAndPasswordAuthentication;
+import software.wings.graphql.schema.type.QLEnvFilterType;
 import software.wings.graphql.schema.type.cloudProvider.k8s.QLClusterDetailsType;
 import software.wings.graphql.schema.type.cloudProvider.k8s.QLManualClusterDetailsAuthenticationType;
+import software.wings.graphql.schema.type.secrets.QLAppEnvScope;
+import software.wings.graphql.schema.type.secrets.QLAppScopeFilter;
+import software.wings.graphql.schema.type.secrets.QLEnvScopeFilter;
+import software.wings.graphql.schema.type.secrets.QLUsageScope;
+import software.wings.security.UsageRestrictions;
 
 import java.sql.SQLException;
 import java.util.Collections;
@@ -60,6 +70,170 @@ public class K8sDataFetcherHelperTest extends WingsBaseTest {
   @Before
   public void setup() throws SQLException {
     MockitoAnnotations.initMocks(this);
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = SHUBHAM_MAHESHWARI)
+  @Category(UnitTests.class)
+  public void toSettingUpdateAttributeForManualWithUsageScopeAndSecret() {
+    QLUsageScope qlUsageScope =
+        QLUsageScope.builder()
+            .appEnvScopes(new HashSet<>(Collections.singletonList(
+                QLAppEnvScope.builder()
+                    .application(QLAppScopeFilter.builder().appId(APP_ID).build())
+                    .environment(
+                        QLEnvScopeFilter.builder().filterType(QLEnvFilterType.NON_PRODUCTION_ENVIRONMENTS).build())
+                    .build())))
+            .build();
+    final QLUpdateManualClusterDetails clusterDetails =
+        QLUpdateManualClusterDetails.builder()
+            .masterUrl(RequestField.ofNullable(MASTER_URL))
+            .type(RequestField.ofNullable(QLManualClusterDetailsAuthenticationType.USERNAME_AND_PASSWORD))
+            .usernameAndPassword(
+                RequestField.ofNullable(QLUpdateUsernameAndPasswordAuthentication.builder()
+                                            .userName(RequestField.ofNullable(USER_NAME))
+                                            .userNameSecretId(RequestField.ofNullable(null))
+                                            .passwordSecretId(RequestField.ofNullable(PASSWORD_SECRET_ID))
+                                            .build()))
+            .usageScope(RequestField.ofNullable(qlUsageScope))
+            .build();
+
+    final QLUpdateK8sCloudProviderInput input =
+        QLUpdateK8sCloudProviderInput.builder()
+            .name(RequestField.ofNull())
+            .skipValidation(RequestField.ofNull())
+            .clusterDetailsType(RequestField.ofNullable(QLClusterDetailsType.MANUAL_CLUSTER_DETAILS))
+            .manualClusterDetails(RequestField.ofNullable(clusterDetails))
+            .build();
+
+    SettingAttribute setting =
+        SettingAttribute.Builder.aSettingAttribute().withValue(KubernetesClusterConfig.builder().build()).build();
+    UsageRestrictions mockRestrictions = mock(UsageRestrictions.class);
+    when(usageScopeController.populateUsageRestrictions(qlUsageScope, ACCOUNT_ID)).thenReturn(mockRestrictions);
+    helper.updateSettingAttribute(setting, input, ACCOUNT_ID);
+  }
+
+  @Test()
+  @Owner(developers = SHUBHAM_MAHESHWARI)
+  @Category(UnitTests.class)
+  public void toSettingUpdateAttributeForManualWithUsageScope() {
+    QLUsageScope qlUsageScope =
+        QLUsageScope.builder()
+            .appEnvScopes(new HashSet<>(Collections.singletonList(
+                QLAppEnvScope.builder()
+                    .application(QLAppScopeFilter.builder().appId(APP_ID).build())
+                    .environment(
+                        QLEnvScopeFilter.builder().filterType(QLEnvFilterType.NON_PRODUCTION_ENVIRONMENTS).build())
+                    .build())))
+            .build();
+    final QLUpdateManualClusterDetails clusterDetails =
+        QLUpdateManualClusterDetails.builder()
+            .masterUrl(RequestField.ofNullable(MASTER_URL))
+            .type(RequestField.ofNullable(QLManualClusterDetailsAuthenticationType.USERNAME_AND_PASSWORD))
+            .usernameAndPassword(RequestField.ofNullable(QLUpdateUsernameAndPasswordAuthentication.builder()
+                                                             .userName(RequestField.ofNullable(USER_NAME))
+                                                             .userNameSecretId(RequestField.ofNullable(null))
+                                                             .passwordSecretId(RequestField.ofNullable(null))
+                                                             .build()))
+            .usageScope(RequestField.ofNullable(qlUsageScope))
+            .build();
+
+    final QLUpdateK8sCloudProviderInput input =
+        QLUpdateK8sCloudProviderInput.builder()
+            .name(RequestField.ofNull())
+            .skipValidation(RequestField.ofNull())
+            .clusterDetailsType(RequestField.ofNullable(QLClusterDetailsType.MANUAL_CLUSTER_DETAILS))
+            .manualClusterDetails(RequestField.ofNullable(clusterDetails))
+            .build();
+
+    SettingAttribute setting =
+        SettingAttribute.Builder.aSettingAttribute().withValue(KubernetesClusterConfig.builder().build()).build();
+    UsageRestrictions mockRestrictions = mock(UsageRestrictions.class);
+    when(usageScopeController.populateUsageRestrictions(qlUsageScope, ACCOUNT_ID)).thenReturn(mockRestrictions);
+    helper.updateSettingAttribute(setting, input, ACCOUNT_ID);
+
+    assertThat(setting).isNotNull();
+    assertThat(setting.getUsageRestrictions()).isEqualTo(mockRestrictions);
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = SHUBHAM_MAHESHWARI)
+  @Category(UnitTests.class)
+  public void toSettingAttributeForManualWithUsageScopeAndSecret() {
+    QLUsageScope qlUsageScope =
+        QLUsageScope.builder()
+            .appEnvScopes(new HashSet<>(Collections.singletonList(
+                QLAppEnvScope.builder()
+                    .application(QLAppScopeFilter.builder().appId(APP_ID).build())
+                    .environment(
+                        QLEnvScopeFilter.builder().filterType(QLEnvFilterType.NON_PRODUCTION_ENVIRONMENTS).build())
+                    .build())))
+            .build();
+    final QLManualClusterDetails clusterDetails =
+        QLManualClusterDetails.builder()
+            .masterUrl(RequestField.ofNullable(MASTER_URL))
+            .type(RequestField.ofNullable(QLManualClusterDetailsAuthenticationType.USERNAME_AND_PASSWORD))
+            .usernameAndPassword(
+                RequestField.ofNullable(QLUsernameAndPasswordAuthentication.builder()
+                                            .userName(RequestField.ofNullable(USER_NAME))
+                                            .userNameSecretId(RequestField.ofNullable(null))
+                                            .passwordSecretId(RequestField.ofNullable(PASSWORD_SECRET_ID))
+                                            .build()))
+            .usageScope(RequestField.ofNullable(qlUsageScope))
+            .build();
+
+    final QLK8sCloudProviderInput input =
+        QLK8sCloudProviderInput.builder()
+            .name(RequestField.ofNull())
+            .skipValidation(RequestField.ofNull())
+            .clusterDetailsType(RequestField.ofNullable(QLClusterDetailsType.MANUAL_CLUSTER_DETAILS))
+            .manualClusterDetails(RequestField.ofNullable(clusterDetails))
+            .build();
+
+    UsageRestrictions mockRestrictions = mock(UsageRestrictions.class);
+    when(usageScopeController.populateUsageRestrictions(qlUsageScope, ACCOUNT_ID)).thenReturn(mockRestrictions);
+    helper.toSettingAttribute(input, ACCOUNT_ID);
+  }
+
+  @Test()
+  @Owner(developers = SHUBHAM_MAHESHWARI)
+  @Category(UnitTests.class)
+  public void toSettingAttributeForManualWithUsageScope() {
+    QLUsageScope qlUsageScope =
+        QLUsageScope.builder()
+            .appEnvScopes(new HashSet<>(Collections.singletonList(
+                QLAppEnvScope.builder()
+                    .application(QLAppScopeFilter.builder().appId(APP_ID).build())
+                    .environment(
+                        QLEnvScopeFilter.builder().filterType(QLEnvFilterType.NON_PRODUCTION_ENVIRONMENTS).build())
+                    .build())))
+            .build();
+    final QLManualClusterDetails clusterDetails =
+        QLManualClusterDetails.builder()
+            .masterUrl(RequestField.ofNullable(MASTER_URL))
+            .type(RequestField.ofNullable(QLManualClusterDetailsAuthenticationType.USERNAME_AND_PASSWORD))
+            .usernameAndPassword(RequestField.ofNullable(QLUsernameAndPasswordAuthentication.builder()
+                                                             .userName(RequestField.ofNullable(USER_NAME))
+                                                             .userNameSecretId(RequestField.ofNullable(null))
+                                                             .passwordSecretId(RequestField.ofNullable(null))
+                                                             .build()))
+            .usageScope(RequestField.ofNullable(qlUsageScope))
+            .build();
+
+    final QLK8sCloudProviderInput input =
+        QLK8sCloudProviderInput.builder()
+            .name(RequestField.ofNull())
+            .skipValidation(RequestField.ofNull())
+            .clusterDetailsType(RequestField.ofNullable(QLClusterDetailsType.MANUAL_CLUSTER_DETAILS))
+            .manualClusterDetails(RequestField.ofNullable(clusterDetails))
+            .build();
+
+    UsageRestrictions mockRestrictions = mock(UsageRestrictions.class);
+    when(usageScopeController.populateUsageRestrictions(qlUsageScope, ACCOUNT_ID)).thenReturn(mockRestrictions);
+    SettingAttribute setting = helper.toSettingAttribute(input, ACCOUNT_ID);
+
+    assertThat(setting).isNotNull();
+    assertThat(setting.getUsageRestrictions()).isEqualTo(mockRestrictions);
   }
 
   @Test

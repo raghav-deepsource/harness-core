@@ -7,6 +7,8 @@
 
 package software.wings.helpers.ext.ldap;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Hashtable;
@@ -169,7 +171,9 @@ public class LdapSearch implements LdapValidator {
           ctx.setRequestControls(new Control[] {new PagedResultsControl(pageSize, cookie, Control.CRITICAL)});
         } while (cookie != null);
         ctx.close();
-        return new SearchResult(entries);
+        if (isNotEmpty(entries)) {
+          return new SearchResult(entries);
+        }
       } catch (Exception e) {
         log.error("Error querying to ldap server with pagination", e);
       }

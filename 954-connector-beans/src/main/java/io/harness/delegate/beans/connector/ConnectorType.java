@@ -35,6 +35,8 @@ public enum ConnectorType implements EntitySubtype {
   //  @JsonProperty("CustomSecretManager") CUSTOM("CustomSecretManager"),
   @JsonProperty("Gcp") GCP("Gcp"),
   @JsonProperty("Aws") AWS("Aws"),
+  @JsonProperty("Azure") AZURE("Azure"),
+
   @JsonProperty("Artifactory") ARTIFACTORY("Artifactory"),
   @JsonProperty("Jira") JIRA("Jira"),
   @JsonProperty("Nexus") NEXUS("Nexus"),
@@ -53,7 +55,9 @@ public enum ConnectorType implements EntitySubtype {
   @JsonProperty("PagerDuty") PAGER_DUTY("PagerDuty"),
   @JsonProperty("CustomHealth") CUSTOM_HEALTH("CustomHealth"),
   @JsonProperty("ServiceNow") SERVICENOW("ServiceNow"),
-  @JsonProperty("ErrorTracking") ERROR_TRACKING("ErrorTracking");
+  @JsonProperty("ErrorTracking") ERROR_TRACKING("ErrorTracking"),
+  @JsonProperty("Pdc") PDC("Pdc"),
+  @JsonProperty("AzureRepo") AZURE_REPO("AzureRepo");
   private final String displayName;
 
   @JsonCreator(mode = JsonCreator.Mode.DELEGATING)

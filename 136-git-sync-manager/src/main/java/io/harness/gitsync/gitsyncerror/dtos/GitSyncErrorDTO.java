@@ -16,10 +16,12 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.git.model.ChangeType;
+import io.harness.gitsync.common.dtos.RepoProviders;
 import io.harness.gitsync.gitsyncerror.GitSyncErrorStatus;
 import io.harness.gitsync.gitsyncerror.beans.GitSyncErrorType;
 import io.harness.gitsync.sdk.GitSyncApiConstants;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -51,6 +53,7 @@ public class GitSyncErrorDTO {
   @Schema(description = "Type of Git Sync Error") GitSyncErrorType errorType;
   @Schema(description = "Additional Details of Git Sync Error based on its type")
   GitSyncErrorDetailsDTO additionalErrorDetails;
+  @JsonIgnore RepoProviders repoProvider;
 
   @Schema(description = "Time at which the Git Sync error was logged") long createdAt;
 }

@@ -27,9 +27,11 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
+import software.wings.beans.AwsConfig;
 import software.wings.service.impl.aws.model.AwsCFGetTemplateParamsRequest;
 import software.wings.service.impl.aws.model.AwsCFRequest;
 import software.wings.service.intfc.aws.delegate.AwsCFHelperServiceDelegate;
+import software.wings.service.intfc.security.EncryptionService;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -41,6 +43,7 @@ import org.mockito.Mock;
 @OwnedBy(CDP)
 public class AwsCFTaskTest extends WingsBaseTest {
   @Mock private AwsCFHelperServiceDelegate mockAwsCFHelperServiceDelegate;
+  @Mock private EncryptionService encryptionService;
 
   @InjectMocks
   private AwsCFTask task =
@@ -59,9 +62,9 @@ public class AwsCFTaskTest extends WingsBaseTest {
   @Owner(developers = SATYAM)
   @Category(UnitTests.class)
   public void testRun() {
-    AwsCFRequest request = AwsCFGetTemplateParamsRequest.builder().build();
+    AwsCFRequest request = AwsCFGetTemplateParamsRequest.builder().awsConfig(AwsConfig.builder().build()).build();
     task.run(new Object[] {request});
     verify(mockAwsCFHelperServiceDelegate)
-        .getParamsData(any(), anyList(), anyString(), anyString(), anyString(), anyObject(), anyObject(), anyList());
+        .getParamsData(any(), anyString(), anyString(), anyString(), anyObject(), anyObject(), anyList());
   }
 }

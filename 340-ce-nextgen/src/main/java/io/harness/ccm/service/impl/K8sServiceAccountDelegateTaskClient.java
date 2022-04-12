@@ -28,7 +28,7 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.hazelcast.util.Preconditions;
+import com.hazelcast.internal.util.Preconditions;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;

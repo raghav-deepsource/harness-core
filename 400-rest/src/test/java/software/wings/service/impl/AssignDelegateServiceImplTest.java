@@ -25,6 +25,8 @@ import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.SANJA;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.VUK;
+import static io.harness.utils.DelegateOwner.NG_DELEGATE_ENABLED_CONSTANT;
+import static io.harness.utils.DelegateOwner.NG_DELEGATE_OWNER_CONSTANT;
 
 import static software.wings.beans.Environment.Builder.anEnvironment;
 import static software.wings.beans.GcpKubernetesInfrastructureMapping.Builder.aGcpKubernetesInfrastructureMapping;
@@ -58,6 +60,7 @@ import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskBuilder;
 import io.harness.category.element.UnitTests;
+import io.harness.common.NGTaskType;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateBuilder;
 import io.harness.delegate.beans.DelegateEntityOwner;
@@ -1946,6 +1949,58 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
     assertThat(assignDelegateService.fetchActiveDelegates("ACCOUNT_ID").size() == 2);
   }
 
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testGetActiveNGEligibleDelegatesForTask() throws ExecutionException {
+    Delegate delegate = createNGDelegate();
+    delegate.setNg(true);
+    persistence.save(delegate);
+    delegate.setSupportedTaskTypes(Collections.singletonList(NGTaskType.JIRA_TASK_NG.name()));
+    // DelegateTask task = constructDelegateTask(false, Collections.emptySet(), DelegateTask.Status.QUEUED);
+    DelegateTask task = DelegateTask.builder()
+                            .accountId(ACCOUNT_ID)
+                            .setupAbstraction(NG_DELEGATE_ENABLED_CONSTANT, "true")
+                            .setupAbstraction(NG_DELEGATE_OWNER_CONSTANT, "orgId/projectId")
+                            .data(TaskData.builder()
+                                      .async(true)
+                                      .taskType(NGTaskType.JIRA_TASK_NG.name())
+                                      .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
+                                      .build())
+                            .build();
+    when(accountDelegatesCache.get(ACCOUNT_ID)).thenReturn(asList(delegate));
+    when(delegateCache.get(ACCOUNT_ID, delegate.getUuid(), false)).thenReturn(delegate);
+
+    assertThat(assignDelegateService.getEligibleDelegatesToExecuteTask(task)).isNotEmpty();
+    assertThat(assignDelegateService.getEligibleDelegatesToExecuteTask(task)).contains(delegate.getUuid());
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testGetActiveCGEligibleDelegatesForTask() throws ExecutionException {
+    Delegate delegate = createNGDelegate();
+    delegate.setNg(false);
+    persistence.save(delegate);
+    delegate.setSupportedTaskTypes(Collections.singletonList(NGTaskType.JIRA_TASK_NG.name()));
+    // DelegateTask task = constructDelegateTask(false, Collections.emptySet(), DelegateTask.Status.QUEUED);
+    DelegateTask task = DelegateTask.builder()
+                            .accountId(ACCOUNT_ID)
+                            .setupAbstraction(NG_DELEGATE_ENABLED_CONSTANT, "false")
+                            .setupAbstraction(NG_DELEGATE_OWNER_CONSTANT, "orgId/projectId")
+                            .data(TaskData.builder()
+                                      .async(true)
+                                      .taskType(NGTaskType.JIRA_TASK_NG.name())
+                                      .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
+                                      .build())
+                            .build();
+    when(accountDelegatesCache.get(ACCOUNT_ID)).thenReturn(asList(delegate));
+    when(delegateCache.get(ACCOUNT_ID, delegate.getUuid(), false)).thenReturn(delegate);
+
+    assertThat(assignDelegateService.getEligibleDelegatesToExecuteTask(task)).isNotEmpty();
+    assertThat(assignDelegateService.getEligibleDelegatesToExecuteTask(task)).contains(delegate.getUuid());
+  }
+
   private DelegateTask constructDelegateTask(boolean async, Set<String> validatingTaskIds, DelegateTask.Status status) {
     DelegateTask delegateTask =
         DelegateTask.builder()
@@ -2027,5 +2082,13 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                              .build();
     persistence.save(delegate4);
     return Lists.newArrayList(delegate1, delegate2, delegate3, delegate4);
+  }
+
+  private Delegate createNGDelegate() {
+    Delegate delegate = createDelegateBuilder().build();
+    delegate.setOwner(DelegateEntityOwner.builder().identifier("orgId/projectId").build());
+    delegate.setNg(true);
+    persistence.save(delegate);
+    return delegate;
   }
 }

@@ -32,7 +32,7 @@ import io.harness.cdng.pipeline.CdAbstractStepNode;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.govern.Switch;
-import io.harness.plancreator.PipelineServiceUtilPlanCreationConstants;
+import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.plancreator.steps.AbstractStepPlanCreator;
 import io.harness.plancreator.steps.FailureStrategiesUtils;
 import io.harness.plancreator.steps.GenericPlanCreatorUtils;
@@ -197,7 +197,7 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
       stepElement.setTimeout(TimeoutUtils.getTimeout(stepElement.getTimeout()));
       return ((CDStepInfo) stepElement.getStepSpecType())
           .getStepParameters(stepElement,
-              getRollbackParameters(ctx.getCurrentField(), Collections.emptySet(), RollbackStrategy.UNKNOWN));
+              getRollbackParameters(ctx.getCurrentField(), Collections.emptySet(), RollbackStrategy.UNKNOWN), ctx);
     }
 
     return stepElement.getStepSpecType().getStepParameters();
@@ -392,8 +392,8 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
   protected Map<RollbackStrategy, String> getRollbackStrategyMap(YamlField currentField) {
     String stageNodeId = GenericPlanCreatorUtils.getStageNodeId(currentField);
     Map<RollbackStrategy, String> rollbackStrategyStringMap = new HashMap<>();
-    rollbackStrategyStringMap.put(RollbackStrategy.STAGE_ROLLBACK,
-        stageNodeId + PipelineServiceUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX);
+    rollbackStrategyStringMap.put(
+        RollbackStrategy.STAGE_ROLLBACK, stageNodeId + NGCommonUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX);
     rollbackStrategyStringMap.put(
         RollbackStrategy.STEP_GROUP_ROLLBACK, GenericPlanCreatorUtils.getStepGroupRollbackStepsNodeId(currentField));
     return rollbackStrategyStringMap;

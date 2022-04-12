@@ -18,9 +18,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
+@Slf4j
 public class PreflightCommonUtils {
   public PreFlightEntityErrorInfo getNotFoundErrorInfo() {
     return PreFlightEntityErrorInfo.builder()
@@ -42,14 +44,22 @@ public class PreflightCommonUtils {
         .build();
   }
 
-  public PreFlightEntityErrorInfo getInternalIssueErrorInfo() {
+  public PreFlightEntityErrorInfo getInternalIssueErrorInfo(Exception exception) {
     return PreFlightEntityErrorInfo.builder()
-        .summary("Error connecting to systems upstream")
+        .summary(exception.getMessage())
         .causes(Collections.singletonList(PreFlightCause.builder().cause("Internal Server Error").build()))
         .build();
   }
+
   public String getStageName(Map<String, Object> fqnToObjectMapMergedYaml, String identifier) {
-    return ((TextNode) fqnToObjectMapMergedYaml.get("pipeline.stages." + identifier + ".name")).asText();
+    if (fqnToObjectMapMergedYaml == null
+        || fqnToObjectMapMergedYaml.get("pipeline.stages." + identifier + ".name") == null) {
+      log.error("FqnToObjectMapMergedYaml found null or given stageIdentifier [{}]  is not present in the pipeline",
+          identifier);
+      return null;
+    }
+    TextNode stageNameNode = (TextNode) fqnToObjectMapMergedYaml.get("pipeline.stages." + identifier + ".name");
+    return stageNameNode.asText();
   }
 
   public PreFlightStatus getPreFlightStatus(ConnectivityStatus status) {

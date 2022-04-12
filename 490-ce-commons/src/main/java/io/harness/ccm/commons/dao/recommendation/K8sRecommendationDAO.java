@@ -347,7 +347,7 @@ public class K8sRecommendationDAO {
 
   public String insertNodeRecommendationResponse(JobConstants jobConstants, NodePoolId nodePoolId,
       RecommendClusterRequest recommendClusterRequest, K8sServiceProvider serviceProvider,
-      RecommendationResponse recommendation) {
+      RecommendationResponse recommendation, @NonNull TotalResourceUsage totalResourceUsage) {
     Query<K8sNodeRecommendation> query =
         hPersistence.createQuery(K8sNodeRecommendation.class)
             .filter(K8sNodeRecommendationKeys.accountId, jobConstants.getAccountId())
@@ -361,6 +361,7 @@ public class K8sRecommendationDAO {
             .set(K8sNodeRecommendationKeys.nodePoolId, nodePoolId)
             .set(K8sNodeRecommendationKeys.recommendation, recommendation)
             .set(K8sNodeRecommendationKeys.recommendClusterRequest, recommendClusterRequest)
+            .set(K8sNodeRecommendationKeys.totalResourceUsage, totalResourceUsage)
             .set(K8sNodeRecommendationKeys.currentServiceProvider, serviceProvider);
 
     return hPersistence.upsert(query, updateOperations, HPersistence.upsertReturnNewOptions).getUuid();

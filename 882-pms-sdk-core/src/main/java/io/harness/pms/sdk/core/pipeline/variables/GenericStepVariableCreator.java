@@ -13,18 +13,24 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.plancreator.steps.AbstractStepNode;
+import io.harness.pms.contracts.plan.YamlExtraProperties;
 import io.harness.pms.contracts.plan.YamlOutputProperties;
 import io.harness.pms.contracts.plan.YamlProperties;
+import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.sdk.core.variables.ChildrenVariableCreator;
+import io.harness.pms.sdk.core.variables.VariableCreatorHelper;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationContext;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationResponse;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.yaml.utils.JsonPipelineUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +38,7 @@ import java.util.Objects;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-public abstract class GenericStepVariableCreator extends ChildrenVariableCreator {
+public abstract class GenericStepVariableCreator<T extends AbstractStepNode> extends ChildrenVariableCreator<T> {
   public abstract Set<String> getSupportedStepTypes();
 
   @Override
@@ -170,5 +176,49 @@ public abstract class GenericStepVariableCreator extends ChildrenVariableCreator
             YamlOutputProperties.newBuilder().setLocalName(localName).setFqn(fqn).build());
       }
     });
+  }
+
+  @Override
+  public LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodesV2(
+      VariableCreationContext ctx, T config) {
+    return new LinkedHashMap<>();
+  }
+
+  @Override
+  public VariableCreationResponse createVariablesForParentNodeV2(VariableCreationContext ctx, T config) {
+    Map<String, YamlExtraProperties> yamlExtraPropertiesMap = new HashMap<>();
+    Map<String, YamlProperties> yamlPropertiesMap = new HashMap<>();
+
+    String fqnPrefix = YamlUtils.getFullyQualifiedName(ctx.getCurrentField().getNode());
+    String localNamePrefix = fqnPrefix;
+    if (fqnPrefix.contains(YAMLFieldNameConstants.PIPELINE_INFRASTRUCTURE)) {
+      localNamePrefix = YamlUtils.getQualifiedNameTillGivenField(
+          ctx.getCurrentField().getNode(), YAMLFieldNameConstants.PIPELINE_INFRASTRUCTURE);
+    } else if (fqnPrefix.contains(YAMLFieldNameConstants.EXECUTION)) {
+      localNamePrefix =
+          YamlUtils.getQualifiedNameTillGivenField(ctx.getCurrentField().getNode(), YAMLFieldNameConstants.EXECUTION);
+    }
+
+    VariableCreatorHelper.collectVariableExpressions(
+        config, yamlPropertiesMap, yamlExtraPropertiesMap, fqnPrefix, localNamePrefix);
+
+    VariableCreatorHelper.addYamlExtraPropertyToMap(
+        config.getUuid(), yamlExtraPropertiesMap, getStepExtraProperties(fqnPrefix, localNamePrefix, config));
+
+    return VariableCreationResponse.builder()
+        .yamlExtraProperties(yamlExtraPropertiesMap)
+        .yamlProperties(yamlPropertiesMap)
+        .yamlUpdates(YamlUpdates.newBuilder()
+                         .putFqnToYaml(ctx.getCurrentField().getYamlPath(), JsonPipelineUtils.getJsonString(config))
+                         .build())
+        .build();
+  }
+
+  public YamlExtraProperties getStepExtraProperties(String fqnPrefix, String localNamePrefix, T config) {
+    YamlProperties startTsProperty =
+        YamlProperties.newBuilder().setFqn(fqnPrefix + ".startTs").setLocalName(localNamePrefix + ".startTs").build();
+    YamlProperties endTsProperty =
+        YamlProperties.newBuilder().setFqn(fqnPrefix + ".endTs").setLocalName(localNamePrefix + ".endTs").build();
+    return YamlExtraProperties.newBuilder().addProperties(startTsProperty).addProperties(endTsProperty).build();
   }
 }

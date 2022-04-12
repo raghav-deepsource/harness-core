@@ -26,6 +26,7 @@ import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.entities.NewRelicCVConfig;
 import io.harness.cvng.core.entities.NewRelicCVConfig.NewRelicMetricInfo;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
+import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.rule.Owner;
 
@@ -68,14 +69,14 @@ public class NewRelicDataCollectionInfoMapperTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testToDataConnectionInfo_withCustomMetrics() {
     NewRelicCVConfig cvConfig = createCVConfigWithCustomMetric();
-    NewRelicDataCollectionInfo dataCollectionInfo = mapper.toDataCollectionInfo(cvConfig, TaskType.LIVE_MONITORING);
+    NewRelicDataCollectionInfo dataCollectionInfo = mapper.toDataCollectionInfo(cvConfig, TaskType.DEPLOYMENT);
     assertThat(dataCollectionInfo.getMetricPack()).isEqualTo(cvConfig.getMetricPack().toDTO());
     assertThat(dataCollectionInfo.getApplicationName()).isNull();
     assertThat(dataCollectionInfo.getApplicationId()).isEqualTo(0);
     assertThat(dataCollectionInfo.getDataCollectionDsl()).isEqualTo("metric-pack-dsl");
 
     assertThat(dataCollectionInfo.getGroupName()).isEqualTo("groupName");
-    assertThat(dataCollectionInfo.getMetricInfoList().size()).isEqualTo(0);
+    assertThat(dataCollectionInfo.getMetricInfoList().size()).isEqualTo(1);
   }
 
   @Test
@@ -124,14 +125,17 @@ public class NewRelicDataCollectionInfoMapperTest extends CvNextGenTestBase {
   private NewRelicCVConfig createCVConfigWithCustomMetric(String metricIdentifier) {
     NewRelicCVConfig cvConfig = (NewRelicCVConfig) builderFactory.newRelicCVConfigBuilder()
                                     .groupName("groupName")
-
                                     .connectorIdentifier("connector")
                                     .productName("apm")
                                     .identifier("monService")
                                     .monitoringSourceName("monService")
                                     .build();
-    cvConfig.setMetricPack(
-        MetricPack.builder().dataCollectionDsl("metric-pack-dsl").category(CVMonitoringCategory.PERFORMANCE).build());
+    cvConfig.setMetricPack(MetricPack.builder()
+                               .dataCollectionDsl("metric-pack-dsl")
+                               .category(CVMonitoringCategory.PERFORMANCE)
+                               .identifier(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)
+                               .build());
+    cvConfig.setCustomQuery(true);
     cvConfig.setMetricInfos(Arrays.asList(
         NewRelicCVConfig.NewRelicMetricInfo.builder()
             .metricName("metric1")

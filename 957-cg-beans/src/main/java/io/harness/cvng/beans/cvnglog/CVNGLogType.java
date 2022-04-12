@@ -8,6 +8,11 @@
 package io.harness.cvng.beans.cvnglog;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import org.apache.commons.collections4.MapUtils;
 
 public enum CVNGLogType {
   @JsonProperty("ApiCallLog") API_CALL_LOG("ApiCallLog"),
@@ -23,13 +28,16 @@ public enum CVNGLogType {
     return displayName;
   }
 
-  public static CVNGLogType toCVNGLogType(String cvngLogType) {
-    if (cvngLogType.equalsIgnoreCase("ApiCallLog")) {
-      return CVNGLogType.API_CALL_LOG;
-    } else if (cvngLogType.equalsIgnoreCase("ExecutionLog")) {
-      return CVNGLogType.EXECUTION_LOG;
-    } else {
-      throw new UnsupportedOperationException("logType should either be ApiCallLog or ExecutionLog");
+  private static Map<String, CVNGLogType> STRING_TO_TYPE_MAP;
+
+  public static CVNGLogType fromString(String stringValue) {
+    if (MapUtils.isEmpty(STRING_TO_TYPE_MAP)) {
+      STRING_TO_TYPE_MAP = Arrays.stream(CVNGLogType.values())
+                               .collect(Collectors.toMap(CVNGLogType::getDisplayName, Function.identity()));
     }
+    if (!STRING_TO_TYPE_MAP.containsKey(stringValue)) {
+      throw new IllegalArgumentException("CVNGLogType should be in : " + STRING_TO_TYPE_MAP.keySet());
+    }
+    return STRING_TO_TYPE_MAP.get(stringValue);
   }
 }

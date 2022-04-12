@@ -104,6 +104,7 @@ import software.wings.security.AppPermissionSummary.EnvInfo;
 import software.wings.security.AppPermissionSummaryForUI;
 import software.wings.security.AppPermissionSummaryForUI.AppPermissionSummaryForUIBuilder;
 import software.wings.security.EnvFilter;
+import software.wings.security.ExecutableElementsFilter;
 import software.wings.security.Filter;
 import software.wings.security.GenericEntityFilter;
 import software.wings.security.GenericEntityFilter.FilterType;
@@ -740,14 +741,111 @@ public class AuthHandler {
           pipelineIdActionMap = getPipelineIdsByFilter(permissionTypeAppIdEntityMap.get(PIPELINE).get(appId),
               permissionTypeAppIdEntityMap.get(ENV).get(appId), (EnvFilter) entityFilter, envActionMap, entityActions,
               workflowCache);
-
           Map<Action, Set<String>> actionEntityIdMap =
               buildActionPipelineMap(finalAppPermissionSummary.getDeploymentPermissions(), pipelineIdActionMap);
           finalAppPermissionSummary.setDeploymentPermissions(actionEntityIdMap);
+
+          Map<AppPermissionSummary.ExecutableElementInfo, Set<String>> envDeploymentPermissionMap =
+              appPermissionSummary.getEnvExecutableElementDeployPermissions();
+          if (isEmpty(envDeploymentPermissionMap)) {
+            envDeploymentPermissionMap = new HashMap<>();
+          }
+          buildPipelineEnvMap(permissionTypeAppIdEntityMap.get(PIPELINE).get(appId),
+              permissionTypeAppIdEntityMap.get(ENV).get(appId), (EnvFilter) entityFilter, envDeploymentPermissionMap,
+              entityActions);
+          buildWorkflowEnvMap(permissionTypeAppIdEntityMap.get(WORKFLOW).get(appId),
+              permissionTypeAppIdEntityMap.get(ENV).get(appId), (EnvFilter) entityFilter, envDeploymentPermissionMap,
+              entityActions);
+          finalAppPermissionSummary.setEnvExecutableElementDeployPermissions(envDeploymentPermissionMap);
           break;
 
         default:
           noop();
+      }
+    });
+  }
+
+  private void buildPipelineEnvMap(List<Base> pipelines, List<Base> environments, EnvFilter filter,
+      Map<AppPermissionSummary.ExecutableElementInfo, Set<String>> permission, Set<Action> entityActions) {
+    if (isEmpty(pipelines) || isEmpty(entityActions) || !entityActions.contains(Action.EXECUTE_PIPELINE)) {
+      return;
+    }
+
+    ExecutableElementsFilter executableElementsFilter;
+    if (filter == null) {
+      executableElementsFilter = new ExecutableElementsFilter();
+      executableElementsFilter.setFilterTypes(Sets.newHashSet(PROD, NON_PROD));
+      executableElementsFilter.setExecutableElementFilterType(ExecutableElementsFilter.FilterType.PIPELINE);
+      executableElementsFilter.setFilter(GenericEntityFilter.builder().filterType(FilterType.ALL).build());
+    } else {
+      if (filter instanceof ExecutableElementsFilter) {
+        executableElementsFilter = (ExecutableElementsFilter) filter;
+      } else {
+        executableElementsFilter = new ExecutableElementsFilter();
+        executableElementsFilter.setFilterTypes(filter.getFilterTypes());
+        executableElementsFilter.setIds(filter.getIds());
+        executableElementsFilter.setExecutableElementFilterType(ExecutableElementsFilter.FilterType.PIPELINE);
+        executableElementsFilter.setFilter(GenericEntityFilter.builder().filterType(FilterType.ALL).build());
+      }
+    }
+
+    final Set<String> envIds = getEnvIdsByFilter(environments, filter);
+    final String executableElementFilterType = executableElementsFilter.getExecutableElementFilterType();
+    final GenericEntityFilter executableElementFilter = executableElementsFilter.getFilter();
+    final Set<String> pipelineIdsByEntityFilter = getPipelineIdsByEntityFilter(pipelines, executableElementFilter);
+    pipelineIdsByEntityFilter.forEach(pipelineId -> {
+      final AppPermissionSummary.ExecutableElementInfo executableElementInfo =
+          AppPermissionSummary.ExecutableElementInfo.builder()
+              .entityId(pipelineId)
+              .entityType(executableElementFilterType)
+              .build();
+      if (permission.containsKey(executableElementInfo)) {
+        permission.get(executableElementInfo).addAll(envIds);
+      } else {
+        permission.put(executableElementInfo, envIds);
+      }
+    });
+  }
+
+  private void buildWorkflowEnvMap(List<Base> workflows, List<Base> environments, EnvFilter filter,
+      Map<AppPermissionSummary.ExecutableElementInfo, Set<String>> permission, Set<Action> entityActions) {
+    if (isEmpty(workflows) || isEmpty(entityActions) || !entityActions.contains(Action.EXECUTE_WORKFLOW)) {
+      return;
+    }
+
+    ExecutableElementsFilter executableElementsFilter;
+    if (filter == null) {
+      executableElementsFilter = new ExecutableElementsFilter();
+      executableElementsFilter.setFilterTypes(Sets.newHashSet(PROD, NON_PROD));
+      executableElementsFilter.setExecutableElementFilterType(ExecutableElementsFilter.FilterType.WORKFLOW);
+      executableElementsFilter.setFilter(GenericEntityFilter.builder().filterType(FilterType.ALL).build());
+    } else {
+      if (filter instanceof ExecutableElementsFilter) {
+        executableElementsFilter = (ExecutableElementsFilter) filter;
+      } else {
+        executableElementsFilter = new ExecutableElementsFilter();
+        executableElementsFilter.setFilterTypes(filter.getFilterTypes());
+        executableElementsFilter.setIds(filter.getIds());
+        executableElementsFilter.setExecutableElementFilterType(ExecutableElementsFilter.FilterType.WORKFLOW);
+        executableElementsFilter.setFilter(GenericEntityFilter.builder().filterType(FilterType.ALL).build());
+      }
+    }
+    final String executableElementFilterType = executableElementsFilter.getExecutableElementFilterType();
+    final GenericEntityFilter executableElementFilter = executableElementsFilter.getFilter();
+    final Set<String> workflowIdsByEntityFilter = getWorkflowIdsByEntityFilter(workflows, executableElementFilter);
+    final Set<String> envIds = getEnvIdsByFilter(environments, filter);
+    workflowIdsByEntityFilter.forEach(workflowId -> {
+      final AppPermissionSummary.ExecutableElementInfo executableElementInfo =
+          AppPermissionSummary.ExecutableElementInfo.builder()
+              .entityId(workflowId)
+              .entityType(executableElementFilterType)
+              .build();
+      if (permission.containsKey(executableElementInfo)) {
+        permission.get(executableElementInfo).addAll(envIds);
+      } else {
+        Set<String> executableElementInfos = new HashSet<>();
+        executableElementInfos.addAll(envIds);
+        permission.put(executableElementInfo, envIds);
       }
     });
   }
@@ -1645,6 +1743,7 @@ public class AuthHandler {
             .pipelinePermissions(convertActionEntityIdMapToEntityActionMap(fromSummary.getPipelinePermissions()))
             .deploymentPermissions(convertActionEntityIdMapToEntityActionMap(fromSummary.getDeploymentPermissions()))
             .templatePermissions(convertActionEntityIdMapToEntityActionMap(fromSummary.getTemplatePermissions()));
+    // todo(abhinav): think of pipeline env filter here.
     return toAppPermissionSummaryBuilder.build();
   }
 

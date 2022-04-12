@@ -1,0 +1,137 @@
+{
+  "data" : {
+    "pairs" : [ {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/api/v1/query"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "app.datadoghq.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "from" : [ {
+            "matcher" : "exact",
+            "value" : "1644833760"
+          } ],
+          "query" : [ {
+            "matcher" : "exact",
+            "value" : "kubernetes.memory.usage{cluster-name:chi-play}.rollup(avg, 60)"
+          } ],
+          "to" : [ {
+            "matcher" : "exact",
+            "value" : "1644834060"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAEA4yS246bMBCGX6XyVSuxyAZjDJd9jVWEnDAh1hrM+hAtQrx7xzl2pUbqnQ/f+B//86/EBxWiJy2xHyQjDvzcncF5bSfSsox4cBrw+n0lMPV4JDiXJadVQynNiArB6X0MCVm3jIyA+wO+9hH34CbAi3yE0bolj14NgBJ6CuDOypBW4ANBDZ2HgAI7FAvK4fKqUdYCJRAxMA3hRNoqI58R3NLpqYcv0ib5YXCknaIxWHywM6DywUSPCm+TGqE9nPTbbNSCurNFZaN90nr/JpHTjPOGV4JxmktJK1qyXXZnZJHauDJ4Uxcs51XDWFP9xcgnIwpaNMizoqqleDINfzJVVdOyzKVgoqyKB3Mh7lpC1JyKXDYllUzu0B74mnE+19G8Mnj95/e33Flj4vxTnYfsh6C/0I846WTFSo5q1GZB5/ZLmmNyUhnojuoQLLrL8OskmXkjEnCyLnS3s9/JWxNdmujjCd2TttiyNBlsvNc+DeFe8SobG6LBdr0KqHUP2i0El8mjwIva///2iA6mILYE+0Y7u7BcYhP0CJjES9qxDdyl1GNHR2fHbz09gjk4G+duj9YlDiMdrzXbHwAAAP//AwDaFBKyVgMAAA==",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Cache-Control" : [ "no-cache" ],
+          "Connection" : [ "keep-alive" ],
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Security-Policy" : [ "frame-ancestors 'self'; report-uri https://logs.browser-intake-datadoghq.com/api/v2/logs?dd-api-key=pube4f163c23bbf91c16b8f57f56af9fc58&dd-evp-origin=content-security-policy&ddsource=csp-report&ddtags=site%3Adatadoghq.com" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Thu, 17 Mar 2022 11:37:06 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Pragma" : [ "no-cache" ],
+          "Strict-Transport-Security" : [ "max-age=15724800;" ],
+          "Vary" : [ "Accept-Encoding" ],
+          "X-Content-Type-Options" : [ "nosniff" ],
+          "X-Frame-Options" : [ "SAMEORIGIN" ],
+          "X-Ratelimit-Limit" : [ "3600" ],
+          "X-Ratelimit-Name" : [ "batch_query" ],
+          "X-Ratelimit-Period" : [ "3600" ],
+          "X-Ratelimit-Remaining" : [ "3413" ],
+          "X-Ratelimit-Reset" : [ "1374" ]
+        }
+      }
+    }, {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/api/v1/query"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "app.datadoghq.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "from" : [ {
+            "matcher" : "exact",
+            "value" : "1644833760"
+          } ],
+          "query" : [ {
+            "matcher" : "exact",
+            "value" : "docker.cpu.usage{cluster-name:chi-play}.rollup(avg, 60)"
+          } ],
+          "to" : [ {
+            "matcher" : "exact",
+            "value" : "1644834060"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAEA4xS226jMBT8lZWllXYliszNBn6lipALDrFqMPUlaoT49x2TpGm3+7DiBdtzZs6ZMytxXvjgSEvMK0mIlW7pztI6ZWbSZglx0iqJ5+eVyHnAFSvLuihp1VBKEyK8t+ol+AhZt4RMEucebIPpX6VN+yWkwYlRglvNXtqz0KRlqPRi7Jz0YD5AxQuL3yt5wRm4AdFyHv2JtFVC3oK0l07Ng3wnbdQdR0vaOWiN4t4sEpK9Dg4KT7OYZNuf1NOixQW6i4GyVi5qPX+RSGmSpaypeZZlNa0xWFY2h+QOqvPYxw6qOa/KgueMNbQsM/YJVH+AQEMZ5yWjRQGP8geoKT+B6rxqiqZhPM8r+mDaITc5TpsMH0NPTV6z6gCP5PuC7VwX883e9Z/Db6k1WofllziPyQ9Gf8ONMKtoxEqOYlL6At8WaXs5Yx9xSa4XWnZH0XsDgzMMT6KfD1jEnIz13e36Z3RYBxv3eqfClRpQzbckrgjND8rFbdyLvqVjA8abbhAeUveM3WKw7x7kfxf9/8wTfIvjtQSdwcTOX/bEeDVJhHBPOPRxiklHK0drpi/NfGRytCYs3Qt8izikOVxrtj8AAAD//wMAXZEnPkoDAAA=",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Cache-Control" : [ "no-cache" ],
+          "Connection" : [ "keep-alive" ],
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Security-Policy" : [ "frame-ancestors 'self'; report-uri https://logs.browser-intake-datadoghq.com/api/v2/logs?dd-api-key=pube4f163c23bbf91c16b8f57f56af9fc58&dd-evp-origin=content-security-policy&ddsource=csp-report&ddtags=site%3Adatadoghq.com" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Thu, 17 Mar 2022 11:37:06 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Pragma" : [ "no-cache" ],
+          "Strict-Transport-Security" : [ "max-age=15724800;" ],
+          "Vary" : [ "Accept-Encoding" ],
+          "X-Content-Type-Options" : [ "nosniff" ],
+          "X-Frame-Options" : [ "SAMEORIGIN" ],
+          "X-Ratelimit-Limit" : [ "3600" ],
+          "X-Ratelimit-Name" : [ "batch_query" ],
+          "X-Ratelimit-Period" : [ "3600" ],
+          "X-Ratelimit-Remaining" : [ "3414" ],
+          "X-Ratelimit-Reset" : [ "1374" ]
+        }
+      }
+    } ],
+    "globalActions" : {
+      "delays" : [ ]
+    }
+  },
+  "meta" : {
+    "schemaVersion" : "v5",
+    "hoverflyVersion" : "v1.1.5",
+    "timeExported" : "2022-03-17T12:19:32Z"
+  }
+}

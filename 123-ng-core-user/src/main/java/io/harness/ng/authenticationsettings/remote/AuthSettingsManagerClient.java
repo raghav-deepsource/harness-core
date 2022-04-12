@@ -16,6 +16,7 @@ import io.harness.rest.RestResponse;
 import software.wings.beans.loginSettings.LoginSettings;
 import software.wings.beans.loginSettings.PasswordStrengthPolicy;
 import software.wings.beans.sso.OauthSettings;
+import software.wings.beans.sso.SamlSettings;
 import software.wings.security.authentication.LoginTypeResponse;
 import software.wings.security.authentication.SSOConfig;
 
@@ -91,6 +92,9 @@ public interface AuthSettingsManagerClient {
 
   @DELETE(API_PREFIX + "sso/delete-saml-idp-metadata")
   Call<RestResponse<SSOConfig>> deleteSAMLMetadata(@Query("accountId") String accountIdentifier);
+
+  @GET(API_PREFIX + "sso/get-saml-settings")
+  Call<RestResponse<SamlSettings>> getSAMLMetadata(@Query("accountId") String accountIdentifier);
 
   @GET(API_PREFIX + "sso/saml-login-test")
   Call<RestResponse<LoginTypeResponse>> getSAMLLoginTest(@Query("accountId") @NotEmpty String accountIdentifier);

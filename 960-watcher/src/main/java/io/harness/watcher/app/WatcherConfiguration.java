@@ -7,6 +7,9 @@
 
 package io.harness.watcher.app;
 
+import io.harness.event.client.impl.EventPublisherConstants;
+
+import java.util.Optional;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
@@ -37,5 +40,9 @@ public class WatcherConfiguration {
       return accountSecret;
     }
     return delegateToken;
+  }
+
+  public String getQueueFilePath() {
+    return Optional.ofNullable(queueFilePath).orElse(EventPublisherConstants.DEFAULT_QUEUE_FILE_PATH);
   }
 }

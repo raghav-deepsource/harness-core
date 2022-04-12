@@ -201,16 +201,17 @@
         a factory and shared from all instances. -->
         <module name="io.harness.checks.LoggerCheck"/>
 
-        <!-- TODO: Every system handler should be responsible to handle all the exception in its execution threads.
-        When the thread is done or move to another task it should log or serialize the exception info to another
-        subsystem. If it is responsible to do so, this means that no one else should do it. This is why log and
-        rethrow pattern will either duplicate the logging or it is needed because the handler needs to be fixed.
-        In both cases having tis pattern in the code should be removed.
-        -->
-        <module name="com.github.sevntu.checkstyle.checks.coding.EitherLogOrThrowCheck">
-            <property name="loggerFullyQualifiedClassName" value="org.slf4j.Logger"/>
-            <property name="loggingMethodNames" value="error, warn, info, debug"/>
-        </module>
+        <!-- Temporarily commenting out BT-1014-->
+<!--        &lt;!&ndash; TODO: Every system handler should be responsible to handle all the exception in its execution threads.-->
+<!--        When the thread is done or move to another task it should log or serialize the exception info to another-->
+<!--        subsystem. If it is responsible to do so, this means that no one else should do it. This is why log and-->
+<!--        rethrow pattern will either duplicate the logging or it is needed because the handler needs to be fixed.-->
+<!--        In both cases having tis pattern in the code should be removed.-->
+<!--        &ndash;&gt;-->
+<!--        <module name="com.github.sevntu.checkstyle.checks.coding.EitherLogOrThrowCheck">-->
+<!--            <property name="loggerFullyQualifiedClassName" value="org.slf4j.Logger"/>-->
+<!--            <property name="loggingMethodNames" value="error, warn, info, debug"/>-->
+<!--        </module>-->
 
 
         <!-- PERFORMANCE -->

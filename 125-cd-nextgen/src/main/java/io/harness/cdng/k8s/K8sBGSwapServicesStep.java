@@ -71,8 +71,9 @@ public class K8sBGSwapServicesStep extends TaskExecutableWithRollbackAndRbac<K8s
       Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
     K8sBGSwapServicesStepParameters k8sBGSwapServicesStepParameters =
         (K8sBGSwapServicesStepParameters) stepElementParameters.getSpec();
+    String bgStepFqn = k8sBGSwapServicesStepParameters.getBlueGreenStepFqn();
     String bgSwapServicesFqn = k8sBGSwapServicesStepParameters.getBlueGreenSwapServicesStepFqn();
-    if (EmptyPredicate.isNotEmpty(bgSwapServicesFqn)) {
+    if (EmptyPredicate.isNotEmpty(bgSwapServicesFqn) || EmptyPredicate.isNotEmpty(bgStepFqn)) {
       OptionalOutcome optionalOutcome = outcomeService.resolveOptional(ambiance,
           RefObjectUtils.getOutcomeRefObject(
               bgSwapServicesFqn + "." + OutcomeExpressionConstants.K8S_BG_SWAP_SERVICES_OUTCOME));
@@ -85,7 +86,6 @@ public class K8sBGSwapServicesStep extends TaskExecutableWithRollbackAndRbac<K8s
       }
     }
 
-    String bgStepFqn = k8sBGSwapServicesStepParameters.getBlueGreenStepFqn();
     if (EmptyPredicate.isEmpty(bgStepFqn)) {
       throw new InvalidRequestException(BG_STEP_MISSING_ERROR, USER);
     }

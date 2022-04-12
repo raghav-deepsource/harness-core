@@ -10,8 +10,10 @@ package io.harness.ng.core.event;
 import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
+import static io.harness.eventsframework.EventsFrameworkConstants.GIT_SYNC_ENTITY_STREAM;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY_TYPE;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENVIRONMENT_GROUP_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SECRET_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SETUP_USAGE_ENTITY;
@@ -53,17 +55,21 @@ public class EntityCRUDStreamConsumer implements Runnable {
   public EntityCRUDStreamConsumer(@Named(ENTITY_CRUD) Consumer redisConsumer,
       @Named(PROJECT_ENTITY + ENTITY_CRUD) MessageListener projectEntityCRUDStreamListener,
       @Named(CONNECTOR_ENTITY + ENTITY_CRUD) MessageListener connectorEntityCRUDStreamListener,
+      @Named(ENVIRONMENT_GROUP_ENTITY + ENTITY_CRUD) MessageListener environmentGroupEntityCRUDStreamListener,
       @Named(SETUP_USAGE_ENTITY) MessageProcessor setupUsageChangeEventMessageProcessor,
       @Named(USER_ENTITY + ENTITY_CRUD) MessageListener userEntityCRUDStreamListener,
       @Named(SECRET_ENTITY + ENTITY_CRUD) MessageListener secretEntityCRUDStreamListner,
       @Named(USER_GROUP + ENTITY_CRUD) MessageListener userGroupEntityCRUDStreamListener,
       @Named(USER_SCOPE_RECONCILIATION) MessageListener userMembershipReconciliationMessageProcessor,
+      @Named(GIT_SYNC_ENTITY_STREAM + ENTITY_CRUD) MessageListener gitSyncProjectCleanup,
       QueueController queueController) {
     this.redisConsumer = redisConsumer;
     this.queueController = queueController;
     messageListenersList = new ArrayList<>();
     messageListenersList.add(projectEntityCRUDStreamListener);
+    messageListenersList.add(gitSyncProjectCleanup);
     messageListenersList.add(connectorEntityCRUDStreamListener);
+    messageListenersList.add(environmentGroupEntityCRUDStreamListener);
     messageListenersList.add(userEntityCRUDStreamListener);
     messageListenersList.add(secretEntityCRUDStreamListner);
     messageListenersList.add(userGroupEntityCRUDStreamListener);

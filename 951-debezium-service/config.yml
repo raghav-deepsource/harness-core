@@ -1,0 +1,85 @@
+logging:
+  level: INFO
+  loggers:
+    org.glassfish.jersey: WARN
+    allbegray.slack: WARN
+    org.glassfish.jersey.server.ServerRuntime.Responder: "OFF"
+  appenders:
+    - type: console
+      threshold: TRACE
+      target: STDOUT
+      logFormat: "%date{ISO8601} %green([%thread]) %highlight(%-5level) %cyan(%logger) - %msg %yellow(%replace(%mdc){'(.+)', '[$1]'}) %n"
+    - type: gke-console
+      threshold: TRACE
+      target: STDOUT
+      stackdriverLogEnabled: false
+
+server:
+  applicationConnectors:
+    - type: http
+      port: 14552
+      maxRequestHeaderSize: 100KiB
+  adminConnectors:
+    - type: http
+      port: 13002
+  requestLog:
+    appenders: []
+  maxThreads: 1024
+
+
+debeziumConfigs:
+  - isEnabled: true
+    offset.storage.topic: debezium-offsets-pipeline
+    name: pipeline
+    key.converter.schemas.enable: false
+    value.converter.schemas.enable: false
+    offset.flush.interval.ms: ${OFFSET_FLUSH_INTERVAL_MS:-5000}
+    mongodb.hosts: ${MONGO_DB_HOSTS:-localhost:27017}
+    mongodb.name: pmsMongo
+    mongodb.user: ${MONGO_DB_USER:-}
+    mongodb.password: ${MONGO_DB_PASSWORD:-}
+    mongodb.ssl.enabled: ${MONGO_DB_SSL_ENABLED:-false}
+    connector.class: io.debezium.connector.mongodb.MongoDbConnector
+    database.include.list: pms-harness
+    collection.include.list: ${COLLECTION_INCLUDE_LIST:-pms-harness.planExecutionsSummary}
+    connect.backoff.initial.delay.ms: 1000
+    connect.backoff.max.delay.ms: 10000
+    connect.max.attempts: 3
+    snapshot.fetch.size: 2000
+
+eventsFramework:
+  redis:
+    sentinel: false
+    masterName: "test"
+    redisUrl: "redis://localhost:6379"
+    sentinelUrls:
+      - "redis://redis1:26379"
+      - "redis://redis2:26379"
+      - "redis://redis3:26379"
+    envNamespace: ""
+    readMode: MASTER
+    nettyThreads: 16
+    useScriptCache: true
+    userName: ""
+    password: ""
+    sslConfig:
+      enabled: false
+      CATrustStorePath: "/tmp/ca_trust_store"
+      CATrustStorePassword: ""
+
+redisLockConfig:
+  sentinel: false
+  masterName: "test"
+  redisUrl: "redis://localhost:6379"
+  sentinelUrls:
+    - "redis://redis1:26379"
+    - "redis://redis2:26379"
+    - "redis://redis3:26379"
+  envNamespace: ""
+  readMode: MASTER
+  nettyThreads: 16
+  useScriptCache: true
+  userName: ""
+  password: ""
+
+distributedLockImplementation: REDIS

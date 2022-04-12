@@ -13,11 +13,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.gitsync.common.dtos.GitToHarnessProcessMsvcStepResponse;
 
+import java.util.List;
+
 @OwnedBy(DX)
 public interface GitBranchSyncService {
   GitToHarnessProcessMsvcStepResponse processBranchSyncEvent(YamlGitConfigDTO yamlGitConfigDTO, String branch,
-      String accountIdentifier, String filePathToBeExcluded, String changeSetId, String gitToHarnessProgressRecordId);
+      String accountIdentifier, List<String> filePathsToBeExcluded, String changeSetId,
+      String gitToHarnessProgressRecordId);
 
   void createBranchSyncEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String yamlGitConfigIdentifier, String repoURL, String branch, String filePathToBeExcluded);
+      String yamlGitConfigIdentifier, String repoURL, String branch, List<String> filePathsToBeExcluded);
 }

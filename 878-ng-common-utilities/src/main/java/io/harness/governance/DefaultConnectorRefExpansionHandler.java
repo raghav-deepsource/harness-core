@@ -37,7 +37,7 @@ public class DefaultConnectorRefExpansionHandler implements JsonExpansionHandler
   @Inject PmsGitSyncHelper gitSyncHelper;
 
   @Override
-  public ExpansionResponse expand(JsonNode fieldValue, ExpansionRequestMetadata metadata) {
+  public ExpansionResponse expand(JsonNode fieldValue, ExpansionRequestMetadata metadata, String fqn) {
     String accountId = metadata.getAccountId();
     String orgId = metadata.getOrgId();
     String projectId = metadata.getProjectId();

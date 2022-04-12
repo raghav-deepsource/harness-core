@@ -28,4 +28,6 @@ public interface GitFullSyncEntityRepositoryCustom {
   long count(Criteria criteria);
 
   List<GitFullSyncEntityInfo> findAll(Criteria criteria);
+
+  List<GitFullSyncEntityInfo> deleteAll(Criteria criteria);
 }

@@ -117,6 +117,8 @@ public class HintException extends WingsException {
       "Please make sure that your delegates are connected. If you are using delegate selectors, "
       + "please ensure that a delegate exists with the delegate selector used in the Connector which is used for git sync. "
       + "Refer %s for more information on delegate Installation";
+  public static final String HINT_SCM_INVALID_REQUEST =
+      "Check if delegate is able to communicate with harness.io and outbound network is enabled for delegate";
 
   public HintException(String message) {
     super(message, null, HINT, INFO, null, null);

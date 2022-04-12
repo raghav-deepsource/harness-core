@@ -29,11 +29,13 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.ci.pod.ContainerParams;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
+import io.harness.delegate.beans.ci.pod.ContainerSecurityContext;
 import io.harness.delegate.beans.ci.pod.SecretVarParams;
 import io.harness.delegate.task.citasks.cik8handler.params.CIConstants;
 import io.harness.k8s.model.ImageDetails;
 
 import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.openapi.models.V1CapabilitiesBuilder;
 import io.kubernetes.client.openapi.models.V1ContainerBuilder;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1ContainerPortBuilder;
@@ -134,8 +136,12 @@ public abstract class BaseContainerSpecBuilder {
                                               .withVolumeMounts(volumeMounts);
 
     boolean isPrivilegedImage = isPrivilegedImage(imageDetails);
-    containerBuilder.withSecurityContext(
-        getSecurityContext(containerParams.isPrivileged() || isPrivilegedImage, containerParams.getRunAsUser()));
+    if (containerParams.getSecurityContext() == null) {
+      containerBuilder.withSecurityContext(getDeprecatedSecurityContext(
+          containerParams.isPrivileged() || isPrivilegedImage, containerParams.getRunAsUser()));
+    } else {
+      containerBuilder.withSecurityContext(getSecurityContext(containerParams.getSecurityContext(), isPrivilegedImage));
+    }
 
     if (isNotEmpty(containerParams.getWorkingDir())) {
       containerBuilder.withWorkingDir(containerParams.getWorkingDir());
@@ -148,7 +154,7 @@ public abstract class BaseContainerSpecBuilder {
         .build();
   }
 
-  private V1SecurityContext getSecurityContext(boolean privileged, Integer runAsUser) {
+  private V1SecurityContext getDeprecatedSecurityContext(boolean privileged, Integer runAsUser) {
     V1SecurityContextBuilder builder = new V1SecurityContextBuilder().withPrivileged(privileged);
     if (runAsUser != null) {
       builder.withRunAsUser((long) runAsUser);
@@ -169,6 +175,34 @@ public abstract class BaseContainerSpecBuilder {
       return true;
     }
     return false;
+  }
+
+  private V1SecurityContext getSecurityContext(ContainerSecurityContext ctrSecurityContext, boolean isPrivilegedImage) {
+    Boolean privileged = ctrSecurityContext.getPrivileged();
+    if (privileged == null && isPrivilegedImage) {
+      privileged = Boolean.TRUE;
+    }
+
+    V1SecurityContextBuilder builder =
+        new V1SecurityContextBuilder()
+            .withAllowPrivilegeEscalation(ctrSecurityContext.getAllowPrivilegeEscalation())
+            .withPrivileged(privileged)
+            .withProcMount(ctrSecurityContext.getProcMount())
+            .withReadOnlyRootFilesystem(ctrSecurityContext.getReadOnlyRootFilesystem())
+            .withRunAsNonRoot(ctrSecurityContext.getRunAsNonRoot());
+    if (ctrSecurityContext.getRunAsUser() != null) {
+      builder.withRunAsUser((long) ctrSecurityContext.getRunAsUser());
+    }
+    if (ctrSecurityContext.getRunAsGroup() != null) {
+      builder.withRunAsGroup((long) ctrSecurityContext.getRunAsGroup());
+    }
+    if (ctrSecurityContext.getCapabilities() != null) {
+      builder.withCapabilities(new V1CapabilitiesBuilder()
+                                   .withAdd(ctrSecurityContext.getCapabilities().getAdd())
+                                   .withDrop(ctrSecurityContext.getCapabilities().getDrop())
+                                   .build());
+    }
+    return builder.build();
   }
 
   private V1ResourceRequirements getResourceRequirements(ContainerResourceParams containerResourceParams) {

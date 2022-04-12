@@ -51,4 +51,6 @@ public interface YamlGitConfigService {
 
   void updateTheConnectorRepoAndBranch(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String yamlGitConfigIdentifier, String repo, String branch);
+
+  void deleteAllEntities(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 }

@@ -98,6 +98,10 @@ public class GitFetchFilesTask extends AbstractDelegateRunnableTask {
     AppManifestKind appManifestKind = taskParams.getAppManifestKind();
     Map<String, GitFetchFilesResult> filesFromMultipleRepo = new HashMap<>();
     Map<String, GitFetchFilesConfig> gitFetchFilesConfigMap = taskParams.getGitFetchFilesConfigMap();
+
+    executionLogCallback.saveExecutionLog(
+        color(format("%nStarting Git %s Fetch", getFileTypeMessage(appManifestKind)), LogColor.White, LogWeight.Bold));
+
     for (Entry<String, GitFetchFilesConfig> entry : taskParams.getGitFetchFilesConfigMap().entrySet()) {
       executionLogCallback.saveExecutionLog(
           color(format("%nFetching %s files from git for %s", getFileTypeMessage(appManifestKind), entry.getKey()),
@@ -112,7 +116,7 @@ public class GitFetchFilesTask extends AbstractDelegateRunnableTask {
             gitFetchFileConfig.getGitConfig(), gitFetchFileConfig.getEncryptedDataDetails(), executionLogCallback,
             taskParams.isOptimizedFilesFetch(), taskParams.isShouldInheritGitFetchFilesConfigMap());
       } catch (Exception ex) {
-        String exceptionMsg = ex.getMessage();
+        String exceptionMsg = gitFetchFilesTaskHelper.extractErrorMessage(ex);
 
         // Values.yaml in service spec is optional.
         if (AppManifestKind.VALUES == appManifestKind && K8sValuesLocation.Service.toString().equals(k8ValuesLocation)
@@ -153,7 +157,10 @@ public class GitFetchFilesTask extends AbstractDelegateRunnableTask {
     }
 
     if (taskParams.isFinalState()) {
-      executionLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
+      executionLogCallback.saveExecutionLog(
+          color(format("%nGit %s Fetch completed successfully.", getFileTypeMessage(appManifestKind)), LogColor.White,
+              LogWeight.Bold),
+          INFO, CommandExecutionStatus.SUCCESS);
     }
 
     return GitCommandExecutionResponse.builder()

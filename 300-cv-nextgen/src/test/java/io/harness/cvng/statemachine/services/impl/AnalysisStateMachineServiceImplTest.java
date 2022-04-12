@@ -44,6 +44,7 @@ import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.statemachine.entities.ActivityVerificationState;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
+import io.harness.cvng.statemachine.entities.CanaryTimeSeriesAnalysisState;
 import io.harness.cvng.statemachine.entities.DeploymentLogClusterState;
 import io.harness.cvng.statemachine.entities.PreDeploymentLogClusterState;
 import io.harness.cvng.statemachine.entities.ServiceGuardLogClusterState;
@@ -52,6 +53,7 @@ import io.harness.cvng.statemachine.entities.TimeSeriesAnalysisState;
 import io.harness.cvng.statemachine.exception.AnalysisStateMachineException;
 import io.harness.cvng.statemachine.services.api.AnalysisStateMachineService;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
+import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.cvng.verificationjob.services.api.VerificationJobService;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
@@ -76,14 +78,21 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
   @Inject private Clock clock;
   @Inject HPersistence hPersistence;
   @Inject private VerificationJobService verificationJobService;
+  @Inject private VerificationJobInstanceService verificationJobInstanceService;
+
   @Inject private CVConfigService cvConfigService;
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
 
   private final DataGenerator dataGenerator = DataGenerator.builder().accountId(generateUuid()).build();
+  private String accountId;
   private String cvConfigId;
   private String verificationTaskId;
+  private String deploymentVerificationTaskId;
+
   private TimeSeriesAnalysisState timeSeriesAnalysisState;
+  private TimeSeriesAnalysisState deploymentTimeSeriesAnalysisState;
+
   private BuilderFactory builderFactory;
 
   @Before
@@ -91,8 +100,15 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
     builderFactory = BuilderFactory.getDefault();
     AppDynamicsCVConfig appDConfig = dataGenerator.getAppDynamicsCVConfig();
     CVConfig cvConfig = cvConfigService.save(appDConfig);
+    accountId = builderFactory.getContext().getAccountId();
     cvConfigId = cvConfig.getUuid();
     verificationTaskId = cvConfigId;
+    String verificationJobInstanceId =
+        verificationJobInstanceService.create(builderFactory.verificationJobInstanceBuilder()
+                                                  .resolvedJob(builderFactory.getDeploymentVerificationJob())
+                                                  .build());
+    deploymentVerificationTaskId = verificationTaskService.createDeploymentVerificationTask(
+        accountId, cvConfigId, verificationJobInstanceId, DataSourceType.APP_DYNAMICS);
 
     timeSeriesAnalysisState = ServiceGuardTimeSeriesAnalysisState.builder().build();
     timeSeriesAnalysisState.setStatus(AnalysisStatus.CREATED);
@@ -101,6 +117,14 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
                                           .startTime(clock.instant())
                                           .endTime(clock.instant())
                                           .build());
+
+    deploymentTimeSeriesAnalysisState = CanaryTimeSeriesAnalysisState.builder().build();
+    deploymentTimeSeriesAnalysisState.setStatus(AnalysisStatus.CREATED);
+    deploymentTimeSeriesAnalysisState.setInputs(AnalysisInput.builder()
+                                                    .verificationTaskId(deploymentVerificationTaskId)
+                                                    .startTime(clock.instant())
+                                                    .endTime(clock.instant())
+                                                    .build());
 
     MockitoAnnotations.initMocks(this);
   }
@@ -150,6 +174,7 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
     String verificationTaskId = generateUuid();
     String verificationJobInstanceId = generateUuid();
     VerificationTask verificationTask = VerificationTask.builder()
+                                            .accountId(accountId)
                                             .taskInfo(DeploymentInfo.builder()
                                                           .verificationJobInstanceId(verificationJobInstanceId)
                                                           .cvConfigId(cvConfigId)
@@ -183,6 +208,7 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
     String verificationTaskId = generateUuid();
     String verificationJobInstanceId = generateUuid();
     VerificationTask verificationTask = VerificationTask.builder()
+                                            .accountId(accountId)
                                             .taskInfo(DeploymentInfo.builder()
                                                           .verificationJobInstanceId(verificationJobInstanceId)
                                                           .cvConfigId(cvConfig.getUuid())
@@ -217,6 +243,7 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
     String verificationTaskId = generateUuid();
     String verificationJobInstanceId = generateUuid();
     VerificationTask verificationTask = VerificationTask.builder()
+                                            .accountId(accountId)
                                             .taskInfo(DeploymentInfo.builder()
                                                           .verificationJobInstanceId(verificationJobInstanceId)
                                                           .cvConfigId(cvConfig.getUuid())
@@ -250,6 +277,7 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
     String verificationTaskId = generateUuid();
     String verificationJobInstanceId = generateUuid();
     VerificationTask verificationTask = VerificationTask.builder()
+                                            .accountId(accountId)
                                             .taskInfo(DeploymentInfo.builder()
                                                           .verificationJobInstanceId(verificationJobInstanceId)
                                                           .cvConfigId(cvConfigId)
@@ -450,7 +478,7 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = PRAVEEN)
   @Category(UnitTests.class)
-  public void testExecuteStateMachine_currentlyRetryTransitionedToFailed() {
+  public void testExecuteStateMachine_currentlyRetryIsRetriedMarkedIgnoredForServiceGuard() {
     AnalysisStateMachine stateMachine =
         dataGenerator.buildStateMachine(AnalysisStatus.CREATED, verificationTaskId, timeSeriesAnalysisState);
     stateMachineService.initiateStateMachine(verificationTaskId, stateMachine);
@@ -459,28 +487,35 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
     LearningEngineTask task = hPersistence.createQuery(LearningEngineTask.class).get();
     task.setTaskStatus(FAILED);
     hPersistence.save(task);
+    stateMachine.getCurrentState().setStatus(AnalysisStatus.RETRY);
+    hPersistence.save(stateMachine);
 
     stateMachineService.executeStateMachine(verificationTaskId);
     AnalysisStateMachine savedStateMachine = hPersistence.createQuery(AnalysisStateMachine.class).get();
-    assertThat(savedStateMachine.getStatus().name()).isEqualTo(AnalysisStatus.FAILED.name());
+    assertThat(savedStateMachine.getStatus().name()).isEqualTo(AnalysisStatus.IGNORED.name());
   }
 
   @Test
   @Owner(developers = PRAVEEN)
   @Category(UnitTests.class)
-  public void testExecuteStateMachine_timedOUtTasks() {
-    AnalysisStateMachine stateMachine =
-        dataGenerator.buildStateMachine(AnalysisStatus.CREATED, verificationTaskId, timeSeriesAnalysisState);
-    stateMachineService.initiateStateMachine(verificationTaskId, stateMachine);
+  public void testExecuteStateMachine_timedOUtTasksAreFailedAfterRetryForDeployment() {
+    String deploymentVerificationTaskId = verificationTaskService.createDeploymentVerificationTask(
+        accountId, cvConfigId, generateUuid(), DataSourceType.APP_DYNAMICS);
+    AnalysisStateMachine stateMachine = dataGenerator.buildStateMachine(
+        AnalysisStatus.CREATED, deploymentVerificationTaskId, deploymentTimeSeriesAnalysisState);
+    stateMachineService.initiateStateMachine(deploymentVerificationTaskId, stateMachine);
     stateMachine.getCurrentState().setRetryCount(3);
     hPersistence.save(stateMachine);
     LearningEngineTask task = hPersistence.createQuery(LearningEngineTask.class).get();
     task.setTaskStatus(TIMEOUT);
     hPersistence.save(task);
+    stateMachine.getCurrentState().setStatus(AnalysisStatus.RETRY);
+    hPersistence.save(stateMachine);
 
-    stateMachineService.executeStateMachine(verificationTaskId);
+    stateMachineService.executeStateMachine(deploymentVerificationTaskId);
     AnalysisStateMachine savedStateMachine = hPersistence.createQuery(AnalysisStateMachine.class).get();
     assertThat(savedStateMachine.getStatus().name()).isEqualTo(AnalysisStatus.FAILED.name());
+    assertThat(savedStateMachine.getCurrentState().getRetryCount()).isEqualTo(3);
   }
 
   @Test
@@ -551,6 +586,8 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
     Instant currentTime = clock.instant();
     AnalysisStateMachine analysisStateMachine =
         AnalysisStateMachine.builder()
+            .accountId(accountId)
+            .verificationTaskId(verificationTaskId)
             .analysisStartTime(currentTime.minus(STATE_MACHINE_IGNORE_MINUTES + 10, ChronoUnit.MINUTES))
             .analysisEndTime(currentTime.minus(STATE_MACHINE_IGNORE_MINUTES + 5, ChronoUnit.MINUTES))
             .build();

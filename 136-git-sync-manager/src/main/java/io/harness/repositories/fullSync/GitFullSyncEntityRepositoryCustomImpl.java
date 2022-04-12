@@ -54,4 +54,9 @@ public class GitFullSyncEntityRepositoryCustomImpl implements GitFullSyncEntityR
   public List<GitFullSyncEntityInfo> findAll(Criteria criteria) {
     return mongoTemplate.find(new Query(criteria), GitFullSyncEntityInfo.class);
   }
+
+  @Override
+  public List<GitFullSyncEntityInfo> deleteAll(Criteria criteria) {
+    return mongoTemplate.findAllAndRemove(new Query(criteria), GitFullSyncEntityInfo.class);
+  }
 }

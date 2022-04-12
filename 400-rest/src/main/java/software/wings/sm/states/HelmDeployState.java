@@ -10,6 +10,7 @@ package software.wings.sm.states;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.EnvironmentType.ALL;
 import static io.harness.beans.FeatureName.CUSTOM_MANIFEST;
+import static io.harness.beans.FeatureName.DELETE_HELM_REPO_CACHE_DIR;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
 import static io.harness.beans.FeatureName.HELM_CHART_VERSION_STRICT_MATCH;
 import static io.harness.beans.FeatureName.OPTIMIZED_GIT_FETCH_FILES;
@@ -588,7 +589,7 @@ public class HelmDeployState extends State {
     } else {
       StringBuilder builder = new StringBuilder(256);
       builder.append("Failed to find the previous helm release version. ");
-      if (helmVersion == HelmVersion.V3 || helmVersion == HelmVersion.V380) {
+      if (HelmVersion.isHelmV3(helmVersion)) {
         builder.append("Make sure Helm 3 is installed");
       } else {
         builder.append("Make sure that the helm client and tiller is installed");
@@ -1050,9 +1051,11 @@ public class HelmDeployState extends State {
             helmChartConfigTaskParams.setUseLatestChartMuseumVersion(
                 featureFlagService.isEnabled(USE_LATEST_CHARTMUSEUM_VERSION, context.getAccountId()));
 
-            if (HelmVersion.V3.equals(helmVersion) || HelmVersion.V380.equals(helmVersion)) {
+            if (HelmVersion.isHelmV3(helmVersion)) {
               helmChartConfigTaskParams.setUseRepoFlags(
                   featureFlagService.isEnabled(USE_HELM_REPO_FLAGS, context.getAccountId()));
+              helmChartConfigTaskParams.setDeleteRepoCacheDir(
+                  featureFlagService.isEnabled(DELETE_HELM_REPO_CACHE_DIR, context.getAccountId()));
             }
 
             helmChartConfigTaskParams.setCheckIncorrectChartVersion(

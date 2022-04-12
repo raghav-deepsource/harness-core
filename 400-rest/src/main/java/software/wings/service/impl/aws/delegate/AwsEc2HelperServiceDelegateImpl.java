@@ -70,6 +70,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -294,6 +295,14 @@ public class AwsEc2HelperServiceDelegateImpl
              new CloseableAmazonWebServiceClient(getAmazonEc2Client(region, awsConfig))) {
       List<Instance> result = new ArrayList<>();
       String nextToken = null;
+      if (isNotEmpty(filters)) {
+        tracker.trackEC2Call("Filters: "
+            + filters.stream()
+                  .map(f
+                      -> String.format("[Name:%s]-[Values:[%s]]", f.getName(),
+                          isNotEmpty(f.getValues()) ? String.join(",", f.getValues()) : ""))
+                  .collect(Collectors.joining(",")));
+      }
       do {
         DescribeInstancesRequest describeInstancesRequest =
             new DescribeInstancesRequest().withNextToken(nextToken).withFilters(filters);
@@ -303,6 +312,12 @@ public class AwsEc2HelperServiceDelegateImpl
         result.addAll(getInstanceList(describeInstancesResult));
         nextToken = describeInstancesResult.getNextToken();
       } while (nextToken != null);
+      if (isNotEmpty(result)) {
+        tracker.trackEC2Call(
+            "Found instances: " + result.stream().map(Instance::getInstanceId).collect(Collectors.joining(",")));
+      } else {
+        tracker.trackEC2Call("Found 0 instances");
+      }
       return result;
     } catch (AmazonServiceException amazonServiceException) {
       handleAmazonServiceException(amazonServiceException);

@@ -14,6 +14,7 @@ import static io.harness.cache.CacheBackend.NOOP;
 
 import io.harness.AccessControlClientConfiguration;
 import io.harness.AccessControlClientModule;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
@@ -25,6 +26,7 @@ import io.harness.cvng.CVNextGenCommonsServiceModule;
 import io.harness.cvng.CVServiceModule;
 import io.harness.cvng.EventsFrameworkModule;
 import io.harness.cvng.VerificationConfiguration;
+import io.harness.cvng.client.FakeAccessControlClient;
 import io.harness.cvng.client.FakeNextGenService;
 import io.harness.cvng.client.MockedVerificationManagerService;
 import io.harness.cvng.client.NextGenClientModule;
@@ -87,9 +89,11 @@ import org.mongodb.morphia.converters.TypeConverter;
 @Slf4j
 public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin {
   ClosingFactory closingFactory;
+  private boolean forbiddenAccessControl;
 
-  public CvNextGenRule(ClosingFactory closingFactory) {
+  public CvNextGenRule(ClosingFactory closingFactory, boolean forbiddenAccessControl) {
     this.closingFactory = closingFactory;
+    this.forbiddenAccessControl = forbiddenAccessControl;
   }
 
   @Override
@@ -186,7 +190,14 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
                                             .connectTimeOutSeconds(15)
                                             .build())
             .build();
-    modules.add(AccessControlClientModule.getInstance(accessControlClientConfiguration, CV_NEXT_GEN.getServiceId()));
+    modules.add(Modules
+                    .override(AccessControlClientModule.getInstance(
+                        accessControlClientConfiguration, CV_NEXT_GEN.getServiceId()))
+                    .with(binder -> {
+                      if (forbiddenAccessControl) {
+                        binder.bind(AccessControlClient.class).to(FakeAccessControlClient.class);
+                      }
+                    }));
 
     modules.add(new AbstractCfModule() {
       @Override

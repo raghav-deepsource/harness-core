@@ -41,7 +41,7 @@ public class GitSyncThreadDecorator implements ContainerRequestFilter, Container
     MultivaluedMap<String, String> pathParameters = requestContext.getUriInfo().getPathParameters();
     MultivaluedMap<String, String> queryParameters = requestContext.getUriInfo().getQueryParameters();
     final String branchName =
-        getRequestParamFromContext(GitSyncApiConstants.BRANCH_KEY, pathParameters, queryParameters);
+        getRequestParamFromContextWithoutDecoding(GitSyncApiConstants.BRANCH_KEY, queryParameters);
     final String folderPath =
         getRequestParamFromContext(GitSyncApiConstants.FOLDER_PATH, pathParameters, queryParameters);
     final String filePath =
@@ -82,12 +82,18 @@ public class GitSyncThreadDecorator implements ContainerRequestFilter, Container
   String getRequestParamFromContext(
       String key, MultivaluedMap<String, String> pathParameters, MultivaluedMap<String, String> queryParameters) {
     try {
-      return URLDecoder.decode(
-          queryParameters.getFirst(key) != null ? queryParameters.getFirst(key) : DEFAULT, Charsets.UTF_8.name());
+      // browser converts the query param like 'testing/abc' to 'testing%20abc',
+      // we use decode to convert the string back to 'testing/abc'
+      return URLDecoder.decode(getRequestParamFromContextWithoutDecoding(key, queryParameters), Charsets.UTF_8.name());
     } catch (UnsupportedEncodingException e) {
       log.error("Error in setting request param for {}", key);
     }
     return DEFAULT;
+  }
+
+  @VisibleForTesting
+  String getRequestParamFromContextWithoutDecoding(String key, MultivaluedMap<String, String> queryParameters) {
+    return queryParameters.getFirst(key) != null ? queryParameters.getFirst(key) : DEFAULT;
   }
 
   @Override

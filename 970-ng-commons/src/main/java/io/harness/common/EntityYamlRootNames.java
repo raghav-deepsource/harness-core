@@ -22,6 +22,7 @@ import io.harness.annotations.dev.OwnedBy;
  */
 @OwnedBy(PL)
 public class EntityYamlRootNames {
+  public static String ENVIRONMENT_GROUP = "environmentGroup";
   public static String PROJECT = "project";
   public static String PIPELINE = "pipeline";
   public static String PIPELINE_STEP = "pipelineStep";

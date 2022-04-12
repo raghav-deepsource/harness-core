@@ -44,4 +44,6 @@ public class GitSyncApiConstants {
   public static final String SYNC_STATUS_PARAM_MESSAGE =
       "Sync Status of the Entity that may be QUEUED, SUCCESS or FAILED.";
   public static final String SEARCH_TERM_PARAM_MESSAGE = "Search Term.";
+  public static final String TRIM_LEADING_TRAILING_SPACES = "Any leading/trailing spaces will be removed.";
+  public static final String ENTITY_GIT_URL_DESCRIPTION = "The url of the file in git";
 }

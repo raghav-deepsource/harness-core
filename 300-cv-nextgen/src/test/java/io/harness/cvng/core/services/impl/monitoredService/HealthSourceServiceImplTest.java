@@ -23,6 +23,7 @@ import io.harness.cvng.core.beans.monitoredService.HealthSource;
 import io.harness.cvng.core.beans.monitoredService.MetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.AppDynamicsHealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceSpec;
+import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.services.CVNextGenConstants;
@@ -165,11 +166,21 @@ public class HealthSourceServiceImplTest extends CvNextGenTestBase {
         monitoredServiceIdentifier, nameSpaceIdentifier, Sets.newHashSet(healthSource), true);
     healthSource.setName("new-name");
     healthSourceService.update(accountId, orgIdentifier, projectIdentifier, environmentIdentifier, serviceIdentifier,
-        monitoredServiceIdentifier, nameSpaceIdentifier, Sets.newHashSet(healthSource));
+        monitoredServiceIdentifier, nameSpaceIdentifier, Sets.newHashSet(healthSource), false);
     Set<HealthSource> savedHealthSource = healthSourceService.get(
         accountId, orgIdentifier, projectIdentifier, nameSpaceIdentifier, Arrays.asList(identifier));
     assertThat(savedHealthSource.size()).isEqualTo(1);
     assertThat(savedHealthSource.iterator().next().getName()).isEqualTo("new-name");
+    List<CVConfig> cvConfigs = cvConfigService.getCVConfigs(MonitoredServiceParams.builder()
+                                                                .accountIdentifier(accountId)
+                                                                .orgIdentifier(orgIdentifier)
+                                                                .projectIdentifier(projectIdentifier)
+                                                                .monitoredServiceIdentifier(monitoredServiceIdentifier)
+                                                                .build());
+    assertThat(cvConfigs.size()).isNotZero();
+    for (CVConfig cvConfig : cvConfigs) {
+      assertThat(cvConfig.isEnabled()).isFalse();
+    }
   }
 
   @Test
@@ -188,7 +199,7 @@ public class HealthSourceServiceImplTest extends CvNextGenTestBase {
 
     HealthSource updatedHealthSource = createHealthSource(CVMonitoringCategory.PERFORMANCE);
     healthSourceService.update(accountId, orgIdentifier, projectIdentifier, environmentIdentifier, serviceIdentifier,
-        monitoredServiceIdentifier, nameSpaceIdentifier, Sets.newHashSet(updatedHealthSource));
+        monitoredServiceIdentifier, nameSpaceIdentifier, Sets.newHashSet(updatedHealthSource), true);
     cvConfigs = cvConfigService.list(accountId, orgIdentifier, projectIdentifier,
         HealthSourceService.getNameSpacedIdentifier(nameSpaceIdentifier, healthSource.getIdentifier()));
     assertThat(cvConfigs.size()).isEqualTo(1);
@@ -207,7 +218,7 @@ public class HealthSourceServiceImplTest extends CvNextGenTestBase {
     healthSource.setIdentifier("new-identifier");
     healthSource.setName("new-name");
     healthSourceService.update(accountId, orgIdentifier, projectIdentifier, environmentIdentifier, serviceIdentifier,
-        monitoredServiceIdentifier, nameSpaceIdentifier, Sets.newHashSet(healthSource));
+        monitoredServiceIdentifier, nameSpaceIdentifier, Sets.newHashSet(healthSource), true);
     List<CVConfig> cvConfigs = cvConfigService.list(accountId, orgIdentifier, projectIdentifier,
         HealthSourceService.getNameSpacedIdentifier(nameSpaceIdentifier, healthSource.getIdentifier()));
     assertThat(cvConfigs.size()).isEqualTo(1);
@@ -238,7 +249,7 @@ public class HealthSourceServiceImplTest extends CvNextGenTestBase {
     appDynamicsHealthSourceSpec.setTierName("new-tier-name");
     appDynamicsHealthSourceSpec.setApplicationName("new-application-name");
     healthSourceService.update(accountId, orgIdentifier, projectIdentifier, environmentIdentifier, serviceIdentifier,
-        monitoredServiceIdentifier, nameSpaceIdentifier, Sets.newHashSet(healthSource));
+        monitoredServiceIdentifier, nameSpaceIdentifier, Sets.newHashSet(healthSource), true);
 
     List<CVConfig> cvConfigs = cvConfigService.list(accountId, orgIdentifier, projectIdentifier,
         HealthSourceService.getNameSpacedIdentifier(nameSpaceIdentifier, healthSource.getIdentifier()));

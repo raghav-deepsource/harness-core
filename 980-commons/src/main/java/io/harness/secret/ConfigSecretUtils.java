@@ -31,7 +31,7 @@ public class ConfigSecretUtils {
       }
       log.info("Secret resolution finished");
     } catch (Exception e) {
-      log.error("Failed to resolve secrets", e);
+      log.error("Failed to resolve secrets");
       throw new RuntimeException(e);
     }
   }

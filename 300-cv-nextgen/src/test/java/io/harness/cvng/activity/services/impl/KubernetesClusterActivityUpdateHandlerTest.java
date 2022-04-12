@@ -16,12 +16,12 @@ import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity;
-import io.harness.cvng.activity.entities.KubernetesClusterActivity.ServiceEnvironment;
+import io.harness.cvng.activity.entities.KubernetesClusterActivity.RelatedAppMonitoredService;
+import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.core.beans.dependency.KubernetesDependencyMetadata;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO.ServiceDependencyDTO;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
-import io.harness.cvng.core.services.api.monitoredService.ServiceDependencyService;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.Sets;
@@ -33,8 +33,6 @@ import org.junit.experimental.categories.Category;
 public class KubernetesClusterActivityUpdateHandlerTest extends CvNextGenTestBase {
   @Inject KubernetesClusterActivityUpdateHandler kubernetesClusterActivityUpdateHandler;
   @Inject MonitoredServiceService monitoredServiceService;
-  @Inject ServiceDependencyService serviceDependencyService;
-
   BuilderFactory builderFactory;
   String serviceIdentifier;
   String envIdentifier;
@@ -42,8 +40,8 @@ public class KubernetesClusterActivityUpdateHandlerTest extends CvNextGenTestBas
   @Before
   public void setup() {
     builderFactory = BuilderFactory.getDefault();
-    serviceIdentifier = generateUuid();
-    envIdentifier = generateUuid();
+    serviceIdentifier = builderFactory.getContext().getServiceIdentifier();
+    envIdentifier = builderFactory.getContext().getEnvIdentifier();
   }
 
   @Test
@@ -53,11 +51,10 @@ public class KubernetesClusterActivityUpdateHandlerTest extends CvNextGenTestBas
     KubernetesClusterActivity clusterActivity = builderFactory.getKubernetesClusterActivityBuilder().build();
     assertThat(clusterActivity.getRelatedAppServices()).isNullOrEmpty();
 
-    String infraServiceIdentifier = generateUuid();
     MonitoredServiceDTO infraService = builderFactory.monitoredServiceDTOBuilder()
-                                           .identifier(infraServiceIdentifier)
-                                           .serviceRef(clusterActivity.getServiceIdentifier())
-                                           .environmentRef(clusterActivity.getEnvironmentIdentifier())
+                                           .type(MonitoredServiceType.INFRASTRUCTURE)
+                                           .serviceRef(builderFactory.getContext().getServiceIdentifier() + "infra")
+                                           .environmentRef(builderFactory.getContext().getEnvIdentifier())
                                            .build();
     infraService.getSources().setHealthSources(null);
     infraService.getSources().setChangeSources(
@@ -70,13 +67,15 @@ public class KubernetesClusterActivityUpdateHandlerTest extends CvNextGenTestBas
             .identifier(generateUuid())
             .serviceRef(serviceIdentifier)
             .environmentRef(envIdentifier)
-            .dependencies(Sets.newHashSet(ServiceDependencyDTO.builder()
-                                              .monitoredServiceIdentifier(infraServiceIdentifier)
-                                              .dependencyMetadata(KubernetesDependencyMetadata.builder()
-                                                                      .namespace(clusterActivity.getNamespace())
-                                                                      .workload(clusterActivity.getWorkload())
-                                                                      .build())
-                                              .build()))
+            .dependencies(Sets.newHashSet(
+                ServiceDependencyDTO.builder()
+                    .monitoredServiceIdentifier(
+                        builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier())
+                    .dependencyMetadata(KubernetesDependencyMetadata.builder()
+                                            .namespace(clusterActivity.getNamespace())
+                                            .workload(clusterActivity.getWorkload())
+                                            .build())
+                    .build()))
             .build();
     appService.getSources().setHealthSources(null);
     appService.getSources().setChangeSources(
@@ -86,10 +85,9 @@ public class KubernetesClusterActivityUpdateHandlerTest extends CvNextGenTestBas
     kubernetesClusterActivityUpdateHandler.handleCreate(clusterActivity);
     assertThat(clusterActivity.getRelatedAppServices()).isNotEmpty();
     assertThat(clusterActivity.getRelatedAppServices().size()).isEqualTo(1);
-    ServiceEnvironment serviceEnvironment = clusterActivity.getRelatedAppServices().get(0);
+    RelatedAppMonitoredService serviceEnvironment = clusterActivity.getRelatedAppServices().get(0);
 
-    assertThat(serviceEnvironment.getServiceIdentifier()).isEqualTo(appService.getServiceRef());
-    assertThat(serviceEnvironment.getEnvironmentIdentifier()).isEqualTo(appService.getEnvironmentRef());
+    assertThat(serviceEnvironment.getMonitoredServiceIdentifier()).isEqualTo(appService.getIdentifier());
   }
 
   @Test
@@ -99,11 +97,10 @@ public class KubernetesClusterActivityUpdateHandlerTest extends CvNextGenTestBas
     KubernetesClusterActivity clusterActivity = builderFactory.getKubernetesClusterActivityBuilder().build();
     assertThat(clusterActivity.getRelatedAppServices()).isNullOrEmpty();
 
-    String infraServiceIdentifier = generateUuid();
     MonitoredServiceDTO infraService = builderFactory.monitoredServiceDTOBuilder()
-                                           .identifier(infraServiceIdentifier)
-                                           .serviceRef(clusterActivity.getServiceIdentifier())
-                                           .environmentRef(clusterActivity.getEnvironmentIdentifier())
+                                           .type(MonitoredServiceType.INFRASTRUCTURE)
+                                           .serviceRef(builderFactory.getContext().getServiceIdentifier() + "infra")
+                                           .environmentRef(builderFactory.getContext().getEnvIdentifier())
                                            .build();
     infraService.getSources().setHealthSources(null);
     infraService.getSources().setChangeSources(

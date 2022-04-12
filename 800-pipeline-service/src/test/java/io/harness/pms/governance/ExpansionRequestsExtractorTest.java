@@ -11,13 +11,16 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
@@ -48,6 +51,7 @@ import org.mockito.MockitoAnnotations;
 public class ExpansionRequestsExtractorTest extends CategoryTest {
   @InjectMocks ExpansionRequestsExtractor expansionRequestsExtractor;
   @Mock ExpansionRequestsHelper expansionRequestsHelper;
+  @Mock PmsSdkInstanceService pmsSdkInstanceService;
 
   Map<String, ModuleType> typeToService;
   Map<ModuleType, Set<String>> expandableFieldsPerService;
@@ -70,18 +74,19 @@ public class ExpansionRequestsExtractorTest extends CategoryTest {
     pipelineYamlWithParallelStages = readFile("pipeline-extensive.yml");
     MockitoAnnotations.initMocks(this);
     typeToService = new HashMap<>();
+    when(pmsSdkInstanceService.getActiveInstances()).thenReturn(new ArrayList<>());
     typeToService.put("Approval", ModuleType.PMS);
     typeToService.put("HarnessApproval", ModuleType.PMS);
     typeToService.put("JiraApproval", ModuleType.PMS);
     typeToService.put("Deployment", ModuleType.CD);
     typeToService.put("Http", ModuleType.PMS);
-    doReturn(typeToService).when(expansionRequestsHelper).getTypeToService();
+    doReturn(typeToService).when(expansionRequestsHelper).getTypeToService(any());
 
     expandableFieldsPerService = new HashMap<>();
     expandableFieldsPerService.put(ModuleType.PMS, Collections.singleton("connectorRef"));
     expandableFieldsPerService.put(
         ModuleType.CD, new HashSet<>(Arrays.asList("connectorRef", "serviceRef", "environmentRef")));
-    doReturn(expandableFieldsPerService).when(expansionRequestsHelper).getExpandableFieldsPerService();
+    doReturn(expandableFieldsPerService).when(expansionRequestsHelper).getExpandableFieldsPerService(any());
 
     LocalFQNExpansionInfo sloExpansion =
         LocalFQNExpansionInfo.builder().module(ModuleType.CV).stageType("Deployment").localFQN("stage/spec").build();
@@ -97,7 +102,7 @@ public class ExpansionRequestsExtractorTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testFetchExpansionRequests() {
-    doReturn(Collections.emptyList()).when(expansionRequestsHelper).getLocalFQNRequestMetadata();
+    doReturn(Collections.emptyList()).when(expansionRequestsHelper).getLocalFQNRequestMetadata(any());
     Set<ExpansionRequest> expansionRequests = expansionRequestsExtractor.fetchExpansionRequests(pipelineYaml);
     assertThat(expansionRequests).hasSize(5);
     assertThat(expansionRequests)
@@ -159,7 +164,7 @@ public class ExpansionRequestsExtractorTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testGetFQNBasedServiceCalls() throws IOException {
-    doReturn(localFQNRequestMetadata).when(expansionRequestsHelper).getLocalFQNRequestMetadata();
+    doReturn(localFQNRequestMetadata).when(expansionRequestsHelper).getLocalFQNRequestMetadata(any());
 
     YamlNode pipelineNode = YamlUtils.readTree(pipelineYaml).getNode();
     Set<ExpansionRequest> serviceCalls = new HashSet<>();
@@ -185,7 +190,7 @@ public class ExpansionRequestsExtractorTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testGetFQNBasedServiceCallForParallelStages() throws IOException {
-    doReturn(localFQNRequestMetadata).when(expansionRequestsHelper).getLocalFQNRequestMetadata();
+    doReturn(localFQNRequestMetadata).when(expansionRequestsHelper).getLocalFQNRequestMetadata(any());
 
     YamlNode pipelineNode = YamlUtils.readTree(pipelineYamlWithParallelStages).getNode();
     Set<ExpansionRequest> serviceCalls = new HashSet<>();

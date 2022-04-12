@@ -15,7 +15,9 @@ import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.AppDynamicsHealthSourceSpec.AppDMetricDefinitions;
+import io.harness.cvng.core.entities.AppDynamicsCVConfig.MetricInfo;
 import io.harness.cvng.core.services.CVNextGenConstants;
+import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
 import io.harness.cvng.core.utils.analysisinfo.DevelopmentVerificationTransformer;
 import io.harness.cvng.core.utils.analysisinfo.LiveMonitoringTransformer;
 import io.harness.cvng.core.utils.analysisinfo.SLIMetricTransformer;
@@ -24,6 +26,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -41,7 +44,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 @FieldNameConstants(innerTypeName = "AppDynamicsCVConfigKeys")
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class AppDynamicsCVConfig extends MetricCVConfig {
+public class AppDynamicsCVConfig extends MetricCVConfig<MetricInfo> {
   private String applicationName;
   private String tierName;
   private String groupName;
@@ -62,6 +65,45 @@ public class AppDynamicsCVConfig extends MetricCVConfig {
   protected void validateParams() {
     checkNotNull(applicationName, generateErrorMessageFromParam(AppDynamicsCVConfigKeys.applicationName));
     checkNotNull(tierName, generateErrorMessageFromParam(AppDynamicsCVConfigKeys.tierName));
+  }
+
+  @Override
+  public boolean isSLIEnabled() {
+    if (!getMetricPack().getIdentifier().equals(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)) {
+      return false;
+    }
+    return AnalysisInfoUtility.anySLIEnabled(metricInfos);
+  }
+
+  @Override
+  public boolean isLiveMonitoringEnabled() {
+    if (!getMetricPack().getIdentifier().equals(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)) {
+      return true;
+    }
+    return AnalysisInfoUtility.anyLiveMonitoringEnabled(metricInfos);
+  }
+
+  @Override
+  public boolean isDeploymentVerificationEnabled() {
+    if (!getMetricPack().getIdentifier().equals(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)) {
+      return true;
+    }
+    return AnalysisInfoUtility.anyDeploymentVerificationEnabled(metricInfos);
+  }
+
+  @Override
+  public Optional<String> maybeGetGroupName() {
+    return Optional.ofNullable(groupName);
+  }
+
+  @Override
+  public List<MetricInfo> getMetricInfos() {
+    return metricInfos;
+  }
+
+  @Override
+  public void setMetricInfos(List<MetricInfo> metricInfos) {
+    this.metricInfos = metricInfos;
   }
 
   public static class AppDynamicsCVConfigUpdatableEntity
@@ -124,7 +166,6 @@ public class AppDynamicsCVConfig extends MetricCVConfig {
   @SuperBuilder
   @FieldDefaults(level = AccessLevel.PRIVATE)
   public static class MetricInfo extends AnalysisInfo {
-    String metricName;
     String baseFolder;
     String metricPath;
     TimeSeriesMetricType metricType;

@@ -54,15 +54,6 @@ public abstract class ChangeSource
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("old_unique_index")
-                 .field(ChangeSourceKeys.accountId)
-                 .field(ChangeSourceKeys.orgIdentifier)
-                 .field(ChangeSourceKeys.projectIdentifier)
-                 .field(ChangeSourceKeys.envIdentifier)
-                 .field(ChangeSourceKeys.serviceIdentifier)
-                 .field(ChangeSourceKeys.identifier)
-                 .build())
-        .add(CompoundMongoIndex.builder()
                  .name("demo_generation_index")
                  .field(ChangeSourceKeys.isConfiguredForDemo)
                  .field(ChangeSourceKeys.demoDataGenerationIteration)
@@ -73,12 +64,13 @@ public abstract class ChangeSource
                  .field(ChangeSourceKeys.dataCollectionTaskIteration)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("monitored_service_idx")
+                 .name("identifier_unique_key_idx")
                  .field(ChangeSourceKeys.accountId)
                  .field(ChangeSourceKeys.orgIdentifier)
                  .field(ChangeSourceKeys.projectIdentifier)
                  .field(ChangeSourceKeys.monitoredServiceIdentifier)
                  .field(ChangeSourceKeys.identifier)
+                 .unique(true)
                  .build())
         .build();
   }
@@ -91,9 +83,6 @@ public abstract class ChangeSource
   @NotNull String name;
   @NotNull String orgIdentifier;
   @NotNull String projectIdentifier;
-
-  @Deprecated String serviceIdentifier;
-  @Deprecated String envIdentifier;
 
   String monitoredServiceIdentifier;
 
@@ -109,18 +98,12 @@ public abstract class ChangeSource
 
   @Getter(AccessLevel.NONE) boolean dataCollectionRequired;
 
-  public boolean isDataCollectionRequired() {
-    return false;
-  }
-
   public abstract static class UpdatableChangeSourceEntity<T extends ChangeSource, D extends ChangeSource>
       implements UpdatableEntity<T, D> {
     protected void setCommonOperations(UpdateOperations<T> updateOperations, D changeSource) {
       updateOperations.set(ChangeSourceKeys.accountId, changeSource.getAccountId())
           .set(ChangeSourceKeys.orgIdentifier, changeSource.getOrgIdentifier())
           .set(ChangeSourceKeys.projectIdentifier, changeSource.getProjectIdentifier())
-          .set(ChangeSourceKeys.serviceIdentifier, changeSource.getServiceIdentifier())
-          .set(ChangeSourceKeys.envIdentifier, changeSource.getEnvIdentifier())
           .set(ChangeSourceKeys.identifier, changeSource.getIdentifier())
           .set(ChangeSourceKeys.type, changeSource.getType())
           .set(ChangeSourceKeys.name, changeSource.getName())

@@ -42,6 +42,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import software.wings.beans.TaskType;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import java.util.List;
 import java.util.Map;
 import org.junit.Before;
@@ -67,6 +68,7 @@ public class S3ResourceServiceImplTest extends CategoryTest {
     AwsConnectorDTO awsConnectorDTO =
         AwsConnectorDTO.builder()
             .credential(AwsCredentialDTO.builder().awsCredentialType(AwsCredentialType.INHERIT_FROM_DELEGATE).build())
+            .delegateSelectors(Sets.newHashSet("proj-delegate"))
             .build();
     doReturn(awsConnectorDTO).when(serviceHelper).getAwsConnector(awsConnectorRef);
 
@@ -102,6 +104,7 @@ public class S3ResourceServiceImplTest extends CategoryTest {
     assertThat(awsTaskParams.getAwsConnector()).isNotNull();
     assertThat(awsTaskParams.getRegion()).isEqualTo(region);
     assertThat(awsTaskParams.getAwsTaskType()).isEqualTo(AwsTaskType.LIST_S3_BUCKETS);
+    assertThat(awsTaskParams.getAwsConnector().getDelegateSelectors()).contains("proj-delegate");
   }
 
   @Test

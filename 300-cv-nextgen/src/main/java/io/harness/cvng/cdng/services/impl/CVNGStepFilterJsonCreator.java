@@ -70,7 +70,7 @@ public class CVNGStepFilterJsonCreator extends GenericStepPMSFilterJsonCreator {
     if (!(NGExpressionUtils.isRuntimeOrExpressionField(serviceIdentifier)
             || NGExpressionUtils.isRuntimeOrExpressionField(envIdentifier))) {
       MonitoredServiceDTO monitoredServiceDTO =
-          monitoredServiceService.getMonitoredServiceDTO(serviceEnvironmentParams);
+          monitoredServiceService.getApplicationMonitoredServiceDTO(serviceEnvironmentParams);
       Preconditions.checkNotNull(monitoredServiceDTO, "MonitoredService does not exist for service %s and env %s",
           serviceIdentifier, envIdentifier);
       Preconditions.checkState(!monitoredServiceDTO.getSources().getHealthSources().isEmpty(),
@@ -103,7 +103,7 @@ public class CVNGStepFilterJsonCreator extends GenericStepPMSFilterJsonCreator {
                                           .getField(STAGE_KEY)
                                           .getNode()
                                           .asText();
-      YamlNode propagateFromStage = findStageByIdentifier(stageLevelYamlNode, useFromStageIdentifier);
+      YamlNode propagateFromStage = CVNGStepUtils.findStageByIdentifier(stageLevelYamlNode, useFromStageIdentifier);
       return CVNGStepUtils.getServiceRefNode(propagateFromStage).asText();
     }
   }
@@ -114,19 +114,6 @@ public class CVNGStepFilterJsonCreator extends GenericStepPMSFilterJsonCreator {
       return yamlNode.getField(CVNGStepUtils.STAGE_KEY).getNode();
     } else {
       return getStageSpecYamlNode(yamlNode.getParentNode());
-    }
-  }
-  private YamlNode findStageByIdentifier(YamlNode yamlNode, String identifier) {
-    Preconditions.checkNotNull(yamlNode, "Invalid yaml. Can't find stage spec.");
-    if (yamlNode.getField(CVNGStepUtils.STAGES_KEY) != null) {
-      for (YamlNode stageNode : yamlNode.getField(CVNGStepUtils.STAGES_KEY).getNode().asArray()) {
-        if (identifier.equals(stageNode.getField(CVNGStepUtils.STAGE_KEY).getNode().getIdentifier())) {
-          return stageNode.getField(CVNGStepUtils.STAGE_KEY).getNode();
-        }
-      }
-      throw new IllegalStateException("Could not find stage with identifier: " + identifier);
-    } else {
-      return findStageByIdentifier(yamlNode.getParentNode(), identifier);
     }
   }
 }

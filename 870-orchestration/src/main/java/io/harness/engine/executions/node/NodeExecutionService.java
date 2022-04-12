@@ -16,6 +16,7 @@ import io.harness.execution.NodeExecution;
 import io.harness.plan.Node;
 import io.harness.pms.contracts.execution.Status;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -60,6 +61,8 @@ public interface NodeExecutionService {
   NodeExecution update(@NonNull String nodeExecutionId, @NonNull Consumer<Update> ops);
 
   NodeExecution update(@NonNull String nodeExecutionId, @NonNull Consumer<Update> ops, Set<String> fieldsToBeIncluded);
+
+  @VisibleForTesting boolean shouldLog(Update updateOps);
 
   void updateV2(@NonNull String nodeExecutionId, @NonNull Consumer<Update> ops);
 

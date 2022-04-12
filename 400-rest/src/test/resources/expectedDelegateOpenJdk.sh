@@ -76,6 +76,14 @@ function jar_app_version() {
 
   if [ -z "$VERSION" ]
   then
+    if unzip -l $JAR | grep -q BOOT-INF/classes/main/resources-filtered/versionInfo.yaml
+    then
+      VERSION=$(unzip -c $JAR BOOT-INF/classes/main/resources-filtered/versionInfo.yaml | grep "^version " | cut -d ":" -f2 | tr -d " " | tr -d "\r" | tr -d "\n")
+    fi
+  fi
+
+  if [ -z "$VERSION" ]
+  then
     VERSION=$(unzip -c $JAR META-INF/MANIFEST.MF | grep Application-Version | cut -d "=" -f2 | tr -d " " | tr -d "\r" | tr -d "\n")
   fi
   echo $VERSION
@@ -200,7 +208,7 @@ fi
 
 if [ ! -e config-delegate.yml ]; then
   echo "accountId: ACCOUNT_ID" > config-delegate.yml
-  echo "accountSecret: ACCOUNT_KEY" >> config-delegate.yml
+  echo "delegateToken: ACCOUNT_KEY" >> config-delegate.yml
 fi
 test "$(tail -c 1 config-delegate.yml)" && `echo "" >> config-delegate.yml`
 if ! `grep dynamicHandlingOfRequestEnabled config-delegate.yml > /dev/null`; then
@@ -211,17 +219,17 @@ if ! `grep managerUrl config-delegate.yml > /dev/null`; then
 fi
 if ! `grep verificationServiceUrl config-delegate.yml > /dev/null`; then
   echo "verificationServiceUrl: https://localhost:9090/verification/" >> config-delegate.yml
-else
+elif [[ "$(grep verificationServiceUrl config-delegate.yml | cut -d ' ' -f 2)" != "https://localhost:9090/verification/" ]]; then
   sed -i.bak "s|^verificationServiceUrl:.*$|verificationServiceUrl: https://localhost:9090/verification/|" config-delegate.yml
 fi
 if ! `grep cvNextGenUrl config-delegate.yml > /dev/null`; then
   echo "cvNextGenUrl: https://localhost:9090/cv/api/" >> config-delegate.yml
-else
+elif [[ "$(grep cvNextGenUrl config-delegate.yml | cut -d ' ' -f 2)" != "https://localhost:9090/cv/api/" ]]; then
   sed -i.bak "s|^cvNextGenUrl:.*$|cvNextGenUrl: https://localhost:9090/cv/api/|" config-delegate.yml
 fi
 if ! `grep watcherCheckLocation config-delegate.yml > /dev/null`; then
   echo "watcherCheckLocation: http://localhost:8888/watcherci.txt" >> config-delegate.yml
-else
+elif [[ "$(grep watcherCheckLocation config-delegate.yml | cut -d ' ' -f 2)" != "http://localhost:8888/watcherci.txt" ]]; then
   sed -i.bak "s|^watcherCheckLocation:.*$|watcherCheckLocation: http://localhost:8888/watcherci.txt|" config-delegate.yml
 fi
 if ! `grep heartbeatIntervalMs config-delegate.yml > /dev/null`; then
@@ -246,31 +254,25 @@ fi
 
 if ! `grep useCdn config-delegate.yml > /dev/null`; then
   echo "useCdn: false" >> config-delegate.yml
-else
+elif [[ "$(grep useCdn config-delegate.yml | cut -d ' ' -f 2)" != "false" ]]; then
   sed -i.bak "s|^useCdn:.*$|useCdn: false|" config-delegate.yml
 fi
-if ! `grep cdnUrl config-delegate.yml > /dev/null`; then
-  echo "cdnUrl: http://localhost:9500" >> config-delegate.yml
-else
-  sed -i.bak "s|^cdnUrl:.*$|cdnUrl: http://localhost:9500|" config-delegate.yml
-fi
-
 
 if ! `grep grpcServiceEnabled config-delegate.yml > /dev/null`; then
   echo "grpcServiceEnabled: $GRPC_SERVICE_ENABLED" >> config-delegate.yml
-else
+elif [[ "$(grep grpcServiceEnabled config-delegate.yml | cut -d ' ' -f 2)" != "$GRPC_SERVICE_ENABLED" ]]; then
   sed -i.bak "s|^grpcServiceEnabled:.*$|grpcServiceEnabled: $GRPC_SERVICE_ENABLED|" config-delegate.yml
 fi
 
 if ! `grep grpcServiceConnectorPort config-delegate.yml > /dev/null`; then
   echo "grpcServiceConnectorPort: $GRPC_SERVICE_CONNECTOR_PORT" >> config-delegate.yml
-else
+elif [[ "$(grep grpcServiceConnectorPort config-delegate.yml | cut -d ' ' -f 2)" != "$GRPC_SERVICE_CONNECTOR_PORT" ]]; then
   sed -i.bak "s|^grpcServiceConnectorPort:.*$|grpcServiceConnectorPort: $GRPC_SERVICE_CONNECTOR_PORT|" config-delegate.yml
 fi
 
 if ! `grep logStreamingServiceBaseUrl config-delegate.yml > /dev/null`; then
   echo "logStreamingServiceBaseUrl: http://localhost:8079" >> config-delegate.yml
-else
+elif [[ "$(grep logStreamingServiceBaseUrl config-delegate.yml | cut -d ' ' -f 2)" != "http://localhost:8079" ]]; then
   sed -i.bak "s|^logStreamingServiceBaseUrl:.*$|logStreamingServiceBaseUrl: http://localhost:8079|" config-delegate.yml
 fi
 
@@ -323,10 +325,10 @@ fi
 
 if [[ $DEPLOY_MODE == "KUBERNETES" ]]; then
   echo "Starting delegate - version $2 with java $JRE_BINARY"
-  $JRE_BINARY $JAVA_OPTS $INSTRUMENTATION $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -DACCOUNT_ID="ACCOUNT_ID" -DMANAGER_HOST_AND_PORT="https://localhost:9090" -Ddelegatesourcedir="$DIR" -Xmx4096m -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true -DLANG=en_US.UTF-8 -Xbootclasspath/p:alpn-boot-8.1.13.v20181017.jar -jar $2/delegate.jar config-delegate.yml watched $1
+  $JRE_BINARY $INSTRUMENTATION $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -DACCOUNT_ID="ACCOUNT_ID" -DMANAGER_HOST_AND_PORT="https://localhost:9090" -Ddelegatesourcedir="$DIR" -Xmx4096m -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true -DLANG=en_US.UTF-8 $JAVA_OPTS -Xbootclasspath/p:alpn-boot-8.1.13.v20181017.jar -jar $2/delegate.jar config-delegate.yml watched $1
 else
   echo "Starting delegate - version $REMOTE_DELEGATE_VERSION with java $JRE_BINARY"
-  $JRE_BINARY $JAVA_OPTS $INSTRUMENTATION $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -DACCOUNT_ID="ACCOUNT_ID" -DMANAGER_HOST_AND_PORT="https://localhost:9090" -Ddelegatesourcedir="$DIR" -Xmx4096m -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true -DLANG=en_US.UTF-8 -Xbootclasspath/p:alpn-boot-8.1.13.v20181017.jar -jar delegate.jar config-delegate.yml watched $1
+  $JRE_BINARY $INSTRUMENTATION $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -DACCOUNT_ID="ACCOUNT_ID" -DMANAGER_HOST_AND_PORT="https://localhost:9090" -Ddelegatesourcedir="$DIR" -Xmx4096m -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true -DLANG=en_US.UTF-8 $JAVA_OPTS -Xbootclasspath/p:alpn-boot-8.1.13.v20181017.jar -jar delegate.jar config-delegate.yml watched $1
 fi
 
 sleep 3

@@ -8,7 +8,7 @@
 package io.harness.cvng.servicelevelobjective.services.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.persistence.HQuery.excludeAuthority;
+import static io.harness.persistence.HQuery.excludeAuthorityCount;
 
 import io.harness.annotations.retry.RetryOnException;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
@@ -178,7 +178,7 @@ public class SLIRecordServiceImpl implements SLIRecordService {
 
   @Override
   public List<SLIRecord> getLatestCountSLIRecords(String sliId, int count) {
-    return hPersistence.createQuery(SLIRecord.class, excludeAuthority)
+    return hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
         .filter(SLIRecordKeys.sliId, sliId)
         .order(Sort.descending(SLIRecordKeys.timestamp))
         .asList(new FindOptions().limit(count));
@@ -207,7 +207,7 @@ public class SLIRecordServiceImpl implements SLIRecordService {
       minutes.add(current);
     }
     minutes.add(endTime.minus(Duration.ofMinutes(1))); // always include start and end minute.
-    return hPersistence.createQuery(SLIRecord.class, excludeAuthority)
+    return hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
         .filter(SLIRecordKeys.sliId, sliId)
         .field(SLIRecordKeys.timestamp)
         .in(minutes)
@@ -217,7 +217,7 @@ public class SLIRecordServiceImpl implements SLIRecordService {
 
   @VisibleForTesting
   List<SLIRecord> getSLIRecords(String sliId, Instant startTimeStamp, Instant endTimeStamp) {
-    return hPersistence.createQuery(SLIRecord.class, excludeAuthority)
+    return hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
         .filter(SLIRecordKeys.sliId, sliId)
         .field(SLIRecordKeys.timestamp)
         .greaterThanOrEq(startTimeStamp)
@@ -233,7 +233,7 @@ public class SLIRecordServiceImpl implements SLIRecordService {
   }
 
   private SLIRecord getLastSLIRecord(String sliId, Instant startTimeStamp) {
-    return hPersistence.createQuery(SLIRecord.class, excludeAuthority)
+    return hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
         .filter(SLIRecordKeys.sliId, sliId)
         .field(SLIRecordKeys.timestamp)
         .lessThan(startTimeStamp)
@@ -241,7 +241,7 @@ public class SLIRecordServiceImpl implements SLIRecordService {
         .get();
   }
   private SLIRecord getFirstSLIRecord(String sliId, Instant timestampInclusive) {
-    return hPersistence.createQuery(SLIRecord.class, excludeAuthority)
+    return hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
         .filter(SLIRecordKeys.sliId, sliId)
         .field(SLIRecordKeys.timestamp)
         .greaterThanOrEq(timestampInclusive)
@@ -250,7 +250,7 @@ public class SLIRecordServiceImpl implements SLIRecordService {
   }
 
   private SLIRecord getLatestSLIRecord(String sliId) {
-    return hPersistence.createQuery(SLIRecord.class, excludeAuthority)
+    return hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
         .filter(SLIRecordKeys.sliId, sliId)
         .order(Sort.descending(SLIRecordKeys.timestamp))
         .get();

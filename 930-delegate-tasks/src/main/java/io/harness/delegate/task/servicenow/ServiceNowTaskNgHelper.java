@@ -20,7 +20,11 @@ import io.harness.exception.ServiceNowException;
 import io.harness.exception.WingsException;
 import io.harness.network.Http;
 import io.harness.security.encryption.SecretDecryptionService;
+import io.harness.servicenow.ServiceNowFieldAllowedValueNG;
 import io.harness.servicenow.ServiceNowFieldNG;
+import io.harness.servicenow.ServiceNowFieldNG.ServiceNowFieldNGBuilder;
+import io.harness.servicenow.ServiceNowFieldSchemaNG;
+import io.harness.servicenow.ServiceNowFieldTypeNG;
 import io.harness.servicenow.ServiceNowFieldValueNG;
 import io.harness.servicenow.ServiceNowTicketNG;
 import io.harness.servicenow.ServiceNowUtils;
@@ -72,6 +76,8 @@ public class ServiceNowTaskNgHelper {
       case CREATE_TICKET:
       case UPDATE_TICKET:
         return getTicket(serviceNowTaskNGParameters);
+      case GET_METADATA:
+        return getMetadata(serviceNowTaskNGParameters);
       default:
         throw new InvalidRequestException(
             String.format("Invalid servicenow task action: %s", serviceNowTaskNGParameters.getAction()));
@@ -158,6 +164,68 @@ public class ServiceNowTaskNgHelper {
       log.error("Failed to get serviceNow fields ");
       throw new ServiceNowException(ExceptionUtils.getMessage(e), SERVICENOW_ERROR, USER, e);
     }
+  }
+
+  private ServiceNowTaskNGResponse getMetadata(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
+    ServiceNowConnectorDTO serviceNowConnectorDTO = serviceNowTaskNGParameters.getServiceNowConnectorDTO();
+    String userName = getUserName(serviceNowConnectorDTO);
+    String password = new String(serviceNowConnectorDTO.getPasswordRef().getDecryptedValue());
+    ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(serviceNowConnectorDTO.getServiceNowUrl());
+
+    final Call<JsonNode> request = serviceNowRestClient.getMetadata(
+        Credentials.basic(userName, password), serviceNowTaskNGParameters.getTicketType().toLowerCase());
+    Response<JsonNode> response = null;
+    try {
+      response = request.execute();
+      handleResponse(response, "Failed to get serviceNow fields");
+      JsonNode responseObj = response.body().get("result");
+      if (responseObj != null && responseObj.get("columns") != null) {
+        JsonNode columns = responseObj.get("columns");
+        List<ServiceNowFieldNG> fields = new ArrayList<>();
+        for (JsonNode fieldObj : columns) {
+          List<ServiceNowFieldAllowedValueNG> allowedValues = buildAllowedValues(fieldObj.get("choices"));
+
+          ServiceNowFieldNGBuilder fieldBuilder = ServiceNowFieldNG.builder()
+                                                      .name(fieldObj.get("label").textValue())
+                                                      .key(fieldObj.get("name").textValue())
+                                                      .allowedValues(allowedValues);
+
+          if (!allowedValues.isEmpty()) {
+            fieldBuilder.schema(ServiceNowFieldSchemaNG.builder()
+                                    .type(ServiceNowFieldTypeNG.OPTION)
+                                    .typeStr("array")
+                                    .array(true)
+                                    .build());
+          }
+
+          fields.add(fieldBuilder.build());
+        }
+        return ServiceNowTaskNGResponse.builder().serviceNowFieldNGList(fields).build();
+      } else {
+        throw new ServiceNowException("Failed to fetch fields for ticket type "
+                + serviceNowTaskNGParameters.getTicketType() + " response: " + response,
+            SERVICENOW_ERROR, USER);
+      }
+    } catch (Exception e) {
+      log.error("Failed to get serviceNow fields ");
+      throw new ServiceNowException(ExceptionUtils.getMessage(e), SERVICENOW_ERROR, USER, e);
+    }
+  }
+
+  private List<ServiceNowFieldAllowedValueNG> buildAllowedValues(JsonNode choices) {
+    ArrayList<ServiceNowFieldAllowedValueNG> allowedValues = new ArrayList<>();
+    if (choices == null || !choices.isArray()) {
+      return allowedValues;
+    }
+    if (choices.isArray()) {
+      for (final JsonNode objNode : choices) {
+        allowedValues.add(ServiceNowFieldAllowedValueNG.builder()
+                              .id(objNode.get("value").textValue())
+                              .name(objNode.get("label").textValue())
+                              .build());
+      }
+    }
+    return allowedValues;
   }
 
   private ServiceNowTaskNGResponse validateCredentials(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {

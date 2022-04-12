@@ -52,6 +52,7 @@ public class SlackApprovalParams {
   private String endDate;
   private String expiryDate;
   private String verb;
+  String triggeredByUser;
 
   @Data
   @Builder(toBuilder = true)
@@ -74,6 +75,7 @@ public class SlackApprovalParams {
     private String slackUserId;
     private boolean approve;
     private boolean confirmation;
+    private String triggeredByUserName;
   }
 
   public static External getExternalParams(SlackApprovalParams slackApprovalParams) {

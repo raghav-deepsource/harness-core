@@ -7,6 +7,7 @@
 
 package io.harness.cdng.provision.terraform.steps.rolllback;
 
+import static io.harness.rule.OwnerRule.JENNY;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
@@ -44,6 +45,8 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.persistence.HIterator;
+import io.harness.plancreator.steps.TaskSelectorYaml;
+import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -51,6 +54,7 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
@@ -363,5 +367,20 @@ public class TerraformRollbackStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetStepParametersClass() {
     assertThat(terraformRollbackStep.getStepParametersClass()).isEqualTo(StepElementParameters.class);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testGetSpecParametersWithDelegateSelectors() {
+    TerraformRollbackStepInfo terraformRollbackStepInfo = new TerraformRollbackStepInfo();
+    TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("sel1");
+    terraformRollbackStepInfo.setDelegateSelectors(ParameterField.createValueField(Arrays.asList(taskSelectorYaml)));
+
+    SpecParameters specParameters = terraformRollbackStepInfo.getSpecParameters();
+    TerraformRollbackStepParameters terraformRollbackStepParameters = (TerraformRollbackStepParameters) specParameters;
+    assertThat(specParameters).isNotNull();
+    assertThat(terraformRollbackStepParameters.delegateSelectors.getValue().get(0).getDelegateSelectors())
+        .isEqualTo("sel1");
   }
 }

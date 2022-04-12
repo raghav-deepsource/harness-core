@@ -36,8 +36,8 @@ public class AddMonitoredServiceToChangeSourceMigration implements CVNGMigration
                 .filter(ChangeSourceKeys.accountId, monitoredService.getAccountId())
                 .filter(ChangeSourceKeys.projectIdentifier, monitoredService.getProjectIdentifier())
                 .filter(ChangeSourceKeys.orgIdentifier, monitoredService.getOrgIdentifier())
-                .filter(ChangeSourceKeys.serviceIdentifier, monitoredService.getServiceIdentifier())
-                .filter(ChangeSourceKeys.envIdentifier, monitoredService.getEnvironmentIdentifier());
+                .filter("serviceIdentifier", monitoredService.getServiceIdentifier())
+                .filter("envIdentifier", monitoredService.getEnvironmentIdentifier());
 
         UpdateResults updateResults = hPersistence.update(changeSourceQuery,
             hPersistence.createUpdateOperations(ChangeSource.class)

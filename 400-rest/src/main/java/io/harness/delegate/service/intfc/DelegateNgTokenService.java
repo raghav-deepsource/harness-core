@@ -14,6 +14,7 @@ import io.harness.delegate.beans.DelegateTokenStatus;
 import software.wings.service.intfc.ownership.OwnedByAccount;
 
 import java.util.List;
+import java.util.Map;
 
 public interface DelegateNgTokenService extends OwnedByAccount {
   String getDefaultTokenName(DelegateEntityOwner owner);
@@ -31,4 +32,6 @@ public interface DelegateNgTokenService extends OwnedByAccount {
   DelegateTokenDetails upsertDefaultToken(String accountIdentifier, DelegateEntityOwner owner, boolean skipIfExists);
 
   void deleteAllTokensOwnedByOrgAndProject(String accountId, DelegateEntityOwner owner);
+
+  Map<String, Boolean> isDelegateTokenActive(String accountId, List<String> tokensNameList);
 }

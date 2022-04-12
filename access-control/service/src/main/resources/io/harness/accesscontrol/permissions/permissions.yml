@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 18
+version: 20
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -274,6 +274,30 @@ permissions:
       - project
   - identifier: core_environment_access
     name: Runtime Access to Environment
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: core_environmentgroup_view
+    name: View Environment Group
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: core_environmentgroup_edit
+    name: Create or Edit Environment Group
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: core_environmentgroup_delete
+    name: Delete Environment Group
     status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
@@ -739,14 +763,6 @@ permissions:
       - project
   - identifier: gitops_application_sync
     name: Sync a Gitops Application
-    status: STAGING
-    includeInAllRoles: false
-    allowedScopeLevels:
-      - account
-      - organization
-      - project
-  - identifier: gitops_application_override
-    name: Override a Gitops Application
     status: STAGING
     includeInAllRoles: false
     allowedScopeLevels:

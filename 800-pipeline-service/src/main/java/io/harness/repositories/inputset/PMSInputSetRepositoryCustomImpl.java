@@ -182,6 +182,22 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
     return Failsafe.with(retryPolicy).get(() -> mongoTemplate.updateMulti(query, update, InputSetEntity.class));
   }
 
+  @Override
+  public boolean existsByAccountIdAndOrgIdentifierAndProjectIdentifierAndPipelineIdentifierAndDeletedNot(
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, boolean notDeleted) {
+    return gitAwarePersistence.exists(Criteria.where(InputSetEntityKeys.deleted)
+                                          .is(!notDeleted)
+                                          .and(InputSetEntityKeys.accountId)
+                                          .is(accountId)
+                                          .and(InputSetEntityKeys.orgIdentifier)
+                                          .is(orgIdentifier)
+                                          .and(InputSetEntityKeys.projectIdentifier)
+                                          .is(projectIdentifier)
+                                          .and(InputSetEntityKeys.pipelineIdentifier)
+                                          .is(pipelineIdentifier),
+        projectIdentifier, orgIdentifier, accountId, InputSetEntity.class);
+  }
+
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
     Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(10);
     int MAX_ATTEMPTS = 3;

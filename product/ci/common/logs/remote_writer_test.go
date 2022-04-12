@@ -136,6 +136,37 @@ func Test_RemoteWriter_WriteSingleLine(t *testing.T) {
 	assert.Equal(t, rw.history[0].Args, map[string]string{})
 }
 
+func Test_RemoteWriter_WriteSingleHugeLine(t *testing.T) {
+	ctrl, _ := gomock.WithContext(context.Background(), t)
+	defer ctrl.Finish()
+
+	b := make([]byte, 100000)
+
+	// create a message with over 100000 characters
+	for i := range b {
+		b[i] = 'a'
+	}
+	b[len(b) - 1] = '\n'
+
+	msg := string(b)
+	truncatedMsg := truncate(msg, maxLineLimit)
+	key := "key"
+
+	mclient := mock.NewMockClient(ctrl)
+	mclient.EXPECT().Write(context.Background(), key, gomock.Any())
+	rw, _ := NewRemoteWriter(mclient, key, []logs.Nudge{}, false)
+	rw.opened = true // open the stream to write to it
+	rw.SetInterval(time.Duration(100) * time.Second)
+	rw.Write([]byte(msg))
+	rw.flush() // Force write to the remote
+
+	assert.Equal(t, len(rw.history), 1)
+	assert.Equal(t, rw.history[0].Level, "info")
+	assert.Equal(t, rw.history[0].Number, 0)
+	assert.Equal(t, rw.history[0].Message, truncatedMsg)
+	assert.Equal(t, rw.history[0].Args, map[string]string{})
+}
+
 func Test_RemoteWriter_WriteMultiple(t *testing.T) {
 	ctrl, _ := gomock.WithContext(context.Background(), t)
 	defer ctrl.Finish()

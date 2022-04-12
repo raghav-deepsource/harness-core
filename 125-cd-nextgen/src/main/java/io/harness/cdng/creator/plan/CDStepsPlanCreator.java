@@ -7,6 +7,8 @@
 
 package io.harness.cdng.creator.plan;
 
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.advisers.RollbackCustomAdviser;
@@ -18,9 +20,11 @@ import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.PlanNode;
+import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.steps.common.NGSectionStepParameters;
 import io.harness.steps.common.NGSectionStepWithRollbackInfo;
 
@@ -32,18 +36,25 @@ public class CDStepsPlanCreator extends GenericStepsNodePlanCreator {
   public PlanNode createPlanForParentNode(
       PlanCreationContext ctx, StepsExecutionConfig config, List<String> childrenNodeIds) {
     StepParameters stepParameters = NGSectionStepParameters.builder().childNodeId(childrenNodeIds.get(0)).build();
-    return PlanNode.builder()
-        .uuid(ctx.getCurrentField().getNode().getUuid())
-        .identifier(YAMLFieldNameConstants.STEPS)
-        .stepType(NGSectionStepWithRollbackInfo.STEP_TYPE)
-        .name(YAMLFieldNameConstants.STEPS)
-        .stepParameters(stepParameters)
-        .facilitatorObtainment(
-            FacilitatorObtainment.newBuilder()
-                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
-                .build())
+    PlanNodeBuilder planNodeBuilder =
+        PlanNode.builder()
+            .uuid(ctx.getCurrentField().getNode().getUuid())
+            .identifier(YAMLFieldNameConstants.STEPS)
+            .stepType(NGSectionStepWithRollbackInfo.STEP_TYPE)
+            .name(YAMLFieldNameConstants.STEPS)
+            .stepParameters(stepParameters)
+            .facilitatorObtainment(
+                FacilitatorObtainment.newBuilder()
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
+                    .build())
+            .skipGraphType(SkipType.SKIP_NODE);
+
+    if (YamlUtils.findParentNode(ctx.getCurrentField().getNode(), STEP_GROUP) != null) {
+      return planNodeBuilder.build();
+    }
+
+    return planNodeBuilder
         .adviserObtainment(AdviserObtainment.newBuilder().setType(RollbackCustomAdviser.ADVISER_TYPE).build())
-        .skipGraphType(SkipType.SKIP_NODE)
         .build();
   }
 }

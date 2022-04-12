@@ -68,6 +68,15 @@ public class ServiceNowResourceServiceImpl implements ServiceNowResourceService 
         .getServiceNowFieldNGList();
   }
 
+  @Override
+  public List<ServiceNowFieldNG> getMetadata(
+      IdentifierRef serviceNowConnectorRef, String orgId, String projectId, String ticketType) {
+    ServiceNowTaskNGParametersBuilder parametersBuilder =
+        ServiceNowTaskNGParameters.builder().action(ServiceNowActionNG.GET_METADATA).ticketType(ticketType);
+    return obtainServiceNowTaskNGResponse(serviceNowConnectorRef, orgId, projectId, parametersBuilder)
+        .getServiceNowFieldNGList();
+  }
+
   private ServiceNowTaskNGResponse obtainServiceNowTaskNGResponse(IdentifierRef serviceNowConnectorRef, String orgId,
       String projectId, ServiceNowTaskNGParametersBuilder parametersBuilder) {
     ServiceNowConnectorDTO connector = getConnector(serviceNowConnectorRef);

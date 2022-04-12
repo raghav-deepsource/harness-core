@@ -63,6 +63,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.json.JSONObject;
 
 @Singleton
 @Slf4j
@@ -134,9 +135,10 @@ public class CIK8JavaClientHandler {
       if (isResourceNotFoundException(exception.getCode())) {
         return null;
       }
-      String message = format("Failed to get %s/Secret/%s. Code: %s, message: %s", namespace, secretName,
+      String defaultMessage = format("Failed to get %s/%s. Code: %s, message: %s", namespace, secretName,
           exception.getCode(), exception.getResponseBody());
-      log.error(message);
+      log.error(defaultMessage);
+      String message = parseApiExceptionMessage(exception.getResponseBody(), defaultMessage);
       throw new InvalidRequestException(message, exception, USER);
     }
   }
@@ -153,11 +155,12 @@ public class CIK8JavaClientHandler {
       return coreV1Api.createNamespacedSecret(namespace, secret, null, null, null);
     } catch (ApiException exception) {
       String secretDef = secret.getMetadata() != null && isNotEmpty(secret.getMetadata().getName())
-          ? format("%s/Secret/%s", namespace, secret.getMetadata().getName())
+          ? format("%s/%s", namespace, secret.getMetadata().getName())
           : "Secret";
-      String message = format(
-          "Failed to create %s. Code: %s, message: %s", secretDef, exception.getCode(), exception.getResponseBody());
-      log.error(message);
+      String defaultMessage = format("Failed to create secret %s. Code: %s, message: %s", secretDef,
+          exception.getCode(), exception.getResponseBody());
+      log.error(defaultMessage);
+      String message = parseApiExceptionMessage(exception.getResponseBody(), defaultMessage);
       throw new InvalidRequestException(message, exception, USER);
     }
   }
@@ -171,11 +174,12 @@ public class CIK8JavaClientHandler {
       return coreV1Api.replaceNamespacedSecret(name, namespace, secret, null, null, null);
     } catch (ApiException exception) {
       String secretDef = secret.getMetadata() != null && isNotEmpty(secret.getMetadata().getName())
-          ? format("%s/Secret/%s", namespace, secret.getMetadata().getName())
+          ? format("%s/%s", namespace, secret.getMetadata().getName())
           : "Secret";
-      String message = format(
-          "Failed to replace %s. Code: %s, message: %s", secretDef, exception.getCode(), exception.getResponseBody());
-      log.error(message);
+      String defaultMessage = format("Failed to replace secret %s. Code: %s, message: %s", secretDef,
+          exception.getCode(), exception.getResponseBody());
+      log.error(defaultMessage);
+      String message = parseApiExceptionMessage(exception.getResponseBody(), defaultMessage);
       throw new InvalidRequestException(message, exception, USER);
     }
   }
@@ -364,36 +368,38 @@ public class CIK8JavaClientHandler {
   private List<CIContainerStatus> getContainersStatus(V1Pod pod) {
     List<CIContainerStatus> containerStatusList = new ArrayList<>();
     List<V1ContainerStatus> containerStatuses = pod.getStatus().getContainerStatuses();
-    for (V1ContainerStatus containerStatus : containerStatuses) {
-      String name = containerStatus.getName();
-      String image = containerStatus.getImage();
-      if (containerStatus.getState().getRunning() != null) {
-        containerStatusList.add(CIContainerStatus.builder()
-                                    .name(name)
-                                    .image(image)
-                                    .status(CIContainerStatus.Status.SUCCESS)
-                                    .startTime(containerStatus.getState().getRunning().getStartedAt().toString())
-                                    .build());
-      } else if (containerStatus.getState().getTerminated() != null) {
-        V1ContainerStateTerminated containerStateTerminated = containerStatus.getState().getTerminated();
-        containerStatusList.add(CIContainerStatus.builder()
-                                    .name(name)
-                                    .image(image)
-                                    .status(CIContainerStatus.Status.ERROR)
-                                    .startTime(containerStateTerminated.getStartedAt().toString())
-                                    .endTime(containerStateTerminated.getFinishedAt().toString())
-                                    .errorMsg(getContainerErrMsg(
-                                        containerStateTerminated.getReason(), containerStateTerminated.getMessage()))
-                                    .build());
-      } else if (containerStatus.getState().getWaiting() != null) {
-        V1ContainerStateWaiting containerStateWaiting = containerStatus.getState().getWaiting();
-        containerStatusList.add(
-            CIContainerStatus.builder()
-                .name(name)
-                .image(image)
-                .status(CIContainerStatus.Status.ERROR)
-                .errorMsg(getContainerErrMsg(containerStateWaiting.getReason(), containerStateWaiting.getMessage()))
-                .build());
+    if (isNotEmpty(containerStatuses)) {
+      for (V1ContainerStatus containerStatus : containerStatuses) {
+        String name = containerStatus.getName();
+        String image = containerStatus.getImage();
+        if (containerStatus.getState().getRunning() != null) {
+          containerStatusList.add(CIContainerStatus.builder()
+                                      .name(name)
+                                      .image(image)
+                                      .status(CIContainerStatus.Status.SUCCESS)
+                                      .startTime(containerStatus.getState().getRunning().getStartedAt().toString())
+                                      .build());
+        } else if (containerStatus.getState().getTerminated() != null) {
+          V1ContainerStateTerminated containerStateTerminated = containerStatus.getState().getTerminated();
+          containerStatusList.add(CIContainerStatus.builder()
+                                      .name(name)
+                                      .image(image)
+                                      .status(CIContainerStatus.Status.ERROR)
+                                      .startTime(containerStateTerminated.getStartedAt().toString())
+                                      .endTime(containerStateTerminated.getFinishedAt().toString())
+                                      .errorMsg(getContainerErrMsg(
+                                          containerStateTerminated.getReason(), containerStateTerminated.getMessage()))
+                                      .build());
+        } else if (containerStatus.getState().getWaiting() != null) {
+          V1ContainerStateWaiting containerStateWaiting = containerStatus.getState().getWaiting();
+          containerStatusList.add(
+              CIContainerStatus.builder()
+                  .name(name)
+                  .image(image)
+                  .status(CIContainerStatus.Status.ERROR)
+                  .errorMsg(getContainerErrMsg(containerStateWaiting.getReason(), containerStateWaiting.getMessage()))
+                  .build());
+        }
       }
     }
     return containerStatusList;
@@ -460,5 +466,17 @@ public class CIK8JavaClientHandler {
         .withBackoff(5, 60, ChronoUnit.SECONDS)
         .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
         .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
+  }
+
+  // Example ApiException response body:
+  // {"kind":"Status","apiVersion":"v1","metadata":{},"status":"Failure","message":"namespaces \"test\" not
+  // found","reason":"NotFound","details":{"name":"test","kind":"namespaces"},"code":404}
+  public String parseApiExceptionMessage(String responseBody, String defaultMessage) {
+    try {
+      JSONObject response = new JSONObject(responseBody);
+      return response.getString("message");
+    } catch (Exception e) {
+      return defaultMessage;
+    }
   }
 }

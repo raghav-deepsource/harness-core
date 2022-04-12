@@ -28,8 +28,6 @@ public class HarnessCDChangeEventTransformer
             "Deployment of " + changeEventDTO.getServiceIdentifier() + " in " + changeEventDTO.getEnvIdentifier())
         .orgIdentifier(changeEventDTO.getOrgIdentifier())
         .projectIdentifier(changeEventDTO.getProjectIdentifier())
-        .serviceIdentifier(changeEventDTO.getServiceIdentifier())
-        .environmentIdentifier(changeEventDTO.getEnvIdentifier())
         .eventTime(Instant.ofEpochMilli(changeEventDTO.getEventTime()))
         .changeSourceIdentifier(changeEventDTO.getChangeSourceIdentifier())
         .monitoredServiceIdentifier(changeEventDTO.getMonitoredServiceIdentifier())

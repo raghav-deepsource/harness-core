@@ -288,6 +288,7 @@ public class ExpressionEvaluatorUtils {
     StrSubstitutor substitutor = new StrSubstitutor();
     substitutor.setEnableSubstitutionInVariables(true);
     substitutor.setVariableResolver(variableResolver);
+    substitutor.setValueDelimiter("");
     if (newDelimiters) {
       substitutor.setVariablePrefix(EngineExpressionEvaluator.EXPR_START);
       substitutor.setVariableSuffix(EngineExpressionEvaluator.EXPR_END);

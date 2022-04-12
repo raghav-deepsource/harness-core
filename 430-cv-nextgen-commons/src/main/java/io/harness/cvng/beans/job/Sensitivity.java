@@ -8,9 +8,9 @@
 package io.harness.cvng.beans.job;
 
 public enum Sensitivity {
-  LOW(1, "Low"),
+  LOW(3, "Low"),
   MEDIUM(2, "Medium"),
-  HIGH(3, "High");
+  HIGH(1, "High");
   private final int tolerance;
   private String value;
 

@@ -21,4 +21,5 @@ public class FilterConstants {
   public static final String AUDIT_FILTER = "Audit";
   public static final String DELEGATE_PROFILE_FILTER = "DelegateProfile";
   public static final String DELEGATE_FILTER = "Delegate";
+  public static final String ENVIRONMENT_GROUP_FILTER = "EnvironmentGroup";
 }

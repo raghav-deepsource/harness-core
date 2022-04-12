@@ -21,7 +21,6 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.utils.RestCallToNGManagerClientUtils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,16 +31,22 @@ import org.springframework.stereotype.Component;
 public class NGConnectorHelper {
   @Autowired private ConnectorResourceClient connectorResourceClient;
 
-  public List<ConnectorResponseDTO> getNextGenConnectors(String accountId) {
+  public List<ConnectorResponseDTO> getNextGenConnectors(String accountId, List<ConnectorType> connectorTypes,
+      List<CEFeatures> ceFeatures, List<ConnectivityStatus> connectivityStatuses) {
     List<ConnectorResponseDTO> nextGenConnectorResponses = new ArrayList<>();
     PageResponse<ConnectorResponseDTO> response = null;
-    ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
-        ConnectorFilterPropertiesDTO.builder()
-            .types(Arrays.asList(ConnectorType.CE_AWS))
-            .ccmConnectorFilter(
-                CcmConnectorFilter.builder().featuresEnabled(Arrays.asList(CEFeatures.VISIBILITY)).build())
-            .connectivityStatuses(Arrays.asList(ConnectivityStatus.SUCCESS))
-            .build();
+    ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO = ConnectorFilterPropertiesDTO.builder().build();
+    if (isNotEmpty(connectorTypes)) {
+      connectorFilterPropertiesDTO.setTypes(connectorTypes);
+    }
+    if (isNotEmpty(ceFeatures)) {
+      connectorFilterPropertiesDTO.setCcmConnectorFilter(
+          CcmConnectorFilter.builder().featuresEnabled(ceFeatures).build());
+    }
+    if (isNotEmpty(connectivityStatuses)) {
+      connectorFilterPropertiesDTO.setConnectivityStatuses(connectivityStatuses);
+    }
+
     connectorFilterPropertiesDTO.setFilterType(FilterType.CONNECTOR);
     int page = 0;
     int size = 100;

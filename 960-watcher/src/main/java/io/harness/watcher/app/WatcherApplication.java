@@ -18,7 +18,6 @@ import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.delegate.message.MessageService;
-import io.harness.event.client.impl.EventPublisherConstants;
 import io.harness.event.client.impl.tailer.TailerModule;
 import io.harness.event.client.impl.tailer.TailerModule.Config;
 import io.harness.managerclient.WatcherManagerClientModule;
@@ -35,7 +34,6 @@ import com.google.inject.Module;
 import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -154,8 +152,7 @@ public class WatcherApplication {
         modules.add(new TailerModule(Config.builder()
                                          .accountId(configuration.getAccountId())
                                          .accountSecret(delegateToken)
-                                         .queueFilePath(Optional.ofNullable(configuration.getQueueFilePath())
-                                                            .orElse(EventPublisherConstants.DEFAULT_QUEUE_FILE_PATH))
+                                         .queueFilePath(configuration.getQueueFilePath())
                                          .publishTarget(publishTarget)
                                          .publishAuthority(publishAuthority)
                                          .build()));

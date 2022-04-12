@@ -20,7 +20,8 @@ import retrofit2.http.Query;
 public interface ManagerClientV2 {
   @GET("agent/delegates/delegateScripts")
   Call<RestResponse<DelegateScripts>> getDelegateScripts(@Query("accountId") String accountId,
-      @Query("delegateVersion") String delegateVersion, @Query("patchVersion") String patchVersion);
+      @Query("delegateVersion") String delegateVersion, @Query("patchVersion") String patchVersion,
+      @Query("delegateName") String delegateName);
 
   @GET("agent/delegates/delegateScriptsNg")
   Call<RestResponse<DelegateScripts>> getDelegateScriptsNg(@Query("accountId") String accountId,

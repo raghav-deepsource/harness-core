@@ -8,12 +8,12 @@
 package io.harness.batch.processing.tasklet;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import static com.hazelcast.util.Preconditions.checkFalse;
+import static com.hazelcast.internal.util.Preconditions.checkFalse;
 
 import io.harness.batch.processing.ccm.BatchJobType;
 import io.harness.batch.processing.ccm.CCMJobConstants;
+import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.ng.NGConnectorHelper;
 import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.config.BillingDataPipelineConfig;
 import io.harness.batch.processing.dao.intfc.BatchJobScheduledDataDao;
@@ -21,17 +21,12 @@ import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.entities.batch.BatchJobScheduledData;
 import io.harness.ccm.config.GcpBillingAccount;
 import io.harness.ccm.config.GcpServiceAccount;
-import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.delegate.beans.connector.CEFeatures;
-import io.harness.delegate.beans.connector.CcmConnectorFilter;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.gcpccm.GcpCloudCostConnectorDTO;
-import io.harness.filter.FilterType;
-import io.harness.ng.beans.PageResponse;
-import io.harness.utils.RestCallToNGManagerClientUtils;
 
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
@@ -60,8 +55,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.Value;
@@ -87,6 +82,7 @@ public class GcpSyncTasklet implements Tasklet {
   @Autowired private ConnectorResourceClient connectorResourceClient;
   @Autowired protected CloudToHarnessMappingService cloudToHarnessMappingService;
   @Autowired private BatchJobScheduledDataDao batchJobScheduledDataDao;
+  @Autowired private NGConnectorHelper ngConnectorHelper;
   private static final String GOOGLE_CREDENTIALS_PATH = "CE_GCP_CREDENTIALS_PATH";
 
   private final Cache<CacheKey, Boolean> gcpSyncInfo =
@@ -203,31 +199,10 @@ public class GcpSyncTasklet implements Tasklet {
   }
 
   public List<ConnectorResponseDTO> getNextGenGCPConnectorResponses(String accountId) {
-    List<ConnectorResponseDTO> nextGenConnectorResponses = new ArrayList<>();
-    PageResponse<ConnectorResponseDTO> response = null;
-    ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
-        ConnectorFilterPropertiesDTO.builder()
-            .types(Arrays.asList(ConnectorType.GCP_CLOUD_COST))
-            .ccmConnectorFilter(CcmConnectorFilter.builder().featuresEnabled(Arrays.asList(CEFeatures.BILLING)).build())
-            .build();
-    connectorFilterPropertiesDTO.setFilterType(FilterType.CONNECTOR);
-    int page = 0;
-    int size = 100;
-    do {
-      response = getConnectors(accountId, page, size, connectorFilterPropertiesDTO);
-      if (response != null && isNotEmpty(response.getContent())) {
-        nextGenConnectorResponses.addAll(response.getContent());
-      }
-      page++;
-    } while (response != null && isNotEmpty(response.getContent()));
+    List<ConnectorResponseDTO> nextGenConnectorResponses = ngConnectorHelper.getNextGenConnectors(accountId,
+        Arrays.asList(ConnectorType.GCP_CLOUD_COST), Arrays.asList(CEFeatures.BILLING), Collections.emptyList());
     log.info("Processing batch size of {} in GCP Sync Job", nextGenConnectorResponses.size());
     return nextGenConnectorResponses;
-  }
-
-  PageResponse getConnectors(
-      String accountId, int page, int size, ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO) {
-    return RestCallToNGManagerClientUtils.execute(
-        connectorResourceClient.listConnectors(accountId, null, null, page, size, connectorFilterPropertiesDTO, false));
   }
 
   // read the credential path from env variables

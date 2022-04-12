@@ -34,7 +34,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -144,9 +143,6 @@ public abstract class ServiceLevelIndicator
   public TimeRange getFirstTimeDataCollectionTimeRange() {
     Instant startTime = Instant.ofEpochMilli(getCreatedAt());
     Instant endTime = DateTimeUtils.roundDownTo5MinBoundary(startTime);
-    return TimeRange.builder()
-        .startTime(endTime.minus(DATA_COLLECTION_TIME_RANGE_FOR_SLI, ChronoUnit.MINUTES))
-        .endTime(endTime)
-        .build();
+    return TimeRange.builder().startTime(endTime.minus(DATA_COLLECTION_TIME_RANGE_FOR_SLI)).endTime(endTime).build();
   }
 }

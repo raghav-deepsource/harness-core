@@ -139,6 +139,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -184,12 +185,17 @@ public class WatcherServiceImpl implements WatcherService {
   private long delegateRestartedToUpgradeJreAt;
   private boolean watcherRestartedToUpgradeJre;
 
+  private static final String DELEGATE_NAME =
+      isNotBlank(System.getenv().get("DELEGATE_NAME")) ? System.getenv().get("DELEGATE_NAME") : "";
+
   private final boolean delegateNg = isNotBlank(System.getenv().get("DELEGATE_SESSION_IDENTIFIER"))
       || (isNotBlank(System.getenv().get("NEXT_GEN")) && Boolean.parseBoolean(System.getenv().get("NEXT_GEN")));
   private final SecureRandom random = new SecureRandom();
 
   private static final boolean multiVersion;
   private static boolean accountVersion;
+
+  private final Map<String, Process> delegateProcessMap = new ConcurrentHashMap<>();
 
   static {
     String deployMode = System.getenv().get("DEPLOY_MODE");
@@ -479,6 +485,7 @@ public class WatcherServiceImpl implements WatcherService {
 
   private void heartbeat() {
     if (isDiskFull()) {
+      log.error("Skipping local heartbeat because disk is full");
       return;
     }
     try {
@@ -488,6 +495,7 @@ public class WatcherServiceImpl implements WatcherService {
       heartbeatData.put(WATCHER_VERSION, getVersion());
       messageService.putAllData(WATCHER_DATA, heartbeatData);
     } catch (VersionInfoException e) {
+      log.error("Exception while sending local heartbeat ", e);
       return;
     } catch (Exception e) {
       if (e.getMessage().contains(NO_SPACE_LEFT_ON_DEVICE_ERROR)) {
@@ -631,7 +639,15 @@ public class WatcherServiceImpl implements WatcherService {
                   Optional.ofNullable((Boolean) delegateData.get(DELEGATE_UPGRADE_PENDING)).orElse(false);
               boolean shutdownPending =
                   Optional.ofNullable((Boolean) delegateData.get(DELEGATE_SHUTDOWN_PENDING)).orElse(false);
-              long shutdownStarted = Optional.ofNullable((Long) delegateData.get(DELEGATE_SHUTDOWN_STARTED)).orElse(0L);
+
+              long shutdownStarted = 0L;
+              try {
+                shutdownStarted = (Long) delegateData.get(DELEGATE_SHUTDOWN_STARTED);
+              } catch (Exception e) {
+                log.error("Caught exception while reading {} for Delegate process {} ", DELEGATE_SHUTDOWN_STARTED,
+                    delegateProcess, e);
+              }
+
               boolean shutdownTimedOut = now - shutdownStarted > DELEGATE_SHUTDOWN_TIMEOUT;
               long upgradeStarted =
                   Optional.ofNullable((Long) delegateData.get(DELEGATE_UPGRADE_STARTED)).orElse(Long.MAX_VALUE);
@@ -1017,8 +1033,8 @@ public class WatcherServiceImpl implements WatcherService {
       log.info(format("Calling getDelegateScripts with version %s and patch %s", updatedVersion, patchVersion));
       restResponse = callInterruptible21(timeLimiter, ofMinutes(1),
           ()
-              -> SafeHttpCall.execute(
-                  managerClient.getDelegateScripts(watcherConfiguration.getAccountId(), updatedVersion, patchVersion)));
+              -> SafeHttpCall.execute(managerClient.getDelegateScripts(
+                  watcherConfiguration.getAccountId(), updatedVersion, patchVersion, DELEGATE_NAME)));
     } else {
       log.info(format("Calling getDelegateScriptsNg with version %s and patch %s", updatedVersion, patchVersion));
       restResponse = callInterruptible21(timeLimiter, ofMinutes(1),
@@ -1178,6 +1194,8 @@ public class WatcherServiceImpl implements WatcherService {
               log.info("Sending new delegate process {} go-ahead message", newDelegateProcess);
               messageService.writeMessageToChannel(DELEGATE, newDelegateProcess, DELEGATE_GO_AHEAD);
               success = true;
+              log.info("Adding new delegate process {} to process map", newDelegateProcess);
+              delegateProcessMap.put(newDelegateProcess, newDelegate.getProcess());
             }
           }
         }
@@ -1192,7 +1210,7 @@ public class WatcherServiceImpl implements WatcherService {
             messageService.clearChannel(DELEGATE, newDelegateProcess);
           }
           newDelegate.getProcess().destroy();
-          newDelegate.getProcess().waitFor();
+          newDelegate.getProcess().waitFor(30, TimeUnit.SECONDS);
           oldDelegateProcesses.forEach(oldDelegateProcess -> {
             log.info("Sending old delegate process {} resume message", oldDelegateProcess);
             messageService.writeMessageToChannel(DELEGATE, oldDelegateProcess, DELEGATE_RESUME);
@@ -1208,16 +1226,16 @@ public class WatcherServiceImpl implements WatcherService {
           try {
             log.warn("Killing new delegate");
             newDelegate.getProcess().destroy();
-            newDelegate.getProcess().waitFor();
+            newDelegate.getProcess().waitFor(30, TimeUnit.SECONDS);
           } catch (Exception ex) {
-            // ignore
+            log.warn("Caught exception while waiting on new delegate process to shutdown {}", ex);
           }
           try {
             if (newDelegate.getProcess().isAlive()) {
               log.warn("Killing new delegate forcibly");
               newDelegate.getProcess().destroyForcibly();
               if (newDelegate.getProcess() != null) {
-                newDelegate.getProcess().waitFor();
+                newDelegate.getProcess().waitFor(30, TimeUnit.SECONDS);
               }
             }
           } catch (Exception ex) {
@@ -1242,6 +1260,13 @@ public class WatcherServiceImpl implements WatcherService {
         ProcessControl.ensureKilled(delegateProcess, Duration.ofSeconds(120));
       } catch (Exception e) {
         log.error("Error killing delegate {}", delegateProcess, e);
+        Process delegate = delegateProcessMap.get(delegateProcess);
+        if (delegate != null) {
+          delegate.destroyForcibly();
+          log.error("Delegate process terminated forcefully: {}", !delegate.isAlive());
+        }
+      } finally {
+        delegateProcessMap.remove(delegateProcess);
       }
       messageService.closeData(DELEGATE_DASH + delegateProcess);
       messageService.closeChannel(DELEGATE, delegateProcess);

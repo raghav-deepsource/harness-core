@@ -17,6 +17,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import io.harness.rest.RestResponse;
 
 import software.wings.beans.artifact.Artifact;
+import software.wings.beans.artifact.ArtifactStream;
 import software.wings.common.BuildDetailsComparator;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsFeed;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsPackage;
@@ -25,6 +26,8 @@ import software.wings.helpers.ext.gcs.GcsService;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.helpers.ext.jenkins.JobDetails;
 import software.wings.security.annotations.Scope;
+import software.wings.service.intfc.ArtifactService;
+import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.BuildSourceService;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
@@ -54,6 +57,8 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class BuildSourceResource {
   @Inject private BuildSourceService buildSourceService;
   @Inject private GcsService gcsService;
+  @Inject private ArtifactStreamService artifactStreamService;
+  @Inject private ArtifactService artifactService;
 
   /**
    * Gets jobs.
@@ -211,7 +216,6 @@ public class BuildSourceResource {
    *
    * @param appId            the app id
    * @param artifactStreamId the artifact source id
-   * @param settingId        the setting id
    * @return the builds
    */
   @GET
@@ -222,6 +226,31 @@ public class BuildSourceResource {
       @QueryParam("artifactStreamId") String artifactStreamId, @QueryParam("settingId") String settingId) {
     List<BuildDetails> buildDetails = buildSourceService.getBuilds(appId, artifactStreamId, settingId);
     buildDetails = buildDetails.stream().sorted(new BuildDetailsComparator()).collect(toList());
+    return new RestResponse<>(buildDetails);
+  }
+
+  /*
+  This API is used in deploy form. If artifact collection is enabled, return builds from db, else create a delegate task
+  and get the builds.
+   */
+  @GET
+  @Path("buildsV2")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<List<BuildDetails>> getBuildsV2(
+      @QueryParam("appId") String appId, @QueryParam("artifactStreamId") String artifactStreamId) {
+    List<BuildDetails> buildDetails;
+    ArtifactStream artifactStream = artifactStreamService.get(artifactStreamId);
+    if (!Boolean.FALSE.equals(artifactStream.getCollectionEnabled())) {
+      List<Artifact> artifacts = artifactService.listArtifactsByArtifactStreamId(appId, artifactStreamId);
+      buildDetails =
+          artifacts.stream()
+              .map(artifact -> BuildDetails.Builder.aBuildDetails().withNumber(artifact.getBuildNo()).build())
+              .collect(toList());
+    } else {
+      buildDetails = buildSourceService.getBuilds(appId, artifactStreamId, artifactStream.getSettingId());
+      buildDetails = buildDetails.stream().sorted(new BuildDetailsComparator()).collect(toList());
+    }
     return new RestResponse<>(buildDetails);
   }
 

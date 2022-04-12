@@ -14,6 +14,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.inject.Inject;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.concurrent.TimeUnit;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -59,9 +60,10 @@ public class BillingDataGenerationValidator {
   private boolean fetchClusterBillingDataValidationInfo(String accountId, String clusterId, Instant startTime) {
     LastReceivedPublishedMessage lastReceivedPublishedMessage =
         lastReceivedPublishedMessageDao.get(accountId, clusterId);
+    Instant bufferedStartTime = startTime.minus(2, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS);
     boolean generateData = false;
     if (null != lastReceivedPublishedMessage
-        && Instant.ofEpochMilli(lastReceivedPublishedMessage.getLastReceivedAt()).isAfter(startTime)) {
+        && Instant.ofEpochMilli(lastReceivedPublishedMessage.getLastReceivedAt()).isAfter(bufferedStartTime)) {
       generateData = true;
     }
     if (!generateData) {

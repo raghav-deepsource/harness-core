@@ -329,7 +329,7 @@ public class StatusUtilsTest extends CategoryTest {
     assertThat(StatusUtils.planAllowedStartSet(Status.PAUSED))
         .containsExactlyInAnyOrder(QUEUED, RUNNING, PAUSING, INTERVENTION_WAITING);
     assertThat(StatusUtils.planAllowedStartSet(Status.SUCCEEDED))
-        .containsExactlyInAnyOrder(PAUSING, INTERVENTION_WAITING, RUNNING);
+        .containsExactlyInAnyOrder(PAUSING, INTERVENTION_WAITING, RUNNING, APPROVAL_WAITING);
     assertThat(StatusUtils.planAllowedStartSet(Status.RUNNING))
         .containsExactlyInAnyOrder(QUEUED, ASYNC_WAITING, APPROVAL_WAITING, RESOURCE_WAITING, TASK_WAITING,
             TIMED_WAITING, INTERVENTION_WAITING, PAUSED, PAUSING, APPROVAL_REJECTED);

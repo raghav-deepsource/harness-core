@@ -102,4 +102,15 @@ public class FullSyncJobServiceImpl implements FullSyncJobService {
             accountIdentifier, orgIdentifier, projectIdentifier, SyncStatus.RUNNING);
     return Optional.ofNullable(fullSyncJob);
   }
+
+  @Override
+  public void deleteAll(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = Criteria.where(GitFullSyncJobKeys.accountIdentifier)
+                            .is(accountIdentifier)
+                            .and(GitFullSyncJobKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(GitFullSyncJobKeys.projectIdentifier)
+                            .is(projectIdentifier);
+    fullSyncJobRepository.deleteAll(criteria);
+  }
 }

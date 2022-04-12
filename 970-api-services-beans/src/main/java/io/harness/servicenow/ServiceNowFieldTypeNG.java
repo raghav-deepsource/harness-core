@@ -24,7 +24,8 @@ public enum ServiceNowFieldTypeNG {
   @JsonProperty("glide_date_time") DATE_TIME(Arrays.asList("glide_date_time", "due_date", "glide_date", "glide_time")),
   @JsonProperty("integer") INTEGER(Collections.singletonList("integer")),
   @JsonProperty("boolean") BOOLEAN(Collections.singletonList("boolean")),
-  @JsonProperty("string") STRING(Collections.singletonList("string"));
+  @JsonProperty("string") STRING(Collections.singletonList("string")),
+  @JsonProperty("option") OPTION(Collections.singletonList("option"));
 
   @Getter private List<String> snowInternalTypes;
   ServiceNowFieldTypeNG(List<String> types) {

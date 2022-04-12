@@ -28,6 +28,8 @@ import software.wings.service.impl.aws.model.AwsCFRequest.AwsCFRequestType;
 import software.wings.service.impl.aws.model.AwsCFTemplateParamsData;
 import software.wings.service.impl.aws.model.AwsResponse;
 import software.wings.service.intfc.aws.delegate.AwsCFHelperServiceDelegate;
+import software.wings.service.intfc.security.EncryptionService;
+import software.wings.service.mappers.artifact.AwsConfigToInternalMapper;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -41,6 +43,7 @@ import org.apache.commons.lang3.NotImplementedException;
 @OwnedBy(CDP)
 public class AwsCFTask extends AbstractDelegateRunnableTask {
   @Inject private AwsCFHelperServiceDelegate awsCFHelperServiceDelegate;
+  @Inject private EncryptionService encryptionService;
 
   public AwsCFTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -60,8 +63,9 @@ public class AwsCFTask extends AbstractDelegateRunnableTask {
       switch (requestType) {
         case GET_TEMPLATE_PARAMETERS: {
           AwsCFGetTemplateParamsRequest paramsRequest = (AwsCFGetTemplateParamsRequest) request;
+          encryptionService.decrypt(paramsRequest.getAwsConfig(), paramsRequest.getEncryptionDetails(), false);
           List<AwsCFTemplateParamsData> paramsData = awsCFHelperServiceDelegate.getParamsData(
-              paramsRequest.getAwsConfig(), paramsRequest.getEncryptionDetails(), paramsRequest.getRegion(),
+              AwsConfigToInternalMapper.toAwsInternalConfig(paramsRequest.getAwsConfig()), paramsRequest.getRegion(),
               paramsRequest.getData(), paramsRequest.getType(), paramsRequest.getGitFileConfig(),
               paramsRequest.getGitConfig(), paramsRequest.getSourceRepoEncryptionDetails());
           return AwsCFGetTemplateParamsResponse.builder().executionStatus(SUCCESS).parameters(paramsData).build();

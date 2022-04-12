@@ -50,8 +50,7 @@ public class InputSetFullGitSyncHandler {
     String accountId = scope.getAccountId();
     String orgId = StringValueUtils.getStringFromStringValue(scope.getOrgId());
     String projectId = StringValueUtils.getStringFromStringValue(scope.getProjectId());
-    Criteria criteria =
-        PMSInputSetFilterHelper.createCriteriaForGetList(accountId, orgId, projectId, null, ALL, null, false);
+    Criteria criteria = getCriteriaForFullSync(accountId, orgId, projectId);
 
     Page<InputSetEntity> currentPage = null;
     do {
@@ -71,6 +70,12 @@ public class InputSetFullGitSyncHandler {
                              .collect(Collectors.toList()));
     } while (currentPage.hasNext());
     return fileChanges;
+  }
+
+  private Criteria getCriteriaForFullSync(String accountId, String orgId, String projectId) {
+    Criteria criteria =
+        PMSInputSetFilterHelper.createCriteriaForGetList(accountId, orgId, projectId, null, ALL, null, false);
+    return criteria.and(InputSetEntityKeys.yamlGitConfigRef).is(null);
   }
 
   private String getFilePath(InputSetEntity entity) {

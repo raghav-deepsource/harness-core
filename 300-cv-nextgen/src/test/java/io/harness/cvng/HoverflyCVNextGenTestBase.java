@@ -17,5 +17,5 @@ import org.mockito.junit.MockitoRule;
 public class HoverflyCVNextGenTestBase extends HoverflyTestBase {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Rule public LifecycleRule lifecycleRule = new LifecycleRule();
-  @Rule public CvNextGenRule cvNextGenRule = new CvNextGenRule(lifecycleRule.getClosingFactory());
+  @Rule public CvNextGenRule cvNextGenRule = new CvNextGenRule(lifecycleRule.getClosingFactory(), false);
 }

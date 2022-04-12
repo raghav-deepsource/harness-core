@@ -12,8 +12,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.ResourceTypeConstants;
 import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.ng.core.Resource;
+import io.harness.ng.core.ResourceConstants;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -29,7 +32,13 @@ public class DelegateGroupUpsertEvent extends AbstractDelegateConfigurationEvent
 
   @Override
   public Resource getResource() {
-    return Resource.builder().identifier(delegateGroupId).type(ResourceTypeConstants.DELEGATE).build();
+    Map<String, String> labels = new HashMap<>();
+    labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, delegateSetupDetails.getName());
+    return Resource.builder()
+        .identifier(delegateGroupId)
+        .labels(labels)
+        .type(ResourceTypeConstants.DELEGATE_GROUPS)
+        .build();
   }
 
   @Override

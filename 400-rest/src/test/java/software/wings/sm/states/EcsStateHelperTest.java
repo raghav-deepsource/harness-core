@@ -694,6 +694,44 @@ public class EcsStateHelperTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void testHandleDelegateResponseForEcsDeploy_skipVerificationCheckIfNoNewContainers() {
+    ExecutionContextImpl mockContext = mock(ExecutionContextImpl.class);
+    CommandStateExecutionData executionData = aCommandStateExecutionData().build();
+    doReturn(executionData).when(mockContext).getStateExecutionData();
+    EcsCommandExecutionResponse delegateResponse =
+        EcsCommandExecutionResponse.builder()
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .ecsCommandResponse(EcsServiceDeployResponse.builder().containerInfos(null).build())
+            .build();
+    ContainerDeploymentManagerHelper mockHelper = mock(ContainerDeploymentManagerHelper.class);
+    doReturn(emptyList()).when(mockHelper).getInstanceStatusSummaries(any(), anyList());
+    ActivityService mockService = mock(ActivityService.class);
+    ArgumentCaptor<SweepingOutputInstance> sweepingOutputInstanceCaptor =
+        ArgumentCaptor.forClass(SweepingOutputInstance.class);
+    doReturn(null).when(sweepingOutputService).save(sweepingOutputInstanceCaptor.capture());
+    doReturn("").when(mockContext).appendStateExecutionId(anyString());
+    doReturn(SweepingOutputInstance.builder())
+        .doReturn(SweepingOutputInstance.builder())
+        .when(mockContext)
+        .prepareSweepingOutputBuilder(any());
+    PhaseElement phaseElement = PhaseElement.builder()
+                                    .phaseName("Rollback Phase1")
+                                    .phaseNameForRollback("Phase1")
+                                    .serviceElement(ServiceElement.builder().uuid(SERVICE_ID).build())
+                                    .build();
+    doReturn(phaseElement).when(mockContext).getContextElement(any(), anyString());
+    ExecutionResponse response = helper.handleDelegateResponseForEcsDeploy(
+        mockContext, ImmutableMap.of(ACTIVITY_ID, delegateResponse), false, mockService, false, mockHelper);
+    assertThat(response).isNotNull();
+    assertThat(response.getExecutionStatus()).isEqualTo(SUCCESS);
+    SweepingOutputInstance sweepingOutputInstance = sweepingOutputInstanceCaptor.getValue();
+    assertThat(sweepingOutputInstance.getName()).isEqualTo("");
+    assertThat(((InstanceInfoVariables) sweepingOutputInstance.getValue()).isSkipVerification()).isTrue();
+  }
+
+  @Test
   @Owner(developers = SATYAM)
   @Category(UnitTests.class)
   public void testCreateAndQueueDelegateTaskForEcsServiceDeploy() {
@@ -884,8 +922,9 @@ public class EcsStateHelperTest extends CategoryTest {
     EcsResizeParams ecsResizeParams = mock(EcsResizeParams.class);
     doThrow(new InterruptedException()).when(mockDelegateService).executeTask(any());
 
-    assertThatThrownBy(
-        () -> helper.createSweepingOutputForRollback(bag, activity, mockDelegateService, ecsResizeParams, mockContext))
+    assertThatThrownBy(()
+                           -> helper.createSweepingOutputForRollback(
+                               bag, activity, mockDelegateService, ecsResizeParams, mockContext, false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Failed to generate rollback information");
   }
@@ -935,7 +974,7 @@ public class EcsStateHelperTest extends CategoryTest {
                                     .build();
     doReturn(phaseElement).when(mockContext).getContextElement(any(), anyString());
 
-    helper.createSweepingOutputForRollback(bag, activity, mockDelegateService, ecsResizeParams, mockContext);
+    helper.createSweepingOutputForRollback(bag, activity, mockDelegateService, ecsResizeParams, mockContext, false);
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
     verify(mockDelegateService).executeTask(captor.capture());

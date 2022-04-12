@@ -210,6 +210,9 @@ public final class VerificationJobInstance
     public boolean isLastProgressLog(VerificationJobInstance verificationJobInstance) {
       return getEndTime().equals(verificationJobInstance.getEndTime()) && isFinalState();
     }
+    public Duration getTimeTakenToFinish() {
+      return Duration.between(getStartTime(), getEndTime());
+    }
 
     public abstract boolean isFailedStatus();
   }

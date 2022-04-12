@@ -11,6 +11,7 @@ import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.ContainerParams;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
 import io.harness.delegate.beans.ci.pod.ContainerSecrets;
+import io.harness.delegate.beans.ci.pod.ContainerSecurityContext;
 import io.harness.delegate.beans.ci.pod.ImageDetailsWithConnector;
 import io.harness.delegate.beans.ci.pod.SecretVarParams;
 import io.harness.delegate.beans.ci.pod.SecretVolumeParams;
@@ -37,10 +38,11 @@ public class GitCloneContainerParams extends ContainerParams {
       List<Integer> ports, Map<String, String> envVars, Map<String, String> envVarsWithSecretRef,
       Map<String, SecretVarParams> secretEnvVars, Map<String, SecretVolumeParams> secretVolumes, String imageSecret,
       Map<String, String> volumeToMountPath, ContainerResourceParams containerResourceParams,
-      ContainerSecrets containerSecrets, Integer runAsUser, boolean privileged, String imagePullPolicy) {
+      ContainerSecrets containerSecrets, Integer runAsUser, boolean privileged, String imagePullPolicy,
+      ContainerSecurityContext securityContext) {
     super(name, imageDetailsWithConnector, commands, args, workingDir, ports, envVars, envVarsWithSecretRef,
         secretEnvVars, secretVolumes, imageSecret, volumeToMountPath, containerResourceParams, containerSecrets,
-        runAsUser, privileged, imagePullPolicy);
+        runAsUser, privileged, imagePullPolicy, securityContext);
     this.gitConnectorDetails = gitConnectorDetails;
     this.branchName = branchName;
     this.commitId = commitId;

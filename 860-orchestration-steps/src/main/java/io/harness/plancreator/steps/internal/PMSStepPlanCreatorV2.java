@@ -26,7 +26,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.govern.Switch;
-import io.harness.plancreator.PipelineServiceUtilPlanCreationConstants;
+import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.plancreator.steps.AbstractStepPlanCreator;
 import io.harness.plancreator.steps.FailureStrategiesUtils;
 import io.harness.plancreator.steps.GenericPlanCreatorUtils;
@@ -79,7 +79,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PIPELINE)
+@Slf4j
 public abstract class PMSStepPlanCreatorV2<T extends PmsAbstractStepNode> extends AbstractStepPlanCreator<T> {
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, T stepElement) {
@@ -187,7 +189,7 @@ public abstract class PMSStepPlanCreatorV2<T extends PmsAbstractStepNode> extend
       stepElement.setTimeout(TimeoutUtils.getTimeout(stepElement.getTimeout()));
       return ((PMSStepInfo) stepElement.getStepSpecType())
           .getStepParameters(stepElement,
-              getRollbackParameters(ctx.getCurrentField(), Collections.emptySet(), RollbackStrategy.UNKNOWN));
+              getRollbackParameters(ctx.getCurrentField(), Collections.emptySet(), RollbackStrategy.UNKNOWN), ctx);
     }
 
     return stepElement.getStepSpecType().getStepParameters();
@@ -382,8 +384,8 @@ public abstract class PMSStepPlanCreatorV2<T extends PmsAbstractStepNode> extend
   protected Map<RollbackStrategy, String> getRollbackStrategyMap(YamlField currentField) {
     String stageNodeId = GenericPlanCreatorUtils.getStageNodeId(currentField);
     Map<RollbackStrategy, String> rollbackStrategyStringMap = new HashMap<>();
-    rollbackStrategyStringMap.put(RollbackStrategy.STAGE_ROLLBACK,
-        stageNodeId + PipelineServiceUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX);
+    rollbackStrategyStringMap.put(
+        RollbackStrategy.STAGE_ROLLBACK, stageNodeId + NGCommonUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX);
     rollbackStrategyStringMap.put(
         RollbackStrategy.STEP_GROUP_ROLLBACK, GenericPlanCreatorUtils.getStepGroupRollbackStepsNodeId(currentField));
     return rollbackStrategyStringMap;

@@ -106,6 +106,8 @@ import io.harness.project.ProjectClientModule;
 import io.harness.redis.RedisConfig;
 import io.harness.resourcegroupclient.ResourceGroupClientModule;
 import io.harness.serviceaccount.ServiceAccountClientModule;
+import io.harness.telemetry.AbstractTelemetryModule;
+import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 import io.harness.token.TokenClientModule;
@@ -278,6 +280,12 @@ public class AccessControlModule extends AbstractModule {
     install(AccessControlPersistenceModule.getInstance(config.getMongoConfig()));
     install(AccessControlCoreModule.getInstance());
     install(AccessControlPreferenceModule.getInstance());
+    install(new AbstractTelemetryModule() {
+      @Override
+      public TelemetryConfiguration telemetryConfiguration() {
+        return config.getSegmentConfiguration();
+      }
+    });
 
     if (config.getAggregatorConfiguration().isEnabled()) {
       install(AggregatorModule.getInstance(config.getAggregatorConfiguration()));

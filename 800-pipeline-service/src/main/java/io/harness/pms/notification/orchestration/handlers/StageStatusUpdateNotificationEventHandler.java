@@ -15,7 +15,7 @@ import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.notification.PipelineEventType;
 import io.harness.observer.AsyncInformObserver;
-import io.harness.plancreator.beans.OrchestrationConstants;
+import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -51,7 +51,7 @@ public class StageStatusUpdateNotificationEventHandler implements AsyncInformObs
     Level currentLevel = Objects.requireNonNull(AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()));
     String identifier = currentLevel.getIdentifier();
     if (!nodesVisibleInUI.contains(currentLevel.getStepType().getType())
-        || identifier.endsWith(OrchestrationConstants.ROLLBACK_NODE_NAME)) {
+        || identifier.endsWith(NGCommonUtilPlanCreationConstants.ROLLBACK_NODE_NAME)) {
       return;
     }
     if (!Objects.equals(nodeExecution.getSkipGraphType(), SkipType.SKIP_NODE)

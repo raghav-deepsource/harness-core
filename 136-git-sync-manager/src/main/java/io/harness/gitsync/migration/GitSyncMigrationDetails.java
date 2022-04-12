@@ -34,6 +34,8 @@ public class GitSyncMigrationDetails implements MigrationDetails {
         .add(Pair.of(2, RenameInvalidYamlStringToYamlMigration.class))
         .add(Pair.of(3, GitSyncErrorMigration.class))
         .add(Pair.of(4, UpdateStuckGitBranchesStatusToUnsyncedMigration.class))
+        .add(Pair.of(5, UpdateTheRepoProvidersInGitSyncErrors.class))
+        .add(Pair.of(6, UpdateTheRepoProvidersInGitEntities.class))
         .build();
   }
 }

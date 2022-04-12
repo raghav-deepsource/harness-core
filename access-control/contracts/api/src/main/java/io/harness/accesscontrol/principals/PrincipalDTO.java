@@ -25,6 +25,9 @@ import lombok.experimental.FieldNameConstants;
 @Schema(name = "Principal")
 @OwnedBy(PL)
 public class PrincipalDTO {
+  public static final String MODEL_NAME = "Principal";
+
+  String scopeLevel;
   @ApiModelProperty(required = true) String identifier;
   @ApiModelProperty(required = true) PrincipalType type;
 }

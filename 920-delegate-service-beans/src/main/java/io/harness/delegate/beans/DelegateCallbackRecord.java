@@ -26,5 +26,5 @@ public class DelegateCallbackRecord implements PersistentEntity {
   @Id private String uuid;
   private byte[] callbackMetadata;
 
-  @FdTtlIndex @Builder.Default private Date validUntil = Date.from(OffsetDateTime.now().plusMonths(1).toInstant());
+  @FdTtlIndex @Builder.Default private Date validUntil = Date.from(OffsetDateTime.now().plusYears(1).toInstant());
 }

@@ -4,7 +4,8 @@ resource "google_logging_metric" "ce_failed_batch_job" {
   filter = join("\n", [
     local.filter_prefix,
     "jsonPayload.logger=\"io.harness.batch.processing.schedule.BatchJobRunner\"",
-    "jsonPayload.message:\"Error while running batch job\""
+    "jsonPayload.message:\"Error while running batch job\"",
+    "jsonPayload.harness.batchJobType!=\"CE_SEGMENT_CALL\""
   ])
   metric_descriptor {
     metric_kind = "DELTA"

@@ -18,10 +18,10 @@ import io.harness.eventsframework.schemas.entity.InputSetReferenceProtoDTO;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
+import io.harness.gitsync.common.utils.GitEntityFilePath;
+import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
-import io.harness.gitsync.utils.GitEntityFilePath;
-import io.harness.gitsync.utils.GitSyncSdkUtils;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.inputset.gitsync.InputSetYamlDTOMapper;
@@ -274,11 +274,18 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
                             .and(InputSetEntityKeys.identifier)
                             .is(inputSetEntity.getIdentifier());
 
-    GitEntityFilePath gitEntityFilePath = GitSyncSdkUtils.getRootFolderAndFilePath(newFilePath);
+    GitEntityFilePath gitEntityFilePath = GitSyncFilePathUtils.getRootFolderAndFilePath(newFilePath);
     Update update = new Update()
                         .set(InputSetEntityKeys.filePath, gitEntityFilePath.getFilePath())
                         .set(InputSetEntityKeys.rootFolder, gitEntityFilePath.getRootFolder());
     return inputSetRepository.update(inputSetEntity.getAccountId(), inputSetEntity.getOrgIdentifier(),
         inputSetEntity.getProjectIdentifier(), criteria, update);
+  }
+
+  @Override
+  public boolean checkForInputSetsForPipeline(
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
+    return inputSetRepository.existsByAccountIdAndOrgIdentifierAndProjectIdentifierAndPipelineIdentifierAndDeletedNot(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, true);
   }
 }

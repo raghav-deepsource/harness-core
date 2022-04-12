@@ -1,0 +1,24 @@
+{
+  "_id" : "622f42df8fceed0967abe851",
+  "accountIdentifier" : "kmpySmUISimoRrJL6NL73w",
+  "identifier" : "new_rg",
+  "name" : "new rg",
+  "description" : "",
+  "color" : "#0063f7",
+  "tags" : {},
+  "harnessManaged" : false,
+  "resourceFilter" : {
+    "resources" : [],
+    "includeAllResources" : false
+  },
+  "includedScopes" : [
+    {
+      "filter" : "EXCLUDING_CHILD_SCOPES",
+      "accountIdentifier" : "kmpySmUISimoRrJL6NL73w"
+    }
+  ],
+  "fullScopeSelected" : false,
+  "allowedScopeLevels" : [
+    "account"
+  ]
+}

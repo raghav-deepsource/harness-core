@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.DELEGATE;
 
@@ -19,7 +20,9 @@ import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.expression.RegexFunctor;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.ExceptionLogger;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -27,6 +30,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
+import software.wings.delegatetasks.buildsource.BuildCollectParameters;
 import software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse;
 import software.wings.delegatetasks.buildsource.BuildSourceParameters;
 import software.wings.delegatetasks.buildsource.BuildSourceParameters.BuildSourceRequestType;
@@ -43,6 +47,7 @@ import com.google.inject.Key;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
@@ -94,22 +99,36 @@ public class BuildSourceTask extends AbstractDelegateRunnableTask {
         }
       }
 
-      if (buildSourceRequestType == BuildSourceRequestType.GET_BUILDS) {
-        if (ArtifactStreamType.CUSTOM.name().equals(artifactStreamType)) {
-          buildDetails = service.getBuilds(artifactStreamAttributes);
-        } else {
-          boolean enforceLimitOnResults =
-              limit != -1 && ARTIFACTORY.name().equals(artifactStreamType); // TODO: supported for Artifactory only
-          buildDetails = enforceLimitOnResults
-              ? service.getBuilds(appId, artifactStreamAttributes, settingValue, encryptedDataDetails, limit)
-              : service.getBuilds(appId, artifactStreamAttributes, settingValue, encryptedDataDetails);
-        }
-      } else {
-        BuildDetails lastSuccessfulBuild =
-            service.getLastSuccessfulBuild(appId, artifactStreamAttributes, settingValue, encryptedDataDetails);
-        if (lastSuccessfulBuild != null) {
-          buildDetails.add(lastSuccessfulBuild);
-        }
+      switch (buildSourceRequestType) {
+        case GET_BUILDS:
+          buildDetails = getBuilds(
+              limit, artifactStreamType, settingValue, service, artifactStreamAttributes, appId, encryptedDataDetails);
+          break;
+        case GET_LAST_SUCCESSFUL_BUILD:
+          BuildDetails lastSuccessfulBuild =
+              service.getLastSuccessfulBuild(appId, artifactStreamAttributes, settingValue, encryptedDataDetails);
+          if (lastSuccessfulBuild != null) {
+            buildDetails.add(lastSuccessfulBuild);
+          }
+          break;
+        case GET_BUILD:
+          BuildCollectParameters buildCollectParameters = buildSourceRequest.getBuildCollectParameters();
+          if (buildCollectParameters == null) {
+            throw new InvalidRequestException("Build collection parameters not set correctly");
+          }
+          BuildDetails buildDetail = getBuild(buildCollectParameters, limit, artifactStreamType, settingValue, service,
+              artifactStreamAttributes, appId, encryptedDataDetails);
+          if (buildDetail != null) {
+            buildDetails.add(buildDetail);
+          } else {
+            throw new InvalidRequestException(
+                String.format("Could not find requested build number %s for artifact stream type %s",
+                    buildCollectParameters.getBuildNo(), artifactStreamType));
+          }
+          break;
+        default:
+          throw new InvalidRequestException(
+              String.format("Unsupported build source request type: %s", buildSourceRequestType));
       }
 
       // NOTE: Here BuildSourceExecutionResponse::buildSourceResponse::stable is marked always true. When artifact
@@ -131,6 +150,60 @@ public class BuildSourceTask extends AbstractDelegateRunnableTask {
           .errorMessage(ExceptionUtils.getMessage(ex))
           .build();
     }
+  }
+
+  private BuildDetails getBuild(BuildCollectParameters buildCollectParameters, int limit, String artifactStreamType,
+      SettingValue settingValue, BuildService service, ArtifactStreamAttributes artifactStreamAttributes, String appId,
+      List<EncryptedDataDetail> encryptedDataDetails) {
+    BuildDetails buildDetail = null;
+    boolean isRegex = buildCollectParameters.isRegex();
+    String buildNo = buildCollectParameters.getBuildNo();
+    if (isEmpty(buildNo)) {
+      List<BuildDetails> allBuilds = getBuilds(
+          limit, artifactStreamType, settingValue, service, artifactStreamAttributes, appId, encryptedDataDetails);
+      if (isNotEmpty(allBuilds) && allBuilds.size() > 0) {
+        buildDetail = allBuilds.get(allBuilds.size() - 1);
+      }
+    } else {
+      try {
+        buildDetail = service.getBuild(appId, artifactStreamAttributes, settingValue, encryptedDataDetails,
+            buildCollectParameters.getBuildNo(), buildCollectParameters.isRegex());
+      } catch (UnsupportedOperationException e) {
+        log.warn("getBuild not implemented for {}. Getting all builds instead.", artifactStreamType);
+        List<BuildDetails> allBuilds = getBuilds(
+            limit, artifactStreamType, settingValue, service, artifactStreamAttributes, appId, encryptedDataDetails);
+        if (isNotEmpty(allBuilds)) {
+          Optional<BuildDetails> build = allBuilds.stream()
+                                             .filter(b -> {
+                                               if (isRegex) {
+                                                 return new RegexFunctor().match(buildNo, b.getNumber());
+                                               }
+                                               return buildNo.equals(b.getNumber());
+                                             })
+                                             .findFirst();
+          if (build.isPresent()) {
+            buildDetail = build.get();
+          }
+        }
+      }
+    }
+    return buildDetail;
+  }
+
+  private List<BuildDetails> getBuilds(int limit, String artifactStreamType, SettingValue settingValue,
+      BuildService service, ArtifactStreamAttributes artifactStreamAttributes, String appId,
+      List<EncryptedDataDetail> encryptedDataDetails) {
+    List<BuildDetails> buildDetails;
+    if (ArtifactStreamType.CUSTOM.name().equals(artifactStreamType)) {
+      buildDetails = service.getBuilds(artifactStreamAttributes);
+    } else {
+      boolean enforceLimitOnResults =
+          limit != -1 && ARTIFACTORY.name().equals(artifactStreamType); // TODO: supported for Artifactory only
+      buildDetails = enforceLimitOnResults
+          ? service.getBuilds(appId, artifactStreamAttributes, settingValue, encryptedDataDetails, limit)
+          : service.getBuilds(appId, artifactStreamAttributes, settingValue, encryptedDataDetails);
+    }
+    return buildDetails;
   }
 
   private BuildService getBuildService(String artifactStreamType) {

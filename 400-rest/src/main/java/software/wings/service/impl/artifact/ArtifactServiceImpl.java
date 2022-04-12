@@ -388,6 +388,18 @@ public class ArtifactServiceImpl implements ArtifactService {
   }
 
   @Override
+  public void updateMetadataAndRevision(
+      String artifactId, String accountId, Map<String, String> newMetadata, String revision) {
+    Query<Artifact> query = wingsPersistence.createQuery(Artifact.class)
+                                .filter(ID_KEY, artifactId)
+                                .filter(ArtifactKeys.accountId, accountId);
+    UpdateOperations<Artifact> ops = wingsPersistence.createUpdateOperations(Artifact.class);
+    ops.set(ArtifactKeys.metadata, newMetadata);
+    ops.set(ArtifactKeys.revision, revision);
+    wingsPersistence.update(query, ops);
+  }
+
+  @Override
   public void updateStatus(String artifactId, String accountId, Status status) {
     Query<Artifact> query = wingsPersistence.createQuery(Artifact.class)
                                 .filter(ID_KEY, artifactId)
@@ -933,6 +945,15 @@ public class ArtifactServiceImpl implements ArtifactService {
         .filter(ArtifactKeys.uuid, artifactId)
         .get()
         .getArtifactFiles();
+  }
+
+  @Override
+  public List<Artifact> listArtifactsByArtifactStreamId(String appId, String artifactStreamId) {
+    return wingsPersistence.createQuery(Artifact.class)
+        .filter(ArtifactKeys.appId, appId)
+        .filter(ArtifactKeys.artifactStreamId, artifactStreamId)
+        .order(Sort.descending(CREATED_AT_KEY))
+        .asList();
   }
 
   public static boolean metadataOnlyBehindFlag(

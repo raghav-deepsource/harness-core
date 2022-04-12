@@ -71,7 +71,7 @@ spec:
         resources:
           limits:
             cpu: "1"
-            memory: "8Gi"
+            memory: "${delegateRam}Gi"
         readinessProbe:
           exec:
             command:

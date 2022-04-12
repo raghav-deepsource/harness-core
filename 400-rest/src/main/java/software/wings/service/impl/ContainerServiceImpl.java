@@ -52,7 +52,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.hazelcast.util.Preconditions;
+import com.hazelcast.internal.util.Preconditions;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.kubernetes.client.openapi.models.V1Pod;
 import java.util.ArrayList;

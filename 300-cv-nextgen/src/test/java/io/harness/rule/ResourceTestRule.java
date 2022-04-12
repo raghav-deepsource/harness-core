@@ -7,6 +7,7 @@
 
 package io.harness.rule;
 
+import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.cvng.exception.BadRequestExceptionMapper;
 import io.harness.cvng.exception.ConstraintViolationExceptionMapper;
 import io.harness.cvng.exception.GenericExceptionMapper;
@@ -172,6 +173,7 @@ public class ResourceTestRule implements TestRule {
       register(BadRequestExceptionMapper.class);
       register(NotFoundExceptionMapper.class);
       register(GenericExceptionMapper.class);
+      register(NGAccessDeniedExceptionMapper.class);
       for (Class<?> provider : resourceTestRule.providers) {
         register(provider);
       }

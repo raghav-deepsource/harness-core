@@ -39,17 +39,18 @@ public final class SideKick implements UuidAware, CreatedAtAware, UpdatedAtAware
   @FdIndex private long createdAt;
   private long lastUpdatedAt;
   @FdTtlIndex @Builder.Default private Date validUntil = Date.from(OffsetDateTime.now().plusMonths(1).toInstant());
-  ;
+
   SideKickData sideKickData;
   Instant runAfter;
   Status status;
   String exception;
   String stacktrace;
+  int retryCount;
 
   public interface SideKickData {
     Type getType();
   }
-  public enum Type { DEMO_DATA_ACTIVITY_CREATOR; }
+  public enum Type { DEMO_DATA_ACTIVITY_CREATOR, RETRY_CHANGE_SOURCE_HANDLE_DELETE }
 
   public enum Status { QUEUED, RUNNING, SUCCESS, FAILED }
 }

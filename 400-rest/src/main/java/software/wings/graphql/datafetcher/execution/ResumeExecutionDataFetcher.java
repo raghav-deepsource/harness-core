@@ -47,6 +47,7 @@ public class ResumeExecutionDataFetcher
   @Inject WorkflowExecutionService workflowExecutionService;
   @Inject PipelineExecutionController pipelineExecutionController;
   @Inject DeploymentAuthHandler deploymentAuthHandler;
+  @Inject ExecutionController executionController;
 
   @Inject
   public ResumeExecutionDataFetcher() {
@@ -56,10 +57,11 @@ public class ResumeExecutionDataFetcher
   @Override
   @AuthRule(permissionType = PermissionAttribute.PermissionType.LOGGED_IN)
   protected QLResumeExecutionPayload mutateAndFetch(QLResumeExecutionInput parameter, MutationContext mutationContext) {
-    return resumePipelineExecution(parameter);
+    return resumePipelineExecution(parameter, mutationContext);
   }
 
-  public QLResumeExecutionPayload resumePipelineExecution(QLResumeExecutionInput parameter) {
+  public QLResumeExecutionPayload resumePipelineExecution(
+      QLResumeExecutionInput parameter, MutationContext mutationContext) {
     final String workflowExecutionId = parameter.getPipelineExecutionId();
     final String appId = parameter.getApplicationId();
     final String pipelineStageName = parameter.getPipelineStageName();
@@ -71,6 +73,8 @@ public class ResumeExecutionDataFetcher
 
     final WorkflowExecution previousWorkflowExecution = validateAndGetWorkflowExecution(appId, workflowExecutionId);
     deploymentAuthHandler.authorize(appId, previousWorkflowExecution);
+
+    executionController.setCreatedByTypeInExecutionArgs(mutationContext, previousWorkflowExecution.getExecutionArgs());
 
     final WorkflowExecution resumedExecution =
         workflowExecutionService.triggerPipelineResumeExecution(appId, pipelineStageName, previousWorkflowExecution);

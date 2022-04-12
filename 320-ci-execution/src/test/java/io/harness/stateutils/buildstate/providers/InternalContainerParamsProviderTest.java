@@ -53,8 +53,8 @@ public class InternalContainerParamsProviderTest extends CIExecutionTestBase {
   public void getSetupAddonContainerParams() {
     ConnectorDetails connectorDetails = ConnectorDetails.builder().build();
 
-    CIK8ContainerParams containerParams =
-        internalContainerParamsProvider.getSetupAddonContainerParams(connectorDetails, null, "workspace", "account");
+    CIK8ContainerParams containerParams = internalContainerParamsProvider.getSetupAddonContainerParams(
+        connectorDetails, null, "workspace", null, "account");
 
     assertThat(containerParams.getName()).isEqualTo(SETUP_ADDON_CONTAINER_NAME);
     assertThat(containerParams.getContainerType()).isEqualTo(CIContainerType.ADD_ON);
@@ -104,7 +104,7 @@ public class InternalContainerParamsProviderTest extends CIExecutionTestBase {
 
     CIK8ContainerParams containerParams = internalContainerParamsProvider.getLiteEngineContainerParams(connectorDetails,
         publishArtifactConnectorDetailsMap, k8PodDetails, stageCpuRequest, stageMemoryRequest, logEnvVars, tiEnvVars,
-        volumeToMountPath, "/step-exec/workspace", "test", ambiance);
+        volumeToMountPath, "/step-exec/workspace", null, "test", ambiance);
 
     assertThat(containerParams.getName()).isEqualTo(LITE_ENGINE_CONTAINER_NAME);
     assertThat(containerParams.getContainerType()).isEqualTo(CIContainerType.LITE_ENGINE);

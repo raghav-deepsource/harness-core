@@ -7,12 +7,8 @@
 
 package io.harness.cvng.core.services.impl;
 
-import static io.harness.cvng.CVConstants.DEPLOYMENT;
-import static io.harness.cvng.CVConstants.TAG_DATA_SOURCE;
-import static io.harness.cvng.CVConstants.TAG_VERIFICATION_TYPE;
 import static io.harness.cvng.beans.DataSourceType.APP_DYNAMICS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,9 +17,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
-import io.harness.cvng.CVConstants;
 import io.harness.cvng.VerificationApplication;
-import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.entities.VerificationTask.VerificationTaskKeys;
 import io.harness.cvng.core.services.api.VerificationTaskService;
@@ -44,7 +38,6 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.lang3.reflect.FieldUtils;
-import org.apache.groovy.util.Maps;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -129,42 +122,12 @@ public class VerificationTaskServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
-  @Owner(developers = ABHIJITH)
-  @Category(UnitTests.class)
-  public void testGetVerificationTaskIds_backwardCompatibilityBeforeMigration() {
-    String verificationJobInstanceId = generateUuid();
-
-    Set<String> cvConfigIds = new HashSet<>();
-    Set<String> verificationTaskIds = new HashSet<>();
-    for (int i = 0; i < 10; i++) {
-      String cvConfigId = generateUuid();
-      String verificationTaskId = createOldVerificationTaskForBackwardCompatibilityTest(
-          accountId, cvConfigId, verificationJobInstanceId, APP_DYNAMICS);
-      cvConfigIds.add(cvConfigId);
-      verificationTaskIds.add(verificationTaskId);
-    }
-    assertThat(verificationTaskService.getVerificationTaskIds(accountId, verificationJobInstanceId))
-        .isEqualTo(verificationTaskIds);
-  }
-
-  @Test
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
   public void testGetServiceGuardVerificationTaskId_ifExist() {
     String cvConfigId = generateUuid();
     String verificationTaskId =
         verificationTaskService.createLiveMonitoringVerificationTask(accountId, cvConfigId, APP_DYNAMICS);
-    assertThat(verificationTaskService.getServiceGuardVerificationTaskId(accountId, cvConfigId))
-        .isEqualTo(verificationTaskId);
-  }
-
-  @Test
-  @Owner(developers = ABHIJITH)
-  @Category(UnitTests.class)
-  public void testGetServiceGuardVerificationTaskId_ifExist_backwardCompatibilityBeforeMigration() {
-    String cvConfigId = generateUuid();
-    String verificationTaskId =
-        createOldVerificationTaskForBackwardCompatibilityTest(accountId, cvConfigId, null, APP_DYNAMICS);
     assertThat(verificationTaskService.getServiceGuardVerificationTaskId(accountId, cvConfigId))
         .isEqualTo(verificationTaskId);
   }
@@ -193,32 +156,11 @@ public class VerificationTaskServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
-  public void testIsServiceGuardId_ifExist_backwardCompatibilityBeforeMigration() {
-    String cvConfigId = generateUuid();
-    String verificationTaskId =
-        createOldVerificationTaskForBackwardCompatibilityTest(accountId, cvConfigId, null, APP_DYNAMICS);
-    assertThat(verificationTaskService.isServiceGuardId(verificationTaskId)).isTrue();
-  }
-
-  @Test
-  @Owner(developers = KAMAL)
-  @Category(UnitTests.class)
   public void testIsServiceGuardId_ifDoesNotExist() {
     String verificationTaskId = generateUuid();
     assertThatThrownBy(() -> verificationTaskService.isServiceGuardId(verificationTaskId))
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("Invalid verificationTaskId. Verification mapping does not exist.");
-  }
-
-  @Test
-  @Owner(developers = KAMAL)
-  @Category(UnitTests.class)
-  public void testIsServiceGuardId_ifExistDeployment_backwardCompatibilityBeforeMigration() {
-    String cvConfigId = generateUuid();
-    String verificationJobInstanceId = generateUuid();
-    String verificationTaskId = createOldVerificationTaskForBackwardCompatibilityTest(
-        accountId, cvConfigId, verificationJobInstanceId, APP_DYNAMICS);
-    assertThat(verificationTaskService.isServiceGuardId(verificationTaskId)).isFalse();
   }
 
   @Test
@@ -230,29 +172,6 @@ public class VerificationTaskServiceImplTest extends CvNextGenTestBase {
     String verificationTaskId = verificationTaskService.createDeploymentVerificationTask(
         accountId, cvConfigId, verificationJobInstanceId, APP_DYNAMICS);
     assertThat(verificationTaskService.isServiceGuardId(verificationTaskId)).isFalse();
-  }
-
-  @Test
-  @Owner(developers = KAMAL)
-  @Category(UnitTests.class)
-  public void
-  testRemoveCVConfigMapping_multipleServiceGuardAndDeploymentMappings_backwardCompatibilityBeforeMigration() {
-    String cvConfigId = generateUuid();
-    String verificationJobInstanceId = generateUuid();
-    String verificationTaskId1 = createOldVerificationTaskForBackwardCompatibilityTest(
-        accountId, cvConfigId, verificationJobInstanceId, APP_DYNAMICS);
-    String verificationTaskId2 =
-        createOldVerificationTaskForBackwardCompatibilityTest(accountId, cvConfigId, null, APP_DYNAMICS);
-    assertThat(verificationTaskService.getServiceGuardVerificationTaskId(accountId, cvConfigId))
-        .isEqualTo(verificationTaskId2);
-    assertThat(verificationTaskService.getVerificationTaskIds(accountId, verificationJobInstanceId))
-        .isEqualTo(Sets.newHashSet(verificationTaskId1));
-    verificationTaskService.removeLiveMonitoringMappings(accountId, cvConfigId);
-    assertThatThrownBy(() -> verificationTaskService.getServiceGuardVerificationTaskId(accountId, cvConfigId))
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage(
-            "VerificationTask mapping does not exist for cvConfigId " + cvConfigId + ". Please check cvConfigId");
-    assertThat(verificationTaskService.getVerificationTaskIds(accountId, verificationJobInstanceId)).hasSize(1);
   }
 
   @Test
@@ -278,22 +197,6 @@ public class VerificationTaskServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
-  @Owner(developers = ABHIJITH)
-  @Category(UnitTests.class)
-  public void testGetAllVerificationJobInstanceIdsForCVConfig_backwardCompatibilityBeforeMigration() {
-    String cvConfigId = generateUuid();
-    String verificationJobInstanceId1 = generateUuid();
-    createOldVerificationTaskForBackwardCompatibilityTest(
-        accountId, cvConfigId, verificationJobInstanceId1, APP_DYNAMICS);
-    createOldVerificationTaskForBackwardCompatibilityTest(accountId, cvConfigId, null, APP_DYNAMICS);
-    String verificationJobInstanceId2 = generateUuid();
-    createOldVerificationTaskForBackwardCompatibilityTest(
-        accountId, cvConfigId, verificationJobInstanceId2, APP_DYNAMICS);
-    assertThat(new HashSet<>(verificationTaskService.getAllVerificationJobInstanceIdsForCVConfig(cvConfigId)))
-        .isEqualTo(Sets.newHashSet(verificationJobInstanceId1, verificationJobInstanceId2));
-  }
-
-  @Test
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
   public void testGetAllVerificationJobInstanceIdsForCVConfig() {
@@ -307,32 +210,6 @@ public class VerificationTaskServiceImplTest extends CvNextGenTestBase {
         accountId, cvConfigId, verificationJobInstanceId2, APP_DYNAMICS);
     assertThat(new HashSet<>(verificationTaskService.getAllVerificationJobInstanceIdsForCVConfig(cvConfigId)))
         .isEqualTo(Sets.newHashSet(verificationJobInstanceId1, verificationJobInstanceId2));
-  }
-
-  @Test
-  @Owner(developers = ABHIJITH)
-  @Category(UnitTests.class)
-  public void
-  testFindBaselineVerificationTaskId_baselineVerificationTaskIdExists_backwardCompatibilityBeforeMigration() {
-    String cvConfigId = generateUuid();
-    String verificationJobInstanceId = generateUuid();
-    String currentVerificationTaskId = createOldVerificationTaskForBackwardCompatibilityTest(
-        accountId, cvConfigId, verificationJobInstanceId, APP_DYNAMICS);
-    String baselineVerificationJobInstanceId = generateUuid();
-    String baselineVerificationTaskId = createOldVerificationTaskForBackwardCompatibilityTest(
-        accountId, cvConfigId, baselineVerificationJobInstanceId, APP_DYNAMICS);
-
-    Optional<String> result = verificationTaskService.findBaselineVerificationTaskId(currentVerificationTaskId,
-        VerificationJobInstance.builder()
-            .accountId(accountId)
-            .startTime(Instant.now())
-            .deploymentStartTime(Instant.now())
-            .resolvedJob(TestVerificationJob.builder()
-                             .accountId(accountId)
-                             .baselineVerificationJobInstanceId(baselineVerificationJobInstanceId)
-                             .build())
-            .build());
-    assertThat(result.get()).isEqualTo(baselineVerificationTaskId);
   }
 
   @Test
@@ -420,18 +297,5 @@ public class VerificationTaskServiceImplTest extends CvNextGenTestBase {
 
   private boolean doesClassContainField(Class<?> clazz, String fieldName) {
     return Arrays.stream(clazz.getDeclaredFields()).anyMatch(f -> f.getName().equals(fieldName));
-  }
-  private String createOldVerificationTaskForBackwardCompatibilityTest(
-      String accountId, String cvConfigId, String verificationJobInstanceId, DataSourceType dataSourceType) {
-    VerificationTask verificationTask =
-        VerificationTask.builder()
-            .accountId(accountId)
-            .validUntil(Date.from(builderFactory.getClock().instant().plus(CVConstants.MAX_DATA_RETENTION_DURATION)))
-            .tags(Maps.of(TAG_DATA_SOURCE, dataSourceType.name(), TAG_VERIFICATION_TYPE, DEPLOYMENT))
-            .build();
-    verificationTask.setVerificationJobInstanceId(verificationJobInstanceId);
-    verificationTask.setCvConfigId(cvConfigId);
-    hPersistence.save(verificationTask);
-    return verificationTask.getUuid();
   }
 }

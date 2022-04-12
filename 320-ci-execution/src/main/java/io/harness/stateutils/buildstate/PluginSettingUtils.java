@@ -67,6 +67,7 @@ public class PluginSettingUtils {
   public static final String PLUGIN_DOCKERFILE = "PLUGIN_DOCKERFILE";
   public static final String PLUGIN_CONTEXT = "PLUGIN_CONTEXT";
   public static final String PLUGIN_TARGET = "PLUGIN_TARGET";
+  public static final String PLUGIN_STRIP_PREFIX = "PLUGIN_STRIP_PREFIX";
   public static final String PLUGIN_CACHE_REPO = "PLUGIN_CACHE_REPO";
   public static final String PLUGIN_ENABLE_CACHE = "PLUGIN_ENABLE_CACHE";
   public static final String PLUGIN_BUILD_ARGS = "PLUGIN_BUILD_ARGS";
@@ -545,7 +546,6 @@ public class PluginSettingUtils {
         resolveStringParameter("sourcePath", "S3Upload", identifier, stepInfo.getSourcePath(), true));
 
     String target = resolveStringParameter("target", "S3Upload", identifier, stepInfo.getTarget(), false);
-
     if (target != null && !target.equals(UNRESOLVED_PARAMETER)) {
       setOptionalEnvironmentVariable(map, PLUGIN_TARGET, target);
     }
@@ -559,6 +559,13 @@ public class PluginSettingUtils {
     if (region != null && !region.equals(UNRESOLVED_PARAMETER)) {
       setOptionalEnvironmentVariable(map, PLUGIN_REGION, region);
     }
+
+    String stripPrefix =
+        resolveStringParameter("stripPrefix", "S3Upload", identifier, stepInfo.getStripPrefix(), false);
+    if (stripPrefix != null && !stripPrefix.equals(UNRESOLVED_PARAMETER)) {
+      setOptionalEnvironmentVariable(map, PLUGIN_STRIP_PREFIX, stripPrefix);
+    }
+
     setOptionalEnvironmentVariable(map, PLUGIN_ARTIFACT_FILE, PLUGIN_ARTIFACT_FILE_VALUE);
 
     return map;

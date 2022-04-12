@@ -20,6 +20,7 @@ public enum ExecutionNodeType {
   SERVICE_SPEC("SERVICE_SPEC", YamlTypes.SERVICE_SPEC),
   ARTIFACTS("ARTIFACTS", "artifacts"),
   ARTIFACT("ARTIFACT", "artifact"),
+  ARTIFACT_SYNC("ARTIFACT_SYNC", "artifact"),
   SIDECARS("SIDECARS", "sidecars"),
   MANIFESTS("MANIFESTS", "manifests"),
   MANIFEST_FETCH("MANIFEST_FETCH", YamlTypes.MANIFEST_LIST_CONFIG),

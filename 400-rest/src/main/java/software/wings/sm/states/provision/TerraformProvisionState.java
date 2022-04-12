@@ -334,8 +334,9 @@ public abstract class TerraformProvisionState extends State {
     // We are checking for nulls in tfPlanJson field because it can be null even if feature flag is set to true.
     // Customer sometimes enables that flag because the customer is using multiple terraform versions at the same time,
     // some of which do not support exporting in json format
-    if (featureFlagService.isEnabled(FeatureName.EXPORT_TF_PLAN, context.getAccountId())
-        && executionData.getTfPlanJson() != null) {
+    boolean saveTfPlanSweepingOutput =
+        executionData.getTfPlanJsonFiledId() != null || executionData.getTfPlanJson() != null;
+    if (featureFlagService.isEnabled(FeatureName.EXPORT_TF_PLAN, context.getAccountId()) && saveTfPlanSweepingOutput) {
       String variableName = terraformCommand == TerraformCommand.APPLY ? TF_APPLY_VAR_NAME : TF_DESTROY_VAR_NAME;
       // if the plan variable exists overwrite it
       SweepingOutputInstance sweepingOutputInstance =
@@ -484,14 +485,17 @@ public abstract class TerraformProvisionState extends State {
 
     if (phaseElement != null && isNotEmpty(phaseElement.getInfraDefinitionId())
         && phaseElement.getServiceElement() != null && isNotEmpty(phaseElement.getServiceElement().getUuid())) {
-      sweepingOutputService.save(
-          context.prepareSweepingOutputBuilder(SweepingOutputInstance.Scope.PIPELINE)
-              .name(String
-                        .format("%s_%s_%s", TerraformOutputVariables.SWEEPING_OUTPUT_NAME,
-                            phaseElement.getInfraDefinitionId(), phaseElement.getServiceElement().getUuid())
-                        .replaceAll("-", "_"))
-              .value(terraformOutputVariables)
-              .build());
+      String name = format("%s_%s_%s", TerraformOutputVariables.SWEEPING_OUTPUT_NAME,
+          phaseElement.getInfraDefinitionId(), phaseElement.getServiceElement().getUuid())
+                        .replaceAll("-", "_");
+      try {
+        sweepingOutputService.save(context.prepareSweepingOutputBuilder(SweepingOutputInstance.Scope.PIPELINE)
+                                       .name(name)
+                                       .value(terraformOutputVariables)
+                                       .build());
+      } catch (Exception ex) {
+        log.error("Failed to save sweeping output against name {}", name);
+      }
     }
   }
 

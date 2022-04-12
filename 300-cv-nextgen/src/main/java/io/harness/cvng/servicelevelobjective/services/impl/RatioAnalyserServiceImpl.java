@@ -22,7 +22,8 @@ public class RatioAnalyserServiceImpl implements SLIAnalyserService<RatioSLIMetr
     if (Objects.isNull(metricValue1) || Objects.isNull(metricValue2) || metricValue2 == 0) {
       return SLIState.NO_DATA;
     }
-    double metricValue = (metricValue1 / metricValue2) * 100;
+    double metricValue = sliSpec.getEventType().computeSLIMetricValue(metricValue1, metricValue2);
+
     if (sliSpec.getThresholdType().compute(metricValue, sliSpec.getThresholdValue())) {
       return SLIState.GOOD;
     } else {

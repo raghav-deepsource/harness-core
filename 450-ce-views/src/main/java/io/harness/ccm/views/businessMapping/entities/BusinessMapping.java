@@ -47,6 +47,7 @@ public final class BusinessMapping implements PersistentEntity, UuidAware, Creat
 
   List<CostTarget> costTargets;
   List<SharedCost> sharedCosts;
+  UnallocatedCost unallocatedCost;
 
   long createdAt;
   long lastUpdatedAt;

@@ -42,7 +42,7 @@ public class YamlMapGenerator {
    * For example, the fqnMap can be corresponding to an input set. In this case, the originalYaml
    * refers to the pipeline of this input set
    */
-  public JsonNode generateYamlMap(Map<FQN, Object> fqnMap, JsonNode originalYaml) {
+  public JsonNode generateYamlMap(Map<FQN, Object> fqnMap, JsonNode originalYaml, boolean isSanitiseFlow) {
     Set<String> fieldNames = new LinkedHashSet<>();
     originalYaml.fieldNames().forEachRemaining(fieldNames::add);
     String topKey = fieldNames.iterator().next();
@@ -52,7 +52,7 @@ public class YamlMapGenerator {
 
     Map<String, Object> tempMap = new LinkedHashMap<>();
     generateYamlMap(YamlSubMapExtractor.getFQNToObjectSubMap(fqnMap, currentFQN), currentFQN, originalYaml.get(topKey),
-        tempMap, topKey);
+        tempMap, topKey, isSanitiseFlow);
     try {
       return YamlUtils.readTree(YamlUtils.write(tempMap).replace("---\n", "")).getNode().getCurrJsonNode();
     } catch (IOException e) {
@@ -61,8 +61,8 @@ public class YamlMapGenerator {
     }
   }
 
-  private void generateYamlMap(
-      Map<FQN, Object> fqnMap, FQN baseFQN, JsonNode originalYaml, Map<String, Object> res, String topKey) {
+  private void generateYamlMap(Map<FQN, Object> fqnMap, FQN baseFQN, JsonNode originalYaml, Map<String, Object> res,
+      String topKey, boolean isSanitiseFlow) {
     Set<String> fieldNames = new LinkedHashSet<>();
     originalYaml.fieldNames().forEachRemaining(fieldNames::add);
     Map<String, Object> tempMap = new LinkedHashMap<>();
@@ -73,12 +73,24 @@ public class YamlMapGenerator {
         tempMap.put(key, fqnMap.get(currFQN));
       } else if (value.getNodeType() == JsonNodeType.ARRAY) {
         ArrayNode arrayNode = (ArrayNode) value;
-        generateYamlMapFromList(arrayNode, currFQN, fqnMap, tempMap, key);
+        generateYamlMapFromList(arrayNode, currFQN, fqnMap, tempMap, key, isSanitiseFlow);
       } else if (value.getNodeType() == JsonNodeType.OBJECT) {
-        generateYamlMap(YamlSubMapExtractor.getFQNToObjectSubMap(fqnMap, currFQN), currFQN, value, tempMap, key);
+        generateYamlMap(
+            YamlSubMapExtractor.getFQNToObjectSubMap(fqnMap, currFQN), currFQN, value, tempMap, key, isSanitiseFlow);
       }
     }
     if (!tempMap.isEmpty()) {
+      if (isSanitiseFlow) {
+        if (tempMap.size() == 2 && tempMap.containsKey(YAMLFieldNameConstants.IDENTIFIER)
+            && tempMap.containsKey(YAMLFieldNameConstants.TYPE)) {
+          return;
+        }
+        if (tempMap.size() == 1
+            && (tempMap.containsKey(YAMLFieldNameConstants.IDENTIFIER)
+                || tempMap.containsKey(YAMLFieldNameConstants.NAME))) {
+          return;
+        }
+      }
       Map<String, Object> newTempMap = new LinkedHashMap<>();
       if (fieldNames.contains(YAMLFieldNameConstants.IDENTIFIER)) {
         newTempMap.put(YAMLFieldNameConstants.IDENTIFIER, originalYaml.get(YAMLFieldNameConstants.IDENTIFIER));
@@ -91,8 +103,8 @@ public class YamlMapGenerator {
     }
   }
 
-  private void generateYamlMapFromList(
-      ArrayNode list, FQN baseFQN, Map<FQN, Object> fqnMap, Map<String, Object> res, String topKey) {
+  private void generateYamlMapFromList(ArrayNode list, FQN baseFQN, Map<FQN, Object> fqnMap, Map<String, Object> res,
+      String topKey, boolean isSanitiseFlow) {
     if (list == null || list.get(0) == null) {
       return;
     }
@@ -105,14 +117,14 @@ public class YamlMapGenerator {
     }
     int noOfKeys = firstNode.size();
     if (noOfKeys == 1) {
-      generateYamlMapFromListOfSingleKeyMaps(list, baseFQN, fqnMap, res, topKey);
+      generateYamlMapFromListOfSingleKeyMaps(list, baseFQN, fqnMap, res, topKey, isSanitiseFlow);
     } else {
-      generateYamlMapFromListOfMultipleKeyMaps(list, baseFQN, fqnMap, res, topKey);
+      generateYamlMapFromListOfMultipleKeyMaps(list, baseFQN, fqnMap, res, topKey, isSanitiseFlow);
     }
   }
 
-  private void generateYamlMapFromListOfSingleKeyMaps(
-      ArrayNode list, FQN baseFQN, Map<FQN, Object> fqnMap, Map<String, Object> res, String topKey) {
+  private void generateYamlMapFromListOfSingleKeyMaps(ArrayNode list, FQN baseFQN, Map<FQN, Object> fqnMap,
+      Map<String, Object> res, String topKey, boolean isSanitiseFlow) {
     List<Object> topKeyList = new ArrayList<>();
     if (FQNHelper.checkIfListHasNoIdentifier(list)) {
       if (fqnMap.containsKey(baseFQN)) {
@@ -127,7 +139,7 @@ public class YamlMapGenerator {
         ArrayNode listOfMaps = (ArrayNode) element.get(YAMLFieldNameConstants.PARALLEL);
         Map<String, Object> tempMap = new LinkedHashMap<>();
         generateYamlMapFromList(listOfMaps, currFQN, YamlSubMapExtractor.getFQNToObjectSubMap(fqnMap, currFQN), tempMap,
-            YAMLFieldNameConstants.PARALLEL);
+            YAMLFieldNameConstants.PARALLEL, isSanitiseFlow);
         if (!tempMap.isEmpty()) {
           topKeyList.add(tempMap);
         }
@@ -145,8 +157,8 @@ public class YamlMapGenerator {
                 .uuidValue(identifier)
                 .build());
         Map<String, Object> tempMap = new LinkedHashMap<>();
-        generateYamlMap(
-            YamlSubMapExtractor.getFQNToObjectSubMap(fqnMap, currFQN), currFQN, innerMap, tempMap, topKeyOfInnerMap);
+        generateYamlMap(YamlSubMapExtractor.getFQNToObjectSubMap(fqnMap, currFQN), currFQN, innerMap, tempMap,
+            topKeyOfInnerMap, isSanitiseFlow);
         if (!tempMap.isEmpty()) {
           topKeyList.add(tempMap);
         }
@@ -157,8 +169,8 @@ public class YamlMapGenerator {
     }
   }
 
-  private void generateYamlMapFromListOfMultipleKeyMaps(
-      ArrayNode list, FQN baseFQN, Map<FQN, Object> fqnMap, Map<String, Object> res, String topKey) {
+  private void generateYamlMapFromListOfMultipleKeyMaps(ArrayNode list, FQN baseFQN, Map<FQN, Object> fqnMap,
+      Map<String, Object> res, String topKey, boolean isSanitiseFlow) {
     List<Object> topKeyList = new ArrayList<>();
     String uuidKey = FQNHelper.getUuidKey(list);
     if (EmptyPredicate.isEmpty(uuidKey)) {
@@ -177,7 +189,7 @@ public class YamlMapGenerator {
               .build());
       Map<String, Object> tempRes = new LinkedHashMap<>();
       if (uuidKey.equals(YAMLFieldNameConstants.IDENTIFIER)) {
-        generateYamlMap(fqnMap, currFQN, element, tempRes, topKey);
+        generateYamlMap(fqnMap, currFQN, element, tempRes, topKey, isSanitiseFlow);
         if (tempRes.containsKey(topKey)) {
           topKeyList.add(tempRes.get(topKey));
         }

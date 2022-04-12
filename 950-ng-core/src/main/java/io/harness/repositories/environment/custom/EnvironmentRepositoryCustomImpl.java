@@ -8,12 +8,14 @@
 package io.harness.repositories.environment.custom;
 
 import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
 import io.harness.ng.core.environment.mappers.EnvironmentFilterHelper;
 
 import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
 import java.time.Duration;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -80,6 +82,22 @@ public class EnvironmentRepositoryCustomImpl implements EnvironmentRepositoryCus
 
   @Override
   public List<Environment> findAllRunTimeAccess(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.find(query, Environment.class);
+  }
+
+  @Override
+  public List<String> fetchesNonDeletedEnvIdentifiersFromList(Criteria criteria) {
+    Query query = new Query(criteria);
+    query.fields().include(EnvironmentKeys.identifier);
+    return mongoTemplate.find(query, Environment.class)
+        .stream()
+        .map(entity -> entity.getIdentifier())
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<Environment> fetchesNonDeletedEnvironmentFromListOfIdentifiers(Criteria criteria) {
     Query query = new Query(criteria);
     return mongoTemplate.find(query, Environment.class);
   }

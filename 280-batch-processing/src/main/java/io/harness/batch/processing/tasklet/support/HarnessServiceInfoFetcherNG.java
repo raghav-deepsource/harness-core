@@ -52,7 +52,8 @@ public class HarnessServiceInfoFetcherNG extends CacheUtils {
       String accountId, String namespace, String podName, Map<String, String> labelsMap) {
     try {
       if (labelsMap.containsKey(RELEASE_NAME)) {
-        log.info("Fetching from cache. accountId: {}, podInfo.getPodName(): {}, podInfo.getNamespace(): {}, labels: {}",
+        log.debug(
+            "Fetching from cache. accountId: {}, podInfo.getPodName(): {}, podInfo.getNamespace(): {}, labels: {}",
             accountId, podName, namespace, labelsMap);
         return getHarnessServiceInfoCacheNG.get(new CacheKey(accountId, namespace, podName));
       }

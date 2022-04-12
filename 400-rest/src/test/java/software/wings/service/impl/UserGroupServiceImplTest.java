@@ -21,6 +21,7 @@ import static io.harness.rule.OwnerRule.HANTANG;
 import static io.harness.rule.OwnerRule.KARAN;
 import static io.harness.rule.OwnerRule.MEHUL;
 import static io.harness.rule.OwnerRule.MOHIT;
+import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.NIKOLA;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.REETIKA;
@@ -103,6 +104,7 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.Account;
 import software.wings.beans.Account.Builder;
+import software.wings.beans.EntityType;
 import software.wings.beans.Event.Type;
 import software.wings.beans.LicenseInfo;
 import software.wings.beans.Role;
@@ -1382,7 +1384,7 @@ public class UserGroupServiceImplTest extends WingsBaseTest {
                                               .entityType("PIPELINE")
                                               .build();
 
-    userGroupService.addParentsReference("userGroupId", accountId, "appId3", "pipelineId3");
+    userGroupService.addParentsReference("userGroupId", accountId, "appId3", "pipelineId3", EntityType.PIPELINE.name());
     UserGroup updatedUserGroup = persistence.get(UserGroup.class, "userGroupId");
     assertThat(updatedUserGroup.getParents().size()).isEqualTo(3);
     assertThat(updatedUserGroup.getParents())
@@ -1404,7 +1406,7 @@ public class UserGroupServiceImplTest extends WingsBaseTest {
                                              .entityType("PIPELINE")
                                              .build();
 
-    userGroupService.addParentsReference("userGroupId", accountId, "appId", "pipelineId");
+    userGroupService.addParentsReference("userGroupId", accountId, "appId", "pipelineId", EntityType.PIPELINE.name());
     UserGroup updatedUserGroup = persistence.get(UserGroup.class, "userGroupId");
     assertThat(updatedUserGroup.getParents().size()).isEqualTo(1);
     assertThat(updatedUserGroup.getParents()).isEqualTo(new HashSet<>(Collections.singleton(reference)));
@@ -1430,7 +1432,8 @@ public class UserGroupServiceImplTest extends WingsBaseTest {
 
     persistence.save(userGroup);
 
-    userGroupService.removeParentsReference("userGroupId", accountId, "appId", "pipelineId");
+    userGroupService.removeParentsReference(
+        "userGroupId", accountId, "appId", "pipelineId", EntityType.PIPELINE.name());
     UserGroup updatedUserGroup = persistence.get(UserGroup.class, "userGroupId");
     assertThat(updatedUserGroup.getParents().size()).isEqualTo(0);
   }
@@ -1444,9 +1447,51 @@ public class UserGroupServiceImplTest extends WingsBaseTest {
 
     persistence.save(userGroup);
 
-    userGroupService.removeParentsReference("userGroupId", accountId, "appId", "pipelineId");
+    userGroupService.removeParentsReference(
+        "userGroupId", accountId, "appId", "pipelineId", EntityType.PIPELINE.name());
     UserGroup updatedUserGroup = persistence.get(UserGroup.class, "userGroupId");
     assertThat(updatedUserGroup.getParents().size()).isEqualTo(0);
+  }
+
+  @Test()
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void test_getCountOfUserGroupsWithNullAccountId() {
+    try {
+      userGroupService.getCountOfUserGroups(null);
+      fail("Expected failure as accountID is null");
+    } catch (GeneralException exception) {
+      assertThat(exception.getParams().get("message")).isEqualTo(UserGroupKeys.accountId);
+    }
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void test_getCountOfUserGroupsWithNonNullAccountId() {
+    UserGroup userGroup1 = builder()
+                               .uuid(userGroupId)
+                               .name(userGroupName)
+                               .accountId(accountId)
+                               .description(description)
+                               .memberIds(asList(user1Id))
+                               .members(asList(user))
+                               .build();
+    UserGroup savedUserGroup1 = userGroupService.save(userGroup1);
+
+    UserGroup userGroup2 = builder()
+                               .name(userGroupName2)
+                               .uuid(userGroup2Id)
+                               .accountId(accountId)
+                               .description(description)
+                               .memberIds(asList(user2Id))
+                               .members(asList(user))
+                               .appPermissions(Sets.newHashSet(envPermission))
+                               .build();
+    UserGroup savedUserGroup2 = userGroupService.save(userGroup2);
+
+    long count = userGroupService.getCountOfUserGroups(accountId);
+    assertThat(count).isEqualTo(2);
   }
 
   private Set<String> getAppIds(UserGroup userGroup) {

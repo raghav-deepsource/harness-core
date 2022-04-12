@@ -26,7 +26,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.govern.Switch;
-import io.harness.plancreator.PipelineServiceUtilPlanCreationConstants;
+import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -387,8 +387,8 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
   protected Map<RollbackStrategy, String> getRollbackStrategyMap(YamlField currentField) {
     String stageNodeId = getStageNodeId(currentField);
     Map<RollbackStrategy, String> rollbackStrategyStringMap = new HashMap<>();
-    rollbackStrategyStringMap.put(RollbackStrategy.STAGE_ROLLBACK,
-        stageNodeId + PipelineServiceUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX);
+    rollbackStrategyStringMap.put(
+        RollbackStrategy.STAGE_ROLLBACK, stageNodeId + NGCommonUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX);
     rollbackStrategyStringMap.put(RollbackStrategy.STEP_GROUP_ROLLBACK, getStepGroupRollbackStepsNodeId(currentField));
     return rollbackStrategyStringMap;
   }

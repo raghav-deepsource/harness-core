@@ -14,23 +14,21 @@ import static io.harness.cvng.CVConstants.TAG_UNRECORDED;
 import static io.harness.cvng.CVConstants.TAG_VERIFICATION_TYPE;
 import static io.harness.cvng.beans.cvnglog.TraceableType.ONBOARDING;
 import static io.harness.cvng.beans.cvnglog.TraceableType.VERIFICATION_TASK;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cvng.beans.CVMonitoringCategory;
-import io.harness.cvng.beans.cvnglog.ApiCallLogDTO;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.beans.cvnglog.CVNGLogType;
 import io.harness.cvng.beans.cvnglog.TraceableType;
 import io.harness.cvng.core.beans.params.PageParams;
+import io.harness.cvng.core.beans.params.logsFilterParams.DeploymentLogsFilter;
+import io.harness.cvng.core.beans.params.logsFilterParams.TimeRangeLogsFilter;
 import io.harness.cvng.core.entities.CVNGLog;
 import io.harness.cvng.core.entities.CVNGLog.CVNGLogKeys;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.entities.cvnglogs.CVNGLogRecord;
 import io.harness.cvng.core.entities.cvnglogs.CVNGLogRecord.CVNGLogRecordComparator;
-import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.CVNGLogService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
@@ -39,8 +37,10 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.persistence.HPersistence;
 import io.harness.utils.PageUtils;
 
+import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,12 +58,9 @@ import org.mongodb.morphia.query.Query;
 public class CVNGLogServiceImpl implements CVNGLogService {
   @Inject private HPersistence hPersistence;
   @Inject private Clock clock;
-  @Inject private CVConfigService cvConfigService;
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
   @Inject private MetricService metricService;
-
-  public static final int ERROR_RESPONSE_CODE = 400;
 
   @Override
   public void save(List<CVNGLogDTO> callLogs) {
@@ -119,63 +116,78 @@ public class CVNGLogServiceImpl implements CVNGLogService {
   }
 
   @Override
-  public PageResponse<CVNGLogDTO> getCVNGLogs(String accountId, String orgIdentifier, String projectIdentifier,
-      String serviceIdentifier, String environmentIdentifier, Instant startTime, Instant endTime,
-      CVMonitoringCategory monitoringCategory, CVNGLogType cvngLogType, int offset, int pageSize) {
-    List<CVNGLog> cvngLogs = hPersistence.createQuery(CVNGLog.class)
-                                 .filter(CVNGLogKeys.accountId, accountId)
-                                 .filter(CVNGLogKeys.logType, cvngLogType)
-                                 .filter(CVNGLogKeys.traceableType, VERIFICATION_TASK)
-                                 .field(CVNGLogKeys.traceableId)
-                                 .in(cvConfigIds(accountId, orgIdentifier, projectIdentifier, serviceIdentifier,
-                                     environmentIdentifier, monitoringCategory))
-                                 .field(CVNGLogKeys.endTime)
-                                 .greaterThanOrEq(startTime)
-                                 .field(CVNGLogKeys.startTime)
-                                 .lessThan(endTime)
-                                 .asList();
-    List<CVNGLogDTO> cvngLogDTOs = new ArrayList<>();
-    cvngLogs.forEach(log -> {
-      Collections.sort(log.getLogRecords(), new CVNGLogRecordComparator());
-      cvngLogDTOs.addAll(log.toCVNGLogDTOs());
-    });
-    return PageUtils.offsetAndLimit(cvngLogDTOs, offset, pageSize);
+  public List<CVNGLog> getCompleteCVNGLog(String accountId, String verificationTaskId, CVNGLogType cvngLogType) {
+    return hPersistence.createQuery(CVNGLog.class)
+        .filter(CVNGLogKeys.accountId, accountId)
+        .filter(CVNGLogKeys.traceableType, VERIFICATION_TASK)
+        .filter(CVNGLogKeys.traceableId, verificationTaskId)
+        .filter(CVNGLogKeys.logType, cvngLogType)
+        .asList();
   }
 
   @Override
-  public PageResponse<CVNGLogDTO> getCVNGLogs(String accountId, String verificationJobInstanceId, CVNGLogType logType,
-      List<String> healthSourceIdentifiers, boolean errorLogsOnly, PageParams pageParams) {
-    List<CVNGLog> cvngLogs = getCVNGLogs(accountId, verificationJobInstanceId, logType, healthSourceIdentifiers);
-
+  public PageResponse<CVNGLogDTO> getCVNGLogs(String accountId, String verificationJobInstanceId,
+      DeploymentLogsFilter deploymentLogsFilter, PageParams pageParams) {
+    List<CVNGLog> cvngLogs = getCVNGLogs(accountId, verificationJobInstanceId, deploymentLogsFilter);
     List<CVNGLogDTO> cvngLogDTOs = new ArrayList<>();
-    cvngLogs.forEach(log -> {
-      Collections.sort(log.getLogRecords(), new CVNGLogRecordComparator());
-      cvngLogDTOs.addAll(log.toCVNGLogDTOs());
+    cvngLogs.forEach(cvngLog -> {
+      Collections.sort(cvngLog.getLogRecords(), new CVNGLogRecordComparator());
+      List<CVNGLogRecord> cvngLogRecords =
+          cvngLog.getLogRecords()
+              .stream()
+              .filter(cvngLogRecord -> !deploymentLogsFilter.isErrorLogsOnly() || cvngLogRecord.isErrorLog())
+              .collect(Collectors.toList());
+      cvngLog.setLogRecords(cvngLogRecords);
+      cvngLogDTOs.addAll(cvngLog.toCVNGLogDTOs());
     });
 
-    if (errorLogsOnly) {
-      final List<ApiCallLogDTO> apiCallLogDTOS = new ArrayList<>();
-      cvngLogDTOs.forEach(cvngLogDTO -> apiCallLogDTOS.add((ApiCallLogDTO) cvngLogDTO));
+    return PageUtils.offsetAndLimit(cvngLogDTOs, pageParams.getPage(), pageParams.getSize());
+  }
 
-      List<ApiCallLogDTO> apiCallLogDTOsFiltered =
-          apiCallLogDTOS.stream()
-              .filter(apiCallLogDTO
-                  -> Integer.parseInt(apiCallLogDTO.getResponses().get(0).getValue()) >= ERROR_RESPONSE_CODE)
+  @Override
+  public PageResponse<CVNGLogDTO> getCVNGLogs(String accountId, List<String> verificationTaskIds,
+      TimeRangeLogsFilter timeRangeLogsFilter, PageParams pageParams) {
+    List<CVNGLog> cvngLogs = getCVNGLogs(accountId, verificationTaskIds, timeRangeLogsFilter);
+    List<CVNGLogDTO> cvngLogDTOs = new ArrayList<>();
+    cvngLogs.forEach(cvngLog -> {
+      Collections.sort(cvngLog.getLogRecords(), new CVNGLogRecordComparator());
+      List<CVNGLogRecord> cvngLogRecords =
+          cvngLog.getLogRecords()
+              .stream()
+              .filter(cvngLogRecord -> !timeRangeLogsFilter.isErrorLogsOnly() || cvngLogRecord.isErrorLog())
               .collect(Collectors.toList());
-      cvngLogDTOs.clear();
-      cvngLogDTOs.addAll(apiCallLogDTOsFiltered);
-    }
+      cvngLog.setLogRecords(cvngLogRecords);
+      cvngLogDTOs.addAll(cvngLog.toCVNGLogDTOs());
+    });
 
     return PageUtils.offsetAndLimit(cvngLogDTOs, pageParams.getPage(), pageParams.getSize());
   }
 
   private List<CVNGLog> getCVNGLogs(
-      String accountId, String verificationJobInstanceId, CVNGLogType logType, List<String> healthSourceIdentifiers) {
+      String accountId, List<String> verificationTaskIds, TimeRangeLogsFilter timeRangeLogsFilter) {
+    Preconditions.checkArgument(
+        Duration.between(timeRangeLogsFilter.getStartTime(), timeRangeLogsFilter.getEndTime()).toDays() <= 1,
+        "Logs can be fetched for maximum 1 day");
+    return hPersistence.createQuery(CVNGLog.class, excludeAuthority)
+        .filter(CVNGLogKeys.accountId, accountId)
+        .filter(CVNGLogKeys.logType, timeRangeLogsFilter.getLogType())
+        .filter(CVNGLogKeys.traceableType, VERIFICATION_TASK)
+        .field(CVNGLogKeys.traceableId)
+        .in(verificationTaskIds)
+        .field(CVNGLogKeys.endTime)
+        .greaterThanOrEq(timeRangeLogsFilter.getStartTime())
+        .field(CVNGLogKeys.startTime)
+        .lessThan(timeRangeLogsFilter.getEndTime())
+        .asList();
+  }
+
+  private List<CVNGLog> getCVNGLogs(
+      String accountId, String verificationJobInstanceId, DeploymentLogsFilter deploymentLogsFilter) {
     Set<String> verificationTaskIds =
         verificationTaskService.maybeGetVerificationTaskIds(accountId, verificationJobInstanceId);
-    if (isNotEmpty(healthSourceIdentifiers)) {
+    if (deploymentLogsFilter.filterByHealthSourceIdentifiers()) {
       List<String> cvConfigIds = verificationJobInstanceService.getCVConfigIdsForVerificationJobInstance(
-          verificationJobInstanceId, healthSourceIdentifiers);
+          verificationJobInstanceId, deploymentLogsFilter.getHealthSourceIdentifiers());
       verificationTaskIds =
           verificationTaskIds.stream()
               .filter(
@@ -184,21 +196,11 @@ public class CVNGLogServiceImpl implements CVNGLogService {
     }
     return hPersistence.createQuery(CVNGLog.class, excludeAuthority)
         .filter(CVNGLogKeys.accountId, accountId)
-        .filter(CVNGLogKeys.logType, logType)
+        .filter(CVNGLogKeys.logType, deploymentLogsFilter.getLogType())
         .filter(CVNGLogKeys.traceableType, VERIFICATION_TASK)
         .field(CVNGLogKeys.traceableId)
         .in(verificationTaskIds)
         .asList();
-  }
-
-  private List<String> cvConfigIds(String accountId, String orgIdentifier, String projectIdentifier,
-      String serviceIdentifier, String environmentIdentifier, CVMonitoringCategory monitoringCategory) {
-    List<String> cvConfigIds = (cvConfigService.list(accountId, orgIdentifier, projectIdentifier, environmentIdentifier,
-                                    serviceIdentifier, monitoringCategory))
-                                   .stream()
-                                   .map(cvConfig -> cvConfig.getUuid())
-                                   .collect(Collectors.toList());
-    return verificationTaskService.getServiceGuardVerificationTaskIds(accountId, cvConfigIds);
   }
 
   private Map<String, String> getTags(CVNGLogDTO cvngLogDTO) {

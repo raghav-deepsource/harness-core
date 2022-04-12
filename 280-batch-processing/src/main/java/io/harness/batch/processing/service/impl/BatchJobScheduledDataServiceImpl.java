@@ -43,7 +43,8 @@ public class BatchJobScheduledDataServiceImpl implements BatchJobScheduledDataSe
   public Instant fetchLastBatchJobScheduledTime(String accountId, BatchJobType batchJobType) {
     Instant instant = fetchLastDependentBatchJobScheduledTime(accountId, batchJobType);
     if (null == instant) {
-      if (batchJobType.getBatchJobBucket() == BatchJobBucket.OUT_OF_CLUSTER) {
+      if (ImmutableSet.of(BatchJobBucket.OUT_OF_CLUSTER, BatchJobBucket.OUT_OF_CLUSTER_ECS)
+              .contains(batchJobType.getBatchJobBucket())) {
         Instant connectorCreationTime =
             Instant.ofEpochMilli(Instant.now().toEpochMilli()).truncatedTo(ChronoUnit.DAYS).minus(1, ChronoUnit.DAYS);
         if (ImmutableSet.of(BatchJobType.AWS_ECS_CLUSTER_SYNC).contains(batchJobType)) {
@@ -86,7 +87,9 @@ public class BatchJobScheduledDataServiceImpl implements BatchJobScheduledDataSe
       return instant;
     }
 
-    if (null != instant && batchJobType.getBatchJobBucket() != BatchJobBucket.OUT_OF_CLUSTER
+    if (null != instant
+        && !ImmutableSet.of(BatchJobBucket.OUT_OF_CLUSTER, BatchJobBucket.OUT_OF_CLUSTER_ECS)
+                .contains(batchJobType.getBatchJobBucket())
         && batchJobType != BatchJobType.INSTANCE_BILLING_AGGREGATION) {
       Instant startInstant = Instant.now().minus(MAX_IN_CLUSTER_DATA, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS);
       instant = startInstant.isAfter(instant) ? startInstant : instant;
@@ -98,7 +101,9 @@ public class BatchJobScheduledDataServiceImpl implements BatchJobScheduledDataSe
       instant = startInstant.isAfter(instant) ? startInstant : instant;
     }
 
-    if (null != instant && batchJobType.getBatchJobBucket() == BatchJobBucket.OUT_OF_CLUSTER
+    if (null != instant
+        && ImmutableSet.of(BatchJobBucket.OUT_OF_CLUSTER, BatchJobBucket.OUT_OF_CLUSTER_ECS)
+               .contains(batchJobType.getBatchJobBucket())
         && !ImmutableSet.of(BatchJobType.AWS_ECS_CLUSTER_SYNC).contains(batchJobType)) {
       Instant startInstant = Instant.now().minus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS);
       instant = startInstant.isAfter(instant) ? startInstant : instant;

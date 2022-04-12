@@ -7,12 +7,15 @@
 
 package io.harness.accesscontrol.principals.serviceaccounts;
 
+import static io.harness.accesscontrol.scopes.core.ScopeHelper.toParentScope;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.accesscontrol.common.validation.ValidationResult;
 import io.harness.accesscontrol.principals.Principal;
 import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.principals.PrincipalValidator;
+import io.harness.accesscontrol.scopes.core.Scope;
+import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.google.inject.Inject;
@@ -25,10 +28,12 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class ServiceAccountValidator implements PrincipalValidator {
   private final ServiceAccountService serviceAccountService;
+  private final ScopeService scopeService;
 
   @Inject
-  public ServiceAccountValidator(ServiceAccountService serviceAccountService) {
+  public ServiceAccountValidator(ServiceAccountService serviceAccountService, ScopeService scopeService) {
     this.serviceAccountService = serviceAccountService;
+    this.scopeService = scopeService;
   }
 
   @Override
@@ -38,8 +43,11 @@ public class ServiceAccountValidator implements PrincipalValidator {
 
   @Override
   public ValidationResult validatePrincipal(Principal principal, String scopeIdentifier) {
+    Scope scope =
+        toParentScope(scopeService.buildScopeFromScopeIdentifier(scopeIdentifier), principal.getPrincipalScopeLevel());
+    String principalScopeIdentifier = scope == null ? scopeIdentifier : scope.toString();
     String identifier = principal.getPrincipalIdentifier();
-    Optional<ServiceAccount> serviceAccountOptional = serviceAccountService.get(identifier, scopeIdentifier);
+    Optional<ServiceAccount> serviceAccountOptional = serviceAccountService.get(identifier, principalScopeIdentifier);
     if (serviceAccountOptional.isPresent()) {
       return ValidationResult.builder().valid(true).build();
     }

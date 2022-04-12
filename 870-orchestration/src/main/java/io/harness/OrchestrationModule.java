@@ -15,6 +15,7 @@ import static java.util.Arrays.asList;
 import io.harness.account.AccountClientModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cache.HarnessCacheManager;
 import io.harness.delay.AbstractOrchestrationDelayModule;
 import io.harness.engine.GovernanceService;
 import io.harness.engine.GovernanceServiceImpl;
@@ -52,6 +53,7 @@ import io.harness.engine.pms.tasks.NgDelegate2TaskExecutor;
 import io.harness.engine.pms.tasks.TaskExecutor;
 import io.harness.engine.progress.publisher.ProgressEventPublisher;
 import io.harness.engine.progress.publisher.RedisProgressEventPublisher;
+import io.harness.event.OrchestrationLogConfiguration;
 import io.harness.exception.exceptionmanager.ExceptionModule;
 import io.harness.govern.ServersModule;
 import io.harness.graph.stepDetail.PmsGraphStepDetailsServiceImpl;
@@ -67,6 +69,7 @@ import io.harness.queue.TimerScheduledExecutorService;
 import io.harness.serializer.KryoSerializer;
 import io.harness.testing.TestExecution;
 import io.harness.threading.ThreadPool;
+import io.harness.version.VersionInfoManager;
 import io.harness.waiter.AbstractWaiterModule;
 import io.harness.waiter.AsyncWaitEngineImpl;
 import io.harness.waiter.WaitNotifyEngine;
@@ -86,6 +89,12 @@ import java.io.Closeable;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import javax.cache.Cache;
+import javax.cache.configuration.FactoryBuilder;
+import javax.cache.configuration.MutableCacheEntryListenerConfiguration;
+import javax.cache.configuration.MutableConfiguration;
+import javax.cache.expiry.AccessedExpiryPolicy;
+import javax.cache.expiry.Duration;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class OrchestrationModule extends AbstractModule implements ServersModule {
@@ -207,5 +216,27 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
   @Singleton
   public OrchestrationModuleConfig orchestrationModuleConfig() {
     return config;
+  }
+
+  @Provides
+  @Singleton
+  @Named("orchestrationLogCache")
+  public Cache<String, Long> orchestrationLogCache(HarnessCacheManager harnessCacheManager,
+      VersionInfoManager versionInfoManager, OrchestrationLogCacheListener orchestrationLogCacheListener) {
+    Cache<String, Long> cache = harnessCacheManager.getCache("orchestrationLogCache", String.class, Long.class,
+        AccessedExpiryPolicy.factoryOf(new Duration(TimeUnit.HOURS, 1)),
+        versionInfoManager.getVersionInfo().getBuildNo());
+    MutableConfiguration<String, Long> config = new MutableConfiguration<>();
+    config.setTypes(String.class, Long.class);
+    cache.registerCacheEntryListener(
+        new MutableCacheEntryListenerConfiguration(FactoryBuilder.factoryOf(orchestrationLogCacheListener),
+            FactoryBuilder.factoryOf(orchestrationLogCacheListener), false, false));
+    return cache;
+  }
+
+  @Provides
+  @Singleton
+  public OrchestrationLogConfiguration orchestrationLogConfiguration() {
+    return config.getOrchestrationLogConfiguration();
   }
 }

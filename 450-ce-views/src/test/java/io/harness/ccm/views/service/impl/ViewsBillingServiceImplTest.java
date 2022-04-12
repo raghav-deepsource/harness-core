@@ -146,6 +146,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
         .when(viewsQueryHelper)
         .buildQueryParams(anyString(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyInt());
     doCallRealMethod().when(viewsQueryBuilder).getViewFieldInput(any());
+    doCallRealMethod().when(viewsQueryBuilder).mapConditionToFilter(any());
 
     clusterId = QLCEViewFieldInput.builder()
                     .fieldId(CLUSTER_ID)

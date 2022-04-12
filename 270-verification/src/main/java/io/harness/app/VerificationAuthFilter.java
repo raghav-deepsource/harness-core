@@ -39,8 +39,9 @@ public class VerificationAuthFilter extends VerificationServiceAuthenticationFil
       String accountId = getRequestParamFromContext("accountId", pathParameters, queryParameters);
       String header = containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
       if (header.contains("Delegate")) {
+        String delegateId = containerRequestContext.getHeaderString("delegateId");
         String token = substringAfter(containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION), "Delegate ");
-        validateDelegateToken(accountId, token);
+        validateDelegateToken(accountId, token, delegateId);
       } else {
         throw new IllegalStateException("Invalid header:" + header);
       }
@@ -52,7 +53,7 @@ public class VerificationAuthFilter extends VerificationServiceAuthenticationFil
   }
 
   @Override
-  public void validateDelegateToken(String accountId, String tokenString) {
-    delegateTokenAuthenticator.validateDelegateToken(accountId, tokenString);
+  public void validateDelegateToken(String accountId, String tokenString, String delegateId) {
+    delegateTokenAuthenticator.validateDelegateToken(accountId, tokenString, delegateId, false);
   }
 }

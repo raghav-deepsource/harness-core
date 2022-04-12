@@ -12,6 +12,8 @@ import static io.harness.shell.AccessType.USER_PASSWORD;
 import static io.harness.shell.AuthenticationScheme.KERBEROS;
 import static io.harness.shell.SshSessionConfig.Builder.aSshSessionConfig;
 
+import static java.util.Collections.emptyMap;
+
 import io.harness.logging.LogCallback;
 import io.harness.logging.NoopExecutionCallback;
 import io.harness.security.EncryptionUtils;
@@ -186,7 +188,7 @@ public class SshSessionFactory {
     if (config.getKerberosConfig().isGenerateTGT()) {
       SshHelperUtils.generateTGT(config.getKerberosConfig().getPrincipalWithRealm(),
           config.getPassword() != null ? new String(config.getPassword()) : null,
-          config.getKerberosConfig().getKeyTabFilePath(), logCallback);
+          config.getKerberosConfig().getKeyTabFilePath(), logCallback, emptyMap());
     }
   }
 

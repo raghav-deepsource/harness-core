@@ -88,6 +88,22 @@ public class GitFullSyncEntityServiceImpl implements GitFullSyncEntityService {
   }
 
   @Override
+  public List<GitFullSyncEntityInfo> getQueuedEntitiesFromPreviousJobs(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String currentMessageId) {
+    Criteria criteria = Criteria.where(GitFullSyncEntityInfoKeys.accountIdentifier)
+                            .is(accountIdentifier)
+                            .and(GitFullSyncEntityInfoKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(GitFullSyncEntityInfoKeys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(GitFullSyncEntityInfoKeys.messageId)
+                            .ne(currentMessageId)
+                            .and(GitFullSyncEntityInfoKeys.syncStatus)
+                            .is(QUEUED);
+    return gitFullSyncEntityRepository.findAll(criteria);
+  }
+
+  @Override
   public void updateStatus(String accountIdentifier, String orgIdentifier, String projectIdentifier, String filePath,
       List<GitFullSyncEntityInfo.SyncStatus> oldStatus, GitFullSyncEntityInfo.SyncStatus newStatus) {
     Criteria criteria = Criteria.where(GitFullSyncEntityInfoKeys.accountIdentifier)
@@ -186,5 +202,16 @@ public class GitFullSyncEntityServiceImpl implements GitFullSyncEntityService {
       update.push(GitFullSyncEntityInfoKeys.errorMessage, errorMessage);
     }
     gitFullSyncEntityRepository.update(criteria, update);
+  }
+
+  @Override
+  public void deleteAll(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = Criteria.where(GitFullSyncEntityInfoKeys.accountIdentifier)
+                            .is(accountIdentifier)
+                            .and(GitFullSyncEntityInfoKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(GitFullSyncEntityInfoKeys.projectIdentifier)
+                            .is(projectIdentifier);
+    gitFullSyncEntityRepository.deleteAll(criteria);
   }
 }

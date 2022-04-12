@@ -7,8 +7,10 @@
 
 package io.harness.cvng.servicelevelobjective.services.api;
 
+import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.logsFilterParams.SLILogsFilter;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.SLOGraphData;
@@ -37,6 +39,8 @@ public interface ServiceLevelObjectiveService {
   SLORiskCountResponse getRiskCount(ProjectParams projectParams, SLODashboardApiFilter serviceLevelObjectiveFilter);
 
   ServiceLevelObjectiveResponse get(ProjectParams projectParams, String identifier);
+  PageResponse<CVNGLogDTO> getCVNGLogs(
+      ProjectParams projectParams, String identifier, SLILogsFilter sliLogsFilter, PageParams pageParams);
   ServiceLevelObjective getEntity(ProjectParams projectParams, String identifier);
 
   PageResponse<ServiceLevelObjectiveResponse> getSLOForDashboard(

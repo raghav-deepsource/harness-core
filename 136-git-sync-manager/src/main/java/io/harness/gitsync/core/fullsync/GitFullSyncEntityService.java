@@ -38,9 +38,14 @@ public interface GitFullSyncEntityService {
   Optional<GitFullSyncEntityInfo> get(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String filePath);
 
+  List<GitFullSyncEntityInfo> getQueuedEntitiesFromPreviousJobs(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String currentJobId);
+
   void updateStatus(String accountIdentifier, String orgIdentifier, String projectIdentifier, String filePath,
       List<GitFullSyncEntityInfo.SyncStatus> oldStatus, GitFullSyncEntityInfo.SyncStatus newStatus);
 
   void updateStatus(
       String accountIdentifier, String uuid, GitFullSyncEntityInfo.SyncStatus status, String errorMessage);
+
+  void deleteAll(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 }

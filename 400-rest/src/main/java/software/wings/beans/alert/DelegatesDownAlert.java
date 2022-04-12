@@ -7,6 +7,8 @@
 
 package software.wings.beans.alert;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import static java.lang.String.format;
 
 import io.harness.alert.AlertData;
@@ -28,17 +30,22 @@ public class DelegatesDownAlert implements AlertData {
   private String hostName;
   private String accountId;
 
+  // this is for ecs delegates, currently in cg only
+  private String delegateGroupName;
+
   @Override
   public boolean matches(AlertData alertData) {
     DelegatesDownAlert delegatesDownAlert = (DelegatesDownAlert) alertData;
     return StringUtils.equals(accountId, delegatesDownAlert.getAccountId())
-        && StringUtils.equals(hostName, delegatesDownAlert.getHostName())
-        && (hostName.contains(KubernetesConvention.getAccountIdentifier(accountId))
-            || StringUtils.equals(obfuscatedIpAddress, delegatesDownAlert.getObfuscatedIpAddress()));
+        && ((isNotEmpty(delegatesDownAlert.getDelegateGroupName())
+                && StringUtils.equals(delegateGroupName, delegatesDownAlert.getDelegateGroupName()))
+            || (StringUtils.equals(hostName, delegatesDownAlert.getHostName())
+                && (hostName.contains(KubernetesConvention.getAccountIdentifier(accountId))
+                    || StringUtils.equals(obfuscatedIpAddress, delegatesDownAlert.getObfuscatedIpAddress()))));
   }
 
   @Override
   public String buildTitle() {
-    return format("Delegate %s is down", hostName);
+    return format("Delegate %s is down", isNotEmpty(hostName) ? hostName : delegateGroupName);
   }
 }

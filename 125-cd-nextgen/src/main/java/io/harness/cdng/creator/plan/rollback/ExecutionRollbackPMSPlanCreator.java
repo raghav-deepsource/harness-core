@@ -14,7 +14,7 @@ import io.harness.cdng.pipeline.beans.RollbackOptionalChildChainStepParameters;
 import io.harness.cdng.pipeline.beans.RollbackOptionalChildChainStepParameters.RollbackOptionalChildChainStepParametersBuilder;
 import io.harness.cdng.pipeline.steps.RollbackOptionalChildChainStep;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.plancreator.beans.OrchestrationConstants;
+import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -52,14 +52,14 @@ public class ExecutionRollbackPMSPlanCreator {
         && executionRollbackSteps.getNode().asArray().size() > 0) {
       // Adding dependencies
       dependencies.put(
-          executionRollbackSteps.getNode().getUuid() + OrchestrationConstants.ROLLBACK_STEPS_NODE_ID_SUFFIX,
+          executionRollbackSteps.getNode().getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STEPS_NODE_ID_SUFFIX,
           executionRollbackSteps);
 
-      stepParametersBuilder.childNode(
-          RollbackNode.builder()
-              .nodeId(executionRollbackSteps.getNode().getUuid() + OrchestrationConstants.ROLLBACK_STEPS_NODE_ID_SUFFIX)
-              .dependentNodeIdentifier(executionNodeFullIdentifier)
-              .build());
+      stepParametersBuilder.childNode(RollbackNode.builder()
+                                          .nodeId(executionRollbackSteps.getNode().getUuid()
+                                              + NGCommonUtilPlanCreationConstants.ROLLBACK_STEPS_NODE_ID_SUFFIX)
+                                          .dependentNodeIdentifier(executionNodeFullIdentifier)
+                                          .build());
     }
 
     if (EmptyPredicate.isEmpty(stepParametersBuilder.build().getChildNodes())) {
@@ -68,8 +68,10 @@ public class ExecutionRollbackPMSPlanCreator {
 
     PlanNode deploymentStageRollbackNode =
         PlanNode.builder()
-            .uuid(executionStepsField.getNode().getUuid() + OrchestrationConstants.ROLLBACK_EXECUTION_NODE_ID_SUFFIX)
-            .name(OrchestrationConstants.EXECUTION_NODE_NAME + " " + OrchestrationConstants.ROLLBACK_NODE_NAME)
+            .uuid(executionStepsField.getNode().getUuid()
+                + NGCommonUtilPlanCreationConstants.ROLLBACK_EXECUTION_NODE_ID_SUFFIX)
+            .name(NGCommonUtilPlanCreationConstants.EXECUTION_NODE_NAME + " "
+                + NGCommonUtilPlanCreationConstants.ROLLBACK_NODE_NAME)
             .identifier(YAMLFieldNameConstants.ROLLBACK_STEPS)
             .stepType(RollbackOptionalChildChainStep.STEP_TYPE)
             .stepParameters(stepParametersBuilder.build())

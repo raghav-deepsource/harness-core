@@ -47,12 +47,7 @@ public class DockerImageManifestResponse {
       try {
         Map<String, String> labels = JsonUtils.jsonPath(v1Compatibility, path);
         if (isNotEmpty(labels)) {
-          // NOTE: Removing labels where keys contain '.'. Storing and retrieving these keys is throwing error with
-          // MongoDB and might also cause problems with expression evaluation as '.' is used as a separator there.
-          labels.entrySet()
-              .stream()
-              .filter(entry -> !entry.getKey().contains("."))
-              .forEach(entry -> finalLabels.putIfAbsent(entry.getKey(), entry.getValue()));
+          labels.forEach(finalLabels::putIfAbsent);
         }
       } catch (Exception ignored) {
         // Ignore error

@@ -15,6 +15,8 @@ import "product/ci/engine/proto/publish_artifact.proto";
 enum ShellType {
   SH = 0;
   BASH = 1;
+  POWERSHELL = 2;
+  PWSH = 3;
 }
 
 message StepContext {

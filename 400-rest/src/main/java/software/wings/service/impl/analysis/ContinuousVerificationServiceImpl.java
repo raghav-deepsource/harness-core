@@ -2382,6 +2382,7 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
         for (List<String> hostBatch : Lists.partition(hostList, HOST_BATCH_SIZE)) {
           final CustomLogDataCollectionInfo dataCollectionInfo = createCustomLogDataCollectionInfo(
               datadogConfig, context, collectionStartMinute, new HashSet<>(hostBatch));
+          dataCollectionInfo.setDelayMinutes(0);
           delegateTasks.add(createDelegateTaskAndNotify(
               dataCollectionInfo, CUSTOM_LOG_COLLECTION_TASK, executionData, context, true));
         }

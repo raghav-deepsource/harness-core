@@ -319,7 +319,7 @@ public class AwsLambdaInstanceHandler extends InstanceHandler implements Instanc
       syncLambdaInstanceInDB(instanceToUpdate, lambdaInstanceInfo);
 
     } catch (NoDelegatesException ex) {
-      log.warn("Delegates are not available ", ex.getMessage());
+      log.warn("error while Syncing Aws Lambda Instance. skipping the sync for it", ex);
     } catch (Exception e) {
       log.info("error while Syncing Aws Lambda Instance. skipping the sync for it", e);
     }

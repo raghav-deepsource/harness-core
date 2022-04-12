@@ -47,7 +47,7 @@ public class ManifestTriggerValidator implements TriggerValidator {
 
     try {
       Optional<String> pipelineYmlOptional =
-          validationHelper.fetchPipelineForTrigger(triggerDetails.getNgTriggerEntity());
+          validationHelper.fetchResolvedTemplatesPipelineForTrigger(triggerDetails.getNgTriggerEntity());
 
       if (!pipelineYmlOptional.isPresent()) {
         return builder.success(false).message("Pipeline doesn't exists").build();

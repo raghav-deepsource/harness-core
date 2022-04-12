@@ -9,6 +9,7 @@ package software.wings.service.impl.security.auth;
 
 import static io.harness.annotations.dev.HarnessModule._950_NG_AUTHENTICATION_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.beans.FeatureName.PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION;
 import static io.harness.beans.WorkflowType.ORCHESTRATION;
 import static io.harness.beans.WorkflowType.PIPELINE;
 import static io.harness.validation.Validator.notNullCheck;
@@ -24,11 +25,14 @@ import static java.util.Arrays.asList;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 
 import software.wings.beans.Pipeline;
 import software.wings.beans.User;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
+import software.wings.security.AppPermissionSummary;
+import software.wings.security.ExecutableElementsFilter;
 import software.wings.security.PermissionAttribute;
 import software.wings.security.UserRequestContext;
 import software.wings.security.UserThreadLocal;
@@ -41,7 +45,9 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -59,6 +65,7 @@ public class DeploymentAuthHandler {
   @Inject private WorkflowService workflowService;
   @Inject private PipelineService pipelineService;
   @Inject private AuthHandler authHandler;
+  @Inject private FeatureFlagService featureFlagService;
 
   private void authorize(List<PermissionAttribute> requiredPermissionAttributes, List<String> appIds, String entityId) {
     User user = UserThreadLocal.get();
@@ -140,6 +147,12 @@ public class DeploymentAuthHandler {
     authorize(permissionAttributeList, Collections.singletonList(appId), entityId);
   }
 
+  public void authorizeExecutableDeployableInEnv(
+      Set<String> envIds, String appId, String executableId, String filterType) {
+    authService.authorize(envIds, appId,
+        AppPermissionSummary.ExecutableElementInfo.builder().entityType(filterType).entityId(executableId).build());
+  }
+
   public void authorizeWorkflowExecution(String appId, String entityId) {
     List<PermissionAttribute> permissionAttributeList = new ArrayList<>();
     permissionAttributeList.add(new PermissionAttribute(DEPLOYMENT, EXECUTE_WORKFLOW));
@@ -150,10 +163,20 @@ public class DeploymentAuthHandler {
     Workflow workflow = workflowService.getWorkflow(appId, workflowOrPipelineId);
     if (workflow != null) {
       authorizeWorkflowExecution(appId, workflowOrPipelineId);
+      //      if (featureFlagService.isEnabled(PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION, workflow.getAccountId())) {
+      //        authorizeExecutableDeployableInEnv(
+      //                new HashSet<>(workflow.getEnvId()), appId, workflowOrPipelineId,
+      //                ExecutableElementsFilter.FilterType.WORKFLOW);
+      //      }
     }
     Pipeline pipeline = pipelineService.getPipeline(appId, workflowOrPipelineId);
     if (pipeline != null) {
       authorizePipelineExecution(appId, workflowOrPipelineId);
+      if (featureFlagService.isEnabled(PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION, pipeline.getAccountId())) {
+        Pipeline fullPipeline = pipelineService.readPipeline(appId, workflowOrPipelineId, true);
+        authorizeExecutableDeployableInEnv(new HashSet<>(fullPipeline.getEnvIds()), appId, workflowOrPipelineId,
+            ExecutableElementsFilter.FilterType.PIPELINE);
+      }
     }
     if (workflow == null && pipeline == null) {
       log.error(

@@ -81,6 +81,7 @@ public class InputSetFullGitSyncHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetFileChangesForFullSync() {
     Criteria criteria = PMSInputSetFilterHelper.createCriteriaForGetList(acc, org, proj, null, ALL, null, false);
+    criteria = criteria.and(InputSetEntityKeys.yamlGitConfigRef).is(null);
     PageRequest pageRequest = PageRequest.of(0, 200, Sort.by(Sort.Direction.DESC, InputSetEntityKeys.lastUpdatedAt));
     Page<InputSetEntity> inputSetPages = new PageImpl<>(Collections.singletonList(inputSetEntity), pageRequest, 1);
     doReturn(inputSetPages).when(inputSetService).list(criteria, pageRequest, acc, org, proj);

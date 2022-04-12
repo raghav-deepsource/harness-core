@@ -10,10 +10,12 @@ package io.harness.gitsync.common.impl.gittoharness;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.gitsync.common.beans.GitToHarnessProcessingStepStatus.DONE;
 import static io.harness.gitsync.common.beans.GitToHarnessProcessingStepStatus.ERROR;
 import static io.harness.gitsync.common.beans.GitToHarnessProcessingStepStatus.IN_PROGRESS;
 import static io.harness.gitsync.common.beans.GitToHarnessProcessingStepType.PROCESS_FILES_IN_MSVS;
+import static io.harness.gitsync.common.helper.RepoProviderHelper.getRepoProviderType;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -23,6 +25,7 @@ import io.harness.Microservice;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
+import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitsync.ChangeSet;
 import io.harness.gitsync.ChangeSets;
@@ -38,6 +41,7 @@ import io.harness.gitsync.common.beans.FileProcessingResponseDTO;
 import io.harness.gitsync.common.beans.FileProcessingStatus;
 import io.harness.gitsync.common.beans.GitSyncDirection;
 import io.harness.gitsync.common.beans.GitToHarnessFileProcessingRequest;
+import io.harness.gitsync.common.beans.GitToHarnessFilesGroupedByMsvc;
 import io.harness.gitsync.common.beans.GitToHarnessProcessingInfo;
 import io.harness.gitsync.common.beans.GitToHarnessProcessingResponse;
 import io.harness.gitsync.common.beans.GitToHarnessProcessingResponseDTO;
@@ -46,6 +50,7 @@ import io.harness.gitsync.common.beans.GitToHarnessProgressStatus;
 import io.harness.gitsync.common.beans.MsvcProcessingFailureStage;
 import io.harness.gitsync.common.dtos.ChangeSetWithYamlStatusDTO;
 import io.harness.gitsync.common.dtos.GitSyncEntityDTO;
+import io.harness.gitsync.common.dtos.RepoProviders;
 import io.harness.gitsync.common.helper.GitChangeSetMapper;
 import io.harness.gitsync.common.helper.GitConnectivityExceptionHelper;
 import io.harness.gitsync.common.helper.GitSyncGrpcClientUtils;
@@ -72,6 +77,7 @@ import com.google.inject.Singleton;
 import com.google.protobuf.StringValue;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -99,6 +105,7 @@ public class GitToHarnessProcessorServiceImpl implements GitToHarnessProcessorSe
   GitSyncErrorService gitSyncErrorService;
   GitEntityService gitEntityService;
   EntityDetailRestToProtoMapper entityDetailRestToProtoMapper;
+  List<Microservice> microservicesProcessingOrder;
 
   @Override
   public GitToHarnessProgressStatus processFiles(String accountId,
@@ -133,7 +140,7 @@ public class GitToHarnessProcessorServiceImpl implements GitToHarnessProcessorSe
 
     Map<EntityType, List<ChangeSet>> mapOfEntityTypeAndContent =
         createMapOfEntityTypeAndFileContent(changeSetsWithYamlStatus);
-    Map<Microservice, List<ChangeSet>> groupedFilesByMicroservices =
+    List<GitToHarnessFilesGroupedByMsvc> groupedFilesByMicroservices =
         groupFilesByMicroservices(mapOfEntityTypeAndContent);
 
     List<GitToHarnessProcessingResponse> gitToHarnessProcessingResponses = processInternal(
@@ -244,18 +251,19 @@ public class GitToHarnessProcessorServiceImpl implements GitToHarnessProcessorSe
   }
 
   private List<GitToHarnessProcessingResponse> processInternal(GitToHarnessProcessingInfo gitToHarnessProcessingInfo,
-      Map<Microservice, List<ChangeSet>> groupedFilesByMicroservices, List<GitSyncErrorDTO> gitToHarnessErrors,
+      List<GitToHarnessFilesGroupedByMsvc> groupedFilesByMicroservices, List<GitSyncErrorDTO> gitToHarnessErrors,
       Set<String> filePathsHavingError) {
     List<GitToHarnessProcessingResponse> gitToHarnessProcessingResponses = new ArrayList<>();
     gitToHarnessProgressService.startNewStep(
         gitToHarnessProcessingInfo.getGitToHarnessProgressRecordId(), PROCESS_FILES_IN_MSVS, IN_PROGRESS);
-    for (Map.Entry<Microservice, List<ChangeSet>> entry : groupedFilesByMicroservices.entrySet()) {
-      Microservice microservice = entry.getKey();
+    for (GitToHarnessFilesGroupedByMsvc gitToHarnessFilesGroupedByMsvc : groupedFilesByMicroservices) {
+      Microservice microservice = gitToHarnessFilesGroupedByMsvc.getMicroservice();
+      List<ChangeSet> gitFilesForThisMsvc = gitToHarnessFilesGroupedByMsvc.getChangeSetList();
       Map<String, ChangeSet> filePathToChangeSetMap =
-          entry.getValue().stream().collect(Collectors.toMap(ChangeSet::getFilePath, Function.identity()));
+          gitFilesForThisMsvc.stream().collect(Collectors.toMap(ChangeSet::getFilePath, Function.identity()));
       GitToHarnessServiceGrpc.GitToHarnessServiceBlockingStub gitToHarnessServiceBlockingStub =
           gitToHarnessServiceGrpcClient.get(microservice);
-      ChangeSets changeSetForThisMicroservice = ChangeSets.newBuilder().addAllChangeSet(entry.getValue()).build();
+      ChangeSets changeSetForThisMicroservice = ChangeSets.newBuilder().addAllChangeSet(gitFilesForThisMsvc).build();
       GitToHarnessInfo.Builder gitToHarnessInfo = GitToHarnessInfo.newBuilder()
                                                       .setRepoUrl(gitToHarnessProcessingInfo.getRepoUrl())
                                                       .setBranch(gitToHarnessProcessingInfo.getBranchName());
@@ -269,23 +277,23 @@ public class GitToHarnessProcessorServiceImpl implements GitToHarnessProcessorSe
               .build();
 
       // TODO log for debug purpose, remove after use
-      log.info("Sending to microservice {}, request : {}", entry.getKey(), gitToHarnessProcessRequest);
+      log.info("Sending to microservice {}, request : {}", microservice, gitToHarnessProcessRequest);
       GitToHarnessProcessingResponseDTO gitToHarnessProcessingResponseDTO = null;
       try {
         ProcessingResponse processingResponse = GitSyncGrpcClientUtils.retryAndProcessException(
             gitToHarnessServiceBlockingStub::process, gitToHarnessProcessRequest);
         gitToHarnessProcessingResponseDTO = ProcessingResponseMapper.toProcessingResponseDTO(processingResponse);
-        log.info(
-            "Got the processing response for the microservice {}, response {}", entry.getKey(), processingResponse);
+        log.info("Got the processing response for the microservice {}, response {}", microservice, processingResponse);
         markEntitiesInvalidForYamlsWhichCouldBeProcessedByMicroService(
             microservice, filePathToChangeSetMap, gitToHarnessProcessRequest, gitToHarnessProcessingResponseDTO);
         completeUpdateForFilesWithRenameOps(
             filePathToChangeSetMap, gitToHarnessProcessRequest, gitToHarnessProcessingResponseDTO);
       } catch (Exception ex) {
         // This exception happens in the case when we are not able to connect to the microservice
-        log.error("Exception in file processing for the microservice {}", entry.getKey(), ex);
-        gitSyncErrorService.recordConnectivityError(gitToHarnessProcessingInfo.getAccountId(),
-            gitToHarnessProcessingInfo.getRepoUrl(), GitConnectivityExceptionHelper.ERROR_MSG_MSVC_DOWN);
+        log.error("Exception in file processing for the microservice {}", microservice, ex);
+        gitSyncErrorService.saveConnectivityError(gitToHarnessProcessingInfo.getAccountId(),
+            gitToHarnessProcessingInfo.getRepoUrl(), GitConnectivityExceptionHelper.ERROR_MSG_MSVC_DOWN,
+            getRepoProviderType(gitToHarnessProcessingInfo.getYamlGitConfigs()));
         gitToHarnessProcessingResponseDTO = GitToHarnessProcessingResponseDTO.builder()
                                                 .msvcProcessingFailureStage(MsvcProcessingFailureStage.RECEIVE_STAGE)
                                                 .build();
@@ -293,7 +301,7 @@ public class GitToHarnessProcessorServiceImpl implements GitToHarnessProcessorSe
       List<FileProcessingResponseDTO> fileResponsesHavingError =
           getFileResponsesHavingError(gitToHarnessProcessingResponseDTO.getFileResponses());
       gitToHarnessErrors.addAll(
-          getErrorsForProcessingResponse(gitToHarnessProcessingInfo, entry.getValue(), fileResponsesHavingError));
+          getErrorsForProcessingResponse(gitToHarnessProcessingInfo, gitFilesForThisMsvc, fileResponsesHavingError));
       filePathsHavingError.addAll(getFilePathsFromFileResponses(fileResponsesHavingError));
       GitToHarnessProcessingResponse gitToHarnessResponse = GitToHarnessProcessingResponse.builder()
                                                                 .processingResponse(gitToHarnessProcessingResponseDTO)
@@ -302,7 +310,7 @@ public class GitToHarnessProcessorServiceImpl implements GitToHarnessProcessorSe
       gitToHarnessProcessingResponses.add(gitToHarnessResponse);
       gitToHarnessProgressService.updateProgressWithProcessingResponse(
           gitToHarnessProcessingInfo.getGitToHarnessProgressRecordId(), gitToHarnessResponse);
-      log.info("Completed for microservice {}", entry.getKey());
+      log.info("Completed for microservice {}", microservice);
     }
     gitSyncErrorService.overrideGitToHarnessErrors(gitToHarnessProcessingInfo.getAccountId(),
         gitToHarnessProcessingInfo.getRepoUrl(), gitToHarnessProcessingInfo.getBranchName(), filePathsHavingError);
@@ -355,11 +363,12 @@ public class GitToHarnessProcessorServiceImpl implements GitToHarnessProcessorSe
     return DONE;
   }
 
-  private Map<Microservice, List<ChangeSet>> groupFilesByMicroservices(
+  private List<GitToHarnessFilesGroupedByMsvc> groupFilesByMicroservices(
       Map<EntityType, List<ChangeSet>> mapOfEntityTypeAndContent) {
+    List<GitToHarnessFilesGroupedByMsvc> sortedFilesByMsvc = new ArrayList<>();
     Map<Microservice, List<ChangeSet>> groupedFilesByMicroservices = new HashMap<>();
     if (isEmpty(mapOfEntityTypeAndContent)) {
-      return groupedFilesByMicroservices;
+      return sortedFilesByMsvc;
     }
     for (Map.Entry<EntityType, List<ChangeSet>> entry : mapOfEntityTypeAndContent.entrySet()) {
       final EntityType entityType = entry.getKey();
@@ -371,7 +380,15 @@ public class GitToHarnessProcessorServiceImpl implements GitToHarnessProcessorSe
         groupedFilesByMicroservices.put(microservice, fileContents);
       }
     }
-    return groupedFilesByMicroservices;
+
+    for (Map.Entry<Microservice, List<ChangeSet>> entry : groupedFilesByMicroservices.entrySet()) {
+      GitToHarnessFilesGroupedByMsvc gitToHarnessFilesGroupedByMsvc =
+          GitToHarnessFilesGroupedByMsvc.builder().microservice(entry.getKey()).changeSetList(entry.getValue()).build();
+      sortedFilesByMsvc.add(gitToHarnessFilesGroupedByMsvc);
+    }
+    sortedFilesByMsvc.sort(Comparator.comparingInt(x -> microservicesProcessingOrder.indexOf(x)));
+
+    return sortedFilesByMsvc;
   }
 
   private Map<EntityType, List<ChangeSet>> createMapOfEntityTypeAndFileContent(
@@ -407,6 +424,10 @@ public class GitToHarnessProcessorServiceImpl implements GitToHarnessProcessorSe
 
   private void updateCommit(String commitId, String accountId, String branchName, String repoUrl,
       List<GitToHarnessProcessingResponse> gitToHarnessProcessingResponses, List<ChangeSet> invalidChangeSets) {
+    if (commitId == null) {
+      throw new InvalidRequestException(
+          String.format("Found null commitId while saving the commit for repo %s and branch %s", repoUrl, branchName));
+    }
     GitToHarnessProcessingStepStatus status = getStatus(gitToHarnessProcessingResponses);
     if (status == DONE) {
       GitCommitDTO gitCommitDTO = GitCommitDTO.builder()
@@ -508,10 +529,12 @@ public class GitToHarnessProcessorServiceImpl implements GitToHarnessProcessorSe
 
   private GitSyncErrorDTO buildGitSyncErrorDTO(GitToHarnessProcessingInfo gitToHarnessProcessingInfo,
       String errorMessage, ChangeSet changeSet, List<Scope> scopes) {
+    RepoProviders repoProviderType = getRepoProviderType(gitToHarnessProcessingInfo.getYamlGitConfigs());
     return GitSyncErrorDTO.builder()
         .accountIdentifier(gitToHarnessProcessingInfo.getAccountId())
         .repoUrl(gitToHarnessProcessingInfo.getRepoUrl())
         .branchName(gitToHarnessProcessingInfo.getBranchName())
+        .repoProvider(repoProviderType)
         .scopes(scopes)
         .errorType(GitSyncErrorType.GIT_TO_HARNESS)
         .status(GitSyncErrorStatus.ACTIVE)
@@ -541,10 +564,12 @@ public class GitToHarnessProcessorServiceImpl implements GitToHarnessProcessorSe
 
   private Set<String> getFilePathsWithoutError(List<GitToHarnessProcessingResponse> gitToHarnessProcessingResponses) {
     List<FileProcessingResponseDTO> fileResponses = new ArrayList<>();
-    gitToHarnessProcessingResponses.stream()
-        .map(GitToHarnessProcessingResponse::getProcessingResponse)
-        .map(GitToHarnessProcessingResponseDTO::getFileResponses)
-        .forEach(fileProcessingResponseDTO -> fileResponses.addAll(fileProcessingResponseDTO));
+    for (GitToHarnessProcessingResponse gitToHarnessProcessingResponse : emptyIfNull(gitToHarnessProcessingResponses)) {
+      GitToHarnessProcessingResponseDTO processingResponse = gitToHarnessProcessingResponse.getProcessingResponse();
+      if (processingResponse != null && isNotEmpty(processingResponse.getFileResponses())) {
+        fileResponses.addAll(processingResponse.getFileResponses());
+      }
+    }
     return fileResponses.stream()
         .filter(fileResponse -> fileResponse.getFileProcessingStatus() == FileProcessingStatus.SUCCESS)
         .map(FileProcessingResponseDTO::getFilePath)

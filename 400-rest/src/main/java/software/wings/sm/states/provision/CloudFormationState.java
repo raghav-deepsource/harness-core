@@ -12,6 +12,8 @@ import static io.harness.beans.EnvironmentType.ALL;
 import static io.harness.beans.OrchestrationWorkflowType.BUILD;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.task.cloudformation.CloudformationBaseHelperImpl.CLOUDFORMATION_STACK_CREATE_BODY;
+import static io.harness.delegate.task.cloudformation.CloudformationBaseHelperImpl.CLOUDFORMATION_STACK_CREATE_URL;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.validation.Validator.notNullCheck;
 
@@ -63,7 +65,6 @@ import software.wings.common.TemplateExpressionProcessor;
 import software.wings.dl.WingsPersistence;
 import software.wings.helpers.ext.cloudformation.CloudFormationCompletionFlag;
 import software.wings.helpers.ext.cloudformation.request.CloudFormationCommandRequest;
-import software.wings.helpers.ext.cloudformation.request.CloudFormationCreateStackRequest;
 import software.wings.helpers.ext.cloudformation.response.CloudFormationCommandExecutionResponse;
 import software.wings.helpers.ext.cloudformation.response.CloudFormationCommandResponse;
 import software.wings.helpers.ext.cloudformation.response.CloudFormationCreateStackResponse;
@@ -408,10 +409,10 @@ public abstract class CloudFormationState extends State {
     String body = null;
     String createType;
     if (isNotEmpty(rollbackInfo.getUrl())) {
-      createType = CloudFormationCreateStackRequest.CLOUD_FORMATION_STACK_CREATE_URL;
+      createType = CLOUDFORMATION_STACK_CREATE_URL;
       url = rollbackInfo.getUrl();
     } else {
-      createType = CloudFormationCreateStackRequest.CLOUD_FORMATION_STACK_CREATE_BODY;
+      createType = CLOUDFORMATION_STACK_CREATE_BODY;
       body = rollbackInfo.getBody();
     }
     wingsPersistence.save(CloudFormationRollbackConfig.builder()

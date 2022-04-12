@@ -63,6 +63,20 @@ public class InputSetSanitizerTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testSanitizeInputSetsWithAllWrongFielsd() {
+    String filename = "pipeline-extensive.yml";
+    String yaml = readFile(filename);
+
+    String inputSetWrongFile = "input-set-all-fields-wrong.yml";
+    String inputSetWrongYaml = readFile(inputSetWrongFile);
+
+    String emptyAfterSanitised = sanitizeInputSet(yaml, inputSetWrongYaml);
+    assertThat(emptyAfterSanitised).isNullOrEmpty();
+  }
+
+  @Test
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
   public void testTrimmedValues() {

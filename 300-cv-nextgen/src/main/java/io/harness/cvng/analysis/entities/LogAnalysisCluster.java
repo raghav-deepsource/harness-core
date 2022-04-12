@@ -39,6 +39,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
+import org.bson.BsonDocument;
+import org.bson.BsonDouble;
+import org.bson.BsonInt64;
+import org.bson.codecs.configuration.CodecRegistry;
+import org.bson.conversions.Bson;
 import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
 import org.mongodb.morphia.annotations.PrePersist;
@@ -104,10 +109,26 @@ public final class LogAnalysisCluster implements PersistentEntity, UuidAware, Cr
 
   @Data
   @Builder
-  public static class Frequency {
+  @FieldNameConstants(innerTypeName = "FrequencyKeys")
+  public static class Frequency implements Bson {
     Integer count;
     Long timestamp;
     Double riskScore;
+
+    @Override
+    public <TDocument> BsonDocument toBsonDocument(Class<TDocument> aClass, CodecRegistry codecRegistry) {
+      BsonDocument bsonDocument = new BsonDocument();
+      if (count != null) {
+        bsonDocument.append(FrequencyKeys.count, new BsonInt64(count));
+      }
+      if (timestamp != null) {
+        bsonDocument.append(FrequencyKeys.timestamp, new BsonInt64(timestamp));
+      }
+      if (riskScore != null) {
+        bsonDocument.append(FrequencyKeys.riskScore, new BsonDouble(riskScore));
+      }
+      return bsonDocument;
+    }
   }
 
   @PrePersist

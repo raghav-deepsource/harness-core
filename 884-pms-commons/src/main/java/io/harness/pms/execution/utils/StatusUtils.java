@@ -170,7 +170,7 @@ public class StatusUtils {
       case PAUSED:
         return EnumSet.of(QUEUED, RUNNING, PAUSING, INTERVENTION_WAITING);
       case SUCCEEDED:
-        return EnumSet.of(PAUSING, INTERVENTION_WAITING, RUNNING);
+        return EnumSet.of(PAUSING, INTERVENTION_WAITING, RUNNING, APPROVAL_WAITING);
       default:
         return nodeAllowedStartSet(status);
     }

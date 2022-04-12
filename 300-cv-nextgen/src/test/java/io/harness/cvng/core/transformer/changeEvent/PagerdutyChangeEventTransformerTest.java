@@ -10,39 +10,31 @@ package io.harness.cvng.core.transformer.changeEvent;
 import static io.harness.rule.OwnerRule.SOWMYA;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
 
+import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.activity.entities.PagerDutyActivity;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.PagerDutyEventMetaData;
-import io.harness.cvng.client.NextGenService;
-import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
-import io.harness.ng.core.service.dto.ServiceResponseDTO;
+import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.rule.Owner;
 
-import org.apache.commons.lang3.reflect.FieldUtils;
+import com.google.inject.Inject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.Mockito;
 
-public class PagerdutyChangeEventTransformerTest {
-  PagerDutyChangeEventTransformer pagerDutyChangeEventTransformer;
+public class PagerdutyChangeEventTransformerTest extends CvNextGenTestBase {
+  @Inject PagerDutyChangeEventTransformer pagerDutyChangeEventTransformer;
   BuilderFactory builderFactory;
-  NextGenService nextGenService;
+  @Inject private MonitoredServiceService monitoredServiceService;
 
   @Before
   public void setup() throws IllegalAccessException {
-    pagerDutyChangeEventTransformer = new PagerDutyChangeEventTransformer();
-    nextGenService = Mockito.mock(NextGenService.class);
-    FieldUtils.writeField(pagerDutyChangeEventTransformer, "nextGenService", nextGenService, true);
-    Mockito.when(nextGenService.getService(any(), any(), any(), any()))
-        .thenReturn(ServiceResponseDTO.builder().name("serviceName").build());
-    Mockito.when(nextGenService.getEnvironment(any(), any(), any(), any()))
-        .thenReturn(EnvironmentResponseDTO.builder().name("environmentName").build());
     builderFactory = BuilderFactory.getDefault();
+    monitoredServiceService.createDefault(builderFactory.getProjectParams(),
+        builderFactory.getContext().getServiceIdentifier(), builderFactory.getContext().getEnvIdentifier());
   }
 
   @Test

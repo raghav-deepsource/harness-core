@@ -33,6 +33,7 @@ import software.wings.security.UserThreadLocal;
 import software.wings.security.annotations.AuthRule;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.AuthService;
+import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.yaml.YamlGitService;
 import software.wings.settings.SettingValue;
 import software.wings.settings.SettingVariableTypes;
@@ -51,15 +52,17 @@ public class UpdateApplicationGitSyncConfigDataFetcher
   private final YamlGitService yamlGitService;
   private HPersistence persistence;
   private AuthService authService;
+  private SettingsService settingsService;
 
   @Inject
-  public UpdateApplicationGitSyncConfigDataFetcher(
-      AppService appService, YamlGitService yamlGitService, HPersistence persistence, AuthService authService) {
+  public UpdateApplicationGitSyncConfigDataFetcher(AppService appService, YamlGitService yamlGitService,
+      HPersistence persistence, AuthService authService, SettingsService settingsService) {
     super(QLUpdateApplicationGitSyncConfigInput.class, QLUpdateApplicationGitSyncConfigPayload.class);
     this.appService = appService;
     this.yamlGitService = yamlGitService;
     this.persistence = persistence;
     this.authService = authService;
+    this.settingsService = settingsService;
   }
 
   @Override
@@ -97,10 +100,7 @@ public class UpdateApplicationGitSyncConfigDataFetcher
   }
 
   private void validateGitConnector(String connectorId, String accountId) {
-    SettingAttribute settingAttribute = persistence.get(SettingAttribute.class, connectorId);
-    if (settingAttribute == null) {
-      throw new InvalidRequestException("Git Connector does not exist", WingsException.USER);
-    }
+    final SettingAttribute settingAttribute = settingsService.getWithRbac(connectorId);
 
     if (!settingAttribute.getAccountId().equals(accountId)) {
       throw new InvalidRequestException("Git Connector does not exist", WingsException.USER);

@@ -135,8 +135,8 @@ public class ArtifactCollectionServiceAsyncImpl implements ArtifactCollectionSer
       ArtifactStreamAttributes artifactStreamAttributes =
           artifactCollectionUtils.renderCustomArtifactScriptString((CustomArtifactStream) artifactStream);
       accountId = artifactStreamAttributes.getAccountId();
-      delegateTaskBuilder =
-          artifactCollectionUtils.fetchCustomDelegateTask(waitId, artifactStream, artifactStreamAttributes, true);
+      delegateTaskBuilder = artifactCollectionUtils.fetchCustomDelegateTask(waitId, artifactStream,
+          artifactStreamAttributes, true, BuildSourceParameters.BuildSourceRequestType.GET_BUILDS);
     } else {
       SettingAttribute settingAttribute = settingsService.get(artifactStream.getSettingId());
       if (settingAttribute == null) {

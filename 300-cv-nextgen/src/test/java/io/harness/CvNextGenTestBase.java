@@ -24,7 +24,14 @@ import org.mockito.junit.MockitoRule;
 public abstract class CvNextGenTestBase extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Rule public LifecycleRule lifecycleRule = new LifecycleRule();
-  @Rule public CvNextGenRule cvNextGenRule = new CvNextGenRule(lifecycleRule.getClosingFactory());
+  @Rule public CvNextGenRule cvNextGenRule;
+
+  public CvNextGenTestBase(boolean forbiddenAccessControl) {
+    cvNextGenRule = new CvNextGenRule(lifecycleRule.getClosingFactory(), forbiddenAccessControl);
+  }
+  public CvNextGenTestBase() {
+    this(false);
+  }
 
   private static boolean isBazelTest() {
     return System.getProperty("user.dir").contains("/bin/");

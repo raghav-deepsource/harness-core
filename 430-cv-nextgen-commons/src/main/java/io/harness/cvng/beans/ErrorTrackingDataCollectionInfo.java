@@ -20,6 +20,9 @@ import lombok.EqualsAndHashCode;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 public class ErrorTrackingDataCollectionInfo extends LogDataCollectionInfo<ErrorTrackingConnectorDTO> {
+  private String accountId;
+  private String orgId;
+  private String projectId;
   private String serviceId;
   private String environmentId;
   private String versionId;
@@ -27,7 +30,9 @@ public class ErrorTrackingDataCollectionInfo extends LogDataCollectionInfo<Error
   @Override
   public Map<String, Object> getDslEnvVariables(ErrorTrackingConnectorDTO overOpsConnectorDTO) {
     Map<String, Object> map = new HashMap<>();
-    map.put("sid", overOpsConnectorDTO.getSid());
+    map.put("accountId", accountId);
+    map.put("orgId", orgId);
+    map.put("projectId", projectId);
     map.put("versionId", versionId == null ? "" : versionId);
     map.put("serviceId", serviceId);
     map.put("environmentId", environmentId);
@@ -40,7 +45,7 @@ public class ErrorTrackingDataCollectionInfo extends LogDataCollectionInfo<Error
     if (!url.endsWith("/")) {
       url += "/";
     }
-    url += "et/dashboard/eventlog";
+    url += "api/dashboard/eventlog";
     return url;
   }
 
@@ -48,6 +53,7 @@ public class ErrorTrackingDataCollectionInfo extends LogDataCollectionInfo<Error
   public Map<String, String> collectionHeaders(ErrorTrackingConnectorDTO overOpsConnectorDTO) {
     Map<String, String> headers = new HashMap<>();
     headers.put("X-API-Key", new String(overOpsConnectorDTO.getApiKeyRef().getDecryptedValue()));
+    headers.put("accountId", accountId);
     return headers;
   }
 

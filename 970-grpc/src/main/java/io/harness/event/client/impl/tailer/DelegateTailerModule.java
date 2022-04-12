@@ -24,17 +24,15 @@ import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
 import io.grpc.netty.shaded.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import java.time.Duration;
 import lombok.Builder;
+import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.Value;
 import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.queue.impl.RollingChronicleQueue;
 
+@RequiredArgsConstructor
 public class DelegateTailerModule extends ProviderModule {
   private final Config config;
-
-  public DelegateTailerModule(final Config config) {
-    this.config = config;
-  }
 
   @Provides
   @Singleton

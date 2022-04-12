@@ -10,6 +10,8 @@ package software.wings.sm.states.provision;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.CLOUDFORMATION_SKIP_WAIT_FOR_RESOURCES;
 import static io.harness.beans.FeatureName.SKIP_BASED_ON_STACK_STATUSES;
+import static io.harness.delegate.task.cloudformation.CloudformationBaseHelperImpl.CLOUDFORMATION_STACK_CREATE_BODY;
+import static io.harness.delegate.task.cloudformation.CloudformationBaseHelperImpl.CLOUDFORMATION_STACK_CREATE_URL;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.BOJANA;
@@ -290,7 +292,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
     CloudFormationCreateStackRequest request =
         (CloudFormationCreateStackRequest) delegateTask.getData().getParameters()[0];
     assertThat(request.getData()).isEqualTo(TEMPLATE_FILE_PATH);
-    assertThat(request.getCreateType()).isEqualTo(CloudFormationCreateStackRequest.CLOUD_FORMATION_STACK_CREATE_URL);
+    assertThat(request.getCreateType()).isEqualTo(CLOUDFORMATION_STACK_CREATE_URL);
     assertThat(request.getCustomStackName()).isEqualTo(StringUtils.EMPTY);
   }
 
@@ -312,7 +314,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
     CloudFormationCreateStackRequest request =
         (CloudFormationCreateStackRequest) delegateTask.getData().getParameters()[0];
     assertThat(request.getData()).isEqualTo(WingsTestConstants.TEMPLATE_BODY);
-    assertThat(request.getCreateType()).isEqualTo(CloudFormationCreateStackRequest.CLOUD_FORMATION_STACK_CREATE_BODY);
+    assertThat(request.getCreateType()).isEqualTo(CLOUDFORMATION_STACK_CREATE_BODY);
     assertThat(request.getCustomStackName()).isEqualTo("customStackName");
     assertThat(request.getCapabilities()).isNull();
     assertThat(request.getTags()).isNull();
@@ -342,7 +344,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
     CloudFormationCreateStackRequest request =
         (CloudFormationCreateStackRequest) delegateTask.getData().getParameters()[0];
     assertThat(request.getData()).isEqualTo(WingsTestConstants.TEMPLATE_BODY);
-    assertThat(request.getCreateType()).isEqualTo(CloudFormationCreateStackRequest.CLOUD_FORMATION_STACK_CREATE_BODY);
+    assertThat(request.getCreateType()).isEqualTo(CLOUDFORMATION_STACK_CREATE_BODY);
     assertThat(request.getCustomStackName()).isEqualTo("customStackName");
     assertThat(request.getStackStatusesToMarkAsSuccess()).containsExactly(UPDATE_ROLLBACK_COMPLETE);
   }
@@ -766,7 +768,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
     CloudFormationCreateStackRequest request =
         (CloudFormationCreateStackRequest) delegateTask.getData().getParameters()[0];
     assertThat(request.getData()).isEqualTo(WingsTestConstants.TEMPLATE_BODY);
-    assertThat(request.getCreateType()).isEqualTo(CloudFormationCreateStackRequest.CLOUD_FORMATION_STACK_CREATE_BODY);
+    assertThat(request.getCreateType()).isEqualTo(CLOUDFORMATION_STACK_CREATE_BODY);
     assertThat(request.getCustomStackName()).isEqualTo("customStackName");
     assertThat(request.getCapabilities()).isEqualTo(capabilities);
     assertThat(request.getTags()).isEqualTo(tags);

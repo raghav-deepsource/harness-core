@@ -13,6 +13,7 @@ import static io.harness.common.CIExecutionConstants.ACCESS_KEY_MINIO_VARIABLE;
 import static io.harness.common.CIExecutionConstants.HARNESS_ACCOUNT_ID_VARIABLE;
 import static io.harness.common.CIExecutionConstants.HARNESS_BUILD_ID_VARIABLE;
 import static io.harness.common.CIExecutionConstants.HARNESS_CI_INDIRECT_LOG_UPLOAD_FF;
+import static io.harness.common.CIExecutionConstants.HARNESS_EXECUTION_ID_VARIABLE;
 import static io.harness.common.CIExecutionConstants.HARNESS_ORG_ID_VARIABLE;
 import static io.harness.common.CIExecutionConstants.HARNESS_PROJECT_ID_VARIABLE;
 import static io.harness.common.CIExecutionConstants.HARNESS_STAGE_ID_VARIABLE;
@@ -40,6 +41,8 @@ import static org.mockito.Mockito.when;
 import io.harness.beans.FeatureName;
 import io.harness.beans.sweepingoutputs.K8PodDetails;
 import io.harness.beans.sweepingoutputs.StepTaskDetails;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.beans.entities.LogServiceConfig;
 import io.harness.ci.beans.entities.TIServiceConfig;
@@ -128,6 +131,7 @@ public class K8BuildSetupUtilsTest extends CIExecutionTestBase {
     String projectID = "project";
     int buildID = 1;
     String stageID = "stage";
+    String executionID = "execution";
     String namespace = "default";
 
     String logEndpoint = "http://localhost:8080";
@@ -175,9 +179,14 @@ public class K8BuildSetupUtilsTest extends CIExecutionTestBase {
         BaseNGAccess.builder().accountIdentifier(accountID).orgIdentifier(orgID).projectIdentifier(projectID).build();
     K8PodDetails k8PodDetails = K8PodDetails.builder().stageID(stageID).build();
 
+    Infrastructure infrastructure =
+        ciExecutionPlanTestHelper.getExpectedLiteEngineTaskInfoOnFirstPodWithSetCallbackId().getInfrastructure();
+
+    String infraNamepsace = ((K8sDirectInfraYaml) infrastructure).getSpec().getNamespace().getValue();
+
     CIK8PodParams<CIK8ContainerParams> podParams = k8BuildSetupUtils.getPodParams(ngAccess, k8PodDetails,
-        ciExecutionPlanTestHelper.getExpectedLiteEngineTaskInfoOnFirstPodWithSetCallbackId(), true, null, true,
-        "workspace", ambiance, null, null, null, null);
+        ciExecutionPlanTestHelper.getExpectedLiteEngineTaskInfoOnFirstPodWithSetCallbackId(), true, "workspace",
+        ambiance, null, null, null, null, null, null, null, null, infraNamepsace, null, null, null);
 
     List<SecretVariableDetails> secretVariableDetails =
         new ArrayList<>(ciExecutionPlanTestHelper.getSecretVariableDetails());
@@ -212,6 +221,7 @@ public class K8BuildSetupUtilsTest extends CIExecutionTestBase {
     stepEnvVars.put(HARNESS_PROJECT_ID_VARIABLE, projectID);
     stepEnvVars.put(HARNESS_BUILD_ID_VARIABLE, String.valueOf(buildID));
     stepEnvVars.put(HARNESS_STAGE_ID_VARIABLE, stageID);
+    stepEnvVars.put(HARNESS_EXECUTION_ID_VARIABLE, executionID);
     stepEnvVars.put(HARNESS_CI_INDIRECT_LOG_UPLOAD_FF, "true");
     stepEnvVars.putAll(ciExecutionPlanTestHelper.getEnvVariables(true));
 

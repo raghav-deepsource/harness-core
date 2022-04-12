@@ -95,26 +95,31 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
   private void validateApiKey(String accountIdentifier, String apiKey) {
     String[] splitToken = apiKey.split(delimiter);
     if (splitToken.length != 3) {
-      log.warn("Token length not matching for API token");
-      throw new InvalidRequestException("Invalid API Token");
+      String message = "Token length not matching for API token";
+      log.warn(message);
+      throw new InvalidRequestException(String.format("Invalid API Token: %s", message));
     }
     if (EmptyPredicate.isNotEmpty(splitToken)) {
-      TokenDTO tokenDTO = NGRestUtils.getResponse(tokenClient.getToken(splitToken[1]));
+      String tokenId = splitToken[1];
+      TokenDTO tokenDTO = NGRestUtils.getResponse(tokenClient.getToken(tokenId));
 
       if (tokenDTO != null) {
         if (!accountIdentifier.equals(tokenDTO.getAccountIdentifier())) {
-          throw new InvalidRequestException("Invalid account token access");
+          throw new InvalidRequestException(String.format("Invalid account token access %s", tokenId));
         }
         if (!tokenDTO.getApiKeyType().getValue().equals(splitToken[0])) {
-          log.warn("Invalid prefix for API token");
-          throw new InvalidRequestException("Invalid API token");
+          String message = "Invalid prefix for API token";
+          log.warn(message);
+          throw new InvalidRequestException(String.format("Invalid API token %s: %s", tokenId, message));
         }
         if (!new BCryptPasswordEncoder($2A, 10).matches(splitToken[2], tokenDTO.getEncodedPassword())) {
-          log.warn("Raw password not matching for API token");
-          throw new InvalidRequestException("Invalid API token");
+          String message = "Raw password not matching for API token";
+          log.warn(message);
+          throw new InvalidRequestException(String.format("Invalid API token %s: %s", tokenId, message));
         }
         if (!tokenDTO.isValid()) {
-          throw new InvalidRequestException("Incoming API token " + tokenDTO.getName() + " has expired");
+          throw new InvalidRequestException(
+              "Incoming API token " + tokenDTO.getName() + String.format(" has expired %s", tokenId));
         }
         Principal principal = null;
         if (tokenDTO.getApiKeyType() == ApiKeyType.SERVICE_ACCOUNT) {
@@ -128,10 +133,10 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
         SecurityContextBuilder.setContext(principal);
         SourcePrincipalContextBuilder.setSourcePrincipal(principal);
       } else {
-        throw new InvalidRequestException("Invalid API token");
+        throw new InvalidRequestException(String.format("Invalid API token %s: Token not found", tokenId));
       }
     } else {
-      throw new InvalidRequestException("Invalid API token");
+      throw new InvalidRequestException("Invalid API token: Token is Empty");
     }
   }
 

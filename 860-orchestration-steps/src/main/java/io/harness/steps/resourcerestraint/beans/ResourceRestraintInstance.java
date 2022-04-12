@@ -8,11 +8,13 @@
 package io.harness.steps.resourcerestraint.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
 import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.distribution.constraint.Consumer;
 import io.harness.iterator.PersistentRegularIterable;
+import io.harness.logging.AutoLogContext;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
@@ -24,7 +26,9 @@ import io.harness.persistence.UuidAccess;
 import com.google.common.collect.ImmutableList;
 import java.time.OffsetDateTime;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
@@ -107,5 +111,17 @@ public class ResourceRestraintInstance implements PersistentEntity, UuidAccess, 
                  .field(ResourceRestraintInstanceKeys.releaseEntityId)
                  .build())
         .build();
+  }
+
+  public AutoLogContext autoLogContext() {
+    Map<String, String> logContext = new HashMap<>();
+    logContext.put("restraintInstanceId", uuid);
+    logContext.put(ResourceRestraintInstanceKeys.resourceRestraintId, resourceRestraintId);
+    logContext.put(ResourceRestraintInstanceKeys.resourceUnit, resourceUnit);
+    logContext.put(ResourceRestraintInstanceKeys.releaseEntityId, releaseEntityId);
+    logContext.put(ResourceRestraintInstanceKeys.releaseEntityType, releaseEntityType);
+    logContext.put(ResourceRestraintInstanceKeys.permits, String.valueOf(permits));
+    logContext.put(ResourceRestraintInstanceKeys.order, String.valueOf(order));
+    return new AutoLogContext(logContext, OVERRIDE_NESTS);
   }
 }

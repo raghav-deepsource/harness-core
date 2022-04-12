@@ -39,6 +39,13 @@ public class RecommendationUtils {
         .build();
   }
 
+  public TotalResourceUsage getTotalResourceUsageGiB(TotalResourceUsage totalResourceUsage) {
+    return TotalResourceUsage.builder()
+        .maxcpu(totalResourceUsage.getMaxcpu() / 1024.0D)
+        .maxmemory(totalResourceUsage.getMaxmemory() / 1024.0D)
+        .build();
+  }
+
   private boolean isResourceConsistent(@NonNull TotalResourceUsage resource) {
     boolean inconsistent = Math.round(resource.getSumcpu()) < Math.round(resource.getMaxcpu())
         || Math.round(resource.getSummemory()) < Math.round(resource.getMaxmemory());

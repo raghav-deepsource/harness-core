@@ -1,15 +1,14 @@
 Var timeSeriesUrl = concat(Env:baseUrl, "v1/query")
 
 Var requests = []
-Var params = {}
-Var:params.put("from", Env:startTimeSeconds)
-Var:params.put("to", Env:endTimeSeconds)
-
 Var nullObject = null
 foreach query in Env:queries {
-Var:params.put("query", Var:query)
-Request metricRequest = new Request(url=Var:timeSeriesUrl, header=Env:commonHeaders, options=Var:params)
-Var:requests.append(Var:metricRequest)
+    Var params = {}
+    Var:params.put("from", Env:startTimeSeconds)
+    Var:params.put("to", Env:endTimeSeconds)
+    Var:params.put("query", Var:query)
+    Request metricRequest = new Request(url=Var:timeSeriesUrl, header=Env:commonHeaders, options=Var:params)
+    Var:requests.append(Var:metricRequest)
 }
 Var metricResponses = execute-parallel(Var:requests)
 Var returnList = []

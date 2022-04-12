@@ -56,4 +56,14 @@ public class ServiceGuardLogAnalysisStateExecutor extends LogAnalysisStateExecut
     }
     return AnalysisStatus.TRANSITION;
   }
+
+  @Override
+  public AnalysisState handleRetry(ServiceGuardLogAnalysisState analysisState) {
+    if (analysisState.getRetryCount() >= getMaxRetry()) {
+      analysisState.setStatus(AnalysisStatus.IGNORED);
+    } else {
+      return handleRerun(analysisState);
+    }
+    return analysisState;
+  }
 }

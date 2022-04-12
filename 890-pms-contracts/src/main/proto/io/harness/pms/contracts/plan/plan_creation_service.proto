@@ -110,10 +110,11 @@ message VariablesCreationBlobResponse {
   map<string, YamlFieldBlob> dependencies = 2 [deprecated = true];
   map<string, YamlFieldBlob> resolvedDependencies = 3 [deprecated = true];
   repeated ErrorResponse errorResponse = 4;
-  map<string, YamlOutputProperties> yamlOutputProperties = 5;
+  map<string, YamlOutputProperties> yamlOutputProperties = 5 [deprecated = true];
   Dependencies deps = 6;
   YamlUpdates yamlUpdates = 7;
   Dependencies resolvedDeps = 8;
+  map<string, YamlExtraProperties> yamlExtraProperties = 9;
 }
 
 message ErrorResponse {
@@ -129,11 +130,13 @@ message SetupMetadata {
 
 message VariablesCreationMetadata {
   bytes gitSyncBranchContext = 1;
+  map<string, string> metadata = 2;
 }
 
 message Dependencies {
   string yaml = 1;
   map<string, string> dependencies = 2;
+  // Metadata regarding the dependency added in above dependencies map
   map<string, Dependency> dependencyMetadata = 3;
 }
 
@@ -153,5 +156,6 @@ message Dependency {
 //}
 
 message YamlUpdates {
+  // value can be json or yaml doesn't matter, but both structure should be interchangeable
   map<string, string> fqnToYaml = 1;
 }

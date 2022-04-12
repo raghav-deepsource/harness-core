@@ -9,7 +9,6 @@ package io.harness.ci.integrationstage;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.environment.BuildJobEnvInfo;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageConfig;
@@ -31,20 +30,19 @@ public class InitializeStepGenerator {
   InitializeStepInfo createInitializeStepInfo(ExecutionElementConfig executionElement, CodeBase ciCodebase,
       StageElementConfig stageElementConfig, CIExecutionArgs ciExecutionArgs, Infrastructure infrastructure,
       String accountId) {
-    BuildJobEnvInfo buildJobEnvInfo = buildJobEnvInfoBuilder.getCIBuildJobEnvInfo(
-        stageElementConfig, infrastructure, ciExecutionArgs, executionElement.getSteps(), accountId);
-
     IntegrationStageConfig integrationStageConfig = IntegrationStageUtils.getIntegrationStageConfig(stageElementConfig);
 
     boolean gitClone = RunTimeInputHandler.resolveGitClone(integrationStageConfig.getCloneCodebase());
-
     return InitializeStepInfo.builder()
         .identifier(INITIALIZE_TASK)
         .name(INITIALIZE_TASK)
         .infrastructure(infrastructure)
+        .stageIdentifier(stageElementConfig.getIdentifier())
+        .variables(stageElementConfig.getVariables())
+        .stageElementConfig(integrationStageConfig)
+        .executionSource(ciExecutionArgs.getExecutionSource())
         .ciCodebase(ciCodebase)
         .skipGitClone(!gitClone)
-        .buildJobEnvInfo(buildJobEnvInfo)
         .executionElementConfig(executionElement)
         .timeout(buildJobEnvInfoBuilder.getTimeout(infrastructure))
         .build();

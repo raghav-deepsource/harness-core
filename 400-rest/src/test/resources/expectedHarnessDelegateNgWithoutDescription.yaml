@@ -103,10 +103,6 @@ spec:
           value: ""
         - name: DELEGATE_TAGS
           value: ""
-        - name: DELEGATE_ORG_IDENTIFIER
-          value: ""
-        - name: DELEGATE_PROJECT_IDENTIFIER
-          value: ""
         - name: NEXT_GEN
           value: "true"
         - name: ACCOUNT_SECRET
@@ -115,18 +111,12 @@ spec:
           value: http://localhost:8888
         - name: WATCHER_CHECK_LOCATION
           value: watcherci.txt
-        - name: REMOTE_WATCHER_URL_CDN
-          value: http://localhost:9500/builds
         - name: DELEGATE_STORAGE_URL
           value: http://localhost:8888
         - name: DELEGATE_CHECK_LOCATION
           value: delegateci.txt
         - name: HELM_DESIRED_VERSION
           value: ""
-        - name: USE_CDN
-          value: "false"
-        - name: CDN_URL
-          value: http://localhost:9500
         - name: JRE_VERSION
           value: 1.8.0_242
         - name: HELM3_PATH

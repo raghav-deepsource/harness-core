@@ -82,6 +82,7 @@ public class JenkinsTask extends AbstractDelegateRunnableTask {
   @Inject private DelegateLogService logService;
   @Inject private JenkinsUtils jenkinsUtil;
   @Inject @Named("jenkinsExecutor") private ExecutorService jenkinsExecutor;
+  private static final int MAX_RETRY = 5;
 
   public JenkinsTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> postExecute, BooleanSupplier preExecute) {
@@ -384,6 +385,7 @@ public class JenkinsTask extends AbstractDelegateRunnableTask {
   private Build waitForJobToStartExecution(
       Jenkins jenkins, QueueReference queueReference, JenkinsConfig jenkinsConfig) {
     Build jenkinsBuild = null;
+    int retry = 0;
     do {
       log.info(
           "Waiting for job {} to start execution with URL {}", queueReference, queueReference.getQueueItemUrlPart());
@@ -400,6 +402,16 @@ public class JenkinsTask extends AbstractDelegateRunnableTask {
             throw new InvalidCredentialsException("Invalid Jenkins credentials", WingsException.USER);
           } else if (((HttpResponseException) e).getStatusCode() == 403) {
             throw new UnauthorizedException("User not authorized to access jenkins", WingsException.USER);
+          } else if (((HttpResponseException) e).getStatusCode() == 500) {
+            log.info("Failed to retrieve job details at url {}, Retrying (retry count {})  ",
+                queueReference.getQueueItemUrlPart(), retry);
+            if (retry < MAX_RETRY) {
+              retry++;
+              continue;
+            } else {
+              throw new GeneralException(String.format(
+                  "Error retrieving job details at url %s: %s", queueReference.getQueueItemUrlPart(), e.getMessage()));
+            }
           }
           throw new GeneralException(e.getMessage());
         }

@@ -227,9 +227,9 @@ iteratorsConfig:
     enabled: true
     targetIntervalInSeconds: 60
   resourceRestraint:
-    threadPoolCount: 5
+    threadPoolCount: 2
     enabled: true
-    targetIntervalInSeconds: 60
+    targetIntervalInSeconds: 300
   interruptMonitor:
     threadPoolCount: 2
     enabled: true
@@ -345,7 +345,7 @@ segmentConfiguration:
 enforcementClientConfiguration:
   enforcementCheckEnabled: false
 
-shouldUseInstanceCache: ${SHOULD_USE_INSTANCE_CACHE:-false}
+shouldUseInstanceCache: ${SHOULD_USE_INSTANCE_CACHE:-true}
 
 pmsPlanCreatorServicePoolConfig:
   corePoolSize: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_CORE_SIZE:-2}
@@ -375,21 +375,6 @@ pipelineSdkRedisEventsConfig:
   pipelineSdkResponseEvent:
     maxTopicSize: ${PIPELINE_SDK_RESPONSE_EVENT_MAX_TOPIC_SIZE:-5000}
 
-debeziumConfig:
-  isEnabled: false
-  name: ${DEBEZIUM_NAME:-pipeline}
-  key.converter.schemas.enable: ${KEY_CONVERTER_SCHEMAS_ENABLE:-false}
-  value.converter.schemas.enable: ${VALUE_CONVERTER_SCHEMAS_ENABLE:-false}
-  offset.flush.interval.ms: ${OFFSET_FLUSH_INTERVAL_MS:-5000}
-  mongodb.hosts: ${MONGODB_HOSTS:-rs0/localhost:27017}
-  mongodb.name: ${MONGODB_NAME:-pms-harness_db}
-  mongodb.user: ${MONGODB_USER:-""}
-  mongodb.password: ${MONGODB_PASSWORD:-""}
-  mongodb.ssl.enabled: ${MONGODB_SSL_ENABLED:-false}
-  connector.class: ${CONNECTOR_CLASS:-io.debezium.connector.mongodb.MongoDbConnector}
-  database.include.list: ${DATABASE_INCLUDE_LIST:-pms-harness}
-  collection.include.list: ${COLLECTION_INCLUDE_LIST:-pms-harness.planExecutionsSummary}
-
 orchestrationRedisEventsConfig:
   pipelineInterruptEvent:
     maxTopicSize: ${PIPELINE_INTERRUPT_EVENT_MAX_TOPIC_SIZE:-1000}
@@ -409,3 +394,22 @@ orchestrationRedisEventsConfig:
     maxTopicSize: ${START_PARTIAL_PLAN_CREATOR_MAX_TOPIC_SIZE:-5000}
 
 allowedParallelStages: ${ALLOWED_PARALLEL_STAGES:-25}
+
+orchestrationLogConfiguration:
+  reduceOrchestrationLog: ${REDUCE_ORCHESTRATION_EVENT_LOG:-false}
+  shouldUseBatching: ${ORCHESTRATION_LOG_SHOULD_USE_BATCHING:-false}
+  orchestrationLogBatchSize: ${ORCHESTRATION_LOG_BATCH_SIZE:-5}
+
+planCreatorMergeServiceDependencyBatch: ${PLAN_CREATOR_DEPENDENCY_BATCH:-50}
+
+############ Json Expansion Config variables #################
+
+jsonExpansionPoolConfig:
+  corePoolSize: ${JSON_EXPANSION_EXECUTOR_POOL_CORE_SIZE:-5}
+  maxPoolSize: ${JSON_EXPANSION_EXECUTOR_POOL_MAX_SIZE:-10}
+  idleTime: ${JSON_EXPANSION_EXECUTOR_POOL_IDLE_TIME:-30}
+  timeUnit: ${JSON_EXPANSION_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
+jsonExpansionRequestBatchSize: ${JSON_EXPANSION_BATCH_SIZE:-50}
+
+#############################################################

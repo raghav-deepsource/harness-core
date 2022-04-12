@@ -15,6 +15,7 @@ import io.harness.annotations.dev.TargetModule;
 
 import software.wings.graphql.schema.type.aggregation.deployment.QLDeploymentTag;
 import software.wings.graphql.schema.type.artifact.QLArtifact;
+import software.wings.graphql.schema.type.manifest.QLManifest;
 import software.wings.security.PermissionAttribute.ResourceType;
 import software.wings.security.annotations.Scope;
 
@@ -43,4 +44,5 @@ public class QLWorkflowExecution implements QLExecution {
   private String appId;
   private List<QLDeploymentTag> tags;
   private String failureDetails;
+  private List<QLManifest> manifests;
 }

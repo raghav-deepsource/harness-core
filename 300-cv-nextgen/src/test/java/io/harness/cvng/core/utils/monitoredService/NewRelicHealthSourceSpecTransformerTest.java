@@ -98,6 +98,7 @@ public class NewRelicHealthSourceSpecTransformerTest extends CvNextGenTestBase {
     cvConfig.setMetricInfos(Arrays.asList(
         NewRelicMetricInfo.builder()
             .metricName("metric1")
+            .identifier("metricId1")
             .nrql("Select * from transactions")
             .metricType(TimeSeriesMetricType.RESP_TIME)
             .responseMapping(MetricResponseMapping.builder()
@@ -129,6 +130,7 @@ public class NewRelicHealthSourceSpecTransformerTest extends CvNextGenTestBase {
     assertThat(metricDefinition.getGroupName()).isEqualTo(newRelicCVConfig.getGroupName());
     assertThat(metricDefinition.getNrql()).isEqualTo(newRelicCVConfig.getMetricInfos().get(0).getNrql());
     assertThat(metricDefinition.getMetricName()).isEqualTo(newRelicCVConfig.getMetricInfos().get(0).getMetricName());
+    assertThat(metricDefinition.getIdentifier()).isEqualTo(newRelicCVConfig.getMetricInfos().get(0).getIdentifier());
     assertThat(metricDefinition.getResponseMapping())
         .isEqualTo(newRelicCVConfig.getMetricInfos().get(0).getResponseMapping());
     assertThat(metricDefinition.getAnalysis().getDeploymentVerification().getEnabled()).isTrue();

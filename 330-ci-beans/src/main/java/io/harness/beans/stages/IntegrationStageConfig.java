@@ -7,6 +7,7 @@
 
 package io.harness.beans.stages;
 
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -53,11 +54,16 @@ public class IntegrationStageConfig implements StageInfoConfig {
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<String>> sharedPaths;
+
   ExecutionElementConfig execution;
   @NotNull
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, property = "type", visible = true, defaultImpl = UseFromStageInfraYaml.class)
   Infrastructure infrastructure;
-  List<DependencyElement> serviceDependencies;
-  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH) private ParameterField<Boolean> cloneCodebase;
+  @YamlSchemaTypes(value = {runtime})
+  @ApiModelProperty(dataType = "[Lio.harness.beans.dependencies.DependencyElement;")
+  ParameterField<List<DependencyElement>> serviceDependencies;
+  @YamlSchemaTypes(value = {runtime})
+  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  private ParameterField<Boolean> cloneCodebase;
 }

@@ -21,6 +21,7 @@ import software.wings.helpers.ext.cloudformation.request.CloudFormationCommandRe
 import software.wings.helpers.ext.cloudformation.request.CloudFormationDeleteStackRequest;
 import software.wings.helpers.ext.cloudformation.response.CloudFormationCommandExecutionResponse;
 import software.wings.helpers.ext.cloudformation.response.CloudFormationCommandExecutionResponse.CloudFormationCommandExecutionResponseBuilder;
+import software.wings.service.mappers.artifact.AwsConfigToInternalMapper;
 
 import com.amazonaws.services.cloudformation.model.Stack;
 import com.google.inject.Singleton;
@@ -40,8 +41,10 @@ public class CloudFormationDeleteStackHandler extends CloudFormationCommandTaskH
     CloudFormationCommandExecutionResponseBuilder builder = CloudFormationCommandExecutionResponse.builder();
     AwsConfig awsConfig = cloudFormationDeleteStackRequest.getAwsConfig();
     encryptionService.decrypt(awsConfig, details, false);
-    Optional<Stack> existingStack = getIfStackExists(cloudFormationDeleteStackRequest.getCustomStackName(),
-        cloudFormationDeleteStackRequest.getStackNameSuffix(), awsConfig, request.getRegion());
+    Optional<Stack> existingStack = cloudformationBaseHelper.getIfStackExists(
+        cloudFormationDeleteStackRequest.getCustomStackName(), cloudFormationDeleteStackRequest.getStackNameSuffix(),
+        AwsConfigToInternalMapper.toAwsInternalConfig(cloudFormationDeleteStackRequest.getAwsConfig()),
+        request.getRegion());
     String stackId;
     String stackName;
     if (existingStack.isPresent()) {

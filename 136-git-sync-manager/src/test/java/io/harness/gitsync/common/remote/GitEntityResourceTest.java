@@ -23,6 +23,7 @@ import io.harness.gitsync.common.beans.GitFileLocation;
 import io.harness.gitsync.common.dtos.GitSyncEntityListDTO;
 import io.harness.gitsync.common.dtos.GitSyncRepoFilesDTO;
 import io.harness.gitsync.common.dtos.GitSyncRepoFilesListDTO;
+import io.harness.gitsync.common.dtos.RepoProviders;
 import io.harness.gitsync.common.impl.GitEntityServiceImpl;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -154,6 +155,10 @@ public class GitEntityResourceTest extends GitSyncTestBase {
         .entityIdentifier(id)
         .accountId(accountId)
         .scope(Scope.ACCOUNT)
+        .folderPath("folderPath")
+        .entityGitPath("filePath")
+        .completeGitPath("folderPath/filePath")
+        .repoProvider(RepoProviders.GITHUB)
         .isDefault(isDefault)
         .build();
   }

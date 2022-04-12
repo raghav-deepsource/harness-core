@@ -61,6 +61,7 @@ import io.kubernetes.client.openapi.models.V1SecretBuilder;
 import io.kubernetes.client.util.Watch;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
@@ -244,7 +245,7 @@ public class CIK8InitializeTaskHandlerTest extends CategoryTest {
              eq(cik8InitializeTaskParams.getCik8PodParams().getName()), eq(logStreamingTaskClient)))
         .thenReturn(watch);
     when(cik8JavaClientHandler.waitUntilPodIsReady(any(), eq("pod"), eq(namespace), eq(timeout)))
-        .thenReturn(PodStatus.builder().status(RUNNING).build());
+        .thenReturn(PodStatus.builder().ciContainerStatusList(new ArrayList<>()).status(RUNNING).build());
 
     doNothing().when(k8EventHandler).stopEventWatch(watch);
 

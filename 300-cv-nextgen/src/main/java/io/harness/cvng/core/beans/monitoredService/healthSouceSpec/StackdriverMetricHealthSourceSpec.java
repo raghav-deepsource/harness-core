@@ -42,7 +42,7 @@ import org.apache.commons.lang3.StringUtils;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class StackdriverMetricHealthSourceSpec extends HealthSourceSpec {
+public class StackdriverMetricHealthSourceSpec extends MetricHealthSourceSpec {
   @UniqueIdentifierCheck @Valid private List<StackdriverDefinition> metricDefinitions;
 
   public List<StackdriverDefinition> getMetricDefinitions() {

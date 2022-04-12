@@ -93,7 +93,8 @@ public class NGTriggerWebhookConfigResource {
   private final NGTriggerElementMapper ngTriggerElementMapper;
 
   @GET
-  @Operation(operationId = "getSourceRepos", summary = "Gets source repo types with all supported events.",
+  @Operation(hidden = true, operationId = "getSourceRepos",
+      summary = "Gets source repo types with all supported events.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -107,7 +108,8 @@ public class NGTriggerWebhookConfigResource {
   }
 
   @GET
-  @Operation(operationId = "getGitTriggerEventDetails", summary = "Gets trigger git actions for each supported event.",
+  @Operation(hidden = true, operationId = "getGitTriggerEventDetails",
+      summary = "Gets trigger git actions for each supported event.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -121,7 +123,7 @@ public class NGTriggerWebhookConfigResource {
   }
 
   @GET
-  @Operation(operationId = "getWebhookTriggerTypes", summary = "Gets all supported scm webhook type.",
+  @Operation(hidden = true, operationId = "getWebhookTriggerTypes", summary = "Gets all supported scm webhook type.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -135,7 +137,8 @@ public class NGTriggerWebhookConfigResource {
   }
 
   @GET
-  @Operation(operationId = "getGithubTriggerEvents", summary = "Gets all supported Github trigger events.",
+  @Operation(hidden = true, operationId = "getGithubTriggerEvents",
+      summary = "Gets all supported Github trigger events.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -149,7 +152,7 @@ public class NGTriggerWebhookConfigResource {
   }
 
   @GET
-  @Operation(operationId = "getGithubPRActions", summary = "Gets all supported Github PR event actions",
+  @Operation(hidden = true, operationId = "getGithubPRActions", summary = "Gets all supported Github PR event actions",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -163,7 +166,7 @@ public class NGTriggerWebhookConfigResource {
   }
 
   @GET
-  @Operation(operationId = "getGithubIssueCommentActions",
+  @Operation(hidden = true, operationId = "getGithubIssueCommentActions",
       summary = "Gets all supported Github Issue comment event actions",
       responses =
       {
@@ -178,7 +181,8 @@ public class NGTriggerWebhookConfigResource {
   }
 
   @GET
-  @Operation(operationId = "getGitlabTriggerEvents", summary = "Gets all supported Gitlab trigger events.",
+  @Operation(hidden = true, operationId = "getGitlabTriggerEvents",
+      summary = "Gets all supported Gitlab trigger events.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -192,7 +196,7 @@ public class NGTriggerWebhookConfigResource {
   }
 
   @GET
-  @Operation(operationId = "getGitlabPRActions", summary = "Gets all supported GitLab PR event actions.",
+  @Operation(hidden = true, operationId = "getGitlabPRActions", summary = "Gets all supported GitLab PR event actions.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -206,7 +210,8 @@ public class NGTriggerWebhookConfigResource {
   }
 
   @GET
-  @Operation(operationId = "getBitbucketTriggerEvents", summary = "Gets all supported Bitbucket trigger events.",
+  @Operation(hidden = true, operationId = "getBitbucketTriggerEvents",
+      summary = "Gets all supported Bitbucket trigger events.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -220,7 +225,8 @@ public class NGTriggerWebhookConfigResource {
   }
 
   @GET
-  @Operation(operationId = "getBitbucketPRActions", summary = "Gets all supported Bitbucket PR event actions.",
+  @Operation(hidden = true, operationId = "getBitbucketPRActions",
+      summary = "Gets all supported Bitbucket PR event actions.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -234,7 +240,8 @@ public class NGTriggerWebhookConfigResource {
   }
 
   @GET
-  @Operation(operationId = "getActionsList", summary = "Get all supported actions for event type and source.",
+  @Operation(hidden = true, operationId = "getActionsList",
+      summary = "Get all supported actions for event type and source.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",

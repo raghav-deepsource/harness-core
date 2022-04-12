@@ -130,7 +130,8 @@ public abstract class AbstractGitConnectorValidator extends AbstractConnectorVal
       executeOnDelegate = ((ManagerExecutable) connectorConfigDTO).getExecuteOnDelegate();
     }
     if (executeOnDelegate == Boolean.FALSE) {
-      return super.validateConnectorViaManager(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+      return super.validateConnectorViaManager(
+          connectorConfigDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     } else {
       GitCommandExecutionResponse gitCommandExecutionResponse = (GitCommandExecutionResponse) super.validateConnector(
           connectorConfigDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);

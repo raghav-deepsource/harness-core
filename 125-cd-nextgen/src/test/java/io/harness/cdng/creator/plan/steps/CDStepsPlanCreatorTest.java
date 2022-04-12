@@ -8,6 +8,7 @@
 package io.harness.cdng.creator.plan.steps;
 
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -21,10 +22,10 @@ import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
-import io.harness.steps.YamlTypes;
 import io.harness.steps.common.NGSectionStepParameters;
 
 import com.google.inject.Inject;
@@ -68,8 +69,8 @@ public class CDStepsPlanCreatorTest extends CDNGTestBase {
   @Category(UnitTests.class)
   public void testGetSupportedTypes() {
     Map<String, Set<String>> supportedTypes = stepsPlanCreator.getSupportedTypes();
-    assertThat(supportedTypes.containsKey(YamlTypes.STEPS)).isEqualTo(true);
-    assertThat(supportedTypes.get(YamlTypes.STEPS).contains(PlanCreatorUtils.ANY_TYPE)).isEqualTo(true);
+    assertThat(supportedTypes.containsKey(YAMLFieldNameConstants.STEPS)).isEqualTo(true);
+    assertThat(supportedTypes.get(YAMLFieldNameConstants.STEPS).contains(PlanCreatorUtils.ANY_TYPE)).isEqualTo(true);
   }
 
   @Test
@@ -87,6 +88,27 @@ public class CDStepsPlanCreatorTest extends CDNGTestBase {
     PlanNode planForParentNode = stepsPlanCreator.createPlanForParentNode(ctx, null, childrenNodeId);
     assertThat(planForParentNode.getUuid()).isEqualTo(ctx.getCurrentField().getNode().getUuid());
     assertThat(planForParentNode.getStepParameters()).isEqualTo(stepParameters);
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testAdviserForStepGroup() throws IOException {
+    List<String> childrenNodeId = Arrays.asList("child1", "child2");
+
+    YamlField stepsYamlField = getYamlFieldFromGivenFileName("cdng/plan/steps/step-group.yml")
+                                   .getNode()
+                                   .getField("stepGroup")
+                                   .getNode()
+                                   .getField("steps");
+    NGSectionStepParameters stepParameters =
+        NGSectionStepParameters.builder().childNodeId(childrenNodeId.get(0)).build();
+
+    PlanCreationContext ctx = PlanCreationContext.builder().currentField(stepsYamlField).build();
+    PlanNode planForParentNode = stepsPlanCreator.createPlanForParentNode(ctx, null, childrenNodeId);
+    assertThat(planForParentNode.getUuid()).isEqualTo(ctx.getCurrentField().getNode().getUuid());
+    assertThat(planForParentNode.getStepParameters()).isEqualTo(stepParameters);
+    assertThat(planForParentNode.getAdviserObtainments().size()).isEqualTo(0);
   }
 
   @Test

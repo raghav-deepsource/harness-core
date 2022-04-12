@@ -456,14 +456,14 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
     persistence.save(delegate);
     DelegateTask delegateTask = saveDelegateTask(true, emptySet(), QUEUED);
     DelegateTaskPackage delegateTaskPackage =
-        delegateTaskServiceClassic.acquireDelegateTask(ACCOUNT_ID, DELEGATE_ID, delegateTask.getUuid(), null);
+        delegateTaskServiceClassic.acquireDelegateTask(ACCOUNT_ID, DELEGATE_ID, delegateTask.getUuid(), DELEGATE_ID);
     assertThat(delegateTaskPackage).isNotNull();
     assertThat(delegateTaskPackage.getDelegateTaskId()).isEqualTo(delegateTask.getUuid());
     assertThat(delegateTaskPackage.getDelegateId()).isEqualTo(DELEGATE_ID);
     assertThat(delegateTaskPackage.getAccountId()).isEqualTo(ACCOUNT_ID);
 
     delegateTask = persistence.get(DelegateTask.class, delegateTask.getUuid());
-    assertThat(delegateTask.getDelegateInstanceId()).isNull();
+    assertThat(delegateTask.getDelegateInstanceId()).isEqualTo(DELEGATE_ID);
   }
 
   @Cache
@@ -619,7 +619,7 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
         .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
     DelegateTask delegateTask = saveDelegateTask(false, emptySet(), QUEUED);
     DelegateTaskPackage delegateTaskPackage =
-        delegateTaskServiceClassic.reportConnectionResults(ACCOUNT_ID, DELEGATE_ID, delegateTask.getUuid(), null,
+        delegateTaskServiceClassic.reportConnectionResults(ACCOUNT_ID, DELEGATE_ID, delegateTask.getUuid(), DELEGATE_ID,
             singletonList(DelegateConnectionResult.builder()
                               .accountId(ACCOUNT_ID)
                               .delegateId(DELEGATE_ID)

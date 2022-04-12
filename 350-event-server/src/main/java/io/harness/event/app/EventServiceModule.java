@@ -10,8 +10,8 @@ package io.harness.event.app;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.authenticator.DelegateTokenAuthenticatorImpl;
 import io.harness.event.MessageProcessorType;
-import io.harness.event.grpc.DelegateTokenEventServerAuthenticatorImpl;
 import io.harness.event.grpc.EventPublisherServerImpl;
 import io.harness.event.grpc.MessageProcessor;
 import io.harness.event.metrics.EventServiceMetricsPublisher;
@@ -63,7 +63,7 @@ public class EventServiceModule extends AbstractModule {
     bind(EventServiceConfig.class).toInstance(eventServiceConfig);
     bind(HPersistence.class).to(WingsMongoPersistence.class).in(Singleton.class);
     bind(WingsPersistence.class).to(WingsMongoPersistence.class).in(Singleton.class);
-    bind(DelegateTokenAuthenticator.class).to(DelegateTokenEventServerAuthenticatorImpl.class).in(Singleton.class);
+    bind(DelegateTokenAuthenticator.class).to(DelegateTokenAuthenticatorImpl.class).in(Singleton.class);
     bind(SecretManager.class).to(NoOpSecretManagerImpl.class);
     bind(EncryptedSettingAttributes.class).to(NoOpSecretManagerImpl.class);
     bind(LastReceivedPublishedMessageRepository.class).to(LastReceivedPublishedMessageRepositoryImpl.class);

@@ -79,7 +79,8 @@ public class GcpClusterResource {
       {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns list of gcp cluster names")
-      })
+      },
+      hidden = true)
   public ResponseDTO<GcpResponseDTO>
   getClusterNames(@Parameter(description = GCP_CONNECTOR_IDENTIFIER) @NotNull @QueryParam(
                       "connectorRef") String gcpConnectorIdentifier,

@@ -7,6 +7,8 @@
 
 package io.harness.cvng.migration.list;
 
+import static io.harness.persistence.HQuery.excludeValidate;
+
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.entities.Activity.ActivityKeys;
 import io.harness.cvng.core.entities.MonitoredService;
@@ -32,12 +34,12 @@ public class AddMonitoredServiceToActivityMigration implements CVNGMigration {
       while (iterator.hasNext()) {
         MonitoredService monitoredService = iterator.next();
         Query<Activity> heatMapQuery =
-            hPersistence.createQuery(Activity.class)
+            hPersistence.createQuery(Activity.class, excludeValidate)
                 .filter(ActivityKeys.accountId, monitoredService.getAccountId())
                 .filter(ActivityKeys.projectIdentifier, monitoredService.getProjectIdentifier())
                 .filter(ActivityKeys.orgIdentifier, monitoredService.getOrgIdentifier())
-                .filter(ActivityKeys.serviceIdentifier, monitoredService.getServiceIdentifier())
-                .filter(ActivityKeys.environmentIdentifier, monitoredService.getEnvironmentIdentifier());
+                .filter("serviceIdentifier", monitoredService.getServiceIdentifier())
+                .filter("environmentIdentifier", monitoredService.getEnvironmentIdentifier());
 
         UpdateResults updateResults = hPersistence.update(heatMapQuery,
             hPersistence.createUpdateOperations(Activity.class)

@@ -10,14 +10,15 @@ package io.harness.cvng.activity.services.impl;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.cvng.activity.entities.KubernetesClusterActivity;
-import io.harness.cvng.activity.entities.KubernetesClusterActivity.ServiceEnvironment;
+import io.harness.cvng.activity.entities.KubernetesClusterActivity.RelatedAppMonitoredService;
 import io.harness.cvng.activity.services.api.ActivityUpdateHandler;
 import io.harness.cvng.core.beans.dependency.KubernetesDependencyMetadata;
 import io.harness.cvng.core.beans.dependency.ServiceDependencyMetadata.DependencyMetadataType;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO.ServiceDependencyDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
+import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
-import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
+import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.services.api.monitoredService.ServiceDependencyService;
 
@@ -33,21 +34,21 @@ public class KubernetesClusterActivityUpdateHandler extends ActivityUpdateHandle
   @Inject private MonitoredServiceService monitoredServiceService;
   @Override
   public void handleCreate(KubernetesClusterActivity activity) {
-    ServiceEnvironmentParams serviceEnvironmentParams = ServiceEnvironmentParams.builder()
-                                                            .accountIdentifier(activity.getAccountId())
-                                                            .orgIdentifier(activity.getOrgIdentifier())
-                                                            .projectIdentifier(activity.getProjectIdentifier())
-                                                            .serviceIdentifier(activity.getServiceIdentifier())
-                                                            .environmentIdentifier(activity.getEnvironmentIdentifier())
-                                                            .build();
-    MonitoredServiceResponse monitoredServiceResponse = monitoredServiceService.get(serviceEnvironmentParams);
+    MonitoredServiceParams monitoredServiceParams =
+        MonitoredServiceParams.builder()
+            .accountIdentifier(activity.getAccountId())
+            .orgIdentifier(activity.getOrgIdentifier())
+            .projectIdentifier(activity.getProjectIdentifier())
+            .monitoredServiceIdentifier(activity.getMonitoredServiceIdentifier())
+            .build();
+    MonitoredService monitoredService = monitoredServiceService.getMonitoredService(monitoredServiceParams);
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(activity.getAccountId())
                                       .orgIdentifier(activity.getOrgIdentifier())
                                       .projectIdentifier(activity.getProjectIdentifier())
                                       .build();
     Set<ServiceDependencyDTO> serviceDependencies = serviceDependencyService.getDependentServicesToMonitoredService(
-        projectParams, monitoredServiceResponse.getMonitoredServiceDTO().getIdentifier());
+        projectParams, monitoredService.getIdentifier());
     Set<String> dependentMonitoredServices = new HashSet<>();
     serviceDependencies.forEach(
         serviceDependency -> { dependentMonitoredServices.add(serviceDependency.getMonitoredServiceIdentifier()); });
@@ -60,8 +61,7 @@ public class KubernetesClusterActivityUpdateHandler extends ActivityUpdateHandle
                 .getDependencies()
                 .stream()
                 .filter(dependencyDTO
-                    -> dependencyDTO.getMonitoredServiceIdentifier().equals(
-                        monitoredServiceResponse.getMonitoredServiceDTO().getIdentifier()))
+                    -> dependencyDTO.getMonitoredServiceIdentifier().equals(monitoredService.getIdentifier()))
                 .findFirst();
         if (dependencyDTOOptional.isPresent()) {
           ServiceDependencyDTO serviceDependency = dependencyDTOOptional.get();
@@ -75,9 +75,7 @@ public class KubernetesClusterActivityUpdateHandler extends ActivityUpdateHandle
                 activity.setRelatedAppServices(new ArrayList<>());
               }
               activity.getRelatedAppServices().add(
-                  ServiceEnvironment.builder()
-                      .environmentIdentifier(response.getMonitoredServiceDTO().getEnvironmentRef())
-                      .serviceIdentifier(response.getMonitoredServiceDTO().getServiceRef())
+                  RelatedAppMonitoredService.builder()
                       .monitoredServiceIdentifier(response.getMonitoredServiceDTO().getIdentifier())
                       .build());
             }

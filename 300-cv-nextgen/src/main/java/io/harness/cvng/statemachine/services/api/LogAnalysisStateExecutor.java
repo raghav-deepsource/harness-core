@@ -69,8 +69,7 @@ public abstract class LogAnalysisStateExecutor<T extends LogAnalysisState> exten
     log.info("In serviceguard log analysis for Inputs {}, cleaning up worker task. Old taskID: {}",
         analysisState.getInputs(), analysisState.getWorkerTaskId());
     analysisState.setWorkerTaskId(null);
-    execute(analysisState);
-    return analysisState;
+    return execute(analysisState);
   }
 
   @Override
@@ -87,16 +86,6 @@ public abstract class LogAnalysisStateExecutor<T extends LogAnalysisState> exten
   @Override
   public AnalysisState handleTransition(T analysisState) {
     analysisState.setStatus(AnalysisStatus.SUCCESS);
-    return analysisState;
-  }
-
-  @Override
-  public AnalysisState handleRetry(T analysisState) {
-    if (analysisState.getRetryCount() >= getMaxRetry()) {
-      analysisState.setStatus(AnalysisStatus.FAILED);
-    } else {
-      return handleRerun(analysisState);
-    }
     return analysisState;
   }
 }

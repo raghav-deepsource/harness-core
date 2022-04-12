@@ -364,7 +364,7 @@ resource "google_monitoring_dashboard" "cvng_dashboard_2" {
             }
           },
           "plotType": "LINE"
-        }
+        },
       ],
       "timeshiftDuration": "0s",
       "yAxis": {
@@ -374,8 +374,80 @@ resource "google_monitoring_dashboard" "cvng_dashboard_2" {
       "chartOptions": {
         "mode": "COLOR"
       }
+    },
+    {
+      "title": "Analysis State Machine Retry count - analysis_state_machine_retry_count",
+      "xyChart": {
+        "dataSets": [
+          {
+            "timeSeriesQuery": {
+              "apiSource": "DEFAULT_CLOUD",
+              "timeSeriesFilter": {
+                "aggregation": {
+                  "alignmentPeriod": "60s",
+                  "crossSeriesReducer": "REDUCE_NONE",
+                  "perSeriesAligner": "ALIGN_MEAN"
+                },
+                "filter": "metric.type=\"custom.googleapis.com/opencensus/analysis_state_machine_retry_count\" resource.type=\"k8s_container\"",
+                "secondaryAggregation": {
+                  "alignmentPeriod": "60s",
+                  "crossSeriesReducer": "REDUCE_SUM",
+                  "groupByFields": [
+                    "metric.label.\"environment\""
+                  ],
+                  "perSeriesAligner": "ALIGN_MEAN"
+                }
+              }
+            },
+            "plotType": "LINE"
+          },
+        ],
+        "timeshiftDuration": "0s",
+        "yAxis": {
+          "label": "y1Axis",
+          "scale": "LINEAR"
+        },
+        "chartOptions": {
+          "mode": "COLOR"
+        }
+      },
+    {
+      "title": "Analysis Orchestrator queue pile up count - orchestrator_state_machine_queue_size_above_five_count",
+      "xyChart": {
+        "dataSets": [
+          {
+            "timeSeriesQuery": {
+              "apiSource": "DEFAULT_CLOUD",
+              "timeSeriesFilter": {
+                "aggregation": {
+                  "alignmentPeriod": "60s",
+                  "crossSeriesReducer": "REDUCE_NONE",
+                  "perSeriesAligner": "ALIGN_MEAN"
+                },
+                "filter": "metric.type=\"custom.googleapis.com/opencensus/orchestrator_state_machine_queue_size_above_five_count\" resource.type=\"k8s_container\"",
+                "secondaryAggregation": {
+                  "alignmentPeriod": "60s",
+                  "crossSeriesReducer": "REDUCE_SUM",
+                  "groupByFields": [
+                    "metric.label.\"environment\""
+                  ],
+                  "perSeriesAligner": "ALIGN_MEAN"
+                }
+              }
+            },
+            "plotType": "LINE"
+          },
+        ],
+        "timeshiftDuration": "0s",
+        "yAxis": {
+          "label": "y1Axis",
+          "scale": "LINEAR"
+        },
+        "chartOptions": {
+          "mode": "COLOR"
+        }
+      }
     }
-  }
 ]
   }
 }

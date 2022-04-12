@@ -23,6 +23,7 @@ public class CIExecutionConstants {
   public static final String PIPELINE_ID_ATTR = "pipelineID";
   public static final String PIPELINE_EXECUTION_ID_ATTR = "pipelineExecutionID";
   public static final String STAGE_ID_ATTR = "stageID";
+  public static final String STAGE_NAME_ATTR = "stageName";
   public static final String BUILD_NUMBER_ATTR = "buildNumber";
   public static final String LABEL_REGEX = "^[a-z0-9A-Z][a-z0-9A-Z\\-_.]*[a-z0-9A-Z]$";
 
@@ -57,6 +58,7 @@ public class CIExecutionConstants {
   public static final String SERVICE_PREFIX = "service-";
   public static final String STEP_PREFIX = "step-";
   public static final String SHARED_VOLUME_PREFIX = "shared-";
+  public static final String VOLUME_PREFIX = "volume-";
 
   // Container constants for setting up addon binary
   public static final String SETUP_ADDON_CONTAINER_NAME = "setup-addon";
@@ -104,6 +106,7 @@ public class CIExecutionConstants {
   public static final String HARNESS_ORG_ID_VARIABLE = "HARNESS_ORG_ID";
   public static final String HARNESS_BUILD_ID_VARIABLE = "HARNESS_BUILD_ID";
   public static final String HARNESS_STAGE_ID_VARIABLE = "HARNESS_STAGE_ID";
+  public static final String HARNESS_EXECUTION_ID_VARIABLE = "HARNESS_EXECUTION_ID";
   public static final String HARNESS_LOG_PREFIX_VARIABLE = "HARNESS_LOG_PREFIX";
   public static final String HARNESS_SERVICE_LOG_KEY_VARIABLE = "HARNESS_SERVICE_LOG_KEY";
   public static final String HARNESS_PIPELINE_ID_VARIABLE = "HARNESS_PIPELINE_ID";

@@ -65,7 +65,7 @@ public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStep
       runStepBuilder.putAllEnvironment(envvars);
     }
 
-    UnitTestReport reports = runStepInfo.getReports();
+    UnitTestReport reports = runStepInfo.getReports().getValue();
     if (reports != null) {
       if (reports.getType() == UnitTestReportType.JUNIT) {
         JUnitTestReport junitTestReport = (JUnitTestReport) reports.getSpec();
@@ -76,9 +76,12 @@ public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStep
       }
     }
 
-    if (isNotEmpty(runStepInfo.getOutputVariables())) {
-      List<String> outputVarNames =
-          runStepInfo.getOutputVariables().stream().map(OutputNGVariable::getName).collect(Collectors.toList());
+    if (isNotEmpty(runStepInfo.getOutputVariables().getValue())) {
+      List<String> outputVarNames = runStepInfo.getOutputVariables()
+                                        .getValue()
+                                        .stream()
+                                        .map(OutputNGVariable::getName)
+                                        .collect(Collectors.toList());
       runStepBuilder.addAllEnvVarOutputs(outputVarNames);
     }
 
@@ -89,7 +92,12 @@ public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStep
     ShellType protoShellType = ShellType.SH;
     if (shellType == CIShellType.BASH) {
       protoShellType = ShellType.BASH;
+    } else if (shellType == CIShellType.PWSH) {
+      protoShellType = ShellType.PWSH;
+    } else if (shellType == CIShellType.POWERSHELL) {
+      protoShellType = ShellType.POWERSHELL;
     }
+
     runStepBuilder.setShellType(protoShellType);
 
     return UnitStep.newBuilder()

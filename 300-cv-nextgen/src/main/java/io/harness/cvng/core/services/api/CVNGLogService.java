@@ -7,13 +7,14 @@
 
 package io.harness.cvng.core.services.api;
 
-import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.beans.cvnglog.CVNGLogType;
 import io.harness.cvng.core.beans.params.PageParams;
+import io.harness.cvng.core.beans.params.logsFilterParams.DeploymentLogsFilter;
+import io.harness.cvng.core.beans.params.logsFilterParams.TimeRangeLogsFilter;
+import io.harness.cvng.core.entities.CVNGLog;
 import io.harness.ng.beans.PageResponse;
 
-import java.time.Instant;
 import java.util.List;
 
 public interface CVNGLogService {
@@ -21,10 +22,10 @@ public interface CVNGLogService {
   PageResponse<CVNGLogDTO> getOnboardingLogs(
       String accountId, String traceableId, CVNGLogType cvngLogType, int offset, int pageSize);
 
-  PageResponse<CVNGLogDTO> getCVNGLogs(String accountId, String orgIdentifier, String projectIdentifier,
-      String serviceIdentifier, String environmentIdentifier, Instant startTime, Instant endTime,
-      CVMonitoringCategory monitoringCategory, CVNGLogType cvngLogType, int offset, int pageSize);
+  List<CVNGLog> getCompleteCVNGLog(String accountId, String VerificationTaskId, CVNGLogType cvngLogType);
 
-  PageResponse<CVNGLogDTO> getCVNGLogs(String accountId, String verificationJobInstanceId, CVNGLogType logType,
-      List<String> healthSourceIdentifiers, boolean errorLogsOnly, PageParams pageParams);
+  PageResponse<CVNGLogDTO> getCVNGLogs(String accountId, String verificationJobInstanceId,
+      DeploymentLogsFilter deploymentLogsFilter, PageParams pageParams);
+  PageResponse<CVNGLogDTO> getCVNGLogs(String accountId, List<String> verificationTaskIds,
+      TimeRangeLogsFilter timeRangeLogsFilter, PageParams pageParams);
 }

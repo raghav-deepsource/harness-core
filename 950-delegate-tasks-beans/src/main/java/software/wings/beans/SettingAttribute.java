@@ -71,6 +71,9 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.data.validator.EntityName;
 import io.harness.data.validator.Trimmed;
 import io.harness.iterator.PersistentRegularIterable;
+import io.harness.mongo.CollationLocale;
+import io.harness.mongo.CollationStrength;
+import io.harness.mongo.index.Collation;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -170,6 +173,15 @@ public class SettingAttribute
                  .field(SettingAttributeKeys.value_type)
                  .field(SettingAttributeKeys.secretsMigrated)
                  .field(SettingAttributeKeys.accountId)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountIdAppIdCategoryNameIdx")
+                 .field(SettingAttributeKeys.accountId)
+                 .field(SettingAttributeKeys.appId)
+                 .field(SettingAttributeKeys.category)
+                 .field(SettingAttributeKeys.name)
+                 .collation(
+                     Collation.builder().locale(CollationLocale.ENGLISH).strength(CollationStrength.PRIMARY).build())
                  .build())
         .build();
   }

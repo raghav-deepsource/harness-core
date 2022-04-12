@@ -7,6 +7,7 @@
 
 package io.harness.ccm.commons.entities.anomaly;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
@@ -15,13 +16,23 @@ import lombok.experimental.FieldDefaults;
 @Value
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@Schema(name = "AnomalyData", description = "This object contains details of a cost anomaly")
 public class AnomalyData {
   String id;
-  EntityInfo entity;
-  String comment;
-  Double anomalyScore;
-  Double expectedAmount;
-  Double actualAmount;
   Long time;
+  String anomalyRelativeTime;
+  Double actualAmount;
+  Double expectedAmount;
+  Double anomalousSpend;
+  Double anomalousSpendPercentage;
+  String resourceName;
+  String resourceInfo;
+  EntityInfo entity;
+  String details;
+  String status;
+  String statusRelativeTime;
+  String comment;
+  String cloudProvider;
+  Double anomalyScore;
   AnomalyFeedback userFeedback;
 }

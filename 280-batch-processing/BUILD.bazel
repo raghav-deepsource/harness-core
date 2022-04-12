@@ -18,6 +18,7 @@ shared_dependencies = [
     "//490-ce-commons:module",
     "//920-delegate-service-beans:module",
     "//940-feature-flag:module",
+    "//940-notification-client:module",
     "//950-delegate-tasks-beans:module",
     "//950-events-framework:module",
     "//950-telemetry:module",

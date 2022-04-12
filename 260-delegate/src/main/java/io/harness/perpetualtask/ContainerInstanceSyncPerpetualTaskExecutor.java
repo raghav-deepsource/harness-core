@@ -46,6 +46,7 @@ import software.wings.service.intfc.aws.delegate.AwsEcsHelperServiceDelegate;
 import com.google.inject.Inject;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jetty.server.Response;
 
@@ -151,6 +152,12 @@ public class ContainerInstanceSyncPerpetualTaskExecutor implements PerpetualTask
 
     K8sTaskExecutionResponse responseData =
         getK8sTaskResponse(k8sContainerInstanceSyncPerpetualTaskParams, kubernetesConfig);
+
+    K8sInstanceSyncResponse k8sTaskResponse = (K8sInstanceSyncResponse) responseData.getK8sTaskResponse();
+    if (Objects.nonNull(k8sTaskResponse)) {
+      k8sTaskResponse.setClusterName(k8sClusterConfig.getClusterName());
+    }
+
     publishInstanceSyncResult(taskId, k8sContainerInstanceSyncPerpetualTaskParams.getAccountId(),
         k8sContainerInstanceSyncPerpetualTaskParams.getNamespace(), responseData);
 

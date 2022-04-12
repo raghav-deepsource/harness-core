@@ -12,10 +12,13 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.core.beans.GitFullSyncConfig;
 
+import java.util.List;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(PL)
 public interface GitFullSyncConfigRepositoryCustom {
   GitFullSyncConfig update(Criteria criteria, Update update);
+
+  List<GitFullSyncConfig> deleteAll(Criteria criteria);
 }

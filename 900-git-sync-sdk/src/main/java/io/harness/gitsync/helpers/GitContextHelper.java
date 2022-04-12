@@ -26,8 +26,6 @@ public class GitContextHelper {
     final GitSyncBranchContext gitSyncBranchContext =
         GlobalContextManager.get(GitSyncBranchContext.NG_GIT_SYNC_CONTEXT);
     if (gitSyncBranchContext == null) {
-      log.error("Git branch context set as null even git sync is enabled");
-      // Setting to default branch in case it is not set.
       return null;
     }
     GitEntityInfo gitBranchInfo = gitSyncBranchContext.getGitBranchInfo();
@@ -52,5 +50,13 @@ public class GitContextHelper {
       return false;
     }
     return Boolean.TRUE.equals(gitEntityInfo.getIsFullSyncFlow());
+  }
+
+  public String getBranchForRefEntityValidations() {
+    GitEntityInfo gitEntityInfo = getGitEntityInfo();
+    if (gitEntityInfo.isNewBranch()) {
+      return gitEntityInfo.getBaseBranch();
+    }
+    return gitEntityInfo.getBranch();
   }
 }

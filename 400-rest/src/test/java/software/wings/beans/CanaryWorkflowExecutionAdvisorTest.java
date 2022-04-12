@@ -15,11 +15,13 @@ import static io.harness.rule.OwnerRule.AGORODETKI;
 import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.MILOS;
+import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static software.wings.beans.CanaryOrchestrationWorkflow.CanaryOrchestrationWorkflowBuilder.aCanaryOrchestrationWorkflow;
 import static software.wings.beans.PhaseStep.PhaseStepBuilder.aPhaseStep;
 import static software.wings.beans.WorkflowPhase.WorkflowPhaseBuilder.aWorkflowPhase;
+import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.STATE_NAME;
 
@@ -49,9 +51,12 @@ import io.harness.rule.Owner;
 
 import software.wings.api.PhaseElement;
 import software.wings.beans.workflow.StepSkipStrategy;
+import software.wings.service.impl.WorkflowExecutionServiceImpl;
 import software.wings.sm.ExecutionContextImpl;
+import software.wings.sm.ExecutionEvent;
 import software.wings.sm.ExecutionEventAdvice;
 import software.wings.sm.State;
+import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.WorkflowStandardParams;
 import software.wings.sm.WorkflowStandardParams.Builder;
 import software.wings.sm.states.ShellScriptState;
@@ -71,6 +76,7 @@ public class CanaryWorkflowExecutionAdvisorTest extends CategoryTest {
   private static final long VALID_TIMEOUT = 60000L;
   CanaryWorkflowExecutionAdvisor canaryWorkflowExecutionAdvisor;
   FeatureFlagService featureFlagService;
+  WorkflowExecutionServiceImpl executionService;
 
   @Before
   public void setUp() {
@@ -608,5 +614,22 @@ public class CanaryWorkflowExecutionAdvisorTest extends CategoryTest {
     assertThat(CanaryWorkflowExecutionAdvisor.selectTopMatchingStrategy(
                    failureStrategies, null, "stateName", null, FailureStrategyLevel.STEP))
         .isEqualTo(failureStrategies.get(0));
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void shouldReturnCorrectStrategyForOnDemandRollback() {
+    FailureStrategy failureStrategy = FailureStrategy.builder()
+                                          .failureTypes(Collections.singletonList(APPLICATION_ERROR))
+                                          .repairActionCode(RepairActionCode.END_EXECUTION)
+                                          .build();
+    StateExecutionInstance stateExecutionInstance = aStateExecutionInstance().build();
+    ExecutionEvent executionEvent =
+        ExecutionEvent.builder().context(new ExecutionContextImpl(stateExecutionInstance)).build();
+
+    ExecutionEventAdvice advice =
+        canaryWorkflowExecutionAdvisor.computeExecutionEventAdvice(null, failureStrategy, executionEvent, null, null);
+    assertThat(advice.getExecutionInterruptType()).isEqualTo(ExecutionInterruptType.END_EXECUTION);
   }
 }

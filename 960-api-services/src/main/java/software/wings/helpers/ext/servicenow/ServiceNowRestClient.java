@@ -92,4 +92,7 @@ public interface ServiceNowRestClient {
 
   @GET("/api/now/table/sys_choice?sysparm_query=element=approval%5Ename=task%5Einactive=false%5Elanguage=en")
   Call<JsonNode> getChangeApprovalTypes(@Header("Authorization") String authorization);
+
+  @GET("api/now/ui/meta/{ticketType}")
+  Call<JsonNode> getMetadata(@Header("Authorization") String authorization, @Path("ticketType") String ticketType);
 }

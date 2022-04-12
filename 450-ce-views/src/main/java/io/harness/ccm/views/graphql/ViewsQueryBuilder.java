@@ -55,6 +55,7 @@ import io.harness.ccm.views.entities.ViewIdCondition;
 import io.harness.ccm.views.entities.ViewIdOperator;
 import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.entities.ViewTimeGranularity;
+import io.harness.ccm.views.utils.ViewFieldUtils;
 import io.harness.exception.InvalidRequestException;
 
 import com.google.common.collect.ImmutableList;
@@ -366,20 +367,24 @@ public class ViewsQueryBuilder {
         .build();
   }
 
-  private void modifyQueryWithInstanceTypeFilter(List<ViewRule> rules, List<QLCEViewFilter> filters,
+  private void modifyQueryWithInstanceTypeFilter(List<ViewRule> incomingRules, List<QLCEViewFilter> filters,
       List<QLCEViewFieldInput> groupByEntity, List<ViewField> customFields, List<ViewField> businessMappings,
       SelectQuery selectQuery) {
     boolean isClusterConditionOrFilterPresent = false;
     boolean isPodFilterPresent = false;
     boolean isLabelsOperationPresent = false;
-    if (rules.isEmpty() && filters.isEmpty() && groupByEntity.isEmpty() && customFields.isEmpty()) {
+    if (incomingRules.isEmpty() && filters.isEmpty() && groupByEntity.isEmpty() && customFields.isEmpty()) {
       isClusterConditionOrFilterPresent = true;
     }
 
+    List<ViewRule> rules = new ArrayList<>(incomingRules);
+
     for (ViewField field : businessMappings) {
       BusinessMapping businessMapping = businessMappingService.get(field.getFieldId());
-      List<CostTarget> costTargets = businessMapping.getCostTargets();
-      List<SharedCost> sharedCosts = businessMapping.getSharedCosts();
+      List<CostTarget> costTargets =
+          businessMapping.getCostTargets() != null ? businessMapping.getCostTargets() : Collections.emptyList();
+      List<SharedCost> sharedCosts =
+          businessMapping.getSharedCosts() != null ? businessMapping.getSharedCosts() : Collections.emptyList();
       for (CostTarget costTarget : costTargets) {
         rules.addAll(costTarget.getRules());
       }
@@ -979,7 +984,8 @@ public class ViewsQueryBuilder {
     return getSqlAndCondition(conditionList);
   }
 
-  private QLCEViewFilter mapConditionToFilter(ViewIdCondition condition) {
+  // Used in PerspectiveToAnomalyQueryHelper
+  public QLCEViewFilter mapConditionToFilter(ViewIdCondition condition) {
     return QLCEViewFilter.builder()
         .field(getViewFieldInput(condition.getViewField()))
         .operator(mapViewIdOperatorToQLCEViewFilterOperator(condition.getViewOperator()))
@@ -1185,7 +1191,7 @@ public class ViewsQueryBuilder {
     for (CostTarget costTarget : businessMapping.getCostTargets()) {
       caseStatement.addWhen(getConsolidatedRuleCondition(costTarget.getRules()), costTarget.getName());
     }
-    caseStatement.addElse("Default");
+    caseStatement.addElse(ViewFieldUtils.getBusinessMappingUnallocatedCostDefaultName());
     return new CustomSql(caseStatement);
   }
 

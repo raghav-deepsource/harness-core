@@ -202,12 +202,14 @@ public class SignupServiceImpl implements SignupService {
       clonedEmail = replaceTopLevelDomain(topLevelDomain, clonedEmail);
     }
     if (isBlank(clonedEmail)) {
+      log.error("Blank user email found");
       throw new WingsException(INVALID_EMAIL, USER).addParam(EMAIL, email);
     }
 
     final String clonedEmailAddress = clonedEmail.trim();
     final String emailAddress = email.trim();
     if (!EmailValidator.getInstance().isValid(clonedEmailAddress)) {
+      log.error("Invalid user email with id {}", email);
       throw new WingsException(INVALID_EMAIL, USER).addParam(EMAIL, emailAddress);
     }
   }

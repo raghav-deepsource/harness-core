@@ -20,6 +20,7 @@ import com.google.inject.Singleton;
 import com.segment.analytics.messages.GroupMessage;
 import com.segment.analytics.messages.IdentifyMessage;
 import com.segment.analytics.messages.TrackMessage;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,7 +37,9 @@ public class SegmentReporterImpl implements TelemetryReporter {
   private static final String USER_ID_KEY = "userId";
   private static final String GROUP_ID_KEY = "groupId";
   private static final String CATEGORY_KEY = "category";
-
+  private static final String TRACK = "track";
+  private static final String IDENTITY = "identity";
+  private static final String GROUP = "group";
   @Override
   public void sendTrackEvent(String eventName, HashMap<String, Object> properties,
       Map<Destination, Boolean> destinations, String category, TelemetryOption... telemetryOption) {
@@ -68,6 +71,7 @@ public class SegmentReporterImpl implements TelemetryReporter {
       properties.put(USER_ID_KEY, identity);
       properties.put(GROUP_ID_KEY, accountId);
       properties.put(CATEGORY_KEY, category);
+      verifyProperties(properties, TRACK, eventName);
       trackMessageBuilder.properties(properties);
 
       if (destinations != null) {
@@ -90,6 +94,7 @@ public class SegmentReporterImpl implements TelemetryReporter {
       IdentifyMessage.Builder identifyMessageBuilder = IdentifyMessage.builder().userId(identity);
 
       if (properties != null) {
+        verifyProperties(properties, IDENTITY, null);
         identifyMessageBuilder.traits(properties);
       }
       if (destinations != null) {
@@ -127,6 +132,7 @@ public class SegmentReporterImpl implements TelemetryReporter {
       GroupMessage.Builder groupMessageBuilder = GroupMessage.builder(accountId).userId(identity);
 
       if (properties != null) {
+        verifyProperties(properties, GROUP, null);
         groupMessageBuilder.traits(properties);
       }
       if (destinations != null) {
@@ -145,5 +151,24 @@ public class SegmentReporterImpl implements TelemetryReporter {
   @Override
   public void flush() {
     segmentSender.flushDataInQueue();
+  }
+
+  private void verifyProperties(HashMap<String, Object> properties, String eventType, String eventName) {
+    ArrayList<String> nullProperties = new ArrayList<>();
+    for (Map.Entry<String, Object> entry : properties.entrySet()) {
+      if (entry.getValue() == null) {
+        properties.put(entry.getKey(), "null");
+        nullProperties.add(entry.getKey());
+      }
+    }
+
+    if (!nullProperties.isEmpty()) {
+      if (eventType == TRACK) {
+        log.warn("Event type {}, event name {}:  detect null values in event properties with keys: {}", eventType,
+            eventName, nullProperties);
+      } else {
+        log.warn("Event type {}: detect null values in event properties with keys: {}", eventType, nullProperties);
+      }
+    }
   }
 }

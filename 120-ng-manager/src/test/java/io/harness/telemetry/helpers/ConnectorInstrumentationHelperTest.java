@@ -11,9 +11,7 @@ import static io.harness.delegate.beans.connector.ConnectorType.KUBERNETES_CLUST
 import static io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType.MANUAL_CREDENTIALS;
 import static io.harness.rule.OwnerRule.TEJAS;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static junit.framework.TestCase.assertTrue;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -31,6 +29,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.rule.Owner;
 import io.harness.telemetry.TelemetryReporter;
 
+import java.util.concurrent.CompletableFuture;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -92,24 +91,19 @@ public class ConnectorInstrumentationHelperTest {
   @Category(UnitTests.class)
   public void testCreateConnectorTrackSend() {
     ConnectorResponseDTO connectorDTOOutput = createConnector(identifier, name);
-    instrumentationHelper.sendConnectorCreateEvent(connectorDTOOutput.getConnector(), accountIdentifier);
-    try {
-      verify(telemetryReporter, times(1)).sendTrackEvent(any(), any(), any(), any(), any());
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
+    CompletableFuture telemetryTask =
+        instrumentationHelper.sendConnectorCreateEvent(connectorDTOOutput.getConnector(), accountIdentifier);
+    telemetryTask.join();
+    assertTrue(telemetryTask.isDone());
   }
 
   @Test
   @Owner(developers = TEJAS)
   @Category(UnitTests.class)
   public void testDeleteConnectorTrackSend() {
-    instrumentationHelper.sendConnectorDeleteEvent(
+    CompletableFuture telemetryTask = instrumentationHelper.sendConnectorDeleteEvent(
         orgIdentifier, projectIdentifier, connectorIdentifier, accountIdentifier);
-    try {
-      verify(telemetryReporter, times(1)).sendTrackEvent(any(), any(), any(), any(), any());
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
+    telemetryTask.join();
+    assertTrue(telemetryTask.isDone());
   }
 }

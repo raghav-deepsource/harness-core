@@ -9,7 +9,7 @@ package io.harness;
 
 public class SecretManagerDescriptionConstants {
   public static final String HARNESS_MANAGED =
-      "This is true if this Secret Manager is managed by Harness. Harness can manage and edit this Secret Manager in this case.";
+      "Set this to true if the Secret Manager is to be managed by Harness. Harness can manage and edit this Secret Manager in this case.";
   public static final String DEFAULT =
       "Boolean value to indicate if the Secret Manager is your default Secret Manager.";
   public static final String DELEGATE_SELECTORS =
@@ -24,7 +24,7 @@ public class SecretManagerDescriptionConstants {
   public static final String AWS_REGION = "This is the Aws region where aws iam auth will happen.";
   public static final String VAULT_AWS_IAM_HEADER =
       "This is the Aws Iam Header Server ID that has been configured for this Aws Iam instance.";
-  public static final String VAULT_URL = "URL of the Vault.";
+  public static final String VAULT_URL = "URL of the HashiCorp Vault.";
   public static final String READ_ONLY = "Boolean value to indicate if the Secret Manager created is read only.";
   public static final String RENEWAL_INTERVAL_MINUTES = "This is the time interval for token renewal.";
   public static final String SECRET_ENGINE_NAME = "Name of the Secret Engine.";
@@ -34,10 +34,26 @@ public class SecretManagerDescriptionConstants {
   public static final String ENGINE_ENTERED_MANUALLY = "Manually entered Secret Engine.";
   public static final String AWS_CREDENTIAL =
       "This indicates AWS credential types, Manual Credential, Assume IAM Role, Assume STS Role.";
+  public static final String USE_K8s_AUTH = "Boolean value to indicate if K8s Auth is used for authentication.";
+  public static final String VAULT_K8S_AUTH_ROLE = "This is the role where K8s auth will happen.";
+  public static final String SERVICE_ACCOUNT_TOKEN_PATH =
+      "This is the SA token path where the token is mounted in the K8s Pod.";
   public static final String ACCESS_KEY = "Access Key for AWS authentication.";
   public static final String SECRET_KEY = "Secret Key for AWS authentication.";
   public static final String ROLE_ARN = "Role ARN for the Delegate with STS Role.";
   public static final String EXTERNAL_NAME = "External Name.";
   public static final String ASSUME_STS_ROLE_DURATION = "This is the time duration for STS Role.";
   public static final String SINK_PATH = "This is the location at which auth token is to be read from.";
+  public static final String AWS_AUTH_CRED_KMS = "Type of Credential to be used to authenticate AWS KMS.";
+  public static final String AWS_ARN_KMS = "ARN for AWS KMS.";
+  public static final String AWS_REGION_KMS = "Region for AWS KMS.";
+  public static final String AWS_SM_CONFIG = "Returns AWS Secret Manager configuration details.";
+  public static final String AWS_AUTH_CRED_SM = "Type of Credential to be used to authenticate AWS KMS.";
+  public static final String AWS_REGION_SM = "Region for AWS SM.";
+  public static final String AWS_SECRET_NAME_PREFIX = "Text that is prepended to the Secret name as a prefix.";
+  public static final String GCP_KMS_PROJECT_ID = "ID of the project on GCP.";
+  public static final String GCP_KMS_REGION = "Region for GCP KMS";
+  public static final String GCP_KEYRING = "Name of the Key Ring where Google Cloud Symmetric Key is created.";
+  public static final String GCP_KEYNAME = "Name of the Google Cloud Symmetric Key.";
+  public static final String GCP_CRED_FILE = "File Secret which is Service Account Key.";
 }

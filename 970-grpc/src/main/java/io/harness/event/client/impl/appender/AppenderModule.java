@@ -26,7 +26,7 @@ public class AppenderModule extends ProviderModule {
   private final Config config;
   private final Supplier<String> delegateIdSupplier;
 
-  public AppenderModule(Config config, Supplier<String> delegateIdSupplier) {
+  public AppenderModule(final Config config, final Supplier<String> delegateIdSupplier) {
     this.config = config;
     this.delegateIdSupplier = delegateIdSupplier;
   }

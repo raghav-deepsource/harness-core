@@ -18,6 +18,7 @@ import static io.harness.k8s.model.KubernetesClusterAuthType.USER_PASSWORD;
 import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
+import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.BRETT;
 import static io.harness.rule.OwnerRule.YOGESH;
@@ -634,7 +635,7 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
 
     assertThatThrownBy(() -> kubernetesContainerService.getService(KUBERNETES_CONFIG, "service"))
         .hasMessageContaining(
-            "Unable to get default/Service/service. Code: 403, message: {error: \"unable to get service\"}");
+            "Unable to get default/Service/service. Code: 403, message:  Response body: {error: \"unable to get service\"}");
   }
 
   @Test
@@ -981,7 +982,8 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
         .thenThrow(new ApiException(401, emptyMap(), "{\"error\": \"unauthorized\"}"));
 
     assertThatThrownBy(() -> kubernetesContainerService.getRunningPodsWithLabels(KUBERNETES_CONFIG, "default", labels))
-        .hasMessageContaining("Unable to get running pods. Code: 401, message: {\"error\": \"unauthorized\"}");
+        .hasMessageContaining(
+            "Unable to get running pods. Code: 401, message:  Response body: {\"error\": \"unauthorized\"}");
   }
 
   @Test
@@ -1017,7 +1019,46 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
 
     assertThatThrownBy(() -> kubernetesContainerService.getConfigMap(KUBERNETES_CONFIG, "configmap"))
         .hasMessageContaining(
-            "Failed to get default/ConfigMap/configmap. Code: 403, message: {error: \"cluster not found\"}");
+            "Failed to get default/ConfigMap/configmap. Code: 403, message:  Response body: {error: \"cluster not found\"}");
+  }
+
+  @Test
+  @Owner(developers = ACHYUTH)
+  @Category(UnitTests.class)
+  public void testGetConfigMapNestedException() throws Exception {
+    when(k8sApiClient.execute(k8sApiCall, TypeToken.get(V1ConfigMap.class).getType()))
+        .thenThrow(new ApiException(
+            null, new IOException("Unexpected response code for CONNECT: 403"), 403, emptyMap(), null));
+
+    assertThatThrownBy(() -> kubernetesContainerService.getConfigMap(KUBERNETES_CONFIG, "configmap"))
+        .hasMessageContaining(
+            "Failed to get default/ConfigMap/configmap. Code: 403, message: Unexpected response code for CONNECT: 403");
+  }
+
+  @Test
+  @Owner(developers = ACHYUTH)
+  @Category(UnitTests.class)
+  public void testGetConfigMapNestedExceptionWithRespnseBody() throws Exception {
+    when(k8sApiClient.execute(k8sApiCall, TypeToken.get(V1ConfigMap.class).getType()))
+        .thenThrow(new ApiException(
+            null, new IOException("Unexpected response code for CONNECT: 403"), 403, emptyMap(), "connection issue"));
+
+    assertThatThrownBy(() -> kubernetesContainerService.getConfigMap(KUBERNETES_CONFIG, "configmap"))
+        .hasMessageContaining(
+            "Failed to get default/ConfigMap/configmap. Code: 403, message: Unexpected response code for CONNECT: 403 Response body: connection issue");
+  }
+
+  @Test
+  @Owner(developers = ACHYUTH)
+  @Category(UnitTests.class)
+  public void testGetConfigMapNestedExceptionHasEmptyMessage() throws Exception {
+    when(k8sApiClient.execute(k8sApiCall, TypeToken.get(V1ConfigMap.class).getType()))
+        .thenThrow(
+            new ApiException("Unexpected response code for CONNECT: 403", new IOException(), 403, emptyMap(), null));
+
+    assertThatThrownBy(() -> kubernetesContainerService.getConfigMap(KUBERNETES_CONFIG, "configmap"))
+        .hasMessageContaining(
+            "Failed to get default/ConfigMap/configmap. Code: 403, message: Unexpected response code for CONNECT: 403");
   }
 
   @Test
@@ -1055,7 +1096,7 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
 
     assertThatThrownBy(() -> kubernetesContainerService.getSecret(KUBERNETES_CONFIG, "secret"))
         .hasMessageContaining(
-            "Failed to get default/Secret/secret. Code: 403, message: {error: \"cluster not found\"}");
+            "Failed to get default/Secret/secret. Code: 403, message:  Response body: {error: \"cluster not found\"}");
   }
 
   @Test

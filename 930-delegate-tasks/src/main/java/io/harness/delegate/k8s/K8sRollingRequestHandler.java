@@ -20,7 +20,6 @@ import static io.harness.k8s.K8sCommandUnitConstants.WrapUp;
 import static io.harness.k8s.K8sConstants.MANIFEST_FILES_DIR;
 import static io.harness.k8s.manifest.ManifestHelper.getCustomResourceDefinitionWorkloads;
 import static io.harness.k8s.manifest.ManifestHelper.getWorkloads;
-import static io.harness.k8s.manifest.VersionUtils.addRevisionNumber;
 import static io.harness.k8s.manifest.VersionUtils.markVersionedResources;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.INFO;
@@ -55,6 +54,9 @@ import io.harness.k8s.model.Release.Status;
 import io.harness.k8s.model.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+
+import software.wings.beans.LogColor;
+import software.wings.beans.LogWeight;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -102,11 +104,12 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
     manifestFilesDirectory = Paths.get(k8sDelegateTaskParams.getWorkingDirectory(), MANIFEST_FILES_DIR).toString();
     long steadyStateTimeoutInMillis = getTimeoutMillisFromMinutes(k8sDeployRequest.getTimeoutIntervalInMin());
 
+    LogCallback logCallback = k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, FetchFiles,
+        k8sRollingDeployRequest.isShouldOpenFetchFilesLogStream(), commandUnitsProgress);
+
+    logCallback.saveExecutionLog(color("\nStarting Kubernetes Rolling Deployment", LogColor.White, LogWeight.Bold));
     k8sTaskHelperBase.fetchManifestFilesAndWriteToDirectory(k8sRollingDeployRequest.getManifestDelegateConfig(),
-        manifestFilesDirectory,
-        k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, FetchFiles,
-            k8sRollingDeployRequest.isShouldOpenFetchFilesLogStream(), commandUnitsProgress),
-        steadyStateTimeoutInMillis, k8sRollingDeployRequest.getAccountId());
+        manifestFilesDirectory, logCallback, steadyStateTimeoutInMillis, k8sRollingDeployRequest.getAccountId());
 
     init(k8sRollingDeployRequest, k8sDelegateTaskParams,
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Init, true, commandUnitsProgress));
@@ -269,7 +272,7 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
 
       if (!skipResourceVersioning) {
         executionLogCallback.saveExecutionLog("\nVersioning resources.");
-        addRevisionNumber(resources, release.getNumber());
+        k8sTaskHelperBase.addRevisionNumber(resources, release.getNumber());
       }
 
       k8sRollingBaseHandler.addLabelsInManagedWorkloadPodSpec(inCanaryWorkflow, managedWorkloads, releaseName);

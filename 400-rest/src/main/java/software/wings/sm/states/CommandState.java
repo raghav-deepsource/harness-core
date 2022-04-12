@@ -925,6 +925,9 @@ public class CommandState extends State {
 
     commandParametersBuilder.multiArtifact(
         featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId));
+
+    commandParametersBuilder.useWinRMKerberosUniqueCacheFile(
+        featureFlagService.isEnabled(FeatureName.WINRM_KERBEROS_CACHE_UNIQUE_FILE, accountId));
   }
 
   private ExecutionResponse handleException(ExecutionContext context,

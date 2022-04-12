@@ -114,6 +114,10 @@ public abstract class CVConfig
     return identifier;
   }
 
+  public abstract boolean isSLIEnabled();
+  public abstract boolean isLiveMonitoringEnabled();
+  public abstract boolean isDeploymentVerificationEnabled();
+
   @FdIndex private Long createNextTaskIteration;
 
   @Override
@@ -173,7 +177,8 @@ public abstract class CVConfig
           .set(CVConfigKeys.serviceIdentifier, cvConfig.getServiceIdentifier())
           .set(CVConfigKeys.envIdentifier, cvConfig.getEnvIdentifier())
           .set(CVConfigKeys.monitoringSourceName, cvConfig.getMonitoringSourceName())
-          .set(CVConfigKeys.category, cvConfig.getCategory());
+          .set(CVConfigKeys.category, cvConfig.getCategory())
+          .set(CVConfigKeys.enabled, cvConfig.isEnabled());
     }
   }
 

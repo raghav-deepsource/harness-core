@@ -111,6 +111,14 @@ def get_access_configs(network_interface):
     return access_configs
 
 
+def get_status(instance):
+    status = instance.get('status')
+    if status == 'TERMINATED':
+        return 'STOPPED'
+    else:
+        return status
+
+
 def get_data_to_insert(instance, zone, region, project_id, project_number):
     return {
         "instanceId": instance.get('id'),
@@ -121,7 +129,7 @@ def get_data_to_insert(instance, zone, region, project_id, project_number):
         "machineType": instance.get('machineType').split('/')[-1],
         "projectId": project_id,
         "projectNumber": project_number,
-        "status": instance.get('status'),
+        "status": get_status(instance),
         "canIpForward": instance.get('canIpForward'),
         "selfLink": instance.get('selfLink'),
         "startRestricted": instance.get('startRestricted'),

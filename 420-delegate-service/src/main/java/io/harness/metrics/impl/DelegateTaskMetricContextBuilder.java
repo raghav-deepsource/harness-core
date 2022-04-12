@@ -14,7 +14,6 @@ import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.Delegate;
 import io.harness.metrics.AutoMetricContext;
 import io.harness.metrics.beans.DelegateMetricContext;
-import io.harness.metrics.beans.DelegateTaskMetricContext;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Singleton;
@@ -26,10 +25,6 @@ public class DelegateTaskMetricContextBuilder {
   private static Map<Class<?>, DelegateTaskMetricContextBuilder.ObjectContextBuilder<?>> OBJECT_CONTEXT_BUILDER_MAP =
       new HashMap<>();
   static {
-    addToObjContextMap(DelegateTask.class,
-        delegateTask
-        -> new DelegateTaskMetricContext(delegateTask.getAccountId(), delegateTask.getData().getTaskType()));
-
     addToObjContextMap(
         Delegate.class, delegate -> new DelegateMetricContext(delegate.getAccountId(), delegate.getVersion()));
   }

@@ -15,6 +15,13 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.UnexpectedException;
+import io.harness.network.SafeHttpCall;
+import io.harness.ng.core.dto.AccountDTO;
+import io.harness.ng.core.dto.OrganizationDTO;
+import io.harness.ng.core.dto.OrganizationResponse;
+import io.harness.ng.core.dto.ProjectDTO;
+import io.harness.ng.core.dto.ProjectResponse;
+import io.harness.organization.remote.OrganizationClient;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.ErrorResponse;
 import io.harness.pms.contracts.plan.VariablesCreationBlobRequest;
@@ -24,17 +31,21 @@ import io.harness.pms.contracts.plan.VariablesCreationResponse;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.plan.creation.PlanCreatorServiceInfo;
 import io.harness.pms.sdk.PmsSdkHelper;
+import io.harness.pms.sdk.core.variables.VariableCreatorHelper;
 import io.harness.pms.utils.CompletableFutures;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.project.remote.ProjectClient;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -48,6 +59,8 @@ public class VariableCreatorMergeService {
   private final PmsSdkHelper pmsSdkHelper;
   private final PmsGitSyncHelper pmsGitSyncHelper;
   @Inject private Map<String, List<String>> serviceExpressionMap;
+  @Inject private OrganizationClient organizationClient;
+  @Inject private ProjectClient projectClient;
 
   private static final int MAX_DEPTH = 10;
   private final Executor executor = Executors.newFixedThreadPool(5);
@@ -58,10 +71,16 @@ public class VariableCreatorMergeService {
     this.pmsGitSyncHelper = pmsGitSyncHelper;
   }
 
-  public VariableMergeServiceResponse createVariablesResponse(@NotNull String yaml) throws IOException {
+  public VariableMergeServiceResponse createVariablesResponse(@NotNull String yaml, boolean newVersion)
+      throws IOException {
     Map<String, PlanCreatorServiceInfo> services = pmsSdkHelper.getServices();
 
-    YamlField processedYaml = YamlUtils.injectUuidWithLeafUuid(yaml);
+    YamlField processedYaml;
+    if (!newVersion) {
+      processedYaml = YamlUtils.injectUuidWithLeafUuid(yaml);
+    } else {
+      processedYaml = YamlUtils.injectUuidInYamlField(yaml);
+    }
     YamlField topRootFieldInYaml =
         YamlUtils.getTopRootFieldInYamlField(Objects.requireNonNull(processedYaml).getNode());
 
@@ -75,12 +94,53 @@ public class VariableCreatorMergeService {
     if (gitSyncBranchContext != null) {
       metadataBuilder.setGitSyncBranchContext(gitSyncBranchContext);
     }
+    // TODO(archit): delete variables v1 api and this newVersion flag
+    if (newVersion) {
+      metadataBuilder.putMetadata("newVersion", "newVersion");
+    }
 
     VariablesCreationBlobResponse response =
         createVariablesForDependenciesRecursive(services, dependencies, metadataBuilder.build());
 
+    // for backward compatible v1 api changes
+    String responseYaml = newVersion ? response.getDeps().getYaml() : YamlUtils.writeYamlString(processedYaml);
+
     return VariableCreationBlobResponseUtils.getMergeServiceResponse(
-        YamlUtils.writeYamlString(processedYaml), response, serviceExpressionMap);
+        responseYaml, response, serviceExpressionMap, newVersion);
+  }
+
+  public VariableMergeServiceResponse createVariablesResponseV2(@NotNull String accountId,
+      @NotNull String orgIdentifier, @NotNull String projectIdentifier, @NotNull String yaml) throws IOException {
+    Map<String, PlanCreatorServiceInfo> services = pmsSdkHelper.getServices();
+
+    YamlField processedYaml = YamlUtils.injectUuidInYamlField(yaml);
+
+    YamlField topRootFieldInYaml =
+        YamlUtils.getTopRootFieldInYamlField(Objects.requireNonNull(processedYaml).getNode());
+
+    Dependencies dependencies =
+        Dependencies.newBuilder()
+            .setYaml(processedYaml.getNode().getCurrJsonNode().toString())
+            .putDependencies(topRootFieldInYaml.getNode().getUuid(), topRootFieldInYaml.getNode().getYamlPath())
+            .build();
+    VariablesCreationMetadata.Builder metadataBuilder = VariablesCreationMetadata.newBuilder();
+    ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal();
+    if (gitSyncBranchContext != null) {
+      metadataBuilder.setGitSyncBranchContext(gitSyncBranchContext);
+    }
+    // TODO(archit): delete variables v1 api and this newVersion flag
+    metadataBuilder.putMetadata("newVersion", "newVersion");
+
+    VariablesCreationBlobResponse response =
+        createVariablesForDependenciesRecursive(services, dependencies, metadataBuilder.build());
+
+    // for backward compatible v1 api changes
+    String responseYaml = response.getDeps().getYaml();
+
+    // Add account, org and project expressions
+
+    return VariableCreationBlobResponseUtils.getMergeServiceResponse(
+        responseYaml, response, getPipelineMetadataExpressions(accountId, orgIdentifier, projectIdentifier), true);
   }
 
   private VariablesCreationBlobResponse createVariablesForDependenciesRecursive(
@@ -104,11 +164,12 @@ public class VariableCreatorMergeService {
       finalResponseBuilder.setDeps(finalResponseBuilder.getDeps().toBuilder().clearDependencies().build());
 
       VariableCreationBlobResponseUtils.mergeDependencies(finalResponseBuilder, variablesCreationBlobResponse);
-      VariableCreationBlobResponseUtils.mergeYamlProperties(finalResponseBuilder, variablesCreationBlobResponse);
-      VariableCreationBlobResponseUtils.mergeYamlOutputProperties(finalResponseBuilder, variablesCreationBlobResponse);
+      VariableCreationBlobResponseUtils.mergeProperties(
+          finalResponseBuilder, variablesCreationBlobResponse, metadata.getMetadataMap().containsKey("newVersion"));
     }
 
-    finalResponseBuilder.setDeps(unresolvedDependenciesMap);
+    finalResponseBuilder.setDeps(
+        finalResponseBuilder.getDeps().toBuilder().putAllDependencies(unresolvedDependenciesMap.getDependenciesMap()));
     return finalResponseBuilder.build();
   }
 
@@ -142,7 +203,8 @@ public class VariableCreatorMergeService {
       VariablesCreationBlobResponse.Builder builder = VariablesCreationBlobResponse.newBuilder();
       List<VariablesCreationResponse> variablesCreationResponses = completableFutures.allOf().get(5, TimeUnit.MINUTES);
       variablesCreationResponses.forEach(response -> {
-        VariableCreationBlobResponseUtils.mergeResponses(builder, response.getBlobResponse());
+        VariableCreationBlobResponseUtils.mergeResponses(
+            builder, response.getBlobResponse(), metadata.getMetadataMap().containsKey("newVersion"));
         if (response.getResponseCase() == VariablesCreationResponse.ResponseCase.ERRORRESPONSE) {
           builder.addErrorResponse(response.getErrorResponse());
         }
@@ -151,5 +213,35 @@ public class VariableCreatorMergeService {
     } catch (Exception ex) {
       throw new UnexpectedException("Error fetching variables creation response from service", ex);
     }
+  }
+
+  private Map<String, List<String>> getPipelineMetadataExpressions(
+      @NotNull String accountId, @NotNull String orgIdentifier, @NotNull String projectIdentifier) {
+    Map<String, List<String>> resultMap = new HashMap<>();
+    for (Map.Entry<String, List<String>> entry : serviceExpressionMap.entrySet()) {
+      resultMap.put(entry.getKey(), entry.getValue());
+    }
+
+    // Adding account expressions
+    resultMap.put("account", VariableCreatorHelper.getExpressionsInObject(AccountDTO.builder().build(), "account"));
+    // Adding org expressions
+    try {
+      Optional<OrganizationResponse> resp =
+          SafeHttpCall.execute(organizationClient.getOrganization(orgIdentifier, accountId)).getData();
+      OrganizationDTO organizationDTO = resp.map(OrganizationResponse::getOrganization).orElse(null);
+      resultMap.put("org", VariableCreatorHelper.getExpressionsInObject(organizationDTO, "org"));
+    } catch (Exception ex) {
+      log.error("Couldn't get organisation details", ex);
+    }
+    // Adding project details
+    try {
+      Optional<ProjectResponse> resp =
+          SafeHttpCall.execute(projectClient.getProject(projectIdentifier, accountId, orgIdentifier)).getData();
+      ProjectDTO projectDTO = resp.map(ProjectResponse::getProject).orElse(null);
+      resultMap.put("project", VariableCreatorHelper.getExpressionsInObject(projectDTO, "project"));
+    } catch (Exception ex) {
+      log.error("Couldn't get project details", ex);
+    }
+    return resultMap;
   }
 }

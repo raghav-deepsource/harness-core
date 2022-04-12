@@ -13,13 +13,14 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.plan.YamlOutputProperties;
 import io.harness.pms.contracts.plan.YamlProperties;
 import io.harness.pms.sdk.core.pipeline.variables.GenericStepVariableCreator;
-import io.harness.pms.sdk.core.pipeline.variables.VariableCreatorHelper;
+import io.harness.pms.sdk.core.variables.VariableCreatorHelper;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.YamlTypes;
+import io.harness.steps.approval.step.harness.HarnessApprovalStepNode;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -29,7 +30,7 @@ import java.util.Objects;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
-public class ApprovalStepVariableCreator extends GenericStepVariableCreator {
+public class ApprovalStepVariableCreator extends GenericStepVariableCreator<HarnessApprovalStepNode> {
   @Override
   public Set<String> getSupportedStepTypes() {
     Set<String> strings = new HashSet<>();

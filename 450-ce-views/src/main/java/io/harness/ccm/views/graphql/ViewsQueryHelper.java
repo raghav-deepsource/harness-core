@@ -319,4 +319,26 @@ public class ViewsQueryHelper {
             -> groupBy.getEntityGroupBy() == null || !groupBy.getEntityGroupBy().getFieldName().equals(NONE_FIELD))
         .collect(Collectors.toList());
   }
+
+  public String getBusinessMappingIdFromGroupBy(List<QLCEViewGroupBy> groupByList) {
+    Optional<QLCEViewGroupBy> businessMappingGroupBy =
+        groupByList.stream()
+            .filter(groupBy
+                -> groupBy.getEntityGroupBy() != null
+                    && groupBy.getEntityGroupBy().getIdentifier() == ViewFieldIdentifier.BUSINESS_MAPPING)
+            .findFirst();
+
+    return businessMappingGroupBy.map(groupBy -> groupBy.getEntityGroupBy().getFieldId()).orElse(null);
+  }
+
+  public String getBusinessMappingIdFromFilters(List<QLCEViewFilterWrapper> filters) {
+    Optional<QLCEViewFilterWrapper> businessMappingGroupBy =
+        filters.stream()
+            .filter(filter
+                -> filter.getIdFilter() != null
+                    && filter.getIdFilter().getField().getIdentifier() == ViewFieldIdentifier.BUSINESS_MAPPING)
+            .findFirst();
+
+    return businessMappingGroupBy.map(filter -> filter.getIdFilter().getField().getFieldId()).orElse(null);
+  }
 }

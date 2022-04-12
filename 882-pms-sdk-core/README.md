@@ -1,0 +1,1 @@
+This module provides core functionalities for pms-sdk. Only pipeline-sdk concepts should be added to these. Example - steps shared between common steps service(forkStep, sectionStep) and sdk services should only exist here.

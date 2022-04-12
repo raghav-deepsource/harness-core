@@ -33,6 +33,22 @@ import org.mongodb.morphia.query.UpdateOperations;
 public abstract class LogCVConfig extends CVConfig {
   private String queryName;
   private String query;
+
+  @Override
+  public boolean isSLIEnabled() {
+    return false;
+  }
+
+  @Override
+  public boolean isLiveMonitoringEnabled() {
+    return true;
+  }
+
+  @Override
+  public boolean isDeploymentVerificationEnabled() {
+    return true;
+  }
+
   @Override
   public TimeRange getFirstTimeDataCollectionTimeRange() {
     TimeRange baseline = getBaseline();

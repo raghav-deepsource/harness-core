@@ -1,0 +1,15 @@
+{
+  "_id" : "622f42df8fceed0967abe851",
+  "accountIdentifier" : "kmpySmUISimoRrJL6NL73w",
+  "identifier" : "new_rg",
+  "name" : "new rg",
+  "description" : "",
+  "color" : "#0063f7",
+  "tags" : {},
+  "harnessManaged" : false,
+  "resourceSelectors" : [],
+  "fullScopeSelected" : false,
+  "allowedScopeLevels" : [
+    "account"
+  ]
+}

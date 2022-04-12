@@ -112,11 +112,15 @@ enum DeploymentPermissionFilterType {
 input DeploymentPermissionFilterInput {
   filterTypes: [DeploymentPermissionFilterType]
   envIds: [String!]
+  # To give permission of pipeline per env. This is behind FF PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION
+  executableElementFilter: ExecutableElementFilterInput
 }
 
 type DeploymentPermissionFilter {
   filterTypes: [DeploymentPermissionFilterType]
   envIds: [String]
+  # To give permission of pipeline per env. This is behind FF PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION
+  executableElementFilter: ExecutableElementFilter
 }
 
 enum PipelinePermissionFilterType {
@@ -155,4 +159,26 @@ type ProvisionerPermissionFilter {
 type TemplatePermissionFilter {
   filterType: FilterType
   templateIds: [String]
+}
+
+enum ExecutableElementType {
+  PIPELINE
+  # Coming soon
+  WORKFLOW
+}
+
+enum ExecutableElementFilterType {
+  ALL
+}
+
+input ExecutableElementFilterInput {
+  executableElementType: ExecutableElementType!
+  ids: [String]
+  executableElementFilterType: ExecutableElementFilterType
+}
+
+type ExecutableElementFilter {
+  executableElementType: ExecutableElementType!
+  ids: [String]
+  executableElementFilterType: ExecutableElementFilterType
 }

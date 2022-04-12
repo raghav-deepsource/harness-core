@@ -9,6 +9,7 @@ package io.harness.delegate.task.git;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ABHINAV2;
+import static io.harness.rule.OwnerRule.DEV_MITTAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -229,5 +230,23 @@ public class GitCommandTaskHandlerTest extends CategoryTest {
     assertThatThrownBy(
         () -> gitCommandTaskHandler.handleValidateTask(gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig))
         .isInstanceOf(SCMRuntimeException.class);
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testInvalidScmRequest() {
+    GitConfigDTO gitConfig = GitConfigDTO.builder().gitConnectionType(GitConnectionType.ACCOUNT).build();
+    ScmConnector connector =
+        GitlabConnectorDTO.builder()
+            .apiAccess(GitlabApiAccessDTO.builder().spec(GitlabTokenSpecDTO.builder().build()).build())
+            .build();
+    doThrow(new InvalidRequestException(SIMULATED_EXCEPTION_MESSAGE)).when(scmDelegateClient).processScmRequest(any());
+    try {
+      gitCommandTaskHandler.handleValidateTask(gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig);
+    } catch (Exception e) {
+      assertThat(e instanceof SCMRuntimeException).isTrue();
+      assertThat(e.getMessage().equals(SIMULATED_EXCEPTION_MESSAGE)).isTrue();
+    }
   }
 }

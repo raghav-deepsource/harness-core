@@ -8,11 +8,13 @@
 package io.harness.ng.core.service.resources;
 
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static software.wings.beans.Service.ServiceKeys;
 
 import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -109,6 +111,18 @@ public class ServiceResourceTest extends CategoryTest {
 
     assertThat(serviceResponse).isNotNull();
     assertThat(serviceResponse).isEqualTo(serviceResponseDTO);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetForNotFound() {
+    doReturn(Optional.empty())
+        .when(serviceEntityService)
+        .get("ACCOUNT_ID", serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier(),
+            serviceRequestDTO.getIdentifier(), false);
+    assertThatThrownBy(() -> serviceResource.get("IDENTIFIER", "ACCOUNT_ID", "ORG_ID", "PROJECT_ID", false))
+        .hasMessage("Service with identifier [IDENTIFIER] in project [PROJECT_ID], org [ORG_ID] not found");
   }
 
   @Test

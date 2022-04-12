@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerCredentialType.ASSUME_IAM_ROLE;
 import static io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerCredentialType.ASSUME_STS_ROLE;
+import static io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerCredentialType.MANUAL_CONFIG;
 import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
 import static io.harness.exception.WingsException.USER;
 
@@ -24,6 +25,7 @@ import io.harness.exception.InvalidRequestException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.google.common.base.Preconditions;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,16 +47,18 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Schema(name = "AwsSecretManager", description = "Returns AWS Secret Manager configuration details.")
+@Schema(name = "AwsSecretManager", description = SecretManagerDescriptionConstants.AWS_SM_CONFIG)
 public class AwsSecretManagerDTO extends ConnectorConfigDTO implements DelegateSelectable {
-  @Schema(description = "Returns AWS Secret Manager configuration details.")
+  @Schema(description = SecretManagerDescriptionConstants.AWS_AUTH_CRED_SM)
   @Valid
   @NotNull
   AwsSecretManagerCredentialDTO credential;
-  @Schema(description = "Region for AWS Secret Manager.") @NotNull private String region;
+
+  @Schema(description = SecretManagerDescriptionConstants.AWS_REGION_SM) @NotNull private String region;
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
   @Schema(description = SecretManagerDescriptionConstants.HARNESS_MANAGED) @JsonIgnore private boolean harnessManaged;
-  @Schema(description = "Text that is appended to the Secret as a prefix.") private String secretNamePrefix;
+
+  @Schema(description = SecretManagerDescriptionConstants.AWS_SECRET_NAME_PREFIX) private String secretNamePrefix;
   @Schema(description = SecretManagerDescriptionConstants.DELEGATE_SELECTORS) private Set<String> delegateSelectors;
 
   @Builder
@@ -71,7 +75,7 @@ public class AwsSecretManagerDTO extends ConnectorConfigDTO implements DelegateS
   public List<DecryptableEntity> getDecryptableEntities() {
     List<DecryptableEntity> decryptableEntities = new ArrayList<>();
     decryptableEntities.add(this);
-    if (credential.getCredentialType() == AwsSecretManagerCredentialType.MANUAL_CONFIG) {
+    if (credential.getCredentialType() == MANUAL_CONFIG) {
       AwsSMCredentialSpecManualConfigDTO awsKmsManualCredentials =
           (AwsSMCredentialSpecManualConfigDTO) credential.getConfig();
       decryptableEntities.add(awsKmsManualCredentials);
@@ -82,6 +86,18 @@ public class AwsSecretManagerDTO extends ConnectorConfigDTO implements DelegateS
   @Override
   public void validate() {
     AwsSecretManagerCredentialType credentialType = this.credential.getCredentialType();
+    Preconditions.checkNotNull(region, "Region cannot be empty");
+    if (MANUAL_CONFIG.equals(credentialType)) {
+      AwsSMCredentialSpecManualConfigDTO awsKmsManualCredentials =
+          (AwsSMCredentialSpecManualConfigDTO) credential.getConfig();
+      if (isEmpty(awsKmsManualCredentials.getAccessKey().getIdentifier())) {
+        throw new InvalidRequestException("Access key cannot be empty.", INVALID_REQUEST, USER);
+      }
+      if (isEmpty(awsKmsManualCredentials.getSecretKey().getIdentifier())) {
+        throw new InvalidRequestException("Secret key cannot be empty.", INVALID_REQUEST, USER);
+      }
+    }
+
     if (ASSUME_IAM_ROLE.equals(credentialType) || ASSUME_STS_ROLE.equals(credentialType)) {
       if (isEmpty(delegateSelectors)) {
         throw new InvalidRequestException(

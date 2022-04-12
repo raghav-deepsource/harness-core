@@ -147,6 +147,7 @@ public class ArtifactCollectionResponseHandler {
     boolean deleted =
         artifactService.deleteArtifactsByUniqueKey(artifactStream, artifactStreamAttributes, artifactKeys);
     log.info("Artifact cleanup completed: deleted = {}, count = {}", deleted, artifactKeys.size());
+    log.info("[{}] artifacts deleted for artifactStreamId {}", artifactKeys, artifactStream.getUuid());
   }
 
   private void onSuccess(ArtifactStream artifactStream) {

@@ -1,0 +1,22 @@
+{
+  "accountIdentifier" : "kmpySmUISimoRrJL6NL73w",
+  "identifier" : "test_resource_group",
+  "name" : "test resource group",
+  "description" : "",
+  "color" : "#0063f7",
+  "tags" : {},
+  "harnessManaged" : false,
+  "includedScopes" : [
+    {
+      "filter" : "EXCLUDING_CHILD_SCOPES",
+      "accountIdentifier" : "kmpySmUISimoRrJL6NL73w"
+    }
+  ],
+  "resourceFilter" : {
+    "resources" : [],
+    "includeAllResources" : true
+  },
+  "allowedScopeLevels" : [
+    "account"
+  ]
+}

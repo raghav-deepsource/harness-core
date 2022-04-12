@@ -17,6 +17,7 @@ go_library(
 go_test(
     name = "repo_test",
     srcs = [
+        "azure_test.go",
         "bitbucket_cloud_test.go",
         "bitbucket_server_test.go",
         "github_test.go",

@@ -21,6 +21,14 @@ function jar_app_version() {
 
   if [ -z "$VERSION" ]
   then
+    if unzip -l $JAR | grep -q BOOT-INF/classes/main/resources-filtered/versionInfo.yaml
+    then
+      VERSION=$(unzip -c $JAR BOOT-INF/classes/main/resources-filtered/versionInfo.yaml | grep "^version " | cut -d ":" -f2 | tr -d " " | tr -d "\r" | tr -d "\n")
+    fi
+  fi
+
+  if [ -z "$VERSION" ]
+  then
     VERSION=$(unzip -c $JAR META-INF/MANIFEST.MF | grep Application-Version | cut -d "=" -f2 | tr -d " " | tr -d "\r" | tr -d "\n")
   fi
   echo $VERSION
@@ -121,6 +129,7 @@ if [[ "$OSTYPE" == linux* ]]; then
   if [ ! $? -eq 0 ]; then
     echo "/tmp is mounted noexec. Overriding tmpdir"
     export OVERRIDE_TMP_PROPS="-Djava.io.tmpdir=$DIR/tmp"
+    export WATCHER_JAVA_OPTS
     export JAVA_OPTS
   fi
 fi
@@ -209,8 +218,13 @@ if [ ! -e config-watcher.yml ]; then
   echo "accountId: $ACCOUNT_ID" > config-watcher.yml
 fi
 test "$(tail -c 1 config-watcher.yml)" && `echo "" >> config-watcher.yml`
+# delegateToken is a replacement of accountSecret. There is a possibility where pod is running with older yaml,
+# where ACCOUNT_SECRET is present in env variable, prefer using ACCOUNT_SECRET in those scenarios.
 if ! `grep accountSecret config-watcher.yml > /dev/null`; then
   echo "accountSecret: $ACCOUNT_SECRET" >> config-watcher.yml
+fi
+if ! `grep delegateToken config-watcher.yml > /dev/null`; then
+  echo "delegateToken: $DELEGATE_TOKEN" >> config-watcher.yml
 fi
 if ! `grep managerUrl config-watcher.yml > /dev/null`; then
   echo "managerUrl: $MANAGER_HOST_AND_PORT/api/" >> config-watcher.yml
@@ -315,12 +329,12 @@ if [[ $1 == "upgrade" ]]; then
   WATCHER_CURRENT_VERSION=$(jar_app_version watcher.jar)
   mkdir -p watcherBackup.$WATCHER_CURRENT_VERSION
   cp watcher.jar watcherBackup.$WATCHER_CURRENT_VERSION
-  $JRE_BINARY $JAVA_OPTS $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -Dwatchersourcedir="$DIR" -Xmx192m -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -jar watcher.jar config-watcher.yml upgrade $2
+  $JRE_BINARY $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -Dwatchersourcedir="$DIR" -Xmx192m -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 $WATCHER_JAVA_OPTS -jar watcher.jar config-watcher.yml upgrade $2
 else
   if `pgrep -f "\-Dwatchersourcedir=$DIR"> /dev/null`; then
     echo "Watcher already running"
   else
-    nohup $JRE_BINARY $JAVA_OPTS $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -Dwatchersourcedir="$DIR" -Xmx192m -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -jar watcher.jar config-watcher.yml >nohup-watcher.out 2>&1 &
+    nohup $JRE_BINARY $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -Dwatchersourcedir="$DIR" -Xmx192m -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 $WATCHER_JAVA_OPTS -jar watcher.jar config-watcher.yml >nohup-watcher.out 2>&1 &
     sleep 1
     if [ -s nohup-watcher.out ]; then
       echo "Failed to start Watcher."

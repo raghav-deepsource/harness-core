@@ -72,7 +72,7 @@ public class AsyncPreFlightHandler implements Runnable {
     } catch (Exception e) {
       log.error("Error occurred while handling preflight check", e);
       preflightService.updateStatus(
-          entity.getUuid(), PreFlightStatus.FAILURE, PreflightCommonUtils.getInternalIssueErrorInfo());
+          entity.getUuid(), PreFlightStatus.FAILURE, PreflightCommonUtils.getInternalIssueErrorInfo(e));
     }
   }
 }

@@ -1,0 +1,36 @@
+name: Delegate Task Metrics
+identifier: delegate_task_type_metrics
+metricGroup: delegate_task_type
+metrics:
+  - metricName: delegate_task_creation_by_type
+    metricDefinition: Delegate task creation count
+    type: Count
+    unit: "1"
+  - metricName: delegate_task_no_eligible_delegates_by_type
+    metricDefinition: Delegate task - no eligible delegates
+    type: Count
+    unit: "1"
+  - metricName: delegate_task_expired_by_type
+    metricDefinition: Delegate task expired
+    type: Count
+    unit: "1"
+  - metricName: delegate_task_acquire_by_type
+    metricDefinition: Delegate task acquiring count
+    type: Count
+    unit: "1"
+  - metricName: delegate_task_acquire_failed_by_type
+    metricDefinition: Delegate task acquiring failure count
+    type: Count
+    unit: "1"
+  - metricName: delegate_task_rebroadcast_by_type
+    metricDefinition: Delegate task rebroadcast count
+    type: Count
+    unit: "1"
+  - metricName: delegate_task_validation_by_type
+    metricDefinition: Delegate task validation count
+    type: Count
+    unit: "1"
+  - metricName: delegate_task_no_first_whitelisted_by_type
+    metricDefinition: Delegate task not whitelisted
+    type: Count
+    unit: "1"

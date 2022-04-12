@@ -279,7 +279,7 @@ public class CfCliClientImpl implements CfCliClient {
       CfRequestConfig pcfRequestConfig = appAutoscalarRequestData.getCfRequestConfig();
       boolean loginSuccessful = logInForAppAutoscalarCliCommand(appAutoscalarRequestData, logCallback);
       if (loginSuccessful) {
-        ProcessExecutor processExecutor = createProcessExecutorForCfTask(1,
+        ProcessExecutor processExecutor = createProcessExecutorForCfTask(pcfRequestConfig.getTimeOutIntervalInMins(),
             CfCliCommandResolver.getAutoscalingAppsCliCommandWithGrep(pcfRequestConfig.getCfCliPath(),
                 pcfRequestConfig.getCfCliVersion(), appAutoscalarRequestData.getApplicationGuid()),
             getAppAutoscalerEnvMapForCustomPlugin(appAutoscalarRequestData), logCallback);
@@ -305,7 +305,7 @@ public class CfCliClientImpl implements CfCliClient {
     try {
       boolean loginSuccessful = logInForAppAutoscalarCliCommand(appAutoscalarRequestData, logCallback);
       if (loginSuccessful) {
-        ProcessExecutor executor = createProcessExecutorForCfTask(1,
+        ProcessExecutor executor = createProcessExecutorForCfTask(pcfRequestConfig.getTimeOutIntervalInMins(),
             CfCliCommandResolver.getAutoscalingAppsCliCommandWithGrep(pcfRequestConfig.getCfCliPath(),
                 pcfRequestConfig.getCfCliVersion(), appAutoscalarRequestData.getApplicationGuid()),
             getAppAutoscalerEnvMapForCustomPlugin(appAutoscalarRequestData), logCallback);
@@ -477,7 +477,7 @@ public class CfCliClientImpl implements CfCliClient {
           } else {
             command = getRouteCommand(commandType, pcfRequestConfig, info);
           }
-          exitcode = executeCommand(command, env, logCallback);
+          exitcode = executeCommand(command, env, logCallback, pcfRequestConfig);
           if (exitcode != 0) {
             String message = format("Failed to map route: [%s]", route);
             logCallback.saveExecutionLog(message, ERROR);
@@ -596,7 +596,7 @@ public class CfCliClientImpl implements CfCliClient {
               CfCliCommandResolver.getSetEnvCommand(pcfRequestConfig.getCfCliPath(), pcfRequestConfig.getCfCliVersion(),
                   pcfRequestConfig.getApplicationName(), entry.getKey(), String.valueOf(entry.getValue()));
 
-          exitcode = executeCommand(command, env, logCallback);
+          exitcode = executeCommand(command, env, logCallback, pcfRequestConfig);
           if (exitcode != 0) {
             String message = format("Failed to set env var: <%s>", entry.getKey() + ':' + entry.getValue());
             log.error(message);
@@ -613,10 +613,11 @@ public class CfCliClientImpl implements CfCliClient {
     }
   }
 
-  int executeCommand(String command, Map<String, String> env, LogCallback logCallback)
+  int executeCommand(String command, Map<String, String> env, LogCallback logCallback, CfRequestConfig pcfRequestConfig)
       throws IOException, InterruptedException, TimeoutException {
     logCallback.saveExecutionLog(format("Executing command: [%s]", command));
-    ProcessExecutor executor = createProcessExecutorForCfTask(5, command, env, logCallback);
+    ProcessExecutor executor =
+        createProcessExecutorForCfTask(pcfRequestConfig.getTimeOutIntervalInMins(), command, env, logCallback);
     ProcessResult result = executor.execute();
     int resultCode = result.getExitValue();
     if (resultCode != 0) {
@@ -655,7 +656,7 @@ public class CfCliClientImpl implements CfCliClient {
           command = CfCliCommandResolver.getUnsetEnvCommand(pcfRequestConfig.getCfCliPath(),
               pcfRequestConfig.getCfCliVersion(), pcfRequestConfig.getApplicationName(), var);
 
-          exitcode = executeCommand(command, env, logCallback);
+          exitcode = executeCommand(command, env, logCallback, pcfRequestConfig);
           if (exitcode != 0) {
             String message = "Failed to unset env var: " + var;
             log.error(message);
@@ -703,7 +704,7 @@ public class CfCliClientImpl implements CfCliClient {
 
     command = CfCliCommandResolver.getApiCommand(
         pcfRequestConfig.getCfCliPath(), pcfRequestConfig.getCfCliVersion(), pcfRequestConfig.getEndpointUrl(), true);
-    exitValue = executeCommand(command, env, logCallback);
+    exitValue = executeCommand(command, env, logCallback, pcfRequestConfig);
 
     if (exitValue == 0) {
       Map<String, String> envForAuth = new HashMap<>(env);
@@ -711,14 +712,14 @@ public class CfCliClientImpl implements CfCliClient {
       envForAuth.put(CF_PASSWORD, pcfRequestConfig.getPassword());
       command =
           CfCliCommandResolver.getAuthCommand(pcfRequestConfig.getCfCliPath(), pcfRequestConfig.getCfCliVersion());
-      exitValue = executeCommand(command, envForAuth, logCallback);
+      exitValue = executeCommand(command, envForAuth, logCallback, pcfRequestConfig);
     }
 
     if (exitValue == 0) {
       command = CfCliCommandResolver.getTargetCommand(pcfRequestConfig.getCfCliPath(),
           pcfRequestConfig.getCfCliVersion(), Utils.encloseWithQuotesIfNeeded(pcfRequestConfig.getOrgName()),
           Utils.encloseWithQuotesIfNeeded(pcfRequestConfig.getSpaceName()));
-      exitValue = executeCommand(command, env, logCallback);
+      exitValue = executeCommand(command, env, logCallback, pcfRequestConfig);
     }
 
     logCallback.saveExecutionLog(exitValue == 0 ? "# Login Successful" : "# Login Failed");

@@ -13,8 +13,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.plan.VariablesCreationBlobResponse;
+import io.harness.pms.contracts.plan.YamlExtraProperties;
 import io.harness.pms.contracts.plan.YamlOutputProperties;
 import io.harness.pms.contracts.plan.YamlUpdates;
+import io.harness.pms.plan.creation.PlanCreationBlobResponseUtils;
 import io.harness.pms.variables.VariableMergeServiceResponse.ServiceExpressionProperties;
 import io.harness.pms.variables.VariableMergeServiceResponse.VariableResponseMapValue;
 
@@ -28,22 +30,33 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
 public class VariableCreationBlobResponseUtils {
-  public VariableMergeServiceResponse getMergeServiceResponse(
-      String yaml, VariablesCreationBlobResponse response, Map<String, List<String>> serviceExpressionMap) {
+  public VariableMergeServiceResponse getMergeServiceResponse(String yaml, VariablesCreationBlobResponse response,
+      Map<String, List<String>> serviceExpressionMap, boolean newVersion) {
     Map<String, VariableResponseMapValue> metadataMap = new LinkedHashMap<>();
     // Add Yaml Properties
     response.getYamlPropertiesMap().forEach(
         (k, v) -> metadataMap.put(k, VariableResponseMapValue.builder().yamlProperties(v).build()));
 
     // Add Yaml Output Properties
-    response.getYamlOutputPropertiesMap().keySet().forEach(uuid -> {
-      YamlOutputProperties yamlOutputProperties = response.getYamlOutputPropertiesMap().get(uuid);
-      if (metadataMap.containsKey(uuid)) {
-        metadataMap.get(uuid).setYamlOutputProperties(yamlOutputProperties);
-      } else {
-        metadataMap.put(uuid, VariableResponseMapValue.builder().yamlOutputProperties(yamlOutputProperties).build());
-      }
-    });
+    if (!newVersion) {
+      response.getYamlOutputPropertiesMap().keySet().forEach(uuid -> {
+        YamlOutputProperties yamlOutputProperties = response.getYamlOutputPropertiesMap().get(uuid);
+        if (metadataMap.containsKey(uuid)) {
+          metadataMap.get(uuid).setYamlOutputProperties(yamlOutputProperties);
+        } else {
+          metadataMap.put(uuid, VariableResponseMapValue.builder().yamlOutputProperties(yamlOutputProperties).build());
+        }
+      });
+    } else {
+      response.getYamlExtraPropertiesMap().keySet().forEach(uuid -> {
+        YamlExtraProperties yamlExtraProperties = response.getYamlExtraPropertiesMap().get(uuid);
+        if (metadataMap.containsKey(uuid)) {
+          metadataMap.get(uuid).setYamlExtraProperties(yamlExtraProperties);
+        } else {
+          metadataMap.put(uuid, VariableResponseMapValue.builder().yamlExtraProperties(yamlExtraProperties).build());
+        }
+      });
+    }
     List<String> errorMessages = new ArrayList<>();
     response.getErrorResponseList().forEach(error -> {
       int messagesCount = error.getMessagesCount();
@@ -60,13 +73,17 @@ public class VariableCreationBlobResponseUtils {
   }
 
   public void mergeResponses(
-      VariablesCreationBlobResponse.Builder builder, VariablesCreationBlobResponse otherResponse) {
+      VariablesCreationBlobResponse.Builder builder, VariablesCreationBlobResponse otherResponse, boolean newVersion) {
     if (otherResponse == null) {
       return;
     }
 
     mergeYamlProperties(builder, otherResponse);
-    mergeYamlOutputProperties(builder, otherResponse);
+    if (newVersion) {
+      mergeYamlExtraProperties(builder, otherResponse);
+    } else {
+      mergeYamlOutputProperties(builder, otherResponse);
+    }
     mergeResolvedDependencies(builder, otherResponse);
     mergeDependencies(builder, otherResponse);
     mergeErrorResponses(builder, otherResponse);
@@ -80,17 +97,37 @@ public class VariableCreationBlobResponseUtils {
     }
   }
 
-  public void mergeYamlProperties(
+  public void mergeProperties(
+      VariablesCreationBlobResponse.Builder builder, VariablesCreationBlobResponse otherResponse, boolean newVersion) {
+    mergeYamlProperties(builder, otherResponse);
+    if (!newVersion) {
+      mergeYamlOutputProperties(builder, otherResponse);
+    } else {
+      mergeYamlExtraProperties(builder, otherResponse);
+    }
+    String updatedPipelineJson = PlanCreationBlobResponseUtils.mergeYamlUpdates(
+        builder.getDeps().getYaml(), otherResponse.getYamlUpdates().getFqnToYamlMap());
+    builder.setDeps(builder.getDeps().toBuilder().setYaml(updatedPipelineJson).build());
+  }
+
+  private void mergeYamlProperties(
       VariablesCreationBlobResponse.Builder builder, VariablesCreationBlobResponse otherResponse) {
     if (isNotEmpty(otherResponse.getYamlPropertiesMap())) {
       otherResponse.getYamlPropertiesMap().forEach(builder::putYamlProperties);
     }
   }
 
-  public void mergeYamlOutputProperties(
+  private void mergeYamlOutputProperties(
       VariablesCreationBlobResponse.Builder builder, VariablesCreationBlobResponse otherResponse) {
     if (isNotEmpty(otherResponse.getYamlOutputPropertiesMap())) {
       otherResponse.getYamlOutputPropertiesMap().forEach(builder::putYamlOutputProperties);
+    }
+  }
+
+  private void mergeYamlExtraProperties(
+      VariablesCreationBlobResponse.Builder builder, VariablesCreationBlobResponse otherResponse) {
+    if (isNotEmpty(otherResponse.getYamlExtraPropertiesMap())) {
+      otherResponse.getYamlExtraPropertiesMap().forEach(builder::putYamlExtraProperties);
     }
   }
 

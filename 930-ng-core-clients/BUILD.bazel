@@ -8,7 +8,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//940-resource-group-beans:module",
+        "//820-platform-service/contracts/resource-group-service:module",
         "//940-secret-manager-client:module",
         "//947-scim-core:module",
         "//950-delegate-tasks-beans:module",

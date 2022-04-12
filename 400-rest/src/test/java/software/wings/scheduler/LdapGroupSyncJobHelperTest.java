@@ -14,6 +14,7 @@ import static software.wings.scheduler.LdapGroupSyncJob.MIN_LDAP_SYNC_TIMEOUT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -29,9 +30,11 @@ import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
 import software.wings.beans.Account;
+import software.wings.beans.User;
 import software.wings.beans.security.UserGroup;
 import software.wings.beans.sso.LdapGroupResponse;
 import software.wings.beans.sso.LdapSettings;
+import software.wings.beans.sso.LdapUserResponse;
 import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.service.intfc.SSOSettingService;
 import software.wings.service.intfc.UserGroupService;
@@ -40,6 +43,10 @@ import software.wings.service.intfc.ldap.LdapDelegateService;
 
 import com.google.inject.Inject;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -125,5 +132,265 @@ public class LdapGroupSyncJobHelperTest extends CategoryTest {
     // Anything greater than MAX_LDAP_SYNC_TIMEOUT should return MAX_LDAP_SYNC_TIMEOUT
     ldapSyncTimeoutTest = ldapGroupSyncJobHelper.getLdapSyncTimeout(VERY_LARGE_TIME);
     assertThat(MAX_LDAP_SYNC_TIMEOUT).isEqualTo(ldapSyncTimeoutTest);
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void shouldSyncUserGroupWithNullInputs() {
+    UserGroup userGroup = mock(UserGroup.class);
+    Account account = new Account();
+    account.setUuid(UUIDGenerator.generateUuid());
+    when(userGroup.getName()).thenReturn("userGroupName");
+    when(userGroup.getAccountId()).thenReturn(UUIDGenerator.generateUuid());
+    userGroup.setAccountId(UUIDGenerator.generateUuid());
+    doReturn(LdapGroupResponse.builder().selectable(true).build())
+        .when(ldapGroupSyncJobHelper)
+        .fetchGroupDetails(any(), any(), any());
+    doReturn(userGroup).when(ldapGroupSyncJobHelper).syncUserGroupMetadata(any(), any());
+    doReturn(true).when(ldapGroupSyncJobHelper).validateUserGroupStates(any());
+    boolean exceptionThrown = false;
+    try {
+      ldapGroupSyncJobHelper.syncUserGroupMembers(account.getUuid(), null, null);
+    } catch (Exception e) {
+      exceptionThrown = true;
+    }
+    assertThat(exceptionThrown).isEqualTo(false);
+    verify(userService, times(0)).addUserToUserGroups(any(), any(), any(), eq(true), eq(true));
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void shouldSyncUserGroupWithEmailNullInAddedGroupMembersInputs() {
+    UserGroup userGroup = UserGroup.builder().name("userGroupName").accountId("ACCOUNT_ID").build();
+    Account account = new Account();
+    account.setUuid("ACCOUNT_ID");
+    doReturn(LdapGroupResponse.builder().selectable(true).build())
+        .when(ldapGroupSyncJobHelper)
+        .fetchGroupDetails(any(), any(), any());
+    doReturn(userGroup).when(ldapGroupSyncJobHelper).syncUserGroupMetadata(any(), any());
+    doReturn(true).when(ldapGroupSyncJobHelper).validateUserGroupStates(any());
+    boolean exceptionThrown = false;
+
+    Map<LdapUserResponse, Set<UserGroup>> addedGroupMembers = new HashMap<>();
+    LdapUserResponse ldapUserResponse =
+        LdapUserResponse.builder().name("ldap").email(null).userId(null).dn("dn").build();
+
+    Set<UserGroup> userGroupSet = new HashSet<>();
+    userGroupSet.add(userGroup);
+    addedGroupMembers.put(ldapUserResponse, userGroupSet);
+
+    try {
+      ldapGroupSyncJobHelper.syncUserGroupMembers(account.getUuid(), null, addedGroupMembers);
+    } catch (Exception e) {
+      exceptionThrown = true;
+    }
+    assertThat(exceptionThrown).isEqualTo(false);
+    verify(userService, times(0)).addUserToUserGroups(any(), any(), any(), eq(true), eq(true));
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void shouldSyncUserGroupWithEmailNullInAddedGroupMembersInputs2() {
+    UserGroup userGroup = UserGroup.builder().name("userGroupName").accountId("ACCOUNT_ID").build();
+    Account account = new Account();
+    account.setUuid("ACCOUNT_ID");
+    doReturn(LdapGroupResponse.builder().selectable(true).build())
+        .when(ldapGroupSyncJobHelper)
+        .fetchGroupDetails(any(), any(), any());
+    doReturn(userGroup).when(ldapGroupSyncJobHelper).syncUserGroupMetadata(any(), any());
+    doReturn(true).when(ldapGroupSyncJobHelper).validateUserGroupStates(any());
+    boolean exceptionThrown = false;
+
+    Map<LdapUserResponse, Set<UserGroup>> addedGroupMembers = new HashMap<>();
+    LdapUserResponse ldapUserResponse =
+        LdapUserResponse.builder().name("ldap").email(null).userId("userId").dn("dn").build();
+
+    Set<UserGroup> userGroupSet = new HashSet<>();
+    userGroupSet.add(userGroup);
+    addedGroupMembers.put(ldapUserResponse, userGroupSet);
+
+    when(featureFlagService.isEnabled(any(), any())).thenReturn(true);
+    when(userService.getUserByUserId(any())).thenReturn(null);
+
+    try {
+      ldapGroupSyncJobHelper.syncUserGroupMembers(account.getUuid(), null, addedGroupMembers);
+    } catch (Exception e) {
+      exceptionThrown = true;
+    }
+    assertThat(exceptionThrown).isEqualTo(false);
+    verify(userService).inviteUser(any(), eq(false), eq(true));
+    verify(userService, times(0)).addUserToUserGroups(any(), any(), any(), eq(true), eq(true));
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void shouldSyncUserGroupWithEmailNullInAddedGroupMembersInputs4() {
+    UserGroup userGroup = UserGroup.builder().name("userGroupName").accountId("ACCOUNT_ID").build();
+    Account account = new Account();
+    account.setUuid("ACCOUNT_ID");
+    doReturn(LdapGroupResponse.builder().selectable(true).build())
+        .when(ldapGroupSyncJobHelper)
+        .fetchGroupDetails(any(), any(), any());
+    doReturn(userGroup).when(ldapGroupSyncJobHelper).syncUserGroupMetadata(any(), any());
+    doReturn(true).when(ldapGroupSyncJobHelper).validateUserGroupStates(any());
+    boolean exceptionThrown = false;
+
+    Map<LdapUserResponse, Set<UserGroup>> addedGroupMembers = new HashMap<>();
+    LdapUserResponse ldapUserResponse =
+        LdapUserResponse.builder().name("ldap").email(null).userId("userId").dn("dn").build();
+
+    Set<UserGroup> userGroupSet = new HashSet<>();
+    userGroupSet.add(userGroup);
+    addedGroupMembers.put(ldapUserResponse, userGroupSet);
+
+    User user = new User();
+    user.setEmail("test@harness.io");
+    user.setUuid("user_uuid");
+
+    when(featureFlagService.isEnabled(any(), any())).thenReturn(true);
+    when(userService.getUserByUserId(any())).thenReturn(user);
+    when(userService.isUserAssignedToAccount(any(), any())).thenReturn(false);
+
+    try {
+      ldapGroupSyncJobHelper.syncUserGroupMembers(account.getUuid(), null, addedGroupMembers);
+    } catch (Exception e) {
+      exceptionThrown = true;
+    }
+    assertThat(exceptionThrown).isEqualTo(false);
+    verify(userService).inviteUser(any(), eq(false), eq(true));
+    verify(userService, times(0)).addUserToUserGroups(any(), any(), any(), eq(true), eq(true));
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void shouldSyncUserGroupWithEmailNullInAddedGroupMembersInputs3() {
+    UserGroup userGroup = UserGroup.builder().name("userGroupName").accountId("ACCOUNT_ID").build();
+    Account account = new Account();
+    account.setUuid("ACCOUNT_ID");
+    doReturn(LdapGroupResponse.builder().selectable(true).build())
+        .when(ldapGroupSyncJobHelper)
+        .fetchGroupDetails(any(), any(), any());
+    doReturn(userGroup).when(ldapGroupSyncJobHelper).syncUserGroupMetadata(any(), any());
+    doReturn(true).when(ldapGroupSyncJobHelper).validateUserGroupStates(any());
+    boolean exceptionThrown = false;
+
+    Map<LdapUserResponse, Set<UserGroup>> addedGroupMembers = new HashMap<>();
+    LdapUserResponse ldapUserResponse =
+        LdapUserResponse.builder().name("ldap").email(null).userId("userId").dn("dn").build();
+
+    Set<UserGroup> userGroupSet = new HashSet<>();
+    userGroupSet.add(userGroup);
+    addedGroupMembers.put(ldapUserResponse, userGroupSet);
+
+    User user = new User();
+    user.setEmail("test@harness.io");
+    user.setUuid("user_uuid");
+
+    when(featureFlagService.isEnabled(any(), any())).thenReturn(true);
+    when(userService.getUserByUserId(any())).thenReturn(user);
+    when(userService.isUserAssignedToAccount(any(), any())).thenReturn(true);
+
+    try {
+      ldapGroupSyncJobHelper.syncUserGroupMembers(account.getUuid(), null, addedGroupMembers);
+    } catch (Exception e) {
+      exceptionThrown = true;
+    }
+    assertThat(exceptionThrown).isEqualTo(false);
+    verify(userService, times(0)).inviteUser(any(), eq(false), eq(true));
+    verify(userService, times(1)).addUserToUserGroups(any(), any(), any(), eq(true), eq(true));
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void shouldSyncUserGroupWithEmailNullInAddedGroupMembersInputs5() {
+    UserGroup userGroup = UserGroup.builder().name("userGroupName").accountId("ACCOUNT_ID").build();
+    Account account = new Account();
+    account.setUuid("ACCOUNT_ID");
+    doReturn(LdapGroupResponse.builder().selectable(true).build())
+        .when(ldapGroupSyncJobHelper)
+        .fetchGroupDetails(any(), any(), any());
+    doReturn(userGroup).when(ldapGroupSyncJobHelper).syncUserGroupMetadata(any(), any());
+    doReturn(true).when(ldapGroupSyncJobHelper).validateUserGroupStates(any());
+    boolean exceptionThrown = false;
+
+    Map<LdapUserResponse, Set<UserGroup>> addedGroupMembers = new HashMap<>();
+    LdapUserResponse ldapUserResponse1 =
+        LdapUserResponse.builder().name("ldap").email("email@harness.io").userId("userId").dn("dn").build();
+
+    LdapUserResponse ldapUserResponse2 =
+        LdapUserResponse.builder().name("ldap2").email("mail@hanrs.com").userId("userId2").dn("dn2").build();
+
+    Set<UserGroup> userGroupSet = new HashSet<>();
+    userGroupSet.add(userGroup);
+    addedGroupMembers.put(ldapUserResponse1, userGroupSet);
+    addedGroupMembers.put(ldapUserResponse2, userGroupSet);
+
+    User user = new User();
+    user.setEmail("test@harness.io");
+    user.setUuid("user_uuid");
+
+    when(featureFlagService.isEnabled(any(), any())).thenReturn(true);
+    when(userService.getUserByUserId(any())).thenReturn(user);
+    when(userService.isUserAssignedToAccount(any(), any())).thenReturn(true);
+
+    try {
+      ldapGroupSyncJobHelper.syncUserGroupMembers(account.getUuid(), null, addedGroupMembers);
+    } catch (Exception e) {
+      exceptionThrown = true;
+    }
+    assertThat(exceptionThrown).isEqualTo(false);
+    verify(userService, times(0)).inviteUser(any(), eq(false), eq(true));
+    verify(userService, times(2)).addUserToUserGroups(any(), any(), any(), eq(true), eq(true));
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void shouldSyncUserGroupWithEmailNullInAddedGroupMembersInputs6() {
+    UserGroup userGroup = UserGroup.builder().name("userGroupName").accountId("ACCOUNT_ID").build();
+    Account account = new Account();
+    account.setUuid("ACCOUNT_ID");
+    doReturn(LdapGroupResponse.builder().selectable(true).build())
+        .when(ldapGroupSyncJobHelper)
+        .fetchGroupDetails(any(), any(), any());
+    doReturn(userGroup).when(ldapGroupSyncJobHelper).syncUserGroupMetadata(any(), any());
+    doReturn(true).when(ldapGroupSyncJobHelper).validateUserGroupStates(any());
+    boolean exceptionThrown = false;
+
+    Map<LdapUserResponse, Set<UserGroup>> addedGroupMembers = new HashMap<>();
+    LdapUserResponse ldapUserResponse1 =
+        LdapUserResponse.builder().name("ldap").email(null).userId("userId").dn("dn").build();
+
+    LdapUserResponse ldapUserResponse2 =
+        LdapUserResponse.builder().name("ldap2").email(null).userId("userId2").dn("dn2").build();
+
+    Set<UserGroup> userGroupSet = new HashSet<>();
+    userGroupSet.add(userGroup);
+    addedGroupMembers.put(ldapUserResponse1, userGroupSet);
+    addedGroupMembers.put(ldapUserResponse2, userGroupSet);
+
+    User user = new User();
+    user.setEmail("test@harness.io");
+    user.setUuid("user_uuid");
+
+    when(featureFlagService.isEnabled(any(), any())).thenReturn(true);
+    when(userService.getUserByUserId(any())).thenReturn(null);
+    when(userService.isUserAssignedToAccount(any(), any())).thenReturn(true);
+
+    try {
+      ldapGroupSyncJobHelper.syncUserGroupMembers(account.getUuid(), null, addedGroupMembers);
+    } catch (Exception e) {
+      exceptionThrown = true;
+    }
+
+    assertThat(exceptionThrown).isEqualTo(false);
+    verify(userService, times(2)).inviteUser(any(), eq(false), eq(true));
+    verify(userService, times(0)).addUserToUserGroups(any(), any(), any(), eq(true), eq(true));
   }
 }

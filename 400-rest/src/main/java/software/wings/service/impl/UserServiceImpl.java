@@ -270,6 +270,7 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.mindrot.jbcrypt.BCrypt;
+import org.mongodb.morphia.FindAndModifyOptions;
 import org.mongodb.morphia.query.CriteriaContainer;
 import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.Query;
@@ -1272,7 +1273,7 @@ public class UserServiceImpl implements UserService {
 
     for (String email : userInvite.getEmails()) {
       UserInvite userInviteClone = kryoSerializer.clone(userInvite);
-      userInviteClone.setEmail(email.trim());
+      userInviteClone.setEmail(email.trim().toLowerCase());
       inviteOperationResponses.add(
           inviteUser(userInviteClone, !autoInviteAcceptanceEnabled, autoInviteAcceptanceEnabled));
     }
@@ -1297,11 +1298,24 @@ public class UserServiceImpl implements UserService {
     }
   }
 
+  private void updateEmailOfUser(User user, String newEmail) {
+    if (user != null && isNotEmpty(user.getUuid())) {
+      UpdateOperations<User> updateOperations = wingsPersistence.createUpdateOperations(User.class);
+      setUnset(updateOperations, UserKeys.email, newEmail);
+      Query<User> query = wingsPersistence.createQuery(User.class).filter("_id", user.getUuid());
+      wingsPersistence.findAndModify(query, updateOperations, new FindAndModifyOptions());
+    }
+  }
+
   @Override
   public InviteOperationResponse inviteUser(
       UserInvite userInvite, boolean isInviteAcceptanceRequired, boolean markEmailVerified) {
+    log.info("Inviting user {} with isInviteAcceptanceRequired {} and markEmailVerified {}", userInvite.getEmail(),
+        isInviteAcceptanceRequired, markEmailVerified);
+
     signupService.checkIfEmailIsValid(userInvite.getEmail());
 
+    log.info("LDAPIterator: email {} of account {} is valid", userInvite.getEmail(), userInvite.getAccountId());
     String accountId = userInvite.getAccountId();
     limitCheck(accountId, userInvite.getEmail());
 
@@ -1315,6 +1329,16 @@ public class UserServiceImpl implements UserService {
     boolean createNewUser = user == null;
     if (createNewUser) {
       user = anUser().build();
+    }
+
+    String incomingEmail = userInvite.getEmail();
+    if (featureFlagService.isEnabled(FeatureName.LDAP_USER_ID_SYNC, accountId) && isNotEmpty(incomingEmail)
+        && isNotEmpty(user.getEmail()) && !incomingEmail.equals(user.getEmail())) {
+      String incomingEmailInLower = incomingEmail.trim().toLowerCase();
+      log.info("Updating email Id for user {} with current mail {} and new email {}", user.getUuid(), user.getEmail(),
+          incomingEmailInLower);
+      updateEmailOfUser(user, incomingEmailInLower);
+      user.setEmail(incomingEmailInLower);
     }
 
     List<UserGroup> userGroups = userGroupService.getUserGroupsFromUserInvite(userInvite);
@@ -1470,6 +1494,7 @@ public class UserServiceImpl implements UserService {
 
   private List<UserGroup> getUserGroupsOfUser(String accountId, String userId, boolean loadUsers) {
     PageRequest<UserGroup> pageRequest = aPageRequest()
+                                             .withLimit(Long.toString(userGroupService.getCountOfUserGroups(accountId)))
                                              .addFilter(UserGroupKeys.accountId, EQ, accountId)
                                              .addFilter(UserGroupKeys.memberIds, EQ, userId)
                                              .build();
@@ -1487,6 +1512,7 @@ public class UserServiceImpl implements UserService {
 
   private List<UserGroup> getUserGroups(String accountId, SetView<String> userGroupIds) {
     PageRequest<UserGroup> pageRequest = aPageRequest()
+                                             .withLimit(Long.toString(userGroupService.getCountOfUserGroups(accountId)))
                                              .addFilter("_id", IN, userGroupIds.toArray())
                                              .addFilter(UserGroupKeys.accountId, EQ, accountId)
                                              .build();
@@ -2672,7 +2698,10 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public void loadUserGroupsForUsers(List<User> users, String accountId) {
-    PageRequest<UserGroup> req = aPageRequest().addFilter(UserGroupKeys.accountId, EQ, accountId).build();
+    PageRequest<UserGroup> req = aPageRequest()
+                                     .withLimit(Long.toString(userGroupService.getCountOfUserGroups(accountId)))
+                                     .addFilter(UserGroupKeys.accountId, EQ, accountId)
+                                     .build();
     PageResponse<UserGroup> res = userGroupService.list(accountId, req, false);
     List<UserGroup> allUserGroupList = res.getResponse();
     if (isEmpty(allUserGroupList)) {
@@ -2768,6 +2797,17 @@ public class UserServiceImpl implements UserService {
         }
       }
 
+      if (updateUsergroup) {
+        PageResponse<UserGroup> pageResponse = userGroupService.list(accountId,
+            aPageRequest()
+                .withLimit(Long.toString(userGroupService.getCountOfUserGroups(accountId)))
+                .addFilter(UserGroupKeys.memberIds, HAS, user.getUuid())
+                .build(),
+            true);
+        List<UserGroup> userGroupList = pageResponse.getResponse();
+        removeUserFromUserGroups(user, userGroupList, false);
+      }
+
       if (updatedActiveAccounts.isEmpty() && updatedPendingAccounts.isEmpty()) {
         deleteUser(user);
         return;
@@ -2784,13 +2824,6 @@ public class UserServiceImpl implements UserService {
         for (Role role : accountRoles) {
           updatedRolesForUser.remove(role);
         }
-      }
-
-      if (updateUsergroup) {
-        PageResponse<UserGroup> pageResponse = userGroupService.list(
-            accountId, aPageRequest().addFilter(UserGroupKeys.memberIds, HAS, user.getUuid()).build(), true);
-        List<UserGroup> userGroupList = pageResponse.getResponse();
-        removeUserFromUserGroups(user, userGroupList, false);
       }
 
       UpdateOperations<User> updateOp = wingsPersistence.createUpdateOperations(User.class)

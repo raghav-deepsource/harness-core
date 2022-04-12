@@ -283,8 +283,8 @@ public class PcfSetupState extends State {
     List<EncryptedDataDetail> encryptedDataDetails =
         secretManager.getEncryptionDetails(pcfConfig, context.getAppId(), context.getWorkflowExecutionId());
 
-    PcfManifestsPackage pcfManifestsPackage =
-        pcfStateHelper.generateManifestMap(context, appManifestMap, serviceElement, activityId);
+    PcfManifestsPackage pcfManifestsPackage = pcfStateHelper.generateManifestMap(
+        context, appManifestMap, serviceElement, activityId, pcfConfig.getAccountId());
 
     String applicationManifestYmlContent = pcfManifestsPackage.getManifestYml();
     String pcfAppNameSuffix = generateAppNamePrefix(context, app, serviceElement, env, pcfManifestsPackage, pcfConfig);

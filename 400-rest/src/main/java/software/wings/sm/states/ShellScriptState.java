@@ -20,7 +20,6 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static software.wings.beans.delegation.ShellScriptParameters.CommandUnit;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
@@ -69,6 +68,7 @@ import software.wings.beans.SSHVaultConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
 import software.wings.beans.TemplateExpression;
+import software.wings.beans.Variable;
 import software.wings.beans.WinRmConnectionAttributes;
 import software.wings.beans.command.Command.Builder;
 import software.wings.beans.command.CommandType;
@@ -111,8 +111,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
@@ -525,6 +527,11 @@ public class ShellScriptState extends State implements SweepingOutputStateMixin 
       safeDisplayServiceVariables.replaceAll((name, value) -> context.renderExpression(value));
     }
     shellScriptParameters.serviceVariables(serviceVariables).safeDisplayServiceVariables(safeDisplayServiceVariables);
+    ShellScriptParameters taskParams = shellScriptParameters.build();
+    log.info(
+        "Shell script task parameters: accountId - {}, appId - {}, workingDir - {}, activityId - {} & commandPath - {}",
+        taskParams.getAccountId(), taskParams.getAppId(), taskParams.getWorkingDirectory(), taskParams.getActivityId(),
+        commandPath);
 
     int expressionFunctorToken = HashGenerator.generateIntegerHash();
 
@@ -539,7 +546,7 @@ public class ShellScriptState extends State implements SweepingOutputStateMixin 
             .data(TaskData.builder()
                       .async(true)
                       .taskType(TaskType.SCRIPT.name())
-                      .parameters(new Object[] {shellScriptParameters.build()})
+                      .parameters(new Object[] {taskParams})
                       .timeout(defaultIfNullTimeout(DEFAULT_ASYNC_CALL_TIMEOUT))
                       .expressionFunctorToken(expressionFunctorToken)
                       .build())
@@ -604,7 +611,14 @@ public class ShellScriptState extends State implements SweepingOutputStateMixin 
   @Override
   @SchemaIgnore
   public List<String> getPatternsForRequiredContextElementType() {
-    return asList(scriptString, host);
+    List<String> patterns = new LinkedList<>();
+    if (templateVariables != null) {
+      patterns =
+          templateVariables.stream().map(Variable::getValue).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+    patterns.add(scriptString);
+    patterns.add(host);
+    return patterns;
   }
 
   public WinRmConnectionAttributes setupWinrmCredentials(String connectionAttributes, ExecutionContext context) {

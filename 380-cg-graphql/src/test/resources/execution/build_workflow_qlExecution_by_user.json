@@ -36,5 +36,6 @@
       "value":"Workflow"
     }
   ],
-  "failureDetails":null
+  "failureDetails":null,
+  "manifests" : []
 }

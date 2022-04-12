@@ -7,32 +7,26 @@
 
 package io.harness.batch.processing.writer;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.utils.RestCallToNGManagerClientUtils.execute;
-
 import static software.wings.beans.SettingAttribute.SettingCategory.CE_CONNECTOR;
 import static software.wings.settings.SettingVariableTypes.CE_AWS;
 
 import io.harness.batch.processing.BatchProcessingException;
 import io.harness.batch.processing.ccm.CCMJobConstants;
 import io.harness.batch.processing.ccm.S3SyncRecord;
+import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.ng.NGConnectorHelper;
 import io.harness.batch.processing.service.impl.AwsS3SyncServiceImpl;
 import io.harness.ccm.commons.dao.AWSConnectorToBucketMappingDao;
 import io.harness.ccm.commons.entities.AWSConnectorToBucketMapping;
-import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.delegate.beans.connector.CEFeatures;
-import io.harness.delegate.beans.connector.CcmConnectorFilter;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
 import io.harness.delegate.beans.connector.ceawsconnector.AwsCurAttributesDTO;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
 import io.harness.ff.FeatureFlagService;
-import io.harness.filter.FilterType;
-import io.harness.ng.beans.PageResponse;
 
 import software.wings.beans.AwsCrossAccountAttributes;
 import software.wings.beans.AwsS3BucketDetails;
@@ -42,6 +36,7 @@ import software.wings.beans.ce.CEAwsConfig;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.JobParameters;
@@ -57,6 +52,7 @@ public class S3SyncEventWriter extends EventWriter implements ItemWriter<Setting
   @Autowired private ConnectorResourceClient connectorResourceClient;
   @Autowired private FeatureFlagService featureFlagService;
   @Autowired private AWSConnectorToBucketMappingDao awsConnectorToBucketMappingDao;
+  @Autowired private NGConnectorHelper ngConnectorHelper;
   private JobParameters parameters;
   private static final String MASTER = "MASTER";
 
@@ -124,64 +120,48 @@ public class S3SyncEventWriter extends EventWriter implements ItemWriter<Setting
   }
 
   public boolean syncNextGenContainers(String accountId) {
-    List<ConnectorResponseDTO> nextGenConnectorResponses = new ArrayList<>();
-    PageResponse<ConnectorResponseDTO> response = null;
-    ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
-        ConnectorFilterPropertiesDTO.builder()
-            .types(Arrays.asList(ConnectorType.CE_AWS))
-            .ccmConnectorFilter(CcmConnectorFilter.builder().featuresEnabled(Arrays.asList(CEFeatures.BILLING)).build())
-            .build();
-    connectorFilterPropertiesDTO.setFilterType(FilterType.CONNECTOR);
-    int page = 0;
-    int size = 100;
-    do {
-      response = getConnectors(accountId, page, size, connectorFilterPropertiesDTO);
-      if (response != null && isNotEmpty(response.getContent())) {
-        nextGenConnectorResponses.addAll(response.getContent());
-      }
-      page++;
-    } while (response != null && isNotEmpty(response.getContent()));
+    List<ConnectorResponseDTO> nextGenConnectorResponses = ngConnectorHelper.getNextGenConnectors(
+        accountId, Arrays.asList(ConnectorType.CE_AWS), Arrays.asList(CEFeatures.BILLING), Collections.emptyList());
     log.info("Processing batch size of {} in S3SyncEventWriter (From NG)", nextGenConnectorResponses.size());
     return syncAwsContainers(nextGenConnectorResponses, accountId, true);
-  }
-
-  PageResponse getConnectors(
-      String accountId, int page, int size, ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO) {
-    return execute(
-        connectorResourceClient.listConnectors(accountId, null, null, page, size, connectorFilterPropertiesDTO, false));
   }
 
   public boolean syncAwsContainers(List<ConnectorResponseDTO> connectorResponses, String accountId, boolean isNextGen) {
     boolean areAllSyncSuccessful = true;
     for (ConnectorResponseDTO connector : connectorResponses) {
-      ConnectorInfoDTO connectorInfo = connector.getConnector();
-      CEAwsConnectorDTO ceAwsConnectorDTO = (CEAwsConnectorDTO) connectorInfo.getConnectorConfig();
-      if (ceAwsConnectorDTO != null && ceAwsConnectorDTO.getCrossAccountAccess() != null) {
-        String destinationBucket = null;
-        if (isNextGen) {
-          AWSConnectorToBucketMapping awsConnectorToBucketMapping =
-              awsConnectorToBucketMappingDao.getByAwsConnectorId(accountId, connectorInfo.getIdentifier());
-          if (awsConnectorToBucketMapping != null) {
-            destinationBucket = awsConnectorToBucketMapping.getDestinationBucket();
+      try {
+        ConnectorInfoDTO connectorInfo = connector.getConnector();
+        CEAwsConnectorDTO ceAwsConnectorDTO = (CEAwsConnectorDTO) connectorInfo.getConnectorConfig();
+        if (ceAwsConnectorDTO != null && ceAwsConnectorDTO.getCrossAccountAccess() != null) {
+          String destinationBucket = null;
+          if (isNextGen) {
+            AWSConnectorToBucketMapping awsConnectorToBucketMapping =
+                awsConnectorToBucketMappingDao.getByAwsConnectorId(accountId, connectorInfo.getIdentifier());
+            if (awsConnectorToBucketMapping != null) {
+              destinationBucket = awsConnectorToBucketMapping.getDestinationBucket();
+            }
           }
+          AwsCurAttributesDTO curAttributes = ceAwsConnectorDTO.getCurAttributes();
+          CrossAccountAccessDTO crossAccountAccess = ceAwsConnectorDTO.getCrossAccountAccess();
+          S3SyncRecord s3SyncRecord =
+              S3SyncRecord.builder()
+                  .accountId(accountId)
+                  .settingId(connectorInfo.getIdentifier())
+                  .billingAccountId(ceAwsConnectorDTO.getAwsAccountId())
+                  .curReportName(curAttributes.getReportName())
+                  .billingBucketPath(String.join("/", "s3://" + curAttributes.getS3BucketName(),
+                      curAttributes.getS3Prefix().equals("/") ? "" : curAttributes.getS3Prefix(),
+                      curAttributes.getReportName()))
+                  .billingBucketRegion(curAttributes.getRegion())
+                  .externalId(crossAccountAccess.getExternalId())
+                  .roleArn(crossAccountAccess.getCrossAccountRoleArn())
+                  .destinationBucket(destinationBucket)
+                  .build();
+          boolean isSuccessfulSync = awsS3SyncService.syncBuckets(s3SyncRecord);
+          areAllSyncSuccessful = areAllSyncSuccessful && isSuccessfulSync;
         }
-        AwsCurAttributesDTO curAttributes = ceAwsConnectorDTO.getCurAttributes();
-        CrossAccountAccessDTO crossAccountAccess = ceAwsConnectorDTO.getCrossAccountAccess();
-        S3SyncRecord s3SyncRecord = S3SyncRecord.builder()
-                                        .accountId(accountId)
-                                        .settingId(connectorInfo.getIdentifier())
-                                        .billingAccountId(ceAwsConnectorDTO.getAwsAccountId())
-                                        .curReportName(curAttributes.getReportName())
-                                        .billingBucketPath(String.join("/", "s3://" + curAttributes.getS3BucketName(),
-                                            curAttributes.getS3Prefix().equals("/") ? "" : curAttributes.getS3Prefix(),
-                                            curAttributes.getReportName()))
-                                        .billingBucketRegion(curAttributes.getRegion())
-                                        .externalId(crossAccountAccess.getExternalId())
-                                        .roleArn(crossAccountAccess.getCrossAccountRoleArn())
-                                        .destinationBucket(destinationBucket)
-                                        .build();
-        boolean isSuccessfulSync = awsS3SyncService.syncBuckets(s3SyncRecord);
-        areAllSyncSuccessful = areAllSyncSuccessful && isSuccessfulSync;
+      } catch (Exception ex) {
+        log.error("Exception while s3 sync", ex);
       }
     }
     log.info("syncAwsContainers  areAllSyncSuccessful: {}, isNextGen: {}", areAllSyncSuccessful, isNextGen);

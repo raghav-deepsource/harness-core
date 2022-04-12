@@ -93,7 +93,8 @@ public class ExpansionRequestsHelperTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testGetExpandableFieldsPerService() {
-    Map<ModuleType, Set<String>> expandableFieldsPerService = expansionRequestsHelper.getExpandableFieldsPerService();
+    Map<ModuleType, Set<String>> expandableFieldsPerService =
+        expansionRequestsHelper.getExpandableFieldsPerService(activeInstances);
     assertThat(expandableFieldsPerService).hasSize(2);
     Set<String> cdKeys = expandableFieldsPerService.get(ModuleType.CD);
     assertThat(cdKeys).hasSize(3);
@@ -107,7 +108,7 @@ public class ExpansionRequestsHelperTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testGetTypeToService() {
-    Map<String, ModuleType> typeToService = expansionRequestsHelper.getTypeToService();
+    Map<String, ModuleType> typeToService = expansionRequestsHelper.getTypeToService(activeInstances);
     assertThat(typeToService).hasSize(4);
     assertThat(typeToService.get("Approval")).isEqualTo(ModuleType.PMS);
     assertThat(typeToService.get("ShellScript")).isEqualTo(ModuleType.PMS);
@@ -119,7 +120,8 @@ public class ExpansionRequestsHelperTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testGetLocalFQNRequestMetadata() {
-    List<LocalFQNExpansionInfo> localFQNRequestMetadata = expansionRequestsHelper.getLocalFQNRequestMetadata();
+    List<LocalFQNExpansionInfo> localFQNRequestMetadata =
+        expansionRequestsHelper.getLocalFQNRequestMetadata(activeInstances);
     assertThat(localFQNRequestMetadata).hasSize(1);
     LocalFQNExpansionInfo localFQNExpansionInfo = localFQNRequestMetadata.get(0);
     assertThat(localFQNExpansionInfo.getLocalFQN()).isEqualTo("stage/spec");

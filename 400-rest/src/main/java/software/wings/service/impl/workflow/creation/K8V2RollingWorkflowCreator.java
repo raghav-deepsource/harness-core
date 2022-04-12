@@ -50,10 +50,11 @@ public class K8V2RollingWorkflowCreator extends WorkflowCreator {
 
     CanaryOrchestrationWorkflow canaryOrchestrationWorkflow = (CanaryOrchestrationWorkflow) orchestrationWorkflow;
     notNullCheck("orchestrationWorkflow", canaryOrchestrationWorkflow);
-    K8AbstractWorkflowHelper k8AbstractWorkflowHelper =
-        infrastructureDefinition.getInfrastructure().getInfrastructureType().equals("RANCHER_KUBERNETES")
-        ? rancherK8RollingWorkflowPhaseHelper
-        : k8RollingWorkflowPhaseHelper;
+    K8AbstractWorkflowHelper k8AbstractWorkflowHelper = k8RollingWorkflowPhaseHelper;
+    if (infrastructureDefinition != null
+        && infrastructureDefinition.getInfrastructure().getInfrastructureType().equals("RANCHER_KUBERNETES")) {
+      k8AbstractWorkflowHelper = rancherK8RollingWorkflowPhaseHelper;
+    }
     if (k8AbstractWorkflowHelper.isCreationRequired(canaryOrchestrationWorkflow)) {
       addLinkedPreOrPostDeploymentSteps(canaryOrchestrationWorkflow);
       addWorkflowPhases(workflow);

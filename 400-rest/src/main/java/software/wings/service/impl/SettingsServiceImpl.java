@@ -282,10 +282,7 @@ public class SettingsServiceImpl implements SettingsService {
       List<SettingAttribute> filteredSettingAttributes = getFilteredSettingAttributes(
           pageResponse.getResponse(), appIdFromRequest, envIdFromRequest, forUsageInNewApp);
       log.info("Total time taken in filtering setting records:  {}.", System.currentTimeMillis() - timestamp);
-      return aPageResponse()
-          .withResponse(filteredSettingAttributes)
-          .withTotal(filteredSettingAttributes.size())
-          .build();
+      return aPageResponse().withResponse(filteredSettingAttributes).withTotal(pageResponse.getTotal()).build();
     } catch (Exception e) {
       throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
     }
@@ -356,7 +353,7 @@ public class SettingsServiceImpl implements SettingsService {
 
       return aPageResponse()
           .withResponse(resp)
-          .withTotal(filteredSettingAttributes.size())
+          .withTotal(pageResponse.getTotal())
           .withOffset(req.getOffset())
           .withLimit(req.getLimit())
           .build();
@@ -1065,6 +1062,21 @@ public class SettingsServiceImpl implements SettingsService {
     SettingAttribute settingAttribute = wingsPersistence.get(SettingAttribute.class, varId);
     setCertValidationRequired(settingAttribute);
     return settingAttribute;
+  }
+
+  @Override
+  public SettingAttribute getWithRbac(String id) {
+    final SettingAttribute settingAttribute = getById(id);
+    if (settingAttribute == null) {
+      throw new InvalidRequestException(String.format("Entity with id %s does not exist.", id));
+    }
+    final List<SettingAttribute> filteredSettingAttributes =
+        getFilteredSettingAttributes(asList(settingAttribute), null, null, false);
+    if (isEmpty(filteredSettingAttributes)) {
+      throw new InvalidRequestException("Not authorized");
+    } else {
+      return filteredSettingAttributes.get(0);
+    }
   }
 
   @Override

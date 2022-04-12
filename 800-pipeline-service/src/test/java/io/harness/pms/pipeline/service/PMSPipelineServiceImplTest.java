@@ -66,6 +66,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -95,6 +96,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
   @Mock private ExpansionRequestsExtractor expansionRequestsExtractor;
   @Mock private JsonExpander jsonExpander;
   @Mock PmsFeatureFlagService pmsFeatureFlagService;
+  @Inject private PipelineMetadataService pipelineMetadataService;
   @InjectMocks private PMSPipelineServiceImpl pmsPipelineService;
   @Inject private PMSPipelineRepository pmsPipelineRepository;
   StepCategory library;
@@ -272,6 +274,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
   @Owner(developers = SAMARTH)
   @Category(UnitTests.class)
   public void testFormCriteriaWithActualData() throws IOException {
+    doReturn(Optional.empty()).when(pipelineMetadataService).getMetadata(any(), any(), any(), any());
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
     doReturn(outboxEvent).when(outboxService).save(any());
     doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(pipelineEntity);
@@ -301,6 +304,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testDelete() throws IOException {
+    doReturn(Optional.empty()).when(pipelineMetadataService).getMetadata(any(), any(), any(), any());
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
     doReturn(outboxEvent).when(outboxService).save(any());
     doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(pipelineEntity);
@@ -315,6 +319,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testUpdatePipelineYaml() throws IOException {
+    doReturn(Optional.empty()).when(pipelineMetadataService).getMetadata(any(), any(), any(), any());
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
     doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(pipelineEntity);
     assertThatThrownBy(() -> pmsPipelineService.updatePipelineYaml(pipelineEntity, ChangeType.ADD))
@@ -357,6 +362,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
                                                             .setOrgId(ORG_IDENTIFIER)
                                                             .setProjectId(PROJ_IDENTIFIER)
                                                             .setGitSyncBranchContext(randomByteString)
+                                                            .setYaml(ByteString.copyFromUtf8(dummyYaml))
                                                             .build();
     ExpansionRequest dummyRequest = ExpansionRequest.builder().fqn("fqn").build();
     Set<ExpansionRequest> dummyRequestSet = Collections.singleton(dummyRequest);

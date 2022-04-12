@@ -63,7 +63,7 @@ public class K8sDataFetcherHelper {
 
             QLInheritClusterDetails inheritClusterDetails = input.getInheritClusterDetails().getValue().orElse(null);
             RequestField<QLUsageScope> usageRestrictions = inheritClusterDetails.getUsageScope();
-            if (usageRestrictions != null && usageRestrictions.isPresent()) {
+            if (usageRestrictions != null && usageRestrictions.getValue().isPresent()) {
               settingAttributeBuilder.withUsageRestrictions(
                   usageScopeController.populateUsageRestrictions(usageRestrictions.getValue().orElse(null), accountId));
             }
@@ -129,7 +129,7 @@ public class K8sDataFetcherHelper {
                       auth.getServiceAccountTokenSecretId().getValue().ifPresent(
                           configBuilder::encryptedServiceAccountToken);
                       RequestField<QLUsageScope> usageRestrictions = auth.getUsageScope();
-                      if (usageRestrictions != null && usageRestrictions.isPresent()) {
+                      if (usageRestrictions != null && usageRestrictions.getValue().isPresent()) {
                         checkIfUsageScopeCanBeCreatedOrUpdated(configBuilder.build());
                         settingAttributeBuilder.withUsageRestrictions(usageScopeController.populateUsageRestrictions(
                             usageRestrictions.getValue().orElse(null), accountId));
@@ -140,6 +140,15 @@ public class K8sDataFetcherHelper {
                     throw new InvalidRequestException("Invalid manual cluster details type");
                 }
               });
+            });
+
+            input.getManualClusterDetails().getValue().ifPresent(clusterDetails -> {
+              RequestField<QLUsageScope> usageRestrictions = clusterDetails.getUsageScope();
+              if (usageRestrictions != null && usageRestrictions.getValue().isPresent()) {
+                checkIfUsageScopeCanBeCreatedOrUpdated(configBuilder.build());
+                settingAttributeBuilder.withUsageRestrictions(usageScopeController.populateUsageRestrictions(
+                    usageRestrictions.getValue().orElse(null), accountId));
+              }
             });
           }
           break;
@@ -185,7 +194,7 @@ public class K8sDataFetcherHelper {
                 input.getInheritClusterDetails().getValue().orElseThrow(
                     () -> new InvalidRequestException(" No Inherit cluster details supplied"));
             RequestField<QLUsageScope> usageRestrictions = inheritClusterDetails.getUsageScope();
-            if (usageRestrictions != null && usageRestrictions.isPresent()) {
+            if (usageRestrictions != null && usageRestrictions.getValue().isPresent()) {
               settingAttribute.setUsageRestrictions(
                   usageScopeController.populateUsageRestrictions(usageRestrictions.getValue().orElse(null), accountId));
             }
@@ -254,7 +263,7 @@ public class K8sDataFetcherHelper {
                       auth.getServiceAccountTokenSecretId().getValue().ifPresent(
                           config::setEncryptedServiceAccountToken);
                       RequestField<QLUsageScope> usageRestrictions = auth.getUsageScope();
-                      if (usageRestrictions != null && usageRestrictions.isPresent()) {
+                      if (usageRestrictions != null && usageRestrictions.getValue().isPresent()) {
                         checkIfUsageScopeCanBeCreatedOrUpdated(config);
                         settingAttribute.setUsageRestrictions(usageScopeController.populateUsageRestrictions(
                             usageRestrictions.getValue().orElse(null), accountId));
@@ -265,6 +274,15 @@ public class K8sDataFetcherHelper {
                     throw new InvalidRequestException("Invalid manual cluster details type");
                 }
               });
+            });
+
+            input.getManualClusterDetails().getValue().ifPresent(clusterDetails -> {
+              RequestField<QLUsageScope> usageRestrictions = clusterDetails.getUsageScope();
+              if (usageRestrictions != null && usageRestrictions.getValue().isPresent()) {
+                checkIfUsageScopeCanBeCreatedOrUpdated(config);
+                settingAttribute.setUsageRestrictions(usageScopeController.populateUsageRestrictions(
+                    usageRestrictions.getValue().orElse(null), accountId));
+              }
             });
           }
           break;

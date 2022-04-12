@@ -39,7 +39,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@Schema(name = "DockerConnector", description = "This entity contains the details of the Docker Connectors")
+@Schema(name = "DockerConnector", description = "Docker Connector details.")
 public class DockerConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
   @NotNull @NotBlank String dockerRegistryUrl;
   @NotNull DockerRegistryProviderType providerType;

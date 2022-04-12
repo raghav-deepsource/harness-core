@@ -21,6 +21,7 @@ import static io.harness.rule.OwnerRule.ROHIT_KUMAR;
 import static io.harness.rule.OwnerRule.SATYAM;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.TMACARI;
+import static io.harness.rule.OwnerRule.VAIBHAV_KUMAR;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -382,7 +383,7 @@ public class CfCliClientImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void test_doLogin() throws Exception {
     doNothing().when(logCallback).saveExecutionLog(anyString());
-    doReturn(0).when(cfCliClient).executeCommand(anyString(), any(), any());
+    doReturn(0).when(cfCliClient).executeCommand(anyString(), any(), any(), any());
     Map<String, String> env = new HashMap<>();
     env.put("CF_HOME", "CF_HOME");
     doReturn(env).when(cfCliClient).getEnvironmentMapForCfExecutor(anyString(), anyString());
@@ -396,7 +397,7 @@ public class CfCliClientImplTest extends CategoryTest {
                                  .spaceName("space with name")
                                  .build();
     cfCliClient.doLogin(config, logCallback, "conf");
-    verify(cfCliClient, times(3)).executeCommand(anyString(), anyMap(), any());
+    verify(cfCliClient, times(3)).executeCommand(anyString(), anyMap(), any(), any());
   }
 
   @Test
@@ -468,11 +469,11 @@ public class CfCliClientImplTest extends CategoryTest {
                             .path("path")
                             .build();
     doReturn(info).when(cfCliClient).extractRouteInfoFromPath(any(), anyString());
-    doReturn(0).when(cfCliClient).executeCommand(anyString(), any(), any());
+    doReturn(0).when(cfCliClient).executeCommand(anyString(), any(), any(), any());
     cfCliClient.executeRoutesOperationForApplicationUsingCli(
         CfCliCommandType.MAP_ROUTE, requestConfig, singletonList("cdp-10515.z.example.com/path"), logCallback);
     ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
-    verify(cfCliClient).executeCommand(captor.capture(), any(), any());
+    verify(cfCliClient).executeCommand(captor.capture(), any(), any(), any());
     String value = captor.getValue();
     assertThat(value).isEqualTo("cf map-route App_BG_00 example.com --hostname cdp-10515 --path path");
   }
@@ -497,17 +498,17 @@ public class CfCliClientImplTest extends CategoryTest {
 
     // check command generated
     doReturn(true).when(cfCliClient).doLogin(any(), any(), anyString());
-    doReturn(0).when(cfCliClient).executeCommand(anyString(), anyMap(), any());
+    doReturn(0).when(cfCliClient).executeCommand(anyString(), anyMap(), any(), any());
     cfCliClient.setEnvVariablesForApplication(
         Collections.singletonMap(HARNESS__STATUS__IDENTIFIER, HARNESS__ACTIVE__IDENTIFIER), cfRequestConfig,
         logCallback);
     ArgumentCaptor<String> commandCaptor = ArgumentCaptor.forClass(String.class);
-    verify(cfCliClient).executeCommand(commandCaptor.capture(), anyMap(), any());
+    verify(cfCliClient).executeCommand(commandCaptor.capture(), anyMap(), any(), any());
 
     assertThat(commandCaptor.getValue()).isEqualTo("cf set-env app HARNESS__STATUS__IDENTIFIER ACTIVE");
 
     // Command execution failed, returned 1
-    doReturn(1).when(cfCliClient).executeCommand(anyString(), anyMap(), any());
+    doReturn(1).when(cfCliClient).executeCommand(anyString(), anyMap(), any(), any());
     try {
       cfCliClient.setEnvVariablesForApplication(
           Collections.singletonMap(HARNESS__STATUS__IDENTIFIER, HARNESS__ACTIVE__IDENTIFIER), cfRequestConfig,
@@ -539,16 +540,16 @@ public class CfCliClientImplTest extends CategoryTest {
 
     // check command generated
     doReturn(true).when(cfCliClient).doLogin(any(), any(), anyString());
-    doReturn(0).when(cfCliClient).executeCommand(anyString(), anyMap(), any());
+    doReturn(0).when(cfCliClient).executeCommand(anyString(), anyMap(), any(), any());
     cfCliClient.unsetEnvVariablesForApplication(
         Collections.singletonList(HARNESS__STATUS__IDENTIFIER), cfRequestConfig, logCallback);
     ArgumentCaptor<String> commandCaptor = ArgumentCaptor.forClass(String.class);
-    verify(cfCliClient).executeCommand(commandCaptor.capture(), anyMap(), any());
+    verify(cfCliClient).executeCommand(commandCaptor.capture(), anyMap(), any(), any());
 
     assertThat(commandCaptor.getValue()).isEqualTo("cf unset-env app HARNESS__STATUS__IDENTIFIER");
 
     // Command execution failed, returned 1
-    doReturn(1).when(cfCliClient).executeCommand(anyString(), anyMap(), any());
+    doReturn(1).when(cfCliClient).executeCommand(anyString(), anyMap(), any(), any());
     try {
       cfCliClient.unsetEnvVariablesForApplication(
           Collections.singletonList(HARNESS__STATUS__IDENTIFIER), cfRequestConfig, logCallback);
@@ -699,6 +700,29 @@ public class CfCliClientImplTest extends CategoryTest {
     Map<String, String> environmentProperties = cfCliClient.getEnvironmentMapForCfExecutor("app.host.io", "test");
     assertThat(environmentProperties.size()).isEqualTo(1);
     assertThat(environmentProperties.get("https_proxy")).isNull();
+  }
+
+  @Test
+  @Owner(developers = VAIBHAV_KUMAR)
+  @Category(UnitTests.class)
+  public void testAppSetupTimeoutUsedInAutoscaling() throws PivotalClientApiException {
+    int timeout = 2903;
+    CfRequestConfig pcfRequestConfig = getCfRequestConfigWithCfCliPath();
+    pcfRequestConfig.setTimeOutIntervalInMins(timeout);
+    pcfRequestConfig.setLoggedin(true);
+    doNothing().when(logCallback).saveExecutionLog(anyString());
+
+    cfCliClient.checkIfAppHasAutoscalerAttached(
+        CfAppAutoscalarRequestData.builder().cfRequestConfig(pcfRequestConfig).build(), logCallback);
+    cfCliClient.checkIfAppHasAutoscalerWithExpectedState(
+        CfAppAutoscalarRequestData.builder().cfRequestConfig(pcfRequestConfig).build(), logCallback);
+
+    ArgumentCaptor<Long> captor = ArgumentCaptor.forClass(Long.class);
+    verify(cfCliClient, times(2)).createProcessExecutorForCfTask(captor.capture(), any(), any(), any());
+
+    List<Long> capturedPeople = captor.getAllValues();
+    assertThat(capturedPeople.get(0)).isEqualTo(timeout);
+    assertThat(capturedPeople.get(1)).isEqualTo(timeout);
   }
 
   @Test

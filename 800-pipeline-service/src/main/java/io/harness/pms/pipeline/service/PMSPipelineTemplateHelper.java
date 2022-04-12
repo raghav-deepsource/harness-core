@@ -57,6 +57,7 @@ public class PMSPipelineTemplateHelper {
     if (pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_TEMPLATES)
         && pipelineEnforcementService.isFeatureRestricted(accountId, FeatureRestrictionName.TEMPLATE_SERVICE.name())) {
       String TEMPLATE_RESOLVE_EXCEPTION_MSG = "Exception in resolving template refs in given pipeline yaml.";
+      long start = System.currentTimeMillis();
       try {
         GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
         if (gitEntityInfo != null) {
@@ -85,6 +86,9 @@ public class PMSPipelineTemplateHelper {
       } catch (Exception e) {
         log.error("Unknown un-exception in resolving templates", e);
         throw new NGTemplateException(TEMPLATE_RESOLVE_EXCEPTION_MSG, e);
+      } finally {
+        log.info("[PMS_Template] template resolution took {}ms for projectId {}, orgId {}, accountId {}",
+            System.currentTimeMillis() - start, projectId, orgId, accountId);
       }
     }
     return TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();

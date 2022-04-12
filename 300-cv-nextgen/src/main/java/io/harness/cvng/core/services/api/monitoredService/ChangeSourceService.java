@@ -11,7 +11,6 @@ import io.harness.cvng.beans.change.ChangeSourceType;
 import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.core.beans.monitoredService.ChangeSourceDTO;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
-import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.entities.changeSource.ChangeSource;
 import io.harness.cvng.core.entities.changeSource.HarnessCDCurrentGenChangeSource;
 import io.harness.cvng.core.entities.changeSource.KubernetesChangeSource;
@@ -22,20 +21,17 @@ import java.util.Set;
 
 public interface ChangeSourceService {
   void create(MonitoredServiceParams monitoredServiceParams, Set<ChangeSourceDTO> changeSourceDTOs);
-
-  Set<ChangeSourceDTO> get(ServiceEnvironmentParams environmentParams, List<String> identifiers);
-  ChangeSource get(ServiceEnvironmentParams serviceEnvironmentParams, String identifier);
-
-  List<ChangeSource> getEntityByType(ServiceEnvironmentParams environmentParams, ChangeSourceType changeSourceType);
-
-  void delete(ServiceEnvironmentParams environmentParams, List<String> identifiers);
+  Set<ChangeSourceDTO> get(MonitoredServiceParams monitoredServiceParams, List<String> identifiers);
+  ChangeSource get(MonitoredServiceParams monitoredServiceParams, String identifier);
+  List<ChangeSource> getEntityByType(MonitoredServiceParams monitoredServiceParams, ChangeSourceType changeSourceType);
+  void delete(MonitoredServiceParams monitoredServiceParams, List<String> identifiers);
 
   void update(MonitoredServiceParams monitoredServiceParams, Set<ChangeSourceDTO> changeSourceDTOs);
 
   void enqueueDataCollectionTask(KubernetesChangeSource changeSource);
 
-  ChangeSummaryDTO getChangeSummary(ServiceEnvironmentParams serviceEnvironmentParams,
-      List<String> changeSourceIdentifiers, Instant startTime, Instant endTime);
+  ChangeSummaryDTO getChangeSummary(MonitoredServiceParams monitoredServiceParams, List<String> changeSourceIdentifiers,
+      Instant startTime, Instant endTime);
 
   void handleCurrentGenEvents(HarnessCDCurrentGenChangeSource changeSource);
 

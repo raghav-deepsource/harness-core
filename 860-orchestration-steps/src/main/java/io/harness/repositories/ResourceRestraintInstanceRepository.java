@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.distribution.constraint.Consumer;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.repository.CrudRepository;
@@ -26,4 +27,7 @@ public interface ResourceRestraintInstanceRepository extends CrudRepository<Reso
       String releaseEntityType, String releaseEntityId);
   Optional<ResourceRestraintInstance> findByUuidAndResourceUnitAndStateIn(
       String uuid, String resourceUnit, List<Consumer.State> states);
+
+  List<ResourceRestraintInstance> findAllByReleaseEntityIdAndStateIn(
+      String releaseEntityId, EnumSet<Consumer.State> states);
 }

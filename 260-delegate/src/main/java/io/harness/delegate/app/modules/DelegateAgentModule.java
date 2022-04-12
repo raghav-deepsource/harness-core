@@ -20,7 +20,6 @@ import io.harness.delegate.app.DelegateGrpcServiceModule;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.task.citasks.CITaskFactoryModule;
 import io.harness.delegate.task.k8s.apiclient.KubernetesApiClientFactoryModule;
-import io.harness.event.client.impl.EventPublisherConstants;
 import io.harness.event.client.impl.appender.AppenderModule;
 import io.harness.event.client.impl.appender.AppenderModule.Config;
 import io.harness.event.client.impl.tailer.DelegateTailerModule;
@@ -36,7 +35,6 @@ import software.wings.delegatetasks.k8s.client.KubernetesClientFactoryModule;
 
 import com.codahale.metrics.MetricRegistry;
 import com.google.inject.AbstractModule;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,6 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DelegateAgentModule extends AbstractModule {
   private final DelegateConfiguration configuration;
+  private final boolean isImmutableDelegate;
 
   @Override
   protected void configure() {
@@ -65,16 +64,12 @@ public class DelegateAgentModule extends AbstractModule {
       install(new PerpetualTaskWorkerModule());
     }
 
-    final String queueFilePath =
-        Optional.ofNullable(configuration.getQueueFilePath()).orElse(EventPublisherConstants.DEFAULT_QUEUE_FILE_PATH);
     if (!isOnPrem(deployMode)) {
       install(new PingPongModule());
-      configureCcmEventTailer(queueFilePath);
+      configureCcmEventPublishing();
     } else {
       log.warn("Skipping event publisher and PingPong configuration for on-prem deployment");
     }
-    final Config appenderConfig = Config.builder().queueFilePath(queueFilePath).build();
-    install(new AppenderModule(appenderConfig, () -> getDelegateId().orElse("UNREGISTERED")));
 
     install(KubernetesClientFactoryModule.getInstance());
     install(KubernetesApiClientFactoryModule.getInstance());
@@ -90,20 +85,27 @@ public class DelegateAgentModule extends AbstractModule {
     install(new DelegateTokensModule(configuration));
   }
 
-  private void configureCcmEventTailer(final String queueFilePath) {
-    final String managerHostAndPort = System.getenv("MANAGER_HOST_AND_PORT");
-    if (isNotBlank(managerHostAndPort)) {
-      final DelegateTailerModule.Config tailerConfig =
-          DelegateTailerModule.Config.builder()
-              .accountId(configuration.getAccountId())
-              .accountSecret(configuration.getDelegateToken())
-              .queueFilePath(queueFilePath)
-              .publishTarget(extractTarget(managerHostAndPort))
-              .publishAuthority(extractAuthority(managerHostAndPort, "events"))
-              .build();
-      install(new DelegateTailerModule(tailerConfig));
+  private void configureCcmEventPublishing() {
+    if (isImmutableDelegate) {
+      final String managerHostAndPort = System.getenv("MANAGER_HOST_AND_PORT");
+      if (isNotBlank(managerHostAndPort)) {
+        log.info("Running immutable delegate, starting CCM event tailer");
+        final DelegateTailerModule.Config tailerConfig =
+            DelegateTailerModule.Config.builder()
+                .accountId(configuration.getAccountId())
+                .accountSecret(configuration.getDelegateToken())
+                .queueFilePath(configuration.getQueueFilePath())
+                .publishTarget(extractTarget(managerHostAndPort))
+                .publishAuthority(extractAuthority(managerHostAndPort, "events"))
+                .build();
+        install(new DelegateTailerModule(tailerConfig));
+      } else {
+        log.warn("Unable to configure event publisher configs. Event publisher will be disabled");
+      }
     } else {
-      log.warn("Unable to configure event publisher configs. Event publisher will be disabled");
+      log.info("Running mutable delegate, watcher will be running tailer, so skip creating it in delegate");
     }
+    final Config appenderConfig = Config.builder().queueFilePath(configuration.getQueueFilePath()).build();
+    install(new AppenderModule(appenderConfig, () -> getDelegateId().orElse("UNREGISTERED")));
   }
 }

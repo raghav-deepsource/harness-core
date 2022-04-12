@@ -10,13 +10,16 @@ package io.harness.pms.pipeline.service.yamlschema;
 import static io.harness.rule.OwnerRule.BRIJESH;
 
 import static junit.framework.TestCase.assertEquals;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 
+import io.harness.EntityType;
 import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.pms.pipeline.service.yamlschema.approval.ApprovalYamlSchemaService;
 import io.harness.pms.pipeline.service.yamlschema.featureflag.FeatureFlagYamlService;
 import io.harness.rule.Owner;
@@ -27,9 +30,14 @@ import io.harness.yaml.schema.beans.YamlSchemaDetailsWrapper;
 import io.harness.yaml.schema.beans.YamlSchemaMetadata;
 import io.harness.yaml.schema.beans.YamlSchemaWithDetails;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -97,5 +105,66 @@ public class LocalSchemaGetterTest {
     assertEquals(yamlSchemaDetailsWrapper.getYamlSchemaWithDetailsList().get(0).getSchemaClassName(), "HttpStepNode");
     assertEquals(
         yamlSchemaDetailsWrapper.getYamlSchemaWithDetailsList().get(0).getYamlSchemaMetadata(), yamlSchemaMetadata);
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testFetchStepYamlSchema() throws IOException {
+    YamlSchemaMetadata yamlSchemaMetadata = YamlSchemaMetadata.builder()
+                                                .yamlGroup(YamlGroup.builder().group("step").build())
+                                                .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                                .build();
+    YamlSchemaWithDetails yamlSchemaWithDetails = YamlSchemaWithDetails.builder()
+                                                      .yamlSchemaMetadata(yamlSchemaMetadata)
+                                                      .moduleType(ModuleType.PMS)
+                                                      .schemaClassName("HttpStepNode")
+                                                      .build();
+    List<YamlSchemaWithDetails> yamlSchemaWithDetailsList = new ArrayList<>();
+    yamlSchemaWithDetailsList.add(yamlSchemaWithDetails);
+
+    ObjectMapper objectMapper = new ObjectMapper();
+    JsonNode approvalSchema = objectMapper.readTree(getResource("approvalStageSchema.json"));
+
+    PartialSchemaDTO approvalPartialSchemaDTO = PartialSchemaDTO.builder()
+                                                    .namespace("approval")
+                                                    .moduleType(ModuleType.PMS)
+                                                    .nodeName("approval")
+                                                    .schema(approvalSchema)
+                                                    .build();
+    doReturn(approvalPartialSchemaDTO)
+        .when(approvalYamlSchemaService)
+        .getApprovalYamlSchema(any(), any(), any(), any(), any());
+
+    JsonNode response = localSchemaGetter.fetchStepYamlSchema(
+        "orgId", "projectId", null, EntityType.APPROVAL_STAGE, "STAGE", yamlSchemaWithDetailsList);
+    assertEquals(response.get("properties").get("type").get("enum").get(0).asText(), "Approval");
+
+    JsonNode cfSchema = objectMapper.readTree(getResource("cfStageSchema.json"));
+    PartialSchemaDTO cfPartialSchemaDTO =
+        PartialSchemaDTO.builder().namespace("cf").moduleType(ModuleType.PMS).nodeName("cf").schema(cfSchema).build();
+
+    doReturn(cfPartialSchemaDTO)
+        .when(featureFlagYamlService)
+        .getFeatureFlagYamlSchema(any(), any(), any(), any(), any());
+
+    response = localSchemaGetter.fetchStepYamlSchema(
+        "orgId", "projectId", null, EntityType.FEATURE_FLAG_STAGE, "STAGE", yamlSchemaWithDetailsList);
+    assertEquals(response.get("properties").get("type").get("enum").get(0).asText(), "Cf");
+
+    assertThatThrownBy(()
+                           -> localSchemaGetter.fetchStepYamlSchema("orgId", "projectId", null,
+                               EntityType.DEPLOYMENT_STAGE, "STAGE", yamlSchemaWithDetailsList))
+        .isInstanceOf(InvalidRequestException.class);
+
+    JsonNode httpStepSchema = objectMapper.readTree(getResource("stepSchema.json"));
+    doReturn(httpStepSchema).when(yamlSchemaProvider).getYamlSchema(EntityType.HTTP_STEP, "orgId", "projectId", null);
+    response = localSchemaGetter.fetchStepYamlSchema(
+        "orgId", "projectId", null, EntityType.HTTP_STEP, "STEP", yamlSchemaWithDetailsList);
+    assertEquals(response.get("properties").get("type").get("enum").get(0).asText(), "Http");
+  }
+
+  private String getResource(String path) throws IOException {
+    return IOUtils.resourceToString(path, StandardCharsets.UTF_8, this.getClass().getClassLoader());
   }
 }

@@ -9,6 +9,8 @@ package io.harness.accesscontrol;
 
 import io.harness.accesscontrol.permissions.api.PermissionDTO;
 import io.harness.accesscontrol.permissions.api.PermissionDTO.PermissionDTOKeys;
+import io.harness.accesscontrol.principals.PrincipalDTO;
+import io.harness.accesscontrol.principals.PrincipalDTO.PrincipalDTOKeys;
 import io.harness.accesscontrol.roles.api.RoleDTO;
 import io.harness.accesscontrol.roles.api.RoleDTO.RoleDTOKeys;
 import io.harness.accesscontrol.scopes.core.ScopeLevel;
@@ -55,5 +57,11 @@ public class AccessControlSwaggerListener implements ReaderListener {
             .getProperties()
             .get(RoleDTOKeys.allowedScopeLevels))
         .setItems(new StringProperty()._enum(new ArrayList<>(scopesAllowedLevels)));
+
+    ((StringProperty) swagger.getDefinitions()
+            .get(PrincipalDTO.MODEL_NAME)
+            .getProperties()
+            .get(PrincipalDTOKeys.scopeLevel))
+        .setEnum(new ArrayList<>(scopesAllowedLevels));
   }
 }

@@ -1532,6 +1532,7 @@ public class ApprovalStateTest extends WingsBaseTest {
             .environmentsInvolved("*Environments*: env")
             .artifactsInvolved("*Artifacts*: artifacts")
             .infraDefinitionsInvolved("*Infrastructure Definitions*: infra")
+            .triggeredByUser("*Triggered By*: USER_NAME")
             .confirmation(false)
             .pipeline(false)
             .workflowUrl(WORKFLOW_URL)

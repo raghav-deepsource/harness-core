@@ -77,7 +77,8 @@ type Delegate {
   ip: String
   polllingModeEnabled: Boolean
   status: String
-  lastHeartBeat: Long
+  lastHeartBeat: Long @deprecated(reason: "Use lastHeartbeat.")
+  lastHeartbeat: DateTime
   version: String
   delegateProfileId: String
   connections: [DelegateConnection]
@@ -100,7 +101,7 @@ type AttachScopeToDelegatePayload {
 
 type DelegateScope {
   name: String
-  uuid: String
+  uuid: String @deprecated(reason: "Use scope name.")
   taskTypes: [TaskGroup]
   environmentTypes: [EnvironmentType]
   applications: [String]

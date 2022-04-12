@@ -9,7 +9,6 @@ package io.harness.cvng.core.dsl;
 
 import static io.harness.CvNextGenTestBase.getResourceFilePath;
 import static io.harness.CvNextGenTestBase.getSourceResourceFile;
-import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.RAGHU;
@@ -18,14 +17,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.category.element.UnitTests;
+import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.HoverflyCVNextGenTestBase;
 import io.harness.cvng.beans.AppDynamicsDataCollectionInfo;
 import io.harness.cvng.beans.AppDynamicsDataCollectionInfo.AppMetricInfoDTO;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.core.entities.AnalysisInfo.DeploymentVerification;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
+import io.harness.cvng.core.entities.AppDynamicsCVConfig.MetricInfo;
 import io.harness.cvng.core.entities.MetricPack;
+import io.harness.cvng.core.entities.VerificationTask.TaskType;
+import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.services.api.MetricPackService;
+import io.harness.cvng.core.services.impl.AppDynamicsDataCollectionInfoMapper;
 import io.harness.datacollection.DataCollectionDSLService;
 import io.harness.datacollection.entity.RuntimeParameters;
 import io.harness.datacollection.entity.TimeSeriesRecord;
@@ -45,6 +50,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,18 +63,63 @@ import org.junit.experimental.categories.Category;
 
 public class AppDynamicsDataCollectionDSLTest extends HoverflyCVNextGenTestBase {
   @Inject private MetricPackService metricPackService;
+  @Inject private AppDynamicsDataCollectionInfoMapper appDynamicsDataCollectionInfoMapper;
   private String accountId;
   private String orgIdentifier;
   private String projectIdentifier;
   private ExecutorService executorService;
+  private BuilderFactory builderFactory;
 
   @Before
   public void setup() {
-    accountId = generateUuid();
-    orgIdentifier = generateUuid();
-    projectIdentifier = generateUuid();
+    builderFactory = BuilderFactory.getDefault();
+    accountId = builderFactory.getContext().getAccountId();
+    orgIdentifier = builderFactory.getContext().getOrgIdentifier();
+    projectIdentifier = builderFactory.getContext().getProjectIdentifier();
     executorService = Executors.newFixedThreadPool(10);
     metricPackService.createDefaultMetricPackAndThresholds(accountId, orgIdentifier, projectIdentifier);
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void testCustomCVConfigWithNoDeploymentMetric() throws IOException {
+    MetricPack metricPack = metricPackService.getMetricPack(accountId, orgIdentifier, projectIdentifier,
+        DataSourceType.APP_DYNAMICS, CVNextGenConstants.CUSTOM_PACK_IDENTIFIER);
+    metricPackService.populateDataCollectionDsl(DataSourceType.APP_DYNAMICS, metricPack);
+
+    AppDynamicsCVConfig cvConfig =
+        (AppDynamicsCVConfig) builderFactory.appDynamicsCVConfigBuilder()
+            .metricInfos(
+                Arrays.asList(MetricInfo.builder()
+                                  .metricPath("metricPath")
+                                  .baseFolder("baseFolder")
+                                  .identifier("identifier")
+                                  .metricName("name")
+                                  .deploymentVerification(DeploymentVerification.builder().enabled(false).build())
+                                  .build()))
+            .metricPack(metricPack)
+            .build();
+
+    AppDynamicsDataCollectionInfo appDynamicsDataCollectionInfo =
+        appDynamicsDataCollectionInfoMapper.toDataCollectionInfo(cvConfig, TaskType.DEPLOYMENT);
+
+    Instant instant = Instant.ofEpochMilli(1648641555392L);
+    Map<String, Object> params =
+        appDynamicsDataCollectionInfo.getDslEnvVariables(AppDynamicsConnectorDTO.builder().build());
+    Map<String, String> headers = new HashMap<>();
+    headers.put("Authorization", "Basic **"); // Replace this with the actual value when capturing the request.
+    RuntimeParameters runtimeParameters = RuntimeParameters.builder()
+                                              .startTime(instant.minusSeconds(60))
+                                              .endTime(instant)
+                                              .commonHeaders(headers)
+                                              .otherEnvVariables(params)
+                                              .baseUrl("https://harness-test.saas.appdynamics.com/controller/")
+                                              .build();
+    DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
+    List<TimeSeriesRecord> timeSeriesRecords = (List<TimeSeriesRecord>) dataCollectionDSLService.execute(
+        metricPack.getDataCollectionDsl(), runtimeParameters, callDetails -> {});
+    assertThat(Sets.newHashSet(timeSeriesRecords)).isEmpty();
   }
 
   @Test
@@ -106,9 +157,9 @@ public class AppDynamicsDataCollectionDSLTest extends HoverflyCVNextGenTestBase 
                                               .build();
     List<TimeSeriesRecord> timeSeriesRecords =
         (List<TimeSeriesRecord>) dataCollectionDSLService.execute(code, runtimeParameters, callDetails -> {});
-    assertThat(Sets.newHashSet(timeSeriesRecords))
-        .isEqualTo(new Gson().fromJson(readJson("performance-service-guard-expectation.json"),
-            new TypeToken<Set<TimeSeriesRecord>>() {}.getType()));
+    assertThat(new HashSet<>(timeSeriesRecords))
+        .isEqualTo(new HashSet<>(new Gson().fromJson(readJson("performance-service-guard-expectation.json"),
+            new TypeToken<Set<TimeSeriesRecord>>() {}.getType())));
   }
 
   @Test

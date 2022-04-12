@@ -46,10 +46,6 @@ public class HarnessCDCurrentGenChangeSourceSpecTransformerTest extends CvNextGe
     assertThat(harnessCDCurrentGenChangeSource.getAccountId()).isEqualTo(builderFactory.getContext().getAccountId());
     assertThat(harnessCDCurrentGenChangeSource.getProjectIdentifier())
         .isEqualTo(builderFactory.getContext().getProjectIdentifier());
-    assertThat(harnessCDCurrentGenChangeSource.getServiceIdentifier())
-        .isEqualTo(builderFactory.getContext().getServiceIdentifier());
-    assertThat(harnessCDCurrentGenChangeSource.getEnvIdentifier())
-        .isEqualTo(builderFactory.getContext().getEnvIdentifier());
     assertThat(harnessCDCurrentGenChangeSource.getMonitoredServiceIdentifier())
         .isEqualTo(builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier());
     assertThat(harnessCDCurrentGenChangeSource.isEnabled()).isTrue();

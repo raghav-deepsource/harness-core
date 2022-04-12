@@ -1,0 +1,63 @@
+{
+  "data": {
+    "pairs": [{
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/api/v1/logs-queries/list"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "POST"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "app.datadoghq.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "api_key" : [ {
+            "matcher" : "exact",
+            "value" : "api_key"
+          } ],
+          "application_key" : [ {
+            "matcher" : "exact",
+            "value" : "app_key"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : "{\"query\":\"*exception*\",\"time\":{\"from\":\"1644834000000\",\"to\":\"1644834060000\"}}"
+        } ]
+      },
+      "response": {
+        "status": 200,
+        "body": "{\"logs\":[{\"content\":{\"timestamp\":\"2022-03-17T23:32:40.948Z\",\"host\":\"gke-chi-play-delegate-non-preemptible-5a4eed4e-6phx.c.chi-play.internal\",\"message\":\"java.io.IOException: Unknown apiVersionKind v1/ConfigMap is it registered?\",\"service\":\"delegate\",\"tags\":[\"image_name:harness/delegate\"]},\"id\":\"sdfsfsdf\"},{\"content\":{\"timestamp\":\"2022-03-17T23:32:40.948Z\",\"host\":\"gke-chi-play-delegate-non-preemptible-5a4eed4e-6phx.c.chi-play.internal\",\"message\":\"java.io.IOException: Unknown apiVersionKind v1/ConfigMap is it registered?\",\"service\":\"delegate\",\"tags\":[\"sdfsdf\"]},\"id\":\"sfdsfsdfsf\"},{\"content\":{\"timestamp\":\"2022-03-17T23:32:40.948Z\",\"host\":\"gke-chi-play-delegate-non-preemptible-5a4eed4e-6phx.c.chi-play.internal\",\"message\":\"java.io.IOException: Unknown apiVersionKind v1/ConfigMap is it registered?\",\"service\":\"delegate\",\"tags\":[\"sddfsdfoi\"]},\"id\":\"dfgjdg8989798\"},{\"content\":{\"timestamp\":\"2022-03-17T23:32:40.947Z\",\"host\":\"gke-chi-play-delegate-non-preemptible-5a4eed4e-6phx.c.chi-play.internal\",\"message\":\"java.io.IOException: Unknown apiVersionKind v1/ConfigMap is it registered?\",\"service\":\"delegate\",\"tags\":[\"asddaldkn8ds9df7f\"]},\"id\":\"sdjlhfsdfsdfd89798dfsdf\"},{\"content\":{\"timestamp\":\"2022-03-17T23:32:40.946Z\",\"host\":\"gke-chi-play-delegate-non-preemptible-5a4eed4e-6phx.c.chi-play.internal\",\"message\":\"java.io.IOException: Unknown apiVersionKind v1/ConfigMap is it registered?\",\"service\":\"delegate\",\"tags\":[\"sdklfdnsjfdksdf80909\"]},\"id\":\"sldfsjdfhsdfhsdf989\"}]}",
+        "encodedBody" : false,
+        "templated" : false,
+        "headers" : {
+          "Cache-Control" : [ "no-store, no-cache, must-revalidate, max-age=0" ],
+          "Connection" : [ "Keep-Alive" ],
+          "Content-Length" : [ "27" ],
+          "Content-Type" : [ "application/json; charset=UTF-8" ],
+          "Date" : [ "Mon, 24 Jan 2022 11:24:36 GMT" ],
+          "Expires" : [ "Thu, 26 Oct 1978 00:00:00 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Location" : [ "/services/search/jobs/1643023476.181186" ],
+          "Server" : [ "Splunkd" ],
+          "Vary" : [ "Cookie, Authorization" ],
+          "X-Content-Type-Options" : [ "nosniff" ],
+          "X-Frame-Options" : [ "SAMEORIGIN" ]
+        }
+      }
+    }]
+  },
+  "meta" : {
+    "schemaVersion" : "v5",
+    "hoverflyVersion" : "v1.1.5",
+    "timeExported" : "2022-01-24T12:32:23Z"
+  }
+}

@@ -10,7 +10,6 @@ package software.wings.service.impl;
 import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.XIN;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.eq;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -23,7 +22,6 @@ import io.harness.delegate.NoEligibleDelegatesInAccountException;
 import io.harness.delegate.beans.DelegateStringResponseData;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.TaskData;
-import io.harness.metrics.AutoMetricContext;
 import io.harness.metrics.impl.DelegateTaskMetricContextBuilder;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.metrics.service.api.MetricService;
@@ -66,16 +64,6 @@ public class DelegateMetricsServiceTest extends WingsBaseTest {
   @Before
   public void setup() throws IllegalAccessException {
     initMocks(this);
-  }
-
-  @Test
-  @Owner(developers = BOJAN)
-  @Category(UnitTests.class)
-  public void testGetDelegateTaskContext() {
-    try (AutoMetricContext autoMetricContext =
-             metricContextBuilder.getContext(createDefaultDelegateTask(), DelegateTask.class)) {
-      assertThat(autoMetricContext).isNotNull();
-    }
   }
 
   @Test

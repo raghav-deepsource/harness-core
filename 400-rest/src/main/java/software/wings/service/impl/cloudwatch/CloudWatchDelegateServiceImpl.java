@@ -12,12 +12,12 @@ import static io.harness.govern.Switch.unhandled;
 
 import static software.wings.common.VerificationConstants.DURATION_TO_ASK_MINUTES;
 import static software.wings.delegatetasks.AbstractDelegateDataCollectionTask.PREDECTIVE_HISTORY_MINUTES;
+import static software.wings.delegatetasks.cv.CVConstants.CONTROL_HOST_NAME;
+import static software.wings.delegatetasks.cv.CVConstants.TEST_HOST_NAME;
 import static software.wings.service.impl.analysis.AnalysisComparisonStrategy.COMPARE_WITH_CURRENT;
 import static software.wings.service.impl.analysis.AnalysisComparisonStrategy.COMPARE_WITH_PREVIOUS;
 import static software.wings.service.impl.analysis.AnalysisComparisonStrategy.PREDICTIVE;
 import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
-import static software.wings.sm.states.DynatraceState.CONTROL_HOST_NAME;
-import static software.wings.sm.states.DynatraceState.TEST_HOST_NAME;
 
 import io.harness.delegate.task.DataCollectionExecutorService;
 import io.harness.exception.InvalidRequestException;

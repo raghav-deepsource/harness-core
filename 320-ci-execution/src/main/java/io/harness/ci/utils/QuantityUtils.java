@@ -10,19 +10,19 @@ package io.harness.ci.utils;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.quantity.CpuQuantity;
-import io.harness.beans.quantity.MemoryQuantity;
+import io.harness.beans.quantity.StorageQuantity;
 import io.harness.beans.quantity.unit.DecimalQuantityUnit;
-import io.harness.beans.quantity.unit.MemoryQuantityUnit;
+import io.harness.beans.quantity.unit.StorageQuantityUnit;
 
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.CI)
 public class QuantityUtils {
-  public Integer getMemoryQuantityValueInUnit(String memoryQuantityString, MemoryQuantityUnit targetUnit) {
-    MemoryQuantity memoryQuantity = MemoryQuantity.fromString(memoryQuantityString);
-    double numeric = Double.parseDouble(memoryQuantity.getNumericValue());
-    double multiplier = Math.pow(memoryQuantity.getUnit().getBase(), memoryQuantity.getUnit().getExponent());
+  public Integer getStorageQuantityValueInUnit(String memoryQuantityString, StorageQuantityUnit targetUnit) {
+    StorageQuantity storageQuantity = StorageQuantity.fromString(memoryQuantityString);
+    double numeric = Double.parseDouble(storageQuantity.getNumericValue());
+    double multiplier = Math.pow(storageQuantity.getUnit().getBase(), storageQuantity.getUnit().getExponent());
     double targetUnitMultiplier = Math.pow(targetUnit.getBase(), targetUnit.getExponent());
     return Math.toIntExact((long) Math.ceil(numeric * (multiplier / targetUnitMultiplier)));
   }

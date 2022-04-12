@@ -31,6 +31,7 @@ import io.harness.rule.Owner;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import com.google.common.collect.Multimap;
 import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.inprocess.InProcessChannelBuilder;
@@ -43,19 +44,17 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(PIPELINE)
 public class JsonExpanderTest extends CategoryTest {
-  @InjectMocks JsonExpander jsonExpander;
+  JsonExpander jsonExpander;
   JsonExpansionServiceBlockingStub blockingStub;
   @Rule public GrpcCleanupRule grpcCleanup;
   JsonExpansionServiceImplBase jsonExpansionServiceImplBase;
@@ -77,6 +76,7 @@ public class JsonExpanderTest extends CategoryTest {
         responseObserver.onCompleted();
       }
     };
+    jsonExpander = new JsonExpander(null, 10, Executors.newFixedThreadPool(1));
     MockitoAnnotations.initMocks(this);
   }
 
@@ -139,13 +139,13 @@ public class JsonExpanderTest extends CategoryTest {
                                    .fieldValue(new TextNode("k8sConn"))
                                    .build();
     Set<ExpansionRequest> requests = new HashSet<>(Arrays.asList(jiraConn1, jiraConn2, k8sConn));
-    Map<ModuleType, ExpansionRequestBatch> expansionRequestBatches =
+    Multimap<ModuleType, ExpansionRequestBatch> expansionRequestBatches =
         jsonExpander.batchExpansionRequests(requests, ExpansionRequestMetadata.getDefaultInstance());
-    assertThat(expansionRequestBatches).hasSize(2);
-    ExpansionRequestBatch pmsBatch = expansionRequestBatches.get(ModuleType.PMS);
-    assertThat(pmsBatch.getExpansionRequestProtoList()).hasSize(2);
-    ExpansionRequestBatch cdBatch = expansionRequestBatches.get(ModuleType.CD);
-    assertThat(cdBatch.getExpansionRequestProtoList()).hasSize(1);
+    assertThat(expansionRequestBatches.asMap()).hasSize(2);
+    List<ExpansionRequestBatch> pmsBatch = new ArrayList<>(expansionRequestBatches.get(ModuleType.PMS));
+    assertThat(pmsBatch.get(0).getExpansionRequestProtoList()).hasSize(2);
+    List<ExpansionRequestBatch> cdBatch = new ArrayList<>(expansionRequestBatches.get(ModuleType.CD));
+    assertThat(cdBatch.get(0).getExpansionRequestProtoList()).hasSize(1);
   }
 
   @Test

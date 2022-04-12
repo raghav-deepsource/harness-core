@@ -14,6 +14,9 @@ import static io.harness.pms.sdk.core.steps.io.StepResponse.builder;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
+import io.harness.opaclient.model.OpaConstants;
+import io.harness.opaclient.model.OpaEvaluationResponseHolder;
+import io.harness.opaclient.model.OpaPolicySetEvaluationResponse;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -24,6 +27,7 @@ import io.harness.pms.yaml.YamlUtils;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
@@ -60,14 +64,7 @@ public class PolicyStepHelper {
   }
 
   public StepResponse buildFailureStepResponse(ErrorCode errorCode, String message, FailureType failureType) {
-    FailureData failureData = FailureData.newBuilder()
-                                  .setCode(errorCode.name())
-                                  .setLevel(Level.ERROR.name())
-                                  .setMessage(message)
-                                  .addFailureTypes(failureType)
-                                  .build();
-    FailureInfo failureInfo = FailureInfo.newBuilder().addFailureData(failureData).build();
-    return builder().status(Status.FAILED).failureInfo(failureInfo).build();
+    return buildFailureStepResponse(errorCode, message, failureType, null);
   }
 
   public StepResponse buildFailureStepResponse(
@@ -78,7 +75,27 @@ public class PolicyStepHelper {
                                   .setMessage(message)
                                   .addFailureTypes(failureType)
                                   .build();
-    FailureInfo failureInfo = FailureInfo.newBuilder().addFailureData(failureData).build();
+    FailureInfo failureInfo = FailureInfo.newBuilder().addFailureData(failureData).setErrorMessage(message).build();
+    if (stepOutcome == null) {
+      // need a special if block so that an empty null element is not added to the overall step outcomes list later
+      return builder().status(Status.FAILED).failureInfo(failureInfo).build();
+    }
     return builder().status(Status.FAILED).failureInfo(failureInfo).stepOutcome(stepOutcome).build();
+  }
+
+  public String buildPolicyEvaluationFailureMessage(OpaEvaluationResponseHolder opaEvaluationResponseHolder) {
+    List<OpaPolicySetEvaluationResponse> policySetResponses = opaEvaluationResponseHolder.getDetails();
+    List<String> failedPolicySets = policySetResponses.stream()
+                                        .filter(response -> response.getStatus().equals(OpaConstants.OPA_STATUS_ERROR))
+                                        .map(OpaPolicySetEvaluationResponse::getName)
+                                        .collect(Collectors.toList());
+    String failedPolicySetsString = String.join(", ", failedPolicySets);
+    if (failedPolicySets.isEmpty()) {
+      return "";
+    }
+    if (failedPolicySets.size() == 1) {
+      return "The following Policy Set was not adhered to: " + failedPolicySetsString;
+    }
+    return "The following Policy Sets were not adhered to: " + failedPolicySetsString;
   }
 }

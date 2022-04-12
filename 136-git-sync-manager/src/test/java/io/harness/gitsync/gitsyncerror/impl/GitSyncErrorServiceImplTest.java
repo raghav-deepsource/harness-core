@@ -9,6 +9,7 @@ package io.harness.gitsync.gitsyncerror.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.BHAVYA;
+import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.PHOENIKX;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,6 +25,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.gitsync.GitSyncTestBase;
+import io.harness.gitsync.common.dtos.RepoProviders;
 import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.gitsync.gitsyncerror.GitSyncErrorStatus;
 import io.harness.gitsync.gitsyncerror.beans.GitSyncError;
@@ -187,7 +189,17 @@ public class GitSyncErrorServiceImplTest extends GitSyncTestBase {
     Optional<GitSyncErrorDTO> savedError =
         gitSyncErrorService.getGitToHarnessError(accountId, commitId, repoUrl, branch, "filePath");
     assertThat(savedError.isPresent()).isEqualTo(true);
-    assertThat(savedError.get()).isEqualTo(dto);
+    GitSyncErrorDTO expectedDTO = buildDTOWithEntityUrl("filePath", Collections.singletonList(scope));
+    assertThat(savedError.get()).isEqualTo(expectedDTO);
+  }
+
+  private GitSyncErrorDTO buildDTOWithEntityUrl(String filePath, List<Scope> singletonList) {
+    additionalErrorDetailsDTO = GitToHarnessErrorDetailsDTO.builder()
+                                    .gitCommitId(commitId)
+                                    .commitMessage(commitMessage)
+                                    .entityUrl("repo/blob/branch/filePath")
+                                    .build();
+    return buildDTO(filePath, additionalErrorDetailsDTO, singletonList);
   }
 
   @Test
@@ -270,7 +282,8 @@ public class GitSyncErrorServiceImplTest extends GitSyncTestBase {
   @Owner(developers = PHOENIKX)
   @Category(UnitTests.class)
   public void testRecordConnectivityIssue() {
-    gitSyncErrorService.recordConnectivityError(accountId, repoUrl, "Unable to connect to git provider");
+    gitSyncErrorService.saveConnectivityError(
+        accountId, repoUrl, "Unable to connect to git provider", RepoProviders.GITHUB);
 
     PageResponse<GitSyncErrorDTO> gitSyncErrorList = gitSyncErrorService.listConnectivityErrors(
         accountId, orgId, projectId, repoId, new PageRequest(0, 10, new ArrayList<>()));
@@ -282,12 +295,13 @@ public class GitSyncErrorServiceImplTest extends GitSyncTestBase {
   @Owner(developers = PHOENIKX)
   @Category(UnitTests.class)
   public void testListGitSyncErrors() {
-    gitSyncErrorService.recordConnectivityError(accountId, repoUrl, "Unable to connect to git provider");
+    gitSyncErrorService.saveConnectivityError(
+        accountId, repoUrl, "Unable to connect to git provider", RepoProviders.GITHUB);
 
-    gitSyncErrorService.recordConnectivityError(accountId, repoUrl, "Delegates are down");
+    gitSyncErrorService.saveConnectivityError(accountId, repoUrl, "Delegates are down", RepoProviders.GITHUB);
 
-    gitSyncErrorService.recordConnectivityError(
-        accountId, "repoUrl1", "Something went wrong, Please contact Harness Support.");
+    gitSyncErrorService.saveConnectivityError(
+        accountId, "repoUrl1", "Something went wrong, Please contact Harness Support.", RepoProviders.GITHUB);
 
     PageResponse<GitSyncErrorDTO> gitSyncErrorList = gitSyncErrorService.listConnectivityErrors(
         accountId, orgId, projectId, repoId, new PageRequest(0, 10, new ArrayList<>()));
@@ -322,7 +336,8 @@ public class GitSyncErrorServiceImplTest extends GitSyncTestBase {
   @Owner(developers = PHOENIKX)
   @Category(UnitTests.class)
   public void testListConnectivityErrorsForDefaultBranchesOfAllRepos() {
-    gitSyncErrorService.recordConnectivityError(accountId, repoUrl, "Unable to connect to git provider");
+    gitSyncErrorService.saveConnectivityError(
+        accountId, repoUrl, "Unable to connect to git provider", RepoProviders.GITHUB);
     PageResponse<GitSyncErrorDTO> gitSyncErrorList = gitSyncErrorService.listConnectivityErrors(
         accountId, orgId, projectId, null, new PageRequest(0, 10, new ArrayList<>()));
     assertThat(gitSyncErrorList.getContent()).isNotEmpty();
@@ -333,7 +348,8 @@ public class GitSyncErrorServiceImplTest extends GitSyncTestBase {
   @Owner(developers = BHAVYA)
   @Category(UnitTests.class)
   public void test_resolveConnectivityErrors() {
-    gitSyncErrorService.recordConnectivityError(accountId, repoUrl, "Unable to connect to git provider");
+    gitSyncErrorService.saveConnectivityError(
+        accountId, repoUrl, "Unable to connect to git provider", RepoProviders.GITHUB);
     YamlGitConfigDTO yamlGitConfigDTO1 = YamlGitConfigDTO.builder()
                                              .accountIdentifier(accountId)
                                              .organizationIdentifier("org1")
@@ -346,5 +362,20 @@ public class GitSyncErrorServiceImplTest extends GitSyncTestBase {
     PageResponse<GitSyncErrorDTO> gitSyncErrorList = gitSyncErrorService.listConnectivityErrors(
         accountId, orgId, projectId, null, new PageRequest(0, 10, new ArrayList<>()));
     assertThat(gitSyncErrorList.getContent()).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testRemoveScope() {
+    long createdAt = OffsetDateTime.now().minusDays(12).toInstant().toEpochMilli();
+    Scope scope1 = Scope.of(accountId, "org1", "proj1");
+    gitSyncErrorRepository.save(build("filepath1", additionalErrorDetails, createdAt, Arrays.asList(scope1, scope)));
+    gitSyncErrorService.removeScope(accountId, orgId, projectId);
+    assertThat(
+        gitSyncErrorRepository.findByAccountIdentifierAndCompleteFilePathAndErrorType(accountId, "filepath1", errorType)
+            .getScopes()
+            .contains(scope))
+        .isFalse();
   }
 }

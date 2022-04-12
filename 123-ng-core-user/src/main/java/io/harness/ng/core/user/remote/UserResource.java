@@ -24,7 +24,6 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
-import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -32,7 +31,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.enforcement.constants.FeatureRestrictionName;
+import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NoResultFoundException;
 import io.harness.ng.accesscontrol.user.ACLAggregateFilter;
 import io.harness.ng.accesscontrol.user.AggregateUserService;
 import io.harness.ng.beans.PageRequest;
@@ -77,6 +78,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
@@ -143,7 +145,7 @@ public class UserResource {
         ApiResponse(responseCode = "default", description = "Returns current logged in user info")
       })
   public ResponseDTO<UserInfo>
-  getUserInfo(@Parameter(description = "Account Identifier", required = true) @NotNull @QueryParam(
+  getUserInfo(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
       NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
     return ResponseDTO.newResponse(userInfoService.getCurrentUser());
   }
@@ -159,9 +161,11 @@ public class UserResource {
             responseCode = "default", description = "Returns current logged in user's two factor authentication info")
       })
   public ResponseDTO<TwoFactorAuthSettingsInfo>
-  getTwoFactorAuthSettingsInfo(@Parameter(
-      description =
-          "This is the authentication mechanism for the logged-in User. Two-Factor Authentication settings will be fetched for this mechanism.")
+  getTwoFactorAuthSettingsInfo(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @QueryParam(
+                                   NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(
+          description =
+              "This is the authentication mechanism for the logged-in User. Two-Factor Authentication settings will be fetched for this mechanism.")
       @PathParam("authMechanism") TwoFactorAuthMechanismInfo authMechanism) {
     return ResponseDTO.newResponse(userInfoService.getTwoFactorAuthSettingsInfo(authMechanism));
   }
@@ -229,7 +233,7 @@ public class UserResource {
   public ResponseDTO<PageResponse<UserMetadataDTO>>
   getCurrentGenUsers(
       @Parameter(description = "This is the Account Identifier. Users corresponding to this Account will be retrieved.")
-      @QueryParam("accountIdentifier") @NotNull String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
       @Parameter(
           description =
               "This string will be used to filter the search results. Details of all the users having this string in their name or email address will be filtered.")
@@ -390,14 +394,19 @@ public class UserResource {
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(USER, userId), VIEW_USER_PERMISSION);
-
     Scope scope = Scope.builder()
                       .accountIdentifier(accountIdentifier)
                       .orgIdentifier(orgIdentifier)
                       .projectIdentifier(projectIdentifier)
                       .build();
-    UserAggregateDTO aclUserAggregateDTOs = aggregateUserService.getAggregatedUser(scope, userId);
-    return ResponseDTO.newResponse(aclUserAggregateDTOs);
+    Optional<UserAggregateDTO> aclUserAggregateDTO = aggregateUserService.getAggregatedUser(scope, userId);
+    String errorMessage = String.format("User with id %s not found in the given scope", userId);
+    return ResponseDTO.newResponse(aclUserAggregateDTO.orElseThrow(notFoundExceptionSupplier(errorMessage)));
+  }
+
+  @NotNull
+  private Supplier<NoResultFoundException> notFoundExceptionSupplier(String message) {
+    return () -> NoResultFoundException.newBuilder().code(ErrorCode.ENTITY_NOT_FOUND).message(message).build();
   }
 
   @POST
@@ -466,7 +475,8 @@ public class UserResource {
         ApiResponse(responseCode = "default", description = "Returns the update User information")
       })
   public ResponseDTO<UserInfo>
-  updateUserInfo(@Body UserInfo userInfo) {
+  updateUserInfo(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true)
+                 @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier, @Body UserInfo userInfo) {
     if (isUserExternallyManaged(userInfo.getUuid())) {
       log.info("User is externally managed, cannot update user - userId: {}", userInfo.getUuid());
       throw new InvalidRequestException("Cannot update user as it is externally managed.");
@@ -485,7 +495,9 @@ public class UserResource {
             description = "Returns whether the operation is successful or not with readable response.")
       })
   public ResponseDTO<PasswordChangeResponse>
-  changeUserPassword(PasswordChangeDTO passwordChangeDTO) {
+  changeUserPassword(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @QueryParam(
+                         NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      PasswordChangeDTO passwordChangeDTO) {
     return ResponseDTO.newResponse(userInfoService.changeUserPassword(passwordChangeDTO));
   }
 
@@ -500,8 +512,8 @@ public class UserResource {
       })
   @FeatureRestrictionCheck(FeatureRestrictionName.TWO_FACTOR_AUTH_SUPPORT)
   public ResponseDTO<UserInfo>
-  updateTwoFactorAuthInfo(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
-                              "routingId") @AccountIdentifier String accountIdentifier,
+  updateTwoFactorAuthInfo(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @QueryParam(
+                              NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Body TwoFactorAuthSettingsInfo authSettingsInfo) {
     return ResponseDTO.newResponse(userInfoService.updateTwoFactorAuthInfo(authSettingsInfo));
   }
@@ -517,8 +529,8 @@ public class UserResource {
       })
   @FeatureRestrictionCheck(FeatureRestrictionName.TWO_FACTOR_AUTH_SUPPORT)
   public ResponseDTO<UserInfo>
-  disableTFA(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
-      "routingId") @AccountIdentifier String accountIdentifier) {
+  disableTFA(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @QueryParam(
+      NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
     return ResponseDTO.newResponse(userInfoService.disableTFA());
   }
 

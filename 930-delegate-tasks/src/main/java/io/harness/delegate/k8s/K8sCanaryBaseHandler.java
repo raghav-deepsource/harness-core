@@ -9,7 +9,6 @@ package io.harness.delegate.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.k8s.manifest.ManifestHelper.getWorkloadsForCanaryAndBG;
-import static io.harness.k8s.manifest.VersionUtils.addRevisionNumber;
 import static io.harness.k8s.manifest.VersionUtils.markVersionedResources;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.LogLevel.ERROR;
@@ -111,7 +110,7 @@ public class K8sCanaryBaseHandler {
     logCallback.saveExecutionLog("\nVersioning resources.");
 
     if (isNotTrue(skipVersioning)) {
-      addRevisionNumber(canaryHandlerConfig.getResources(), currentRelease.getNumber());
+      k8sTaskHelperBase.addRevisionNumber(canaryHandlerConfig.getResources(), currentRelease.getNumber());
     }
 
     KubernetesResource canaryWorkload = workloads.get(0);

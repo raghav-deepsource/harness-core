@@ -11,42 +11,20 @@ import io.harness.cvng.beans.StackdriverDataCollectionInfo;
 import io.harness.cvng.beans.stackdriver.StackDriverMetricDefinition;
 import io.harness.cvng.core.entities.StackdriverCVConfig;
 import io.harness.cvng.core.entities.StackdriverCVConfig.MetricInfo;
-import io.harness.cvng.core.entities.VerificationTask.TaskType;
-import io.harness.cvng.core.services.api.DataCollectionInfoMapper;
-import io.harness.cvng.core.services.api.DataCollectionSLIInfoMapper;
-import io.harness.cvng.core.utils.dataCollection.MetricDataCollectionUtils;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
+import io.harness.cvng.core.services.api.MetricDataCollectionInfoMapper;
 
-import com.google.common.base.Preconditions;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class StackdriverDataCollectionInfoMapper
-    implements DataCollectionInfoMapper<StackdriverDataCollectionInfo, StackdriverCVConfig>,
-               DataCollectionSLIInfoMapper<StackdriverDataCollectionInfo, StackdriverCVConfig> {
+    extends MetricDataCollectionInfoMapper<StackdriverDataCollectionInfo, StackdriverCVConfig> {
   @Override
-  public StackdriverDataCollectionInfo toDataCollectionInfo(StackdriverCVConfig cvConfig, TaskType taskType) {
-    List<StackDriverMetricDefinition> metricDefinitions = new ArrayList<>();
-    cvConfig.getMetricInfoList()
-        .stream()
-        .filter(metricInfo -> MetricDataCollectionUtils.isMetricApplicableForDataCollection(metricInfo, taskType))
-        .forEach(metricInfo -> { metricDefinitions.add(getMetricCollectionInfo(metricInfo)); });
+  protected StackdriverDataCollectionInfo toDataCollectionInfo(StackdriverCVConfig cvConfig) {
+    List<StackDriverMetricDefinition> metricDefinitions = cvConfig.getMetricInfos()
+                                                              .stream()
+                                                              .map(metricInfo -> getMetricCollectionInfo(metricInfo))
+                                                              .collect(Collectors.toList());
     return getDataCollectionInfo(metricDefinitions, cvConfig);
-  }
-
-  @Override
-  public StackdriverDataCollectionInfo toDataCollectionInfo(
-      List<StackdriverCVConfig> cvConfigList, ServiceLevelIndicator serviceLevelIndicator) {
-    List<String> sliMetricIdentifiers = serviceLevelIndicator.getMetricNames();
-    Preconditions.checkNotNull(cvConfigList);
-    StackdriverCVConfig baseCvConfig = cvConfigList.get(0);
-    List<StackDriverMetricDefinition> metricDefinitions = new ArrayList<>();
-    cvConfigList.forEach(cvConfig -> cvConfig.getMetricInfoList().forEach(metricInfo -> {
-      if (sliMetricIdentifiers.contains(metricInfo.getIdentifier())) {
-        metricDefinitions.add(getMetricCollectionInfo(metricInfo));
-      }
-    }));
-    return getDataCollectionInfo(metricDefinitions, baseCvConfig);
   }
 
   private StackDriverMetricDefinition getMetricCollectionInfo(MetricInfo metricInfo) {

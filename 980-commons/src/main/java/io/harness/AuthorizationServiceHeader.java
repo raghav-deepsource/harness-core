@@ -35,7 +35,8 @@ public enum AuthorizationServiceHeader {
   GIT_SYNC_SERVICE("GitSyncService"),
   DEFAULT("Default"),
   DASHBOAD_AGGREGATION_SERVICE("DashboardAggregationService"),
-  DMS("DelegateManagementService");
+  DMS("DelegateManagementService"),
+  DEBEZIUM_SERVICE("DebeziumService");
 
   private final String serviceId;
 

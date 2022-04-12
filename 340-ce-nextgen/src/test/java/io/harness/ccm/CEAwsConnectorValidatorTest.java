@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.UTSAV;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
@@ -82,8 +83,8 @@ public class CEAwsConnectorValidatorTest extends CategoryTest {
     ceawsConnectorResponseDTO = AWSConnectorTestHelper.getCEAwsConnectorResponseDTO(ceAwsConnectorDTO);
     doReturn(awsConfig).when(ceNextGenConfiguration).getAwsConfig();
     doReturn(null).when(connectorValidator).getCredentialProvider(any());
+    doNothing().when(connectorValidator).validateIfBucketIsPresent(any(), any(), any(), any());
     when(ceConnectorsHelper.isDataSyncCheck(any(), any(), any(), any())).thenReturn(true);
-    doReturn(Collections.emptyList()).when(connectorValidator).validateIfBucketIsPresent(any(), any(), any());
     doReturn(Collections.singletonList(new EvaluationResult().withEvalDecision("allowed")))
         .when(awsClient)
         .simulatePrincipalPolicy(any(), any(), any(), any());

@@ -56,6 +56,7 @@ public class NewRelicHealthSourceSpecTransformer
                   .nrql(metricInfo.getNrql())
                   .responseMapping(metricInfo.getResponseMapping())
                   .metricName(metricInfo.getMetricName())
+                  .identifier(metricInfo.getIdentifier())
                   .riskProfile(riskProfile)
                   .sli(HealthSourceMetricDefinition.SLIDTO.builder().enabled(metricInfo.getSli().isEnabled()).build())
                   .analysis(HealthSourceMetricDefinition.AnalysisDTO.builder()

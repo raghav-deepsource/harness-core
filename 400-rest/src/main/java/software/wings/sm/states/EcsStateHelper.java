@@ -932,32 +932,30 @@ public class EcsStateHelper {
     InstanceElementListParam listParam = InstanceElementListParam.builder().build();
 
     if (deployResponse != null) {
-      if (isNotEmpty(deployResponse.getContainerInfos())) {
-        List<InstanceStatusSummary> instanceStatusSummaries =
-            containerDeploymentHelper.getInstanceStatusSummaries(context, deployResponse.getContainerInfos());
-        executionData.setNewInstanceStatusSummaries(instanceStatusSummaries);
+      List<InstanceStatusSummary> instanceStatusSummaries =
+          containerDeploymentHelper.getInstanceStatusSummaries(context, deployResponse.getContainerInfos());
+      executionData.setNewInstanceStatusSummaries(instanceStatusSummaries);
 
-        List<InstanceElement> finalInstanceElements = new ArrayList<>();
-        List<InstanceElement> instanceElements =
-            instanceStatusSummaries.stream().map(InstanceStatusSummary::getInstanceElement).collect(toList());
-        setNewInstanceFlag(instanceElements, true, finalInstanceElements);
+      List<InstanceElement> finalInstanceElements = new ArrayList<>();
+      List<InstanceElement> instanceElements =
+          instanceStatusSummaries.stream().map(InstanceStatusSummary::getInstanceElement).collect(toList());
+      setNewInstanceFlag(instanceElements, true, finalInstanceElements);
 
-        listParam = InstanceElementListParam.builder().instanceElements(finalInstanceElements).build();
+      listParam = InstanceElementListParam.builder().instanceElements(finalInstanceElements).build();
 
-        List<InstanceElement> allInstanceElements =
-            getAllInstanceElements(context, containerDeploymentHelper, deployResponse, finalInstanceElements);
-        // This sweeping element will be used by verification or other consumers.
-        List<InstanceDetails> instanceDetails = generateEcsInstanceDetails(allInstanceElements);
-        boolean skipVerification = instanceDetails.stream().noneMatch(InstanceDetails::isNewInstance);
-        sweepingOutputService.save(context.prepareSweepingOutputBuilder(SweepingOutputInstance.Scope.WORKFLOW)
-                                       .name(context.appendStateExecutionId(InstanceInfoVariables.SWEEPING_OUTPUT_NAME))
-                                       .value(InstanceInfoVariables.builder()
-                                                  .instanceElements(allInstanceElements)
-                                                  .instanceDetails(instanceDetails)
-                                                  .skipVerification(skipVerification)
-                                                  .build())
-                                       .build());
-      }
+      List<InstanceElement> allInstanceElements =
+          getAllInstanceElements(context, containerDeploymentHelper, deployResponse, finalInstanceElements);
+      // This sweeping element will be used by verification or other consumers.
+      List<InstanceDetails> instanceDetails = generateEcsInstanceDetails(allInstanceElements);
+      boolean skipVerification = instanceDetails.stream().noneMatch(InstanceDetails::isNewInstance);
+      sweepingOutputService.save(context.prepareSweepingOutputBuilder(SweepingOutputInstance.Scope.WORKFLOW)
+                                     .name(context.appendStateExecutionId(InstanceInfoVariables.SWEEPING_OUTPUT_NAME))
+                                     .value(InstanceInfoVariables.builder()
+                                                .instanceElements(allInstanceElements)
+                                                .instanceDetails(instanceDetails)
+                                                .skipVerification(skipVerification)
+                                                .build())
+                                     .build());
 
       executionData.setOldInstanceData(deployResponse.getOldInstanceData());
       executionData.setNewInstanceData(deployResponse.getNewInstanceData());
@@ -1296,7 +1294,7 @@ public class EcsStateHelper {
   }
 
   public void createSweepingOutputForRollback(EcsDeployDataBag deployDataBag, Activity activity,
-      DelegateService delegateService, EcsResizeParams resizeParams, ExecutionContext context) {
+      DelegateService delegateService, EcsResizeParams resizeParams, ExecutionContext context, boolean blueGreen) {
     EcsDeployRollbackDataFetchRequest request =
         EcsDeployRollbackDataFetchRequest.builder()
             .accountId(deployDataBag.getApp().getAccountId())
@@ -1307,6 +1305,7 @@ public class EcsStateHelper {
             .cluster(deployDataBag.getEcsInfrastructureMapping().getClusterName())
             .awsConfig(deployDataBag.getAwsConfig())
             .ecsResizeParams(resizeParams)
+            .blueGreen(blueGreen)
             .build();
 
     DelegateTask task =

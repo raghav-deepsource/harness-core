@@ -52,9 +52,9 @@ public class NewRelicDataCollectionInfo extends TimeSeriesDataCollectionInfo<New
   @Override
   public Map<String, Object> getDslEnvVariables(NewRelicConnectorDTO newRelicConnectorDTO) {
     if (customQuery) {
-      return getEnvVariablesForAppIdBasedConfig();
-    } else {
       return getEnvVariablesForCustomConfig();
+    } else {
+      return getEnvVariablesForAppIdBasedConfig();
     }
   }
 

@@ -10,6 +10,7 @@ package io.harness.security;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.RAJ;
+import static io.harness.rule.OwnerRule.SHASHANK;
 import static io.harness.rule.OwnerRule.SOWMYA;
 import static io.harness.security.NextGenAuthenticationFilter.AUTHORIZATION_HEADER;
 import static io.harness.security.NextGenAuthenticationFilter.X_API_KEY;
@@ -260,7 +261,7 @@ public class NextGenAuthenticationFilterTest extends ApiKeyFilterTestBase {
   }
 
   @Test
-  @Owner(developers = SOWMYA)
+  @Owner(developers = {SOWMYA, SHASHANK})
   @Category(UnitTests.class)
   public void testFilter_pat_invalid() {
     String delimiter = ".";
@@ -280,29 +281,42 @@ public class NextGenAuthenticationFilterTest extends ApiKeyFilterTestBase {
     when(NGRestUtils.getResponse(any())).thenReturn(tokenDTO);
     when(authenticationFilter.testRequestPredicate(containerRequestContext)).thenReturn(true);
 
-    // Incorrect number of sections in api key
+    // Token length not matching for API token
     apiKey = "pat" + delimiter + uuid;
     when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(apiKey);
     assertThatThrownBy(() -> authenticationFilter.filter(containerRequestContext))
-        .isInstanceOf(InvalidRequestException.class);
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Token length not matching for API token");
 
-    // API key prefix not matching
+    // Invalid prefix for API token
     apiKey = "sat" + delimiter + uuid + delimiter + rawPassword;
     when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(apiKey);
     assertThatThrownBy(() -> authenticationFilter.filter(containerRequestContext))
-        .isInstanceOf(InvalidRequestException.class);
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining(uuid);
 
-    // Token not matching
+    // Raw password not matching for API token
     apiKey = "pat" + delimiter + uuid + delimiter + rawPassword + "1";
     when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(apiKey);
     assertThatThrownBy(() -> authenticationFilter.filter(containerRequestContext))
-        .isInstanceOf(InvalidRequestException.class);
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining(uuid);
 
     // Invalid token
     apiKey = "pat" + delimiter + uuid + delimiter + rawPassword;
     when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(apiKey);
     tokenDTO.setValid(false);
     assertThatThrownBy(() -> authenticationFilter.filter(containerRequestContext))
-        .isInstanceOf(InvalidRequestException.class);
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining(uuid);
+
+    // Token not found in DB
+    apiKey = "pat" + delimiter + uuid + delimiter + rawPassword;
+    when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(apiKey);
+    when(NGRestUtils.getResponse(any())).thenReturn(null);
+    assertThatThrownBy(() -> authenticationFilter.filter(containerRequestContext))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Token not found")
+        .hasMessageContaining(uuid);
   }
 }

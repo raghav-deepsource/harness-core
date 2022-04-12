@@ -8,7 +8,6 @@
 package software.wings.features;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -61,7 +60,7 @@ public class RbacFeature extends AbstractUsageLimitedFeature implements Complian
 
   @Override
   public int getUsage(String accountId) {
-    return getUserGroupsCount(accountId);
+    return (int) userGroupService.getCountOfUserGroups(accountId);
   }
 
   @Override
@@ -121,9 +120,5 @@ public class RbacFeature extends AbstractUsageLimitedFeature implements Complian
     userGroup.setAppPermissions(appPermissions);
 
     userGroupService.updatePermissions(userGroup);
-  }
-
-  private int getUserGroupsCount(String accountId) {
-    return userGroupService.list(accountId, aPageRequest().build(), false).getResponse().size();
   }
 }

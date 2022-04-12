@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.rollback.RollbackPlanCreator;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.plancreator.beans.OrchestrationConstants;
+import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
@@ -82,10 +82,10 @@ public class CDExecutionPMSPlanCreator extends ChildrenPlanCreator<ExecutionElem
                                         .build();
     return PlanNode.builder()
         .uuid(ctx.getCurrentField().getNode().getUuid())
-        .identifier(OrchestrationConstants.EXECUTION_NODE_IDENTIFIER)
+        .identifier(NGCommonUtilPlanCreationConstants.EXECUTION_NODE_IDENTIFIER)
         .stepType(NGSectionStepWithRollbackInfo.STEP_TYPE)
         .group(StepOutcomeGroup.EXECUTION.name())
-        .name(OrchestrationConstants.EXECUTION_NODE_NAME)
+        .name(NGCommonUtilPlanCreationConstants.EXECUTION_NODE_NAME)
         .stepParameters(stepParameters)
         .facilitatorObtainment(
             FacilitatorObtainment.newBuilder()

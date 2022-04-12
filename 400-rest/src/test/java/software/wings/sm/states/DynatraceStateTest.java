@@ -47,6 +47,7 @@ import software.wings.beans.Application;
 import software.wings.beans.DynaTraceConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
+import software.wings.delegatetasks.cv.CVConstants;
 import software.wings.delegatetasks.validation.DelegateConnectionResult;
 import software.wings.service.impl.AssignDelegateServiceImpl;
 import software.wings.service.impl.analysis.AnalysisComparisonStrategy;
@@ -158,12 +159,12 @@ public class DynatraceStateTest extends APMStateVerificationTestBase {
   public void compareTestAndControl() {
     DynatraceState dynatraceState = new DynatraceState("DynatraceState");
     for (int i = 1; i <= 7; i++) {
-      assertThat(dynatraceState.getLastExecutionNodes(executionContext).get(DynatraceState.CONTROL_HOST_NAME + i))
+      assertThat(dynatraceState.getLastExecutionNodes(executionContext).get(CVConstants.CONTROL_HOST_NAME + i))
           .isEqualTo(DEFAULT_GROUP_NAME);
     }
 
     assertThat(dynatraceState.getCanaryNewHostNames(executionContext))
-        .isEqualTo(Collections.singletonMap(DynatraceState.TEST_HOST_NAME, DEFAULT_GROUP_NAME));
+        .isEqualTo(Collections.singletonMap(CVConstants.TEST_HOST_NAME, DEFAULT_GROUP_NAME));
   }
 
   @Test

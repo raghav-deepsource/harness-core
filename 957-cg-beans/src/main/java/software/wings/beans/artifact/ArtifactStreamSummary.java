@@ -22,6 +22,7 @@ import lombok.Value;
 @Builder
 public class ArtifactStreamSummary {
   private String artifactStreamId;
+  private String artifactStreamName;
   private String settingId;
   private String displayName;
   private String name;

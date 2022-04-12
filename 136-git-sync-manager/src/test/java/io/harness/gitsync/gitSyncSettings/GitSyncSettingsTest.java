@@ -10,6 +10,7 @@ package io.harness.gitsync.gitSyncSettings;
 import static io.harness.gitsync.common.beans.GitSyncSettings.IS_EXECUTE_ON_DELEGATE;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.HARI;
+import static io.harness.rule.OwnerRule.MEET;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -90,5 +91,22 @@ public class GitSyncSettingsTest extends GitSyncTestBase {
         gitSyncSettingsService.get(accountIdentifier, orgIdentifier, projectIdentifier);
     Boolean isExecuteOnDelegate = gitSyncSettingsDTOOptional.get().isExecuteOnDelegate();
     assertThat(isExecuteOnDelegate).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testDelete() {
+    Map<String, String> settings = new HashMap<>();
+    settings.put(IS_EXECUTE_ON_DELEGATE, String.valueOf(true));
+    GitSyncSettings gitSyncSettings = GitSyncSettings.builder()
+                                          .accountIdentifier(accountIdentifier)
+                                          .projectIdentifier(projectIdentifier)
+                                          .orgIdentifier(orgIdentifier)
+                                          .settings(settings)
+                                          .build();
+    gitSyncSettingsRepository.save(gitSyncSettings);
+    gitSyncSettingsService.delete(accountIdentifier, orgIdentifier, projectIdentifier);
+    assertThat(gitSyncSettingsService.get(accountIdentifier, orgIdentifier, projectIdentifier).isPresent()).isFalse();
   }
 }

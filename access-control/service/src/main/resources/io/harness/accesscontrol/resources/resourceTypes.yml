@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: resourceTypeConfiguration
-version: 5
+version: 6
 resourceTypes:
   - identifier: ACCOUNT
     permissionKey: account
@@ -22,6 +22,8 @@ resourceTypes:
     permissionKey: service
   - identifier: ENVIRONMENT
     permissionKey: environment
+  - identifier: ENVIRONMENT_GROUP
+    permissionKey: environmentgroup
   - identifier: AUDIT
     permissionKey: audit
   - identifier: USER

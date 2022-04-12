@@ -7,11 +7,16 @@
 
 package io.harness.batch.processing.view;
 
+import static io.harness.batch.processing.billing.tasklet.BillingDataGeneratedMailTasklet.ACCOUNT_ID;
+import static io.harness.batch.processing.billing.tasklet.BillingDataGeneratedMailTasklet.CCM_DATA_GENERATED;
+import static io.harness.batch.processing.billing.tasklet.BillingDataGeneratedMailTasklet.DATA_GENERATED;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.telemetry.Destination.AMPLITUDE;
 import static io.harness.utils.RestCallToNGManagerClientUtils.execute;
 
 import io.harness.batch.processing.pricing.gcp.bigquery.BigQueryHelperService;
 import io.harness.batch.processing.shard.AccountShardService;
+import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.commons.entities.batch.CEMetadataRecord;
 import io.harness.ccm.commons.entities.batch.CEMetadataRecord.CEMetadataRecordBuilder;
 import io.harness.ccm.views.dto.DefaultViewIdDto;
@@ -26,6 +31,8 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.ff.FeatureFlagService;
 import io.harness.filter.FilterType;
 import io.harness.ng.beans.PageResponse;
+import io.harness.telemetry.Category;
+import io.harness.telemetry.TelemetryReporter;
 
 import software.wings.beans.Account;
 import software.wings.beans.SettingAttribute;
@@ -35,6 +42,8 @@ import software.wings.settings.SettingVariableTypes;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -51,6 +60,8 @@ public class CEMetaDataRecordUpdateService {
   @Autowired private BigQueryHelperService bigQueryHelperService;
   @Autowired private FeatureFlagService featureFlagService;
   @Autowired private CEViewService ceViewService;
+  @Autowired private CEMetadataRecordDao metadataRecordDao;
+  @Autowired TelemetryReporter telemetryReporter;
 
   public void updateCloudProviderMetadata() {
     List<Account> ceEnabledAccounts = accountShardService.getCeEnabledAccounts();
@@ -103,10 +114,25 @@ public class CEMetaDataRecordUpdateService {
       if (isAwsConnectorPresent || isGCPConnectorPresent || isAzureConnectorPresent) {
         bigQueryHelperService.updateCloudProviderMetaData(accountId, ceMetadataRecordBuilder);
       }
+
       CEMetadataRecord ceMetadataRecord = ceMetadataRecordBuilder.awsConnectorConfigured(isAwsConnectorPresent)
                                               .gcpConnectorConfigured(isGCPConnectorPresent)
                                               .azureConnectorConfigured(isAzureConnectorPresent)
                                               .build();
+
+      if (ceMetadataRecord.getAwsDataPresent() || ceMetadataRecord.getAzureDataPresent()
+          || ceMetadataRecord.getGcpDataPresent()) {
+        CEMetadataRecord currentCEMetadataRecord = metadataRecordDao.getByAccountId(accountId);
+        Boolean isSegmentDataReadyEventSent = currentCEMetadataRecord.getSegmentDataReadyEventSent();
+        if (isSegmentDataReadyEventSent == null || !isSegmentDataReadyEventSent) {
+          HashMap<String, Object> properties = new HashMap<>();
+          properties.put(ACCOUNT_ID, accountId);
+          properties.put(DATA_GENERATED, "CLOUD");
+          telemetryReporter.sendTrackEvent(
+              CCM_DATA_GENERATED, properties, Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+          ceMetadataRecord.setSegmentDataReadyEventSent(true);
+        }
+      }
 
       cloudToHarnessMappingService.upsertCEMetaDataRecord(ceMetadataRecord);
 

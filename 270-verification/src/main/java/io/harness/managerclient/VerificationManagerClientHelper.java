@@ -42,9 +42,9 @@ public class VerificationManagerClientHelper {
   static final int MAX_ATTEMPTS = 10;
 
   public Map<String, Object> getManagerHeader(String accountId, String analysisVersion) {
+    Map<String, Object> headers = new HashMap<>();
     try {
       List<String> versions = callManagerWithRetry(managerClient.getListOfPublishedVersions(accountId)).getResource();
-      Map<String, Object> headers = new HashMap<>();
       if (versions != null) {
         log.info("List of available versions is : {} and the analysisVersion is {}", versions, analysisVersion);
         if (analysisVersion != null && versions.contains(analysisVersion)) {
@@ -54,7 +54,8 @@ public class VerificationManagerClientHelper {
       }
       return headers;
     } catch (Exception ex) {
-      throw new RuntimeException("Error while fetching manager header information");
+      log.error("Error while fetching manager header information. Defaulting to empty header", ex);
+      return headers;
     }
   }
 

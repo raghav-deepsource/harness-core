@@ -6,5 +6,6 @@
 >${artifacts}
 >${environments}
 >${infrastructureDefinitions}
+>${triggeredByUser}
 >_Started<!date^${START_TS_SECS}^ {date_short_pretty} at {time}| ${START_DATE}> and ${VERB} at <!date^${END_TS_SECS}^{time}| ${END_DATE}>_
 >_Expires<!date^${EXPIRES_TS_SECS}^ {date_short_pretty} at {time}| ${EXPIRES_DATE}>_

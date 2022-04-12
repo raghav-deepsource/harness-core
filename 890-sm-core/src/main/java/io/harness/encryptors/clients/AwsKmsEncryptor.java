@@ -107,7 +107,7 @@ public class AwsKmsEncryptor implements KmsEncryptor {
         log.warn("Encryption failed. trial num: {}", failedAttempts, e);
         if (isRetryable(e)) {
           if (failedAttempts == NUM_OF_RETRIES) {
-            String reason = format("Encryption failed after %d retries", NUM_OF_RETRIES) + e.getMessage();
+            String reason = format("Encryption failed after %d retries.%n%s", NUM_OF_RETRIES, e.getMessage());
             throw new DelegateRetryableException(
                 new SecretManagementDelegateException(KMS_OPERATION_ERROR, reason, e, USER));
           }

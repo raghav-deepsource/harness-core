@@ -25,6 +25,7 @@ import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.helm.beans.NativeHelmExecutionPassThroughData;
@@ -65,6 +66,7 @@ import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
 import io.harness.helm.HelmSubCommandType;
+import io.harness.k8s.model.HelmVersion;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -128,13 +130,22 @@ public class NativeHelmStepHelper extends CDStepHelper {
     if (ManifestType.HelmChart.equals(manifestOutcome.getType())) {
       HelmChartManifestOutcome helmChartManifestOutcome = (HelmChartManifestOutcome) manifestOutcome;
       String chartName = getParameterFieldValue(helmChartManifestOutcome.getChartName());
+      HelmVersion helmVersion =
+          getHelmVersionBasedOnFF(helmChartManifestOutcome.getHelmVersion(), AmbianceUtils.getAccountId(ambiance));
       return HelmChartManifestDelegateConfig.builder()
           .storeDelegateConfig(getStoreDelegateConfig(
               helmChartManifestOutcome.getStore(), ambiance, manifestOutcome, manifestOutcome.getType() + " manifest"))
           .chartName(chartName)
           .chartVersion(getParameterFieldValue(helmChartManifestOutcome.getChartVersion()))
-          .helmVersion(helmChartManifestOutcome.getHelmVersion())
+          .helmVersion(helmVersion)
           .helmCommandFlag(getDelegateHelmCommandFlag(helmChartManifestOutcome.getCommandFlags()))
+          .useRepoFlags(helmVersion != HelmVersion.V2
+              && cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.USE_HELM_REPO_FLAGS))
+          .checkIncorrectChartVersion(cdFeatureFlagHelper.isEnabled(
+              AmbianceUtils.getAccountId(ambiance), FeatureName.HELM_CHART_VERSION_STRICT_MATCH))
+          .deleteRepoCacheDir(helmVersion != HelmVersion.V2
+              && cdFeatureFlagHelper.isEnabled(
+                  AmbianceUtils.getAccountId(ambiance), FeatureName.DELETE_HELM_REPO_CACHE_DIR))
           .build();
     }
 

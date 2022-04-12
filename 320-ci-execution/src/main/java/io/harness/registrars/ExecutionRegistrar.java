@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
+import io.harness.registrar.NGCommonUtilStepsRegistrar;
 import io.harness.states.CISpecStep;
 import io.harness.states.CleanupStep;
 import io.harness.states.DockerStep;
@@ -62,7 +63,7 @@ public class ExecutionRegistrar {
     engineSteps.put(CodeBaseStep.STEP_TYPE, CodeBaseStep.class);
     engineSteps.put(CodeBaseTaskStep.STEP_TYPE, CodeBaseTaskStep.class);
     engineSteps.put(CISpecStep.STEP_TYPE, CISpecStep.class);
-    engineSteps.putAll(OrchestrationStepsModuleSdkStepRegistrar.getEngineSteps());
+    engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());
     return engineSteps;
   }
 }

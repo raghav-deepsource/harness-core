@@ -7,6 +7,8 @@
 
 package io.harness.pms.sdk;
 
+import static io.harness.pms.sdk.SdkStepHelper.SDK_STEP_SET_NAME;
+
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 import static org.springframework.data.mongodb.core.query.Update.update;
@@ -14,6 +16,7 @@ import static org.springframework.data.mongodb.core.query.Update.update;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.datastructures.EphemeralCacheService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
@@ -62,12 +65,14 @@ public class PmsSdkInstanceService extends PmsServiceImplBase {
   Cache<String, PmsSdkInstance> instanceCache;
   TransactionHelper transactionHelper;
   public boolean shouldUseInstanceCache;
+  private final EphemeralCacheService ephemeralCacheService;
 
   @Inject
   public PmsSdkInstanceService(PmsSdkInstanceRepository pmsSdkInstanceRepository, MongoTemplate mongoTemplate,
       PersistentLocker persistentLocker, SchemaFetcher schemaFetcher,
       @Named("pmsSdkInstanceCache") Cache<String, PmsSdkInstance> instanceCache,
-      @Named("shouldUseInstanceCache") boolean shouldUseInstanceCache, TransactionHelper transactionHelper) {
+      @Named("shouldUseInstanceCache") boolean shouldUseInstanceCache, TransactionHelper transactionHelper,
+      EphemeralCacheService ephemeralCacheService) {
     this.pmsSdkInstanceRepository = pmsSdkInstanceRepository;
     this.mongoTemplate = mongoTemplate;
     this.persistentLocker = persistentLocker;
@@ -75,6 +80,7 @@ public class PmsSdkInstanceService extends PmsServiceImplBase {
     this.instanceCache = instanceCache;
     this.shouldUseInstanceCache = shouldUseInstanceCache;
     this.transactionHelper = transactionHelper;
+    this.ephemeralCacheService = ephemeralCacheService;
   }
 
   @Override
@@ -89,10 +95,12 @@ public class PmsSdkInstanceService extends PmsServiceImplBase {
         throw new InitializeSdkException("Could not acquire lock");
       }
       saveSdkInstance(request);
-
       schemaFetcher.invalidateAllCache();
+      ephemeralCacheService.getDistributedSet(SDK_STEP_SET_NAME).clear();
+    } catch (Exception ex) {
+      log.error("Exception occurred while registering sdk with name: [{}]", request.getName());
+      throw new InitializeSdkException(ex.getMessage());
     }
-    // TODO: ADD ERROR HANDLING
     responseObserver.onNext(InitializeSdkResponse.newBuilder().build());
     responseObserver.onCompleted();
   }
@@ -131,14 +139,14 @@ public class PmsSdkInstanceService extends PmsServiceImplBase {
     transactionHelper.performTransaction(() -> {
       PmsSdkInstance instance = mongoTemplate.findAndModify(
           query, update, new FindAndModifyOptions().upsert(true).returnNew(true), PmsSdkInstance.class);
+      if (instance == null) {
+        throw new InitializeSdkException(
+            String.format("Update for PmsSdkInstance for module: [%s] Failed", request.getName()));
+      }
       if (shouldUseInstanceCache) {
-        if (instance != null) {
-          log.info("Updating sdkInstanceCache for module {}", request.getName());
-          instanceCache.put(request.getName(), instance);
-          log.info("Updated sdkInstanceCache for module {}", request.getName());
-        } else {
-          log.warn("Found instance as null for module {} . Fallback to database", request.getName());
-        }
+        log.info("Updating sdkInstanceCache for module {}", request.getName());
+        instanceCache.put(request.getName(), instance);
+        log.info("Updated sdkInstanceCache for module {}", request.getName());
       }
       return instance;
     });

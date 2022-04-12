@@ -37,7 +37,6 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidTokenException;
 import io.harness.exception.WingsException;
-import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.security.TokenGenerator;
@@ -68,7 +67,6 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
 
   @Mock LoadingCache<String, String> keyCache;
   @Mock private HPersistence persistence;
-  @Mock FeatureFlagService featureFlagService;
   @Inject @InjectMocks private DelegateTokenAuthenticatorImpl delegateTokenAuthenticator;
 
   private String accountKey = "2f6b0988b6fb3370073c3d0505baee59";
@@ -87,7 +85,7 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
     createPersistenceMocksForDelegateToken(null);
     TokenGenerator tokenGenerator = new TokenGenerator(ACCOUNT_ID, accountKey);
     delegateTokenAuthenticator.validateDelegateToken(
-        ACCOUNT_ID, tokenGenerator.getToken("https", "localhost", 9090, "hostname"));
+        ACCOUNT_ID, tokenGenerator.getToken("https", "localhost", 9090, "hostname"), null, false);
   }
 
   @Test
@@ -106,7 +104,7 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
     TokenGenerator tokenGenerator = new TokenGenerator(ACCOUNT_ID, accountKey);
 
     delegateTokenAuthenticator.validateDelegateToken(
-        ACCOUNT_ID, tokenGenerator.getToken("https", "localhost", 9090, "hostname"));
+        ACCOUNT_ID, tokenGenerator.getToken("https", "localhost", 9090, "hostname"), null, false);
   }
 
   @Test
@@ -126,8 +124,8 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
     TokenGenerator tokenGenerator = new TokenGenerator(ACCOUNT_ID, accountKey);
 
     assertThatThrownBy(()
-                           -> delegateTokenAuthenticator.validateDelegateToken(
-                               ACCOUNT1_ID, tokenGenerator.getToken("https", "localhost", 9090, "hostname")))
+                           -> delegateTokenAuthenticator.validateDelegateToken(ACCOUNT1_ID,
+                               tokenGenerator.getToken("https", "localhost", 9090, "hostname"), null, false))
         .isInstanceOf(InvalidTokenException.class);
   }
 
@@ -157,7 +155,7 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
     TokenGenerator tokenGenerator = new TokenGenerator(ACCOUNT_ID, accountKey);
 
     delegateTokenAuthenticator.validateDelegateToken(
-        ACCOUNT_ID, tokenGenerator.getToken("https", "localhost", 9090, "hostname"));
+        ACCOUNT_ID, tokenGenerator.getToken("https", "localhost", 9090, "hostname"), null, false);
   }
 
   @Test
@@ -198,7 +196,7 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
     TokenGenerator tokenGeneratorNg = new TokenGenerator(ACCOUNT_ID, accountKey);
 
     delegateTokenAuthenticator.validateDelegateToken(
-        ACCOUNT_ID, tokenGeneratorNg.getToken("https", "localhost", 9090, "hostname"));
+        ACCOUNT_ID, tokenGeneratorNg.getToken("https", "localhost", 9090, "hostname"), null, false);
   }
 
   @Test
@@ -208,8 +206,8 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
     createPersistenceMocksForDelegateToken(null);
     TokenGenerator tokenGenerator = new TokenGenerator(GLOBAL_ACCOUNT_ID, accountKey);
     assertThatThrownBy(()
-                           -> delegateTokenAuthenticator.validateDelegateToken(
-                               GLOBAL_ACCOUNT_ID, tokenGenerator.getToken("https", "localhost", 9090, "hostname")))
+                           -> delegateTokenAuthenticator.validateDelegateToken(GLOBAL_ACCOUNT_ID,
+                               tokenGenerator.getToken("https", "localhost", 9090, "hostname"), null, false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Access denied");
   }
@@ -222,7 +220,7 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
 
     String expiredToken =
         "eyJlbmMiOiJBMTI4R0NNIiwiYWxnIjoiZGlyIn0..SFvYSml0znPxoa7K.JcsFw5GiYevubqqzjy-nQyDMzjtA64YhxZjnQz6VH7lRCAGP5JML9Ov86rSRV1V7Kb-a12UvTNzqEqdJ4PCLv4R7GA5SzCwxLEYrlTLtUWX40r0GKuRGoiJVJqax2bBy3gOqDftETZCm_90lD3NxDeJ__RICl4osp9IxCKmlfGyoqriAswoEvkVtu0wjRlvBS-FtY42AeyCf9XIH5rppw-AsXoHH40M6_8FN-mFkilfqv3QKPaGL6Zph.1ipAjbMS834AKSotvHy4sg";
-    assertThatThrownBy(() -> delegateTokenAuthenticator.validateDelegateToken(ACCOUNT_ID, expiredToken))
+    assertThatThrownBy(() -> delegateTokenAuthenticator.validateDelegateToken(ACCOUNT_ID, expiredToken, null, false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Unauthorized");
   }
@@ -235,7 +233,7 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
     TokenGenerator tokenGenerator = new TokenGenerator(ACCOUNT_ID, accountKey);
     assertThatThrownBy(()
                            -> delegateTokenAuthenticator.validateDelegateToken(
-                               null, tokenGenerator.getToken("https", "localhost", 9090, "hostname")))
+                               null, tokenGenerator.getToken("https", "localhost", 9090, "hostname"), null, false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Access denied");
   }
@@ -247,8 +245,8 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
     createPersistenceMocksForDelegateToken(null);
     TokenGenerator tokenGenerator = new TokenGenerator(ACCOUNT_ID, accountKey);
     assertThatThrownBy(()
-                           -> delegateTokenAuthenticator.validateDelegateToken(
-                               ACCOUNT_ID + "1", tokenGenerator.getToken("https", "localhost", 9090, "hostname")))
+                           -> delegateTokenAuthenticator.validateDelegateToken(ACCOUNT_ID + "1",
+                               tokenGenerator.getToken("https", "localhost", 9090, "hostname"), null, false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Access denied");
   }
@@ -257,7 +255,7 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
   @Owner(developers = ANUBHAW)
   @Category(UnitTests.class)
   public void shouldThrowThrowInavlidTokenForDelegate() {
-    assertThatThrownBy(() -> delegateTokenAuthenticator.validateDelegateToken(ACCOUNT_ID, "Dummy"))
+    assertThatThrownBy(() -> delegateTokenAuthenticator.validateDelegateToken(ACCOUNT_ID, "Dummy", null, false))
         .isInstanceOf(InvalidTokenException.class);
   }
 
@@ -267,7 +265,8 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
   public void shouldThrowExceptionWhenUnableToDecryptToken() {
     createPersistenceMocksForDelegateToken(null);
 
-    assertThatThrownBy(() -> delegateTokenAuthenticator.validateDelegateToken(ACCOUNT_ID, getDelegateToken()))
+    assertThatThrownBy(
+        () -> delegateTokenAuthenticator.validateDelegateToken(ACCOUNT_ID, getDelegateToken(), null, false))
         .isInstanceOf(InvalidTokenException.class);
   }
 

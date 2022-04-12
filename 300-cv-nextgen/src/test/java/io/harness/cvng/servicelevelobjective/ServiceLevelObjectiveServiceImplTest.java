@@ -9,6 +9,7 @@ package io.harness.cvng.servicelevelobjective;
 
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
+import static io.harness.rule.OwnerRule.KAPIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -16,9 +17,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
+import io.harness.cvng.CVNGTestConstants;
+import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
+import io.harness.cvng.beans.cvnglog.CVNGLogType;
+import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
+import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
+import io.harness.cvng.beans.cvnglog.TraceableType;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.logsFilterParams.SLILogsFilter;
+import io.harness.cvng.core.services.api.CVNGLogService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.servicelevelobjective.beans.DayOfWeek;
@@ -67,6 +76,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -79,6 +90,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
   @Inject ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject SLOHealthIndicatorService sloHealthIndicatorService;
   @Inject SLOErrorBudgetResetService sloErrorBudgetResetService;
+  @Inject CVNGLogService cvngLogService;
   @Inject Clock clock;
   @Inject HPersistence hPersistence;
   String accountId;
@@ -745,6 +757,52 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
                    .get()
                    .getCount())
         .isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testGetCVNGLogs() {
+    Instant startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().minusSeconds(5);
+    Instant endTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant();
+    ServiceLevelObjectiveDTO sloDTO = createSLOBuilder();
+    createMonitoredService();
+    serviceLevelObjectiveService.create(projectParams, sloDTO);
+    List<String> serviceLevelIndicators = sloDTO.getServiceLevelIndicators()
+                                              .stream()
+                                              .map(ServiceLevelIndicatorDTO::getIdentifier)
+                                              .collect(Collectors.toList());
+    List<String> sliIds = serviceLevelIndicatorService.getEntities(projectParams, serviceLevelIndicators)
+                              .stream()
+                              .map(ServiceLevelIndicator::getUuid)
+                              .collect(Collectors.toList());
+    List<String> verificationTaskIds =
+        verificationTaskService.getSLIVerificationTaskIds(projectParams.getAccountIdentifier(), sliIds);
+    List<CVNGLogDTO> cvngLogDTOs =
+        IntStream.range(0, 3)
+            .mapToObj(index -> builderFactory.executionLogDTOBuilder().traceableId(verificationTaskIds.get(0)).build())
+            .collect(Collectors.toList());
+    cvngLogService.save(cvngLogDTOs);
+
+    SLILogsFilter sliLogsFilter = SLILogsFilter.builder()
+                                      .logType(CVNGLogType.EXECUTION_LOG)
+                                      .startTime(startTime.toEpochMilli())
+                                      .endTime(endTime.toEpochMilli())
+                                      .build();
+    PageResponse<CVNGLogDTO> cvngLogDTOResponse = serviceLevelObjectiveService.getCVNGLogs(
+        projectParams, sloDTO.getIdentifier(), sliLogsFilter, PageParams.builder().page(0).size(10).build());
+
+    assertThat(cvngLogDTOResponse.getContent().size()).isEqualTo(1);
+    assertThat(cvngLogDTOResponse.getPageIndex()).isEqualTo(0);
+    assertThat(cvngLogDTOResponse.getPageSize()).isEqualTo(10);
+
+    ExecutionLogDTO executionLogDTOS = (ExecutionLogDTO) cvngLogDTOResponse.getContent().get(0);
+    assertThat(executionLogDTOS.getAccountId()).isEqualTo(accountId);
+    assertThat(executionLogDTOS.getTraceableId()).isEqualTo(verificationTaskIds.get(0));
+    assertThat(executionLogDTOS.getTraceableType()).isEqualTo(TraceableType.VERIFICATION_TASK);
+    assertThat(executionLogDTOS.getType()).isEqualTo(CVNGLogType.EXECUTION_LOG);
+    assertThat(executionLogDTOS.getLogLevel()).isEqualTo(LogLevel.INFO);
+    assertThat(executionLogDTOS.getLog()).isEqualTo("Data Collection successfully completed.");
   }
 
   private ServiceLevelObjectiveDTO createSLOBuilder() {

@@ -8,6 +8,9 @@
 package io.harness.pms.plan.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.pms.instrumentaion.PipelineInstrumentationConstants.ORG_IDENTIFIER;
+import static io.harness.pms.instrumentaion.PipelineInstrumentationConstants.PIPELINE_ID;
+import static io.harness.pms.instrumentaion.PipelineInstrumentationConstants.PROJECT_IDENTIFIER;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -16,8 +19,10 @@ import io.harness.engine.executions.retry.RetryExecutionParameters;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.execution.StagesExecutionMetadata;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
+import io.harness.pms.instrumentaion.PipelineTelemetryHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
@@ -28,6 +33,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -41,11 +47,13 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
 public class PipelineExecutor {
+  private final String START_PIPELINE_EXECUTION_EVENT = "ng_start_pipeline_execution";
   ExecutionHelper executionHelper;
   ValidateAndMergeHelper validateAndMergeHelper;
   PlanExecutionMetadataService planExecutionMetadataService;
   RetryExecutionHelper retryExecutionHelper;
   PMSPipelineTemplateHelper pipelineTemplateHelper;
+  PipelineTelemetryHelper pipelineTelemetryHelper;
 
   public PlanExecutionResponseDto runPipelineWithInputSetPipelineYaml(@NotNull String accountId,
       @NotNull String orgIdentifier, @NotNull String projectIdentifier, @NotNull String pipelineIdentifier,
@@ -98,6 +106,7 @@ public class PipelineExecutor {
   private PlanExecutionResponseDto startPlanExecution(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String originalExecutionId, String moduleType, String runtimeInputYaml,
       List<String> stagesToRun, Map<String, String> expressionValues, boolean useV2) {
+    sendExecutionStartTelemetryEvent(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
     PipelineEntity pipelineEntity =
         executionHelper.fetchPipelineEntity(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
     if (EmptyPredicate.isNotEmpty(stagesToRun) && !pipelineEntity.shouldAllowStageExecutions()) {
@@ -144,15 +153,19 @@ public class PipelineExecutor {
     if (!optionalPlanExecutionMetadata.isPresent()) {
       throw new InvalidRequestException(String.format("No plan exist for %s planExecutionId", previousExecutionId));
     }
-    String previousProcessedYaml = optionalPlanExecutionMetadata.get().getProcessedYaml();
+    PlanExecutionMetadata planExecutionMetadata = optionalPlanExecutionMetadata.get();
+    String previousProcessedYaml = planExecutionMetadata.getProcessedYaml();
     List<String> identifierOfSkipStages = new ArrayList<>();
 
     // RetryExecutionParameters
     RetryExecutionParameters retryExecutionParameters =
         buildRetryExecutionParameters(true, previousProcessedYaml, retryStagesIdentifier, identifierOfSkipStages);
 
-    ExecArgs execArgs = executionHelper.buildExecutionArgs(pipelineEntity, moduleType, inputSetPipelineYaml, null, null,
-        triggerInfo, previousExecutionId, retryExecutionParameters);
+    StagesExecutionMetadata stagesExecutionMetadata = planExecutionMetadata.getStagesExecutionMetadata();
+    ExecArgs execArgs = executionHelper.buildExecutionArgs(pipelineEntity, moduleType, inputSetPipelineYaml,
+        stagesExecutionMetadata == null ? null : stagesExecutionMetadata.getStageIdentifiers(),
+        stagesExecutionMetadata == null ? null : stagesExecutionMetadata.getExpressionValues(), triggerInfo,
+        previousExecutionId, retryExecutionParameters);
     PlanExecution planExecution;
     if (useV2) {
       planExecution =
@@ -181,5 +194,14 @@ public class PipelineExecutor {
         .retryStagesIdentifier(stagesIdentifier)
         .identifierOfSkipStages(identifierOfSkipStages)
         .build();
+  }
+
+  private void sendExecutionStartTelemetryEvent(
+      String accountId, String orgId, String projectId, String pipelineIdentifier) {
+    HashMap<String, Object> propertiesMap = new HashMap<>();
+    propertiesMap.put(PROJECT_IDENTIFIER, projectId);
+    propertiesMap.put(ORG_IDENTIFIER, orgId);
+    propertiesMap.put(PIPELINE_ID, pipelineIdentifier);
+    pipelineTelemetryHelper.sendTelemetryEventWithAccountName(START_PIPELINE_EXECUTION_EVENT, accountId, propertiesMap);
   }
 }

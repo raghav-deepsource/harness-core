@@ -77,7 +77,7 @@ public class DefaultConnectorRefExpansionHandlerTest extends CategoryTest {
     when(NGRestUtils.getResponseWithRetry(
              requestToClient, "Could not get connector response for account: " + acc + " after {} attempts."))
         .thenReturn(Optional.of(connectorDTOProj));
-    ExpansionResponse expansionResponseProj = connectorRefExpansionHandler.expand(jsonNodeProj, metadataProject);
+    ExpansionResponse expansionResponseProj = connectorRefExpansionHandler.expand(jsonNodeProj, metadataProject, null);
     assertThat(expansionResponseProj.isSuccess()).isTrue();
     assertThat(expansionResponseProj.getKey()).isEqualTo("connector");
     assertThat(expansionResponseProj.getValue().toJson()).isEqualTo("{\"identifier\":\"basic-connector\"}");
@@ -93,7 +93,7 @@ public class DefaultConnectorRefExpansionHandlerTest extends CategoryTest {
     when(NGRestUtils.getResponseWithRetry(
              requestToClient, "Could not get connector response for account: " + acc + " after {} attempts."))
         .thenReturn(Optional.of(connectorDTOOrg));
-    ExpansionResponse expansionResponseOrg = connectorRefExpansionHandler.expand(jsonNodeOrg, metadataOrg);
+    ExpansionResponse expansionResponseOrg = connectorRefExpansionHandler.expand(jsonNodeOrg, metadataOrg, null);
     assertThat(expansionResponseOrg.isSuccess()).isTrue();
     assertThat(expansionResponseOrg.getKey()).isEqualTo("connector");
     assertThat(expansionResponseOrg.getValue().toJson()).isEqualTo("{\"identifier\":\"conn\"}");

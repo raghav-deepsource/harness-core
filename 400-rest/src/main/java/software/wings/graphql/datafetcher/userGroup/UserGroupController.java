@@ -328,6 +328,7 @@ public class UserGroupController {
     }
     List<String> idsInput = new ArrayList<>(userGroupIds);
     PageRequest<UserGroup> req = aPageRequest()
+                                     .withLimit(Long.toString(userGroupService.getCountOfUserGroups(accountId)))
                                      .addFieldsIncluded("_id")
                                      .addFilter("_id", IN, userGroupIds.toArray())
                                      .addFilter("accountId", SearchFilter.Operator.EQ, accountId)

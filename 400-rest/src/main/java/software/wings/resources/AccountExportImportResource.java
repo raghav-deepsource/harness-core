@@ -94,6 +94,7 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -1099,7 +1100,12 @@ public class AccountExportImportResource {
               log.info("User '{}' with email '{}' clashes with one existing user '{}'.", userId, email,
                   existingUser.getUuid());
               // Adding the new import account into the account list of the existing user.
-              existingUser.getAccounts().add(account);
+              if (isEmpty(existingUser.getAccounts())) {
+                existingUser.setAccounts(Collections.singletonList(account));
+              }
+              if (!existingUser.getAccounts().contains(account)) {
+                existingUser.getAccounts().add(account);
+              }
               wingsPersistence.save(existingUser);
             }
           }

@@ -11,44 +11,22 @@ import io.harness.cvng.beans.PrometheusDataCollectionInfo;
 import io.harness.cvng.beans.PrometheusDataCollectionInfo.MetricCollectionInfo;
 import io.harness.cvng.core.entities.PrometheusCVConfig;
 import io.harness.cvng.core.entities.PrometheusCVConfig.MetricInfo;
-import io.harness.cvng.core.entities.VerificationTask.TaskType;
-import io.harness.cvng.core.services.api.DataCollectionInfoMapper;
-import io.harness.cvng.core.services.api.DataCollectionSLIInfoMapper;
-import io.harness.cvng.core.utils.dataCollection.MetricDataCollectionUtils;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
+import io.harness.cvng.core.services.api.MetricDataCollectionInfoMapper;
 
 import com.google.common.base.Preconditions;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class PrometheusDataCollectionInfoMapper
-    implements DataCollectionInfoMapper<PrometheusDataCollectionInfo, PrometheusCVConfig>,
-               DataCollectionSLIInfoMapper<PrometheusDataCollectionInfo, PrometheusCVConfig> {
+    extends MetricDataCollectionInfoMapper<PrometheusDataCollectionInfo, PrometheusCVConfig> {
   @Override
-  public PrometheusDataCollectionInfo toDataCollectionInfo(PrometheusCVConfig cvConfig, TaskType taskType) {
+  protected PrometheusDataCollectionInfo toDataCollectionInfo(PrometheusCVConfig cvConfig) {
     Preconditions.checkNotNull(cvConfig);
-    List<MetricCollectionInfo> metricCollectionInfoList = new ArrayList<>();
-    cvConfig.getMetricInfoList()
-        .stream()
-        .filter(metricInfo -> MetricDataCollectionUtils.isMetricApplicableForDataCollection(metricInfo, taskType))
-        .forEach(metricInfo -> { metricCollectionInfoList.add(getMetricCollectionInfo(metricInfo)); });
+    List<MetricCollectionInfo> metricCollectionInfoList = cvConfig.getMetricInfos()
+                                                              .stream()
+                                                              .map(metricInfo -> getMetricCollectionInfo(metricInfo))
+                                                              .collect(Collectors.toList());
     return getDataCollectionInfo(metricCollectionInfoList, cvConfig);
-  }
-
-  @Override
-  public PrometheusDataCollectionInfo toDataCollectionInfo(
-      List<PrometheusCVConfig> cvConfigList, ServiceLevelIndicator serviceLevelIndicator) {
-    List<String> sliMetricIdentifiers = serviceLevelIndicator.getMetricNames();
-    Preconditions.checkNotNull(cvConfigList);
-    PrometheusCVConfig baseCvConfig = cvConfigList.get(0);
-    List<PrometheusDataCollectionInfo.MetricCollectionInfo> metricCollectionInfoList = new ArrayList<>();
-    cvConfigList.forEach(cvConfig -> cvConfig.getMetricInfoList().forEach(metricInfo -> {
-      if (sliMetricIdentifiers.contains(metricInfo.getIdentifier())) {
-        metricCollectionInfoList.add(getMetricCollectionInfo(metricInfo));
-      }
-    }));
-
-    return getDataCollectionInfo(metricCollectionInfoList, baseCvConfig);
   }
 
   private MetricCollectionInfo getMetricCollectionInfo(MetricInfo metricInfo) {

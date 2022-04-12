@@ -9,11 +9,11 @@ package software.wings.delegatetasks.cloudformation.cloudformationtaskhandler;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.task.cloudformation.CloudformationBaseHelperImpl.CLOUDFORMATION_STACK_CREATE_BODY;
+import static io.harness.delegate.task.cloudformation.CloudformationBaseHelperImpl.CLOUDFORMATION_STACK_CREATE_GIT;
+import static io.harness.delegate.task.cloudformation.CloudformationBaseHelperImpl.CLOUDFORMATION_STACK_CREATE_URL;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.threading.Morpheus.sleep;
-
-import static software.wings.helpers.ext.cloudformation.request.CloudFormationCreateStackRequest.CLOUD_FORMATION_STACK_CREATE_BODY;
-import static software.wings.helpers.ext.cloudformation.request.CloudFormationCreateStackRequest.CLOUD_FORMATION_STACK_CREATE_URL;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static java.lang.String.format;
@@ -23,6 +23,7 @@ import static java.util.stream.Collectors.toMap;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ExceptionUtils;
 import io.harness.logging.CommandExecutionStatus;
@@ -43,7 +44,7 @@ import software.wings.helpers.ext.cloudformation.response.CloudFormationRollback
 import software.wings.helpers.ext.cloudformation.response.CloudFormationRollbackInfo.CloudFormationRollbackInfoBuilder;
 import software.wings.helpers.ext.cloudformation.response.ExistingStackInfo;
 import software.wings.helpers.ext.cloudformation.response.ExistingStackInfo.ExistingStackInfoBuilder;
-import software.wings.utils.GitUtilsDelegate;
+import software.wings.service.mappers.artifact.AwsConfigToInternalMapper;
 
 import com.amazonaws.services.cloudformation.model.CreateStackRequest;
 import com.amazonaws.services.cloudformation.model.CreateStackResult;
@@ -57,7 +58,6 @@ import com.amazonaws.services.cloudformation.model.UpdateStackRequest;
 import com.amazonaws.services.cloudformation.model.UpdateStackResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -76,22 +76,21 @@ import lombok.NoArgsConstructor;
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
 public class CloudFormationCreateStackHandler extends CloudFormationCommandTaskHandler {
-  @Inject private GitUtilsDelegate gitUtilsDelegate;
   private int remainingTimeoutMs;
 
   @Override
   protected CloudFormationCommandExecutionResponse executeInternal(CloudFormationCommandRequest request,
       List<EncryptedDataDetail> details, ExecutionLogCallback executionLogCallback) {
-    AwsConfig awsConfig = request.getAwsConfig();
-    encryptionService.decrypt(awsConfig, details, false);
+    encryptionService.decrypt(request.getAwsConfig(), details, false);
+    AwsInternalConfig awsInternalConfig = AwsConfigToInternalMapper.toAwsInternalConfig(request.getAwsConfig());
 
     CloudFormationCreateStackRequest upsertRequest = (CloudFormationCreateStackRequest) request;
 
     remainingTimeoutMs = request.getTimeoutInMs() > 0 ? request.getTimeoutInMs() : DEFAULT_TIMEOUT_MS;
 
     executionLogCallback.saveExecutionLog("# Checking if stack already exists...");
-    Optional<Stack> stackOptional = getIfStackExists(
-        upsertRequest.getCustomStackName(), upsertRequest.getStackNameSuffix(), awsConfig, request.getRegion());
+    Optional<Stack> stackOptional = cloudformationBaseHelper.getIfStackExists(
+        upsertRequest.getCustomStackName(), upsertRequest.getStackNameSuffix(), awsInternalConfig, request.getRegion());
 
     if (!stackOptional.isPresent()) {
       executionLogCallback.saveExecutionLog("# Stack does not exist, creating new stack");
@@ -137,16 +136,16 @@ public class CloudFormationCreateStackHandler extends CloudFormationCommandTaskH
             "No specific cloudformation role provided will use the default permissions on delegate.");
       }
       switch (updateRequest.getCreateType()) {
-        case CloudFormationCreateStackRequest.CLOUD_FORMATION_STACK_CREATE_GIT: {
+        case CLOUDFORMATION_STACK_CREATE_GIT: {
           executionLogCallback.saveExecutionLog("# Using Git Template Body to Update Stack");
-          updateRequest.setCreateType(CLOUD_FORMATION_STACK_CREATE_BODY);
+          updateRequest.setCreateType(CLOUDFORMATION_STACK_CREATE_BODY);
           updateStackRequest.withTemplateBody(updateRequest.getData());
           updateStackRequest.withCapabilities(getCapabilities(updateRequest.getAwsConfig(), updateRequest.getRegion(),
               updateRequest.getData(), updateRequest.getCapabilities(), "body"));
           updateStackAndWaitWithEvents(updateRequest, updateStackRequest, builder, stack, executionLogCallback);
           break;
         }
-        case CLOUD_FORMATION_STACK_CREATE_BODY: {
+        case CLOUDFORMATION_STACK_CREATE_BODY: {
           executionLogCallback.saveExecutionLog("# Using Template Body to Update Stack");
           updateStackRequest.withTemplateBody(updateRequest.getData());
           updateStackRequest.withCapabilities(getCapabilities(updateRequest.getAwsConfig(), updateRequest.getRegion(),
@@ -154,7 +153,7 @@ public class CloudFormationCreateStackHandler extends CloudFormationCommandTaskH
           updateStackAndWaitWithEvents(updateRequest, updateStackRequest, builder, stack, executionLogCallback);
           break;
         }
-        case CLOUD_FORMATION_STACK_CREATE_URL: {
+        case CLOUDFORMATION_STACK_CREATE_URL: {
           updateRequest.setData(awsCFHelperServiceDelegate.normalizeS3TemplatePath(updateRequest.getData()));
           executionLogCallback.saveExecutionLog(
               format("# Using Template Url: [%s] to Update Stack", updateRequest.getData()));
@@ -219,16 +218,16 @@ public class CloudFormationCreateStackHandler extends CloudFormationCommandTaskH
             "No specific cloudformation role provided will use the default permissions on delegate.");
       }
       switch (createRequest.getCreateType()) {
-        case CloudFormationCreateStackRequest.CLOUD_FORMATION_STACK_CREATE_GIT: {
+        case CLOUDFORMATION_STACK_CREATE_GIT: {
           executionLogCallback.saveExecutionLog("# Using Git Template Body to Create Stack");
-          createRequest.setCreateType(CLOUD_FORMATION_STACK_CREATE_BODY);
+          createRequest.setCreateType(CLOUDFORMATION_STACK_CREATE_BODY);
           createStackRequest.withTemplateBody(createRequest.getData());
           createStackRequest.withCapabilities(getCapabilities(createRequest.getAwsConfig(), createRequest.getRegion(),
               createRequest.getData(), createRequest.getCapabilities(), "body"));
           createStackAndWaitWithEvents(createRequest, createStackRequest, builder, executionLogCallback);
           break;
         }
-        case CLOUD_FORMATION_STACK_CREATE_BODY: {
+        case CLOUDFORMATION_STACK_CREATE_BODY: {
           executionLogCallback.saveExecutionLog("# Using Template Body to create Stack");
           createStackRequest.withTemplateBody(createRequest.getData());
           createStackRequest.withCapabilities(getCapabilities(createRequest.getAwsConfig(), createRequest.getRegion(),
@@ -236,7 +235,7 @@ public class CloudFormationCreateStackHandler extends CloudFormationCommandTaskH
           createStackAndWaitWithEvents(createRequest, createStackRequest, builder, executionLogCallback);
           break;
         }
-        case CLOUD_FORMATION_STACK_CREATE_URL: {
+        case CLOUDFORMATION_STACK_CREATE_URL: {
           createRequest.setData(awsCFHelperServiceDelegate.normalizeS3TemplatePath(createRequest.getData()));
           executionLogCallback.saveExecutionLog(
               format("# Using Template Url: [%s] to Create Stack", createRequest.getData()));
@@ -266,8 +265,8 @@ public class CloudFormationCreateStackHandler extends CloudFormationCommandTaskH
     executionLogCallback.saveExecutionLog(
         format("# Calling Aws API to Create stack: %s", createStackRequest.getStackName()));
     long stackEventsTs = System.currentTimeMillis();
-    CreateStackResult result =
-        awsHelperService.createStack(createRequest.getRegion(), createStackRequest, createRequest.getAwsConfig());
+    CreateStackResult result = awsHelperService.createStack(createRequest.getRegion(), createStackRequest,
+        AwsConfigToInternalMapper.toAwsInternalConfig(createRequest.getAwsConfig()));
     executionLogCallback.saveExecutionLog(format(
         "# Create Stack request submitted for stack: %s. Now polling for status.", createStackRequest.getStackName()));
     int timeOutMs = remainingTimeoutMs;
@@ -276,8 +275,8 @@ public class CloudFormationCreateStackHandler extends CloudFormationCommandTaskH
     Stack stack = null;
     while (System.currentTimeMillis() < endTime) {
       DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest().withStackName(result.getStackId());
-      List<Stack> stacks =
-          awsHelperService.getAllStacks(createRequest.getRegion(), describeStacksRequest, createRequest.getAwsConfig());
+      List<Stack> stacks = awsHelperService.getAllStacks(createRequest.getRegion(), describeStacksRequest,
+          AwsConfigToInternalMapper.toAwsInternalConfig(createRequest.getAwsConfig()));
       if (stacks.size() < 1) {
         String errorMessage = "# Error: received empty stack list from AWS";
         executionLogCallback.saveExecutionLog(errorMessage, LogLevel.ERROR, CommandExecutionStatus.FAILURE);
@@ -361,7 +360,8 @@ public class CloudFormationCreateStackHandler extends CloudFormationCommandTaskH
     builder.stackExisted(true);
     builder.oldStackParameters(originalStack.getParameters().stream().collect(
         toMap(Parameter::getParameterKey, Parameter::getParameterValue)));
-    builder.oldStackBody(awsCFHelperServiceDelegate.getStackBody(awsConfig, region, originalStack.getStackId()));
+    builder.oldStackBody(awsCFHelperServiceDelegate.getStackBody(
+        AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), region, originalStack.getStackId()));
     return builder.build();
   }
 
@@ -374,8 +374,8 @@ public class CloudFormationCreateStackHandler extends CloudFormationCommandTaskH
         format("# Calling Aws API to Update stack: %s", originalStack.getStackName()));
     long stackEventsTs = System.currentTimeMillis();
 
-    UpdateStackResult updateStackResult =
-        awsHelperService.updateStack(request.getRegion(), updateStackRequest, request.getAwsConfig());
+    UpdateStackResult updateStackResult = awsHelperService.updateStack(
+        request.getRegion(), updateStackRequest, AwsConfigToInternalMapper.toAwsInternalConfig(request.getAwsConfig()));
     executionLogCallback.saveExecutionLog(
         format("# Update Stack Request submitted for stack: %s. Now polling for status", originalStack.getStackName()));
 
@@ -393,8 +393,8 @@ public class CloudFormationCreateStackHandler extends CloudFormationCommandTaskH
     while (System.currentTimeMillis() < endTime) {
       DescribeStacksRequest describeStacksRequest =
           new DescribeStacksRequest().withStackName(originalStack.getStackId());
-      List<Stack> stacks =
-          awsHelperService.getAllStacks(request.getRegion(), describeStacksRequest, request.getAwsConfig());
+      List<Stack> stacks = awsHelperService.getAllStacks(request.getRegion(), describeStacksRequest,
+          AwsConfigToInternalMapper.toAwsInternalConfig(request.getAwsConfig()));
       if (stacks.size() < 1) {
         String errorMessage = "# Error: received empty stack list from AWS";
         executionLogCallback.saveExecutionLog(errorMessage, LogLevel.ERROR, CommandExecutionStatus.FAILURE);
@@ -559,7 +559,7 @@ public class CloudFormationCreateStackHandler extends CloudFormationCommandTaskH
     CloudFormationRollbackInfoBuilder builder = CloudFormationRollbackInfo.builder();
 
     builder.cloudFormationRoleArn(cloudFormationCreateStackRequest.getCloudFormationRoleArn());
-    if (CLOUD_FORMATION_STACK_CREATE_URL.equals(cloudFormationCreateStackRequest.getCreateType())) {
+    if (CLOUDFORMATION_STACK_CREATE_URL.equals(cloudFormationCreateStackRequest.getCreateType())) {
       cloudFormationCreateStackRequest.setData(
           awsCFHelperServiceDelegate.normalizeS3TemplatePath(cloudFormationCreateStackRequest.getData()));
       builder.url(cloudFormationCreateStackRequest.getData());
@@ -601,7 +601,8 @@ public class CloudFormationCreateStackHandler extends CloudFormationCommandTaskH
   @VisibleForTesting
   Set<String> getCapabilities(
       AwsConfig awsConfig, String region, String data, List<String> userDefinedCapabilities, String type) {
-    List<String> capabilities = awsCFHelperServiceDelegate.getCapabilities(awsConfig, region, data, type);
+    List<String> capabilities = awsCFHelperServiceDelegate.getCapabilities(
+        AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), region, data, type);
     Set<String> allCapabilities = new HashSet<>();
 
     if (isNotEmpty(userDefinedCapabilities)) {

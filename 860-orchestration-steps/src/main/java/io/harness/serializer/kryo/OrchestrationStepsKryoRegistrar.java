@@ -23,7 +23,6 @@ import io.harness.steps.barriers.beans.BarrierOutcome;
 import io.harness.steps.barriers.beans.BarrierResponseData;
 import io.harness.steps.barriers.beans.BarrierResponseData.BarrierError;
 import io.harness.steps.cf.FlagConfigurationStepParameters;
-import io.harness.steps.fork.ForkStepParameters;
 import io.harness.steps.http.HttpOutcome;
 import io.harness.steps.jira.JiraIssueOutcome;
 import io.harness.steps.resourcerestraint.ResourceRestraintSpecParameters;
@@ -32,8 +31,6 @@ import io.harness.steps.resourcerestraint.beans.HoldingScope;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintOutcome;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintResponseData;
-import io.harness.steps.section.chain.SectionChainPassThroughData;
-import io.harness.steps.section.chain.SectionChainStepParameters;
 import io.harness.steps.shellscript.ShellScriptStepInfo;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -52,11 +49,6 @@ public class OrchestrationStepsKryoRegistrar implements KryoRegistrar {
     kryo.register(AcquireMode.class, 3208);
     kryo.register(ResourceRestraintResponseData.class, 3209);
     kryo.register(HoldingScope.class, 3210);
-
-    kryo.register(ForkStepParameters.class, 3211);
-    kryo.register(SectionChainStepParameters.class, 3214);
-
-    kryo.register(SectionChainPassThroughData.class, 3217);
 
     kryo.register(HarnessApprovalResponseData.class, 3220);
     kryo.register(HarnessApprovalOutcome.class, 3221);

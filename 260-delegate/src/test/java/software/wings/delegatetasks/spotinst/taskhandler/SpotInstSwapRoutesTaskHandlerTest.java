@@ -8,12 +8,16 @@
 package software.wings.delegatetasks.spotinst.taskhandler;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.SATYAM;
 
+import static java.util.Collections.emptyList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -24,6 +28,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.task.aws.AwsElbListener;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.delegate.task.spotinst.request.SpotInstSwapRoutesTaskParameters;
 import io.harness.rule.Owner;
@@ -39,17 +44,25 @@ import software.wings.delegatetasks.DelegateLogService;
 import software.wings.service.intfc.aws.delegate.AwsEc2HelperServiceDelegate;
 import software.wings.service.intfc.aws.delegate.AwsElbHelperServiceDelegate;
 
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.elasticloadbalancingv2.AmazonElasticLoadBalancingClient;
 import com.amazonaws.services.elasticloadbalancingv2.model.Action;
 import com.amazonaws.services.elasticloadbalancingv2.model.DescribeListenersResult;
 import com.amazonaws.services.elasticloadbalancingv2.model.Listener;
+import com.amazonaws.services.elasticloadbalancingv2.model.Rule;
+import com.amazonaws.services.elasticloadbalancingv2.model.TargetGroup;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
@@ -62,6 +75,7 @@ public class SpotInstSwapRoutesTaskHandlerTest extends WingsBaseTest {
   @Mock private AwsEc2HelperServiceDelegate mockAwsEc2HelperServiceDelegate;
 
   @Spy @Inject @InjectMocks SpotInstSwapRoutesTaskHandler spotInstSwapRoutesTaskHandler;
+  private static final String REGION = Regions.US_EAST_1.getName();
 
   @Test
   @Owner(developers = SATYAM)
@@ -130,5 +144,66 @@ public class SpotInstSwapRoutesTaskHandlerTest extends WingsBaseTest {
         .updateDefaultListenersForSpotInstBG(any(), anyList(), anyString(), anyString(), anyString());
     verify(spotInstSwapRoutesTaskHandler, times(2))
         .updateElastiGroupAndWait(anyString(), anyString(), any(), anyInt(), any(), anyString(), anyString());
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void testRestoreSpecificRulesRoutesIfChanged() throws Exception {
+    ExecutionLogCallback mocklogCallback = Mockito.mock(ExecutionLogCallback.class);
+    doNothing().when(mocklogCallback).saveExecutionLog(anyString());
+    AmazonElasticLoadBalancingClient mockClient = Mockito.mock(AmazonElasticLoadBalancingClient.class);
+
+    ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+
+    AwsConfig awsConfig = AwsConfig.builder().build();
+    List<AwsElbListener> elbListeners = Arrays.asList(AwsElbListener.builder().port(80).build());
+    String alb1 = "ALB1";
+    String prodRuleArn = "PROD_RULE_ARN";
+    String stageRuleArn = "STAGE_RULE_ARN";
+    String prodTGArn = "PROD_TG_ARN";
+    String stageTGArn = "STAGE_TG_ARN";
+    List<Rule> prodRules =
+        Arrays.asList(new Rule().withRuleArn(prodRuleArn).withActions(new Action().withTargetGroupArn(prodTGArn)));
+    List<Rule> stageRules =
+        Arrays.asList(new Rule().withRuleArn(prodRuleArn).withActions(new Action().withTargetGroupArn(stageTGArn)));
+    LoadBalancerDetailsForBGDeployment details = LoadBalancerDetailsForBGDeployment.builder()
+                                                     .prodListenerPort("80")
+                                                     .prodRuleArn(prodRuleArn)
+                                                     .stageRuleArn(stageRuleArn)
+                                                     .loadBalancerName(alb1)
+                                                     .stageTargetGroupArn(stageTGArn)
+                                                     .build();
+
+    doReturn(elbListeners)
+        .when(mockAwsElbHelperServiceDelegate)
+        .getElbListenersForLoadBalaner(awsConfig, emptyList(), REGION, alb1);
+    doReturn(new TargetGroup().withTargetGroupArn(stageTGArn))
+        .when(mockAwsElbHelperServiceDelegate)
+        .fetchTargetGroupForSpecificRules(
+            elbListeners.get(0), prodRuleArn, mocklogCallback, awsConfig, REGION, emptyList());
+    doReturn(prodRules)
+        .when(mockAwsElbHelperServiceDelegate)
+        .getListenerRuleFromListenerRuleArn(awsConfig, emptyList(), REGION, prodRuleArn, mocklogCallback);
+    doReturn(stageRules)
+        .when(mockAwsElbHelperServiceDelegate)
+        .getListenerRuleFromListenerRuleArn(awsConfig, emptyList(), REGION, stageRuleArn, mocklogCallback);
+    doReturn(mockClient)
+        .when(mockAwsElbHelperServiceDelegate)
+        .getAmazonElasticLoadBalancingClientV2(Regions.fromName(REGION), awsConfig);
+    doNothing()
+        .when(mockAwsElbHelperServiceDelegate)
+        .modifyListenerRule(eq(mockClient), eq(details.getProdListenerArn()), eq(details.getProdRuleArn()),
+            captor.capture(), eq(mocklogCallback));
+    doNothing()
+        .when(mockAwsElbHelperServiceDelegate)
+        .modifyListenerRule(eq(mockClient), eq(details.getStageListenerArn()), eq(details.getStageRuleArn()),
+            captor.capture(), eq(mocklogCallback));
+
+    spotInstSwapRoutesTaskHandler.restoreSpecificRulesRoutesIfChanged(details, mocklogCallback, awsConfig, REGION);
+
+    List<String> allValues = captor.getAllValues();
+    assertThat(allValues).hasSize(2);
+    assertThat(allValues).containsExactly(stageTGArn, prodTGArn);
   }
 }

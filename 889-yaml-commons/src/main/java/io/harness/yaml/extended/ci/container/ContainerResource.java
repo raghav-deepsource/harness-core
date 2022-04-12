@@ -13,7 +13,9 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.number;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.yaml.YamlSchemaTypes;
+import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.extended.ci.validator.ResourceValidatorConstants;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -25,13 +27,18 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @TypeAlias("resource")
 @OwnedBy(CI)
 public class ContainerResource {
-  @NotNull Limits limits;
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  String uuid;
+  @NotNull @VariableExpression Limits limits;
 
   @Builder
   @JsonCreator
@@ -42,12 +49,18 @@ public class ContainerResource {
   @Data
   @TypeAlias("resource_limits")
   public static class Limits {
+    @JsonProperty(YamlNode.UUID_FIELD_NAME)
+    @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+    @ApiModelProperty(hidden = true)
+    String uuid;
     @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-    @Pattern(regexp = ResourceValidatorConstants.MEMORY_PATTERN)
+    @Pattern(regexp = ResourceValidatorConstants.STORAGE_PATTERN)
+    @VariableExpression
     private ParameterField<String> memory;
     @YamlSchemaTypes(value = {number})
     @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
     @Min(0)
+    @VariableExpression
     private ParameterField<String> cpu;
 
     @Builder

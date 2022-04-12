@@ -14,6 +14,7 @@ import (
 
 	"github.com/drone/go-scm-codecommit/codecommit"
 	"github.com/drone/go-scm/scm"
+	"github.com/drone/go-scm/scm/driver/azure"
 	"github.com/drone/go-scm/scm/driver/bitbucket"
 	"github.com/drone/go-scm/scm/driver/gitea"
 	"github.com/drone/go-scm/scm/driver/github"
@@ -157,6 +158,8 @@ func getClient(p pb.GitProvider) (*scm.Client, error) {
 		return stash.NewDefault(), nil
 	case pb.GitProvider_CODECOMMIT:
 		return codecommit.NewDefault(), nil
+	case pb.GitProvider_AZURE:
+		return azure.NewDefault("empty", "empty"), nil
 	default:
 		return nil, status.Errorf(codes.InvalidArgument,
 			fmt.Sprintf("Unsupported git provider %s", p.String()))

@@ -64,6 +64,7 @@ message S3HelmPayload {
 enum HelmVersion {
   V2 = 0;
   V3 = 1;
+  V380 = 2;
 }
 
 message DockerHubPayload {

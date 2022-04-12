@@ -34,6 +34,9 @@ import io.harness.plancreator.S3UploadStepPlanCreator;
 import io.harness.plancreator.SaveCacheGCSStepPlanCreator;
 import io.harness.plancreator.SaveCacheS3StepPlanCreator;
 import io.harness.plancreator.SecurityStepPlanCreator;
+import io.harness.plancreator.execution.ExecutionPmsPlanCreator;
+import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
+import io.harness.plancreator.steps.NGStageStepsPlanCreator;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
@@ -73,6 +76,9 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     planCreators.add(new BuildAndPushGCRStepPlanCreator());
     planCreators.add(new SaveCacheS3StepPlanCreator());
     planCreators.add(new SecurityStepPlanCreator());
+    planCreators.add(new NGStageStepsPlanCreator());
+    planCreators.add(new ExecutionPmsPlanCreator());
+    planCreators.add(new ParallelPlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }

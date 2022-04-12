@@ -9,4 +9,15 @@ package io.harness.cvng.servicelevelobjective.beans.slimetricspec;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public enum RatioSLIMetricEventType { @JsonProperty("Good") GOOD, @JsonProperty("Bad") BAD }
+public enum RatioSLIMetricEventType {
+  @JsonProperty("Good") GOOD,
+  @JsonProperty("Bad") BAD;
+
+  public double computeSLIMetricValue(double metricValue1, double metricValue2) {
+    double metricValue = (metricValue1 / metricValue2) * 100;
+    if (this.equals(RatioSLIMetricEventType.BAD)) {
+      metricValue = (1 - (metricValue1 / metricValue2)) * 100;
+    }
+    return metricValue;
+  }
+}

@@ -102,6 +102,10 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
             .set(DelegateTokenKeys.status, DelegateTokenStatus.REVOKED)
             .set(DelegateTokenKeys.validUntil,
                 Date.from(OffsetDateTime.now().plusDays(DelegateToken.TTL.toDays()).toInstant()));
+
+    // we are not removing token from delegateTokenCache in DelegateTokenCacheHelper, since the cache has an expiry of 3
+    // mins
+
     DelegateToken updatedDelegateToken =
         persistence.findAndModify(filterQuery, updateOperations, new FindAndModifyOptions());
     auditServiceHelper.reportForAuditingUsingAccountId(
