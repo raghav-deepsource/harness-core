@@ -18,7 +18,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @JsonSubTypes(value =
     {
       @JsonSubTypes.Type(value = SSHConfigDTO.class, name = "SSH")
-      , @JsonSubTypes.Type(value = KerberosSSHConfigDTO.class, name = "Kerberos"),
+      , @JsonSubTypes.Type(value = KerberosConfigDTO.class, name = "Kerberos"),
     })
 @Schema(name = "BaseSSHSpec", description = "This is the SSH specification details as defined in Harness.")
 public interface BaseSSHSpecDTO {

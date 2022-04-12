@@ -22,7 +22,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName("Kerberos")
-public class KerberosWinRmConfig extends KerberosConfig implements BaseWinRmSpec {
+public class KerberosWinRmConfig extends KerberosBaseConfig implements BaseWinRmSpec {
   private String domain;
   private String username;
   private boolean useSSL;

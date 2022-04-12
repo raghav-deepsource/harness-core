@@ -29,7 +29,7 @@ import lombok.experimental.SuperBuilder;
 @JsonTypeName("Kerberos")
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(Include.NON_NULL)
-public class KerberosWinRmConfigDTO extends KerberosConfigDTO implements BaseWinRmSpecDTO {
+public class KerberosWinRmConfigDTO extends KerberosBaseConfigDTO implements BaseWinRmSpecDTO {
   @Schema(description = "This is the Kerberos domain name.") @NotNull private String domain;
 
   @Schema(description = "This is the Kerberos user name.") @NotNull private String username;

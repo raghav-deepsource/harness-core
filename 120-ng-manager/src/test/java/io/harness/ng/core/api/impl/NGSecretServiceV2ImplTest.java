@@ -30,7 +30,7 @@ import io.harness.ng.core.api.NGSecretActivityService;
 import io.harness.ng.core.dto.secrets.SSHCredentialType;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.TGTGenerationMethod;
-import io.harness.ng.core.models.KerberosSSHConfig;
+import io.harness.ng.core.models.KerberosConfig;
 import io.harness.ng.core.models.SSHAuth;
 import io.harness.ng.core.models.SSHConfig;
 import io.harness.ng.core.models.SSHExecutionCredentialSpec;
@@ -267,7 +267,7 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
                              .port(22)
                              .auth(SSHAuth.builder()
                                        .type(SSHAuthScheme.Kerberos)
-                                       .sshSpec(KerberosSSHConfig.builder()
+                                       .sshSpec(KerberosConfig.builder()
                                                     .principal("principal")
                                                     .realm("realm")
                                                     .tgtGenerationMethod(TGTGenerationMethod.KeyTabFilePath)
