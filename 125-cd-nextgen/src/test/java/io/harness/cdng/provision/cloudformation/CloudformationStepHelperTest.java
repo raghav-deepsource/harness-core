@@ -27,6 +27,7 @@ import io.harness.cdng.k8s.K8sStepHelper;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.S3UrlStoreConfig;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.provision.cloudformation.beans.CloudFormationCreateStackPassThroughData;
 import io.harness.cdng.provision.cloudformation.beans.CloudFormationInheritOutput;
@@ -104,6 +105,13 @@ public class CloudformationStepHelperTest extends CategoryTest {
   @Mock private CloudformationStepExecutor cloudformationStepExecutor;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @InjectMocks private final CloudformationStepHelper cloudformationStepHelper = new CloudformationStepHelper();
+  private static final String TAGS = "[\n"
+      + "  {\n"
+      + "    \"tag\": \"tag1\",\n"
+      + "    \"tag2\": \"tag3\"\n"
+      + "  }\n"
+      + "]"
+      + "";
 
   @Test
   @Owner(developers = TMACARI)
@@ -127,7 +135,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
   public void testStartChainLinkWithoutAwsConnector() {
-    StepElementParameters stepElementParameters = createStepParametersWithGit();
+    StepElementParameters stepElementParameters = createStepParametersWithGit(false);
     ConnectorInfoDTO connectorInfoDTO =
         ConnectorInfoDTO.builder().connectorConfig(AppDynamicsConnectorDTO.builder().build()).build();
     doReturn(connectorInfoDTO).when(cdStepHelper).getConnector(any(), any());
@@ -142,7 +150,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
   public void testStartChainLinkWithGit() {
-    StepElementParameters stepElementParameters = createStepParametersWithGit();
+    StepElementParameters stepElementParameters = createStepParametersWithGit(false);
     ConnectorInfoDTO connectorInfoDTO =
         ConnectorInfoDTO.builder().connectorConfig(AwsConnectorDTO.builder().build()).build();
     doReturn(connectorInfoDTO).when(cdStepHelper).getConnector(any(), any());
@@ -171,13 +179,30 @@ public class CloudformationStepHelperTest extends CategoryTest {
     assertThat(taskDataArgumentCaptor.getValue().getTaskType()).isEqualTo(TaskType.GIT_FETCH_NEXT_GEN_TASK.name());
     assertThat(response.getTaskRequest()).isNotNull();
     assertThat(response.getPassThroughData()).isNotNull();
+
+    StepElementParameters stepElementParametersWithTags = createStepParametersWithGit(true);
+    mockStatic(StepUtils.class);
+    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+    ArgumentCaptor<TaskData> taskDataArgumentCaptorWithTags = ArgumentCaptor.forClass(TaskData.class);
+    TaskChainResponse responseWithTags = cloudformationStepHelper.startChainLink(
+        cloudformationStepExecutor, getAmbiance(), stepElementParametersWithTags);
+
+    PowerMockito.verifyStatic(StepUtils.class, times(1));
+    StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptorWithTags.capture(), any(), any(), any(), any(), any());
+    assertThat(taskDataArgumentCaptorWithTags.getValue()).isNotNull();
+    assertThat(taskDataArgumentCaptorWithTags.getValue().getParameters()).isNotNull();
+    assertThat(taskDataArgumentCaptorWithTags.getValue().getTaskType())
+        .isEqualTo(TaskType.GIT_FETCH_NEXT_GEN_TASK.name());
+    assertThat(responseWithTags.getTaskRequest()).isNotNull();
+    assertThat(responseWithTags.getPassThroughData()).isNotNull();
   }
 
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
   public void testStartChainLinkWithS3() {
-    StepElementParameters stepElementParameters = createStepParametersWithS3();
+    StepElementParameters stepElementParameters = createStepParametersWithS3(false);
     ConnectorInfoDTO connectorInfoDTO =
         ConnectorInfoDTO.builder()
             .connectorConfig(
@@ -203,13 +228,30 @@ public class CloudformationStepHelperTest extends CategoryTest {
     assertThat(taskDataArgumentCaptor.getValue().getTaskType()).isEqualTo(TaskType.FETCH_S3_FILE_TASK_NG.name());
     assertThat(response.getTaskRequest()).isNotNull();
     assertThat(response.getPassThroughData()).isNotNull();
+
+    StepElementParameters stepElementParametersWithTags = createStepParametersWithS3(true);
+    mockStatic(StepUtils.class);
+    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+    ArgumentCaptor<TaskData> taskDataArgumentCaptorWithTags = ArgumentCaptor.forClass(TaskData.class);
+    TaskChainResponse responseWithTags = cloudformationStepHelper.startChainLink(
+        cloudformationStepExecutor, getAmbiance(), stepElementParametersWithTags);
+
+    PowerMockito.verifyStatic(StepUtils.class, times(1));
+    StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptorWithTags.capture(), any(), any(), any(), any(), any());
+    assertThat(taskDataArgumentCaptorWithTags.getValue()).isNotNull();
+    assertThat(taskDataArgumentCaptorWithTags.getValue().getParameters()).isNotNull();
+    assertThat(taskDataArgumentCaptorWithTags.getValue().getTaskType())
+        .isEqualTo(TaskType.FETCH_S3_FILE_TASK_NG.name());
+    assertThat(responseWithTags.getTaskRequest()).isNotNull();
+    assertThat(responseWithTags.getPassThroughData()).isNotNull();
   }
 
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
   public void testStartChainLinkWithInline() {
-    StepElementParameters stepElementParameters = createStepParameterInline();
+    StepElementParameters stepElementParameters = createStepParameterInline(false);
     ConnectorInfoDTO connectorInfoDTO =
         ConnectorInfoDTO.builder()
             .connectorConfig(
@@ -229,6 +271,17 @@ public class CloudformationStepHelperTest extends CategoryTest {
     assertThat(taskDataArgumentCaptor.getValue().getTaskType()).isEqualTo(CloudformationTaskType.CREATE_STACK);
     assertThat(taskDataArgumentCaptor.getValue().getRegion()).isEqualTo("region");
     assertThat(taskDataArgumentCaptor.getValue().getStackName()).isEqualTo("stack-name");
+
+    StepElementParameters stepElementParametersWithTags = createStepParameterInline(true);
+    ArgumentCaptor<CloudformationTaskNGParameters> taskDataArgumentCaptorWithTags =
+        ArgumentCaptor.forClass(CloudformationTaskNGParameters.class);
+    cloudformationStepHelper.startChainLink(cloudformationStepExecutor, getAmbiance(), stepElementParametersWithTags);
+    verify(cloudformationStepExecutor, times(2))
+        .executeCloudformationTask(any(), any(), taskDataArgumentCaptorWithTags.capture());
+    assertThat(taskDataArgumentCaptorWithTags.getValue()).isNotNull();
+    assertThat(taskDataArgumentCaptorWithTags.getValue().getTaskType()).isEqualTo(CloudformationTaskType.CREATE_STACK);
+    assertThat(taskDataArgumentCaptorWithTags.getValue().getRegion()).isEqualTo("region");
+    assertThat(taskDataArgumentCaptorWithTags.getValue().getStackName()).isEqualTo("stack-name");
   }
 
   @Test
@@ -272,7 +325,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
             .build();
     doReturn(connectorInfoDTO).when(cdStepHelper).getConnector(any(), any());
 
-    StepElementParameters stepElementParameters = createStepParametersWithGit();
+    StepElementParameters stepElementParameters = createStepParametersWithGit(false);
 
     LinkedHashMap<String, List<String>> parameters = new LinkedHashMap<>();
 
@@ -298,7 +351,10 @@ public class CloudformationStepHelperTest extends CategoryTest {
                                      .filePath("file-path")
                                      .build()))
             .build());
-
+    filesFromMultiRepo.put("tagsFile",
+        FetchFilesResult.builder()
+            .files(Arrays.asList(GitFile.builder().fileContent(TAGS).filePath("file-path").build()))
+            .build());
     filesFromMultiRepo.put("templateFile",
         FetchFilesResult.builder()
             .files(Arrays.asList(GitFile.builder().fileContent("foobar").filePath("file-path").build()))
@@ -309,6 +365,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
     ArgumentCaptor<CloudformationTaskNGParameters> taskDataArgumentCaptor =
         ArgumentCaptor.forClass(CloudformationTaskNGParameters.class);
     doReturn("foobar").when(engineExpressionService).renderExpression(any(), eq("foobar"));
+    doReturn(TAGS).when(engineExpressionService).renderExpression(any(), eq(TAGS));
 
     cloudformationStepHelper.executeNextLink(
         cloudformationStepExecutor, getAmbiance(), stepElementParameters, passThroughData, () -> response);
@@ -321,11 +378,12 @@ public class CloudformationStepHelperTest extends CategoryTest {
     assertThat(taskDataArgumentCaptor.getValue().getStackName()).isEqualTo("stack-name");
     assertThat(taskDataArgumentCaptor.getValue().getParameters().get("AlarmEMail"))
         .isEqualTo("nasser.gonzalez@harness.io");
+    assertThat(taskDataArgumentCaptor.getValue().getTags().equals(TAGS));
 
     filesFromMultiRepo.remove("templateFile");
 
     // Test now the same scenario but with the template been Inline
-    StepElementParameters stepElementParametersInline = createStepParameterInline();
+    StepElementParameters stepElementParametersInline = createStepParameterInline(false);
     ArgumentCaptor<CloudformationTaskNGParameters> taskDataArgumentCaptorInline =
         ArgumentCaptor.forClass(CloudformationTaskNGParameters.class);
     doReturn("test-template").when(engineExpressionService).renderExpression(any(), eq("test-template"));
@@ -341,6 +399,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
     assertThat(taskDataArgumentCaptorInline.getValue().getStackName()).isEqualTo("stack-name");
     assertThat(taskDataArgumentCaptorInline.getValue().getParameters().get("AlarmEMail"))
         .isEqualTo("nasser.gonzalez@harness.io");
+    assertThat(taskDataArgumentCaptor.getValue().getTags().equals(TAGS));
 
     // Test now the same scenario but with the template been in S3 URL
     StepElementParameters stepElementParametersS3Url = createStepParameterS3WithNoParameterFiles();
@@ -375,7 +434,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
             .build();
     doReturn(connectorInfoDTO).when(cdStepHelper).getConnector(any(), any());
 
-    StepElementParameters stepElementParameters = createStepParametersWithS3();
+    StepElementParameters stepElementParameters = createStepParametersWithS3(false);
 
     LinkedHashMap<String, List<String>> parameters = new LinkedHashMap<>();
 
@@ -399,6 +458,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
                               + "]")
                           .build()));
 
+    filesFromMultiRepo.put("tagsFile", Arrays.asList(S3FileDetailResponse.builder().fileContent(TAGS).build()));
     filesFromMultiRepo.put(
         "templateFile", Arrays.asList(S3FileDetailResponse.builder().fileContent("template-content").build()));
 
@@ -407,6 +467,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
     ArgumentCaptor<CloudformationTaskNGParameters> taskDataArgumentCaptor =
         ArgumentCaptor.forClass(CloudformationTaskNGParameters.class);
     doReturn("template-content").when(engineExpressionService).renderExpression(any(), eq("template-content"));
+    doReturn(TAGS).when(engineExpressionService).renderExpression(any(), eq(TAGS));
 
     cloudformationStepHelper.executeNextLink(
         cloudformationStepExecutor, getAmbiance(), stepElementParameters, passThroughData, () -> response);
@@ -419,11 +480,12 @@ public class CloudformationStepHelperTest extends CategoryTest {
     assertThat(taskDataArgumentCaptor.getValue().getStackName()).isEqualTo("stack-name");
     assertThat(taskDataArgumentCaptor.getValue().getParameters().get("AlarmEMail"))
         .isEqualTo("nasser.gonzalez@harness.io");
+    assertThat(taskDataArgumentCaptor.getValue().getTags().equals(TAGS));
 
     filesFromMultiRepo.remove("templateFile");
 
     // Test now the same scenario but with the template been Inline
-    StepElementParameters stepElementParametersInline = createStepParameterInline();
+    StepElementParameters stepElementParametersInline = createStepParameterInline(false);
     ArgumentCaptor<CloudformationTaskNGParameters> taskDataArgumentCaptorInline =
         ArgumentCaptor.forClass(CloudformationTaskNGParameters.class);
     doReturn("test-template").when(engineExpressionService).renderExpression(any(), eq("test-template"));
@@ -439,6 +501,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
     assertThat(taskDataArgumentCaptorInline.getValue().getStackName()).isEqualTo("stack-name");
     assertThat(taskDataArgumentCaptorInline.getValue().getParameters().get("AlarmEMail"))
         .isEqualTo("nasser.gonzalez@harness.io");
+    assertThat(taskDataArgumentCaptor.getValue().getTags().equals(TAGS));
 
     // Test now the same scenario but with the template been in S3 URL
     StepElementParameters stepElementParametersS3Url = createStepParameterS3WithNoParameterFiles();
@@ -456,6 +519,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
     assertThat(taskDataArgumentCaptorS3Url.getValue().getStackName()).isEqualTo("stack-name");
     assertThat(taskDataArgumentCaptorS3Url.getValue().getParameters().get("AlarmEMail"))
         .isEqualTo("nasser.gonzalez@harness.io");
+    assertThat(taskDataArgumentCaptor.getValue().getTags().equals(TAGS));
   }
 
   @Test
@@ -472,7 +536,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
             .build();
     doReturn(connectorInfoDTO).when(cdStepHelper).getConnector(any(), any());
 
-    StepElementParameters stepElementParameters = createStepParameterInline();
+    StepElementParameters stepElementParameters = createStepParameterInline(false);
 
     LinkedHashMap<String, List<String>> parameters = new LinkedHashMap<>();
 
@@ -506,7 +570,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
             .build();
     doReturn(connectorInfoDTO).when(cdStepHelper).getConnector(any(), any());
 
-    StepElementParameters stepElementParameters = createStepParametersWithS3();
+    StepElementParameters stepElementParameters = createStepParametersWithS3(false);
 
     LinkedHashMap<String, List<String>> parameters = new LinkedHashMap<>();
 
@@ -607,14 +671,16 @@ public class CloudformationStepHelperTest extends CategoryTest {
     assertThat(output.getRoleArn()).isEqualTo("role-arn");
   }
 
-  public StepElementParameters createStepParametersWithS3() {
+  public StepElementParameters createStepParametersWithS3(boolean tags) {
     CloudformationCreateStackStepParameters parameters = new CloudformationCreateStackStepParameters();
     RemoteCloudformationTemplateFileSpec templateFileSpec = new RemoteCloudformationTemplateFileSpec();
     CloudformationParametersFileSpec parametersFileSpec = new CloudformationParametersFileSpec();
     CloudformationParametersFileSpec parametersFileSpec2 = new CloudformationParametersFileSpec();
+    RemoteCloudformationTagsFileSpec tagsFileSpec = new RemoteCloudformationTagsFileSpec();
 
     StoreConfigWrapper storeConfigWrapper =
         StoreConfigWrapper.builder()
+            .type(StoreConfigType.S3URL)
             .spec(S3UrlStoreConfig.builder()
                       .urls(ParameterField.createValueField(Arrays.asList("url1")))
                       .region(ParameterField.createValueField("region"))
@@ -624,30 +690,43 @@ public class CloudformationStepHelperTest extends CategoryTest {
     parametersFileSpec.setStore(storeConfigWrapper);
     parametersFileSpec2.setStore(storeConfigWrapper);
     templateFileSpec.setStore(storeConfigWrapper);
-    parameters.setConfiguration(CloudformationCreateStackStepConfiguration.builder()
-                                    .region(ParameterField.createValueField("region"))
-                                    .stackName(ParameterField.createValueField("stack-name"))
-                                    .parametersFilesSpecs(Arrays.asList(parametersFileSpec, parametersFileSpec2))
-                                    .templateFile(CloudformationTemplateFile.builder()
-                                                      .spec(templateFileSpec)
-                                                      .type(CloudformationTemplateFileTypes.Remote)
-                                                      .build())
-                                    .build());
+    tagsFileSpec.setStore(storeConfigWrapper);
+
+    parameters.setConfiguration(
+        CloudformationCreateStackStepConfiguration.builder()
+            .tags(tags
+                    ? CloudformationTags.builder().type(CloudformationTagsFileTypes.Remote).spec(tagsFileSpec).build()
+                    : null)
+            .region(ParameterField.createValueField("region"))
+            .stackName(ParameterField.createValueField("stack-name"))
+            .parametersFilesSpecs(Arrays.asList(parametersFileSpec, parametersFileSpec2))
+            .templateFile(CloudformationTemplateFile.builder()
+                              .spec(templateFileSpec)
+                              .type(CloudformationTemplateFileTypes.Remote)
+                              .build())
+            .build());
     return StepElementParameters.builder().spec(parameters).build();
   }
 
-  public StepElementParameters createStepParameterInline() {
+  public StepElementParameters createStepParameterInline(boolean tags) {
     CloudformationCreateStackStepParameters parameters = new CloudformationCreateStackStepParameters();
     InlineCloudformationTemplateFileSpec templateFileSpec = new InlineCloudformationTemplateFileSpec();
+    InlineCloudformationTagsFileSpec tagsFileSpec = new InlineCloudformationTagsFileSpec();
+
     templateFileSpec.setTemplateBody(ParameterField.createValueField("test-template"));
-    parameters.setConfiguration(CloudformationCreateStackStepConfiguration.builder()
-                                    .region(ParameterField.createValueField("region"))
-                                    .stackName(ParameterField.createValueField("stack-name"))
-                                    .templateFile(CloudformationTemplateFile.builder()
-                                                      .spec(templateFileSpec)
-                                                      .type(CloudformationTemplateFileTypes.Inline)
-                                                      .build())
-                                    .build());
+    tagsFileSpec.setContent(ParameterField.createValueField(TAGS));
+    parameters.setConfiguration(
+        CloudformationCreateStackStepConfiguration.builder()
+            .tags(tags
+                    ? CloudformationTags.builder().type(CloudformationTagsFileTypes.Inline).spec(tagsFileSpec).build()
+                    : null)
+            .region(ParameterField.createValueField("region"))
+            .stackName(ParameterField.createValueField("stack-name"))
+            .templateFile(CloudformationTemplateFile.builder()
+                              .spec(templateFileSpec)
+                              .type(CloudformationTemplateFileTypes.Inline)
+                              .build())
+            .build());
     return StepElementParameters.builder().spec(parameters).build();
   }
 
@@ -666,14 +745,16 @@ public class CloudformationStepHelperTest extends CategoryTest {
     return StepElementParameters.builder().spec(parameters).build();
   }
 
-  public StepElementParameters createStepParametersWithGit() {
+  public StepElementParameters createStepParametersWithGit(boolean tags) {
     CloudformationCreateStackStepParameters parameters = new CloudformationCreateStackStepParameters();
     RemoteCloudformationTemplateFileSpec templateFileSpec = new RemoteCloudformationTemplateFileSpec();
     CloudformationParametersFileSpec parametersFileSpec = new CloudformationParametersFileSpec();
     CloudformationParametersFileSpec parametersFileSpec2 = new CloudformationParametersFileSpec();
+    RemoteCloudformationTagsFileSpec tagsFileSpec = new RemoteCloudformationTagsFileSpec();
 
     StoreConfigWrapper storeConfigWrapper =
         StoreConfigWrapper.builder()
+            .type(StoreConfigType.GIT)
             .spec(GithubStore.builder()
                       .repoName(ParameterField.createValueField("repoName"))
                       .paths(ParameterField.createValueField(Arrays.asList("path1")))
@@ -683,17 +764,24 @@ public class CloudformationStepHelperTest extends CategoryTest {
                       .build())
             .build();
     parametersFileSpec.setStore(storeConfigWrapper);
+    parametersFileSpec.setIdentifier("test-identifier");
     parametersFileSpec2.setStore(storeConfigWrapper);
+    parametersFileSpec2.setIdentifier("test-identifier2");
     templateFileSpec.setStore(storeConfigWrapper);
-    parameters.setConfiguration(CloudformationCreateStackStepConfiguration.builder()
-                                    .parametersFilesSpecs(Arrays.asList(parametersFileSpec, parametersFileSpec2))
-                                    .region(ParameterField.createValueField("region"))
-                                    .stackName(ParameterField.createValueField("stack-name"))
-                                    .templateFile(CloudformationTemplateFile.builder()
-                                                      .spec(templateFileSpec)
-                                                      .type(CloudformationTemplateFileTypes.Remote)
-                                                      .build())
-                                    .build());
+    tagsFileSpec.setStore(storeConfigWrapper);
+    parameters.setConfiguration(
+        CloudformationCreateStackStepConfiguration.builder()
+            .tags(tags
+                    ? CloudformationTags.builder().type(CloudformationTagsFileTypes.Remote).spec(tagsFileSpec).build()
+                    : null)
+            .parametersFilesSpecs(Arrays.asList(parametersFileSpec, parametersFileSpec2))
+            .region(ParameterField.createValueField("region"))
+            .stackName(ParameterField.createValueField("stack-name"))
+            .templateFile(CloudformationTemplateFile.builder()
+                              .spec(templateFileSpec)
+                              .type(CloudformationTemplateFileTypes.Remote)
+                              .build())
+            .build());
     return StepElementParameters.builder().spec(parameters).build();
   }
 }
