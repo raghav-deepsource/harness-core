@@ -31,6 +31,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.Data;
@@ -124,7 +125,7 @@ public class Artifact extends Base {
   private String artifactStreamId;
   private String artifactSourceName;
   @Transient private String artifactStreamName;
-  private ArtifactMetadata metadata;
+  private ArtifactMetadata metadata = new ArtifactMetadata(new HashMap<>());
   @Transient @JsonIgnore public ArtifactLabelEvaluator label;
   @NotEmpty private String displayName;
   private String revision;
@@ -360,7 +361,7 @@ public class Artifact extends Base {
     protected String appId;
     private String artifactStreamId;
     private String artifactSourceName;
-    private ArtifactMetadata metadata;
+    private ArtifactMetadata metadata = new ArtifactMetadata();
     private ArtifactLabelEvaluator label;
     private String displayName;
     private String revision;

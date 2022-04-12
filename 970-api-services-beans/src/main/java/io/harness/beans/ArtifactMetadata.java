@@ -9,6 +9,7 @@ package io.harness.beans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,7 +21,7 @@ public class ArtifactMetadata extends HashMap<String, String> {
   }
 
   public ArtifactMetadata(Map<String, String> map) {
-    super(map);
+    super(EmptyPredicate.isEmpty(map) ? new HashMap<>() : map);
   }
 
   public String getSHA() {
