@@ -71,6 +71,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
@@ -3943,7 +3944,7 @@ public class ArtifactStreamServiceTest extends WingsBaseTest {
                                            .withCreatedAt(System.currentTimeMillis())
                                            .withCreatedBy(EmbeddedUser.builder().uuid("USER_ID").build());
 
-    persistence.save(artifactBuilder.withMetadata(ImmutableMap.of(BUILD_NO, name)).but().build());
+    persistence.save(artifactBuilder.withMetadata(new ArtifactMetadata(ImmutableMap.of(BUILD_NO, name))).but().build());
   }
 
   @Test

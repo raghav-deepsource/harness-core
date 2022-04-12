@@ -288,6 +288,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
 import io.harness.beans.OrchestrationWorkflowType;
@@ -5203,7 +5204,7 @@ public class WorkflowServiceTest extends WingsBaseTest {
     executionArgs.setArtifacts(asList(anArtifact()
                                           .withUuid("art1")
                                           .withArtifactStreamId(ARTIFACT_STREAM_ID)
-                                          .withMetadata(Collections.singletonMap("buildNo", "1"))
+                                          .withMetadata(new ArtifactMetadata(Collections.singletonMap("buildNo", "1")))
                                           .build(),
         anArtifact().withUuid("art2").build(), anArtifact().withUuid("art3").build()));
     WorkflowExecution workflowExecution = WorkflowExecution.builder().executionArgs(executionArgs).build();

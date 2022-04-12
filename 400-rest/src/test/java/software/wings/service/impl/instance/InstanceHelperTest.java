@@ -38,6 +38,7 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.FeatureName;
@@ -245,7 +246,7 @@ public class InstanceHelperTest extends WingsBaseTest {
             .withDisplayName("artifact1")
             .withArtifactStreamId(ARTIFACT_STREAM_ID_1)
             .withArtifactSourceName("sourceName")
-            .withMetadata(Collections.singletonMap("buildNo", "1.0"))
+            .withMetadata(new ArtifactMetadata(Collections.singletonMap("buildNo", "1.0")))
             .build();
       } else {
         return Artifact.Builder.anArtifact()
@@ -253,7 +254,7 @@ public class InstanceHelperTest extends WingsBaseTest {
             .withDisplayName("artifact2")
             .withArtifactStreamId(ARTIFACT_STREAM_ID_2)
             .withArtifactSourceName("sourceName")
-            .withMetadata(Collections.singletonMap("buildNo", "1.0"))
+            .withMetadata(new ArtifactMetadata(Collections.singletonMap("buildNo", "1.0")))
             .build();
       }
     });

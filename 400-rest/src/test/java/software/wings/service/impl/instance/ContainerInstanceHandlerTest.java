@@ -65,6 +65,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.FeatureName;
 import io.harness.beans.PageResponse;
@@ -887,7 +888,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                          .withUuid(ARTIFACT_ID)
                          .withArtifactStreamId(ARTIFACT_STREAM_ID)
                          .withAppId("app_id")
-                         .withMetadata(metadata)
+                         .withMetadata(new ArtifactMetadata(metadata))
                          .build());
 
     containerInstanceHandler.handleNewDeployment(Arrays.asList(DeploymentSummary.builder()
@@ -2362,7 +2363,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                             .withUuid("artifactId")
                             .withArtifactStreamId("artifactStreamId")
                             .withAppId(APP_ID)
-                            .withMetadata(metadata)
+                            .withMetadata(new ArtifactMetadata(metadata))
                             .build();
 
     List<K8sPod> existingK8sPod =

@@ -41,6 +41,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
@@ -312,7 +313,8 @@ public class ArtifactCollectionStateTest extends CategoryTest {
         .thenReturn(BuildDetails.Builder.aBuildDetails().withNumber("1.1").build());
     Map<String, String> map = new HashMap<>();
     map.put("buildNo", "1.1");
-    Artifact artifact = Artifact.Builder.anArtifact().withMetadata(map).withUuid(ARTIFACT_ID).build();
+    Artifact artifact =
+        Artifact.Builder.anArtifact().withMetadata(new ArtifactMetadata(map)).withUuid(ARTIFACT_ID).build();
     when(artifactCollectionUtils.getArtifact(any(), any())).thenReturn(artifact);
     when(artifactService.create(artifact, nexusArtifactStream, false)).thenReturn(artifact);
     artifactCollectionState.execute(executionContext);
@@ -392,7 +394,8 @@ public class ArtifactCollectionStateTest extends CategoryTest {
         .thenReturn(Artifact.Builder.anArtifact().build());
     Map<String, String> map = new HashMap<>();
     map.put("buildNo", "1.1");
-    Artifact artifact = Artifact.Builder.anArtifact().withMetadata(map).withUuid(ARTIFACT_ID).build();
+    Artifact artifact =
+        Artifact.Builder.anArtifact().withMetadata(new ArtifactMetadata(map)).withUuid(ARTIFACT_ID).build();
     when(artifactCollectionUtils.getArtifact(any(), any())).thenReturn(artifact);
 
     ExecutionResponse executionResponse = artifactCollectionState.execute(executionContext);
@@ -424,7 +427,8 @@ public class ArtifactCollectionStateTest extends CategoryTest {
         .thenReturn(Artifact.Builder.anArtifact().build());
     Map<String, String> map = new HashMap<>();
     map.put("buildNo", "1.1");
-    Artifact artifact = Artifact.Builder.anArtifact().withMetadata(map).withUuid(ARTIFACT_ID).build();
+    Artifact artifact =
+        Artifact.Builder.anArtifact().withMetadata(new ArtifactMetadata(map)).withUuid(ARTIFACT_ID).build();
     when(artifactCollectionUtils.getArtifact(any(), any())).thenReturn(artifact);
 
     ExecutionResponse executionResponse = artifactCollectionState.execute(executionContext);

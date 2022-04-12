@@ -83,6 +83,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.PageResponse;
@@ -283,7 +284,8 @@ public class ApprovalStateTest extends WingsBaseTest {
 
     Map<String, String> metadata = new HashMap<>();
     metadata.put(ArtifactMetadataKeys.buildNo, "2");
-    Artifact artifact = anArtifact().withMetadata(metadata).withArtifactSourceName("Artifact").build();
+    Artifact artifact =
+        anArtifact().withMetadata(new ArtifactMetadata(metadata)).withArtifactSourceName("Artifact").build();
     ExecutionArgs executionArgs = new ExecutionArgs();
     executionArgs.setArtifacts(Collections.singletonList(artifact));
 
