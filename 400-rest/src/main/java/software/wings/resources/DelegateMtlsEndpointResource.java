@@ -10,7 +10,7 @@ package software.wings.resources;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
-import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_DELEGATES;
+import static software.wings.security.PermissionAttribute.PermissionType.ACCOUNT_MANAGEMENT;
 import static software.wings.security.PermissionAttribute.ResourceType.DELEGATE;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -31,6 +31,7 @@ import software.wings.service.intfc.HarnessUserGroupService;
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
+import io.dropwizard.jersey.PATCH;
 import io.swagger.annotations.Api;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
@@ -60,8 +61,7 @@ public class DelegateMtlsEndpointResource {
   @Path("accounts/{accountId}/delegate-mtls/endpoint")
   @Timed
   @ExceptionMetered
-  //  @AuthRule(skipAuth = true)
-  @AuthRule(permissionType = MANAGE_DELEGATES)
+  @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
   public RestResponse<DelegateMtlsEndpointDetails> createEndpointForAccount(
       @Parameter(required = true, description = "The account id.") @PathParam("accountId") @NotNull String accountId,
       @RequestBody(required = true, description = "The details of the delegate mTLS endpoint to create.")
@@ -76,8 +76,7 @@ public class DelegateMtlsEndpointResource {
   @Path("accounts/{accountId}/delegate-mtls/endpoint")
   @Timed
   @ExceptionMetered
-  //  @AuthRule(skipAuth = true)
-  @AuthRule(permissionType = MANAGE_DELEGATES)
+  @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
   public RestResponse<DelegateMtlsEndpointDetails> updateEndpointForAccount(
       @Parameter(required = true, description = "The account id.") @PathParam("accountId") @NotNull String accountId,
       @RequestBody(required = true, description = "The updated details of the delegate mTLS endpoint.")
@@ -88,10 +87,26 @@ public class DelegateMtlsEndpointResource {
     }
   }
 
+  @PATCH
+  @Path("accounts/{accountId}/delegate-mtls/endpoint")
+  @Timed
+  @ExceptionMetered
+  @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
+  public RestResponse<DelegateMtlsEndpointDetails> patchEndpointForAccount(
+      @Parameter(required = true, description = "The account id.") @PathParam("accountId") @NotNull String accountId,
+      @RequestBody(required = true, description = "A subset of the details to update for the delegate mTLS endpoint.")
+      @NotNull DelegateMtlsEndpointRequest patchRequest) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      this.ensureOperationIsExecutedByHarnessSupport();
+      return new RestResponse<>(this.delegateMtlsEndpointService.patchEndpointForAccount(accountId, patchRequest));
+    }
+  }
+
   @DELETE
   @Path("accounts/{accountId}/delegate-mtls/endpoint")
   @Timed
   @ExceptionMetered
+  @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
   public RestResponse<Boolean> deleteEndpointForAccount(
       @Parameter(required = true, description = "The account id.") @PathParam("accountId") @NotNull String accountId) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
@@ -104,8 +119,9 @@ public class DelegateMtlsEndpointResource {
   @Path("accounts/{accountId}/delegate-mtls/endpoint")
   @Timed
   @ExceptionMetered
+  @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
   public RestResponse<DelegateMtlsEndpointDetails> getEndpointForAccount(
-      @Parameter(required = false, description = "The account id.") @PathParam("accountId") @NotNull String accountId) {
+      @Parameter(required = true, description = "The account id.") @PathParam("accountId") @NotNull String accountId) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       this.ensureOperationIsExecutedByHarnessSupport();
       return new RestResponse<>(this.delegateMtlsEndpointService.getEndpointForAccount(accountId));
@@ -117,7 +133,7 @@ public class DelegateMtlsEndpointResource {
   @Timed
   @ExceptionMetered
   @AuthRule(skipAuth = true)
-  public RestResponse<Boolean> isDomainPrefixAvailable(@Parameter(required = false,
+  public RestResponse<Boolean> isDomainPrefixAvailable(@Parameter(required = true,
       description = "The domain prefix to check.") @QueryParam("domainPrefix") @NotNull String domainPrefix) {
     return new RestResponse<>(this.delegateMtlsEndpointService.isDomainPrefixAvailable(domainPrefix));
   }

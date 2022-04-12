@@ -16,6 +16,7 @@ import io.harness.delegate.beans.DelegateMtlsEndpointRequest;
 public interface DelegateMtlsEndpointService {
   DelegateMtlsEndpointDetails createEndpointForAccount(String accountId, DelegateMtlsEndpointRequest endpointRequest);
   DelegateMtlsEndpointDetails updateEndpointForAccount(String accountId, DelegateMtlsEndpointRequest endpointRequest);
+  DelegateMtlsEndpointDetails patchEndpointForAccount(String accountId, DelegateMtlsEndpointRequest endpointRequest);
   DelegateMtlsEndpointDetails getEndpointForAccount(String accountId);
   boolean deleteEndpointForAccount(String accountId);
   boolean isDomainPrefixAvailable(String fqdn);
