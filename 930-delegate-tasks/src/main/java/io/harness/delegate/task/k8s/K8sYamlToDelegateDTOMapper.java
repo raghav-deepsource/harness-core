@@ -46,7 +46,11 @@ public class K8sYamlToDelegateDTOMapper {
 
     switch (kubernetesCredentialType) {
       case INHERIT_FROM_DELEGATE:
-        return createKubernetesConfigWhenInheritingCredentials(namespaceNotBlank);
+        if (isRunningInCluster()) {
+          return getKubernetesConfigFromServiceAccount(namespaceNotBlank);
+        } else {
+          return getKubernetesConfigFromDefaultKubeConfigFile(namespaceNotBlank);
+        }
 
       case MANUAL_CREDENTIALS:
         return getKubernetesConfigFromManualCredentials(
@@ -55,14 +59,6 @@ public class K8sYamlToDelegateDTOMapper {
       default:
         throw new UnsupportedOperationException(
             String.format("Unsupported Kubernetes Credential type: [%s]", kubernetesCredentialType));
-    }
-  }
-
-  public KubernetesConfig createKubernetesConfigWhenInheritingCredentials(String namespaceNotBlank) {
-    if (isRunningInCluster()) {
-      return getKubernetesConfigFromServiceAccount(namespaceNotBlank);
-    } else {
-      return getKubernetesConfigFromDefaultKubeConfigFile(namespaceNotBlank);
     }
   }
 
