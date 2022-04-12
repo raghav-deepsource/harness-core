@@ -876,6 +876,13 @@ public class WingsModule extends AbstractModule implements ServersModule {
   }
 
   @Provides
+  @Named("delegateMtlsSubdomain")
+  @Singleton
+  String domain() {
+    return configuration.getDelegateMtlsSubdomain();
+  }
+
+  @Provides
   public BugsnagErrorReporterConfiguration bugsnagErrorReporterConfiguration() {
     return new BugsnagErrorReporterConfiguration(
         configuration.isTrialRegistrationAllowed(), configuration.getBugsnagApiKey());

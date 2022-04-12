@@ -18,5 +18,5 @@ public interface DelegateMtlsEndpointService {
   DelegateMtlsEndpointDetails updateEndpointForAccount(String accountId, DelegateMtlsEndpointRequest endpointRequest);
   DelegateMtlsEndpointDetails getEndpointForAccount(String accountId);
   boolean deleteEndpointForAccount(String accountId);
-  boolean isEndpointFqdnAvailable(String fqdn);
+  boolean isDomainPrefixAvailable(String fqdn);
 }

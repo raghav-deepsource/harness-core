@@ -15,15 +15,19 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.*;
 import io.harness.delegate.beans.DelegateMtlsEndpoint.DelegateMtlsEndpointKeys;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
 import io.harness.service.intfc.DelegateMtlsEndpointService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.mongodb.DuplicateKeyException;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.validator.routines.UrlValidator;
 import org.mongodb.morphia.FindAndModifyOptions;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -33,20 +37,29 @@ import org.mongodb.morphia.query.UpdateOperations;
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointService {
+  private static UrlValidator urlValidator = new UrlValidator(UrlValidator.ALLOW_ALL_SCHEMES);
+
   private final HPersistence persistence;
+  private final String delegateMtlsSubdomain;
 
   @Inject
-  public DelegateMtlsEndpointServiceImpl(HPersistence persistence) {
+  public DelegateMtlsEndpointServiceImpl(
+      HPersistence persistence, @Named("delegateMtlsSubdomain") String delegateMtlsSubdomain) {
     this.persistence = persistence;
+    this.delegateMtlsSubdomain = delegateMtlsSubdomain;
   }
 
   @Override
   public DelegateMtlsEndpointDetails createEndpointForAccount(
       String accountId, DelegateMtlsEndpointRequest endpointRequest) {
+    // validate request before further processing
+    this.validateEndpointRequest(endpointRequest);
+
+    String fqdn = this.getFqdn(endpointRequest.getDomainPrefix());
     DelegateMtlsEndpoint endpoint = DelegateMtlsEndpoint.builder()
                                         .uuid(generateUuid())
                                         .accountId(accountId)
-                                        .fqdn(endpointRequest.getFqdn())
+                                        .fqdn(fqdn)
                                         .mode(endpointRequest.getMode())
                                         .caCertificates(endpointRequest.getCaCertificates())
                                         .build();
@@ -55,8 +68,8 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
       persistence.save(endpoint);
     } catch (DuplicateKeyException e) {
       // For the exception message we assume that uuid / accountId isn't the cause of the duplicate, but it's the fqdn.
-      throw new InvalidRequestException(
-          format("Delegate mTLS endpoint with given fqdn '%s' already exists.", endpointRequest.getFqdn()));
+      throw new InvalidRequestException(format(
+          "Delegate mTLS endpoint with given domain prefix '%s' already exists.", endpointRequest.getDomainPrefix()));
     }
 
     return this.buildEndpointDetails(endpoint);
@@ -65,17 +78,30 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
   @Override
   public DelegateMtlsEndpointDetails updateEndpointForAccount(
       String accountId, DelegateMtlsEndpointRequest endpointRequest) {
+    // validate request before further processing
+    this.validateEndpointRequest(endpointRequest);
+
+    String fqdn = this.getFqdn(endpointRequest.getDomainPrefix());
     Query<DelegateMtlsEndpoint> query =
         persistence.createQuery(DelegateMtlsEndpoint.class).filter(DelegateMtlsEndpointKeys.accountId, accountId);
 
     UpdateOperations<DelegateMtlsEndpoint> updateOperations =
         persistence.createUpdateOperations(DelegateMtlsEndpoint.class)
-            .set(DelegateMtlsEndpointKeys.fqdn, endpointRequest.getFqdn())
+            .set(DelegateMtlsEndpointKeys.fqdn, fqdn)
             .set(DelegateMtlsEndpointKeys.caCertificates, endpointRequest.getCaCertificates())
             .set(DelegateMtlsEndpointKeys.mode, endpointRequest.getMode());
 
-    DelegateMtlsEndpoint updatedEndpoint =
-        persistence.findAndModify(query, updateOperations, new FindAndModifyOptions());
+    // We want to return the previous entity
+    FindAndModifyOptions options = new FindAndModifyOptions();
+    options.returnNew(true);
+    options.upsert(false);
+
+    DelegateMtlsEndpoint updatedEndpoint = persistence.findAndModify(query, updateOperations, options);
+
+    if (updatedEndpoint == null) {
+      throw new EntityNotFoundException(
+          String.format("Delegate mTLS endpoint for account '%s' wasn't found.", accountId));
+    }
 
     return this.buildEndpointDetails(updatedEndpoint);
   }
@@ -88,18 +114,11 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
                                         .get();
 
     if (endpoint == null) {
-      return null;
+      throw new EntityNotFoundException(
+          String.format("Delegate mTLS endpoint for account '%s' wasn't found.", accountId));
     }
 
-    return endpoint == null ? null : this.buildEndpointDetails(endpoint);
-  }
-
-  @Override
-  public boolean isEndpointFqdnAvailable(String fqdn) {
-    DelegateMtlsEndpoint endpoint =
-        persistence.createQuery(DelegateMtlsEndpoint.class).field(DelegateMtlsEndpointKeys.fqdn).equal(fqdn).get();
-
-    return endpoint == null;
+    return this.buildEndpointDetails(endpoint);
   }
 
   @Override
@@ -110,6 +129,15 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
     return persistence.delete(query);
   }
 
+  @Override
+  public boolean isDomainPrefixAvailable(String domainPrefix) {
+    String fqdn = this.getFqdn(domainPrefix);
+    DelegateMtlsEndpoint endpoint =
+        persistence.createQuery(DelegateMtlsEndpoint.class).field(DelegateMtlsEndpointKeys.fqdn).equal(fqdn).get();
+
+    return endpoint == null;
+  }
+
   private DelegateMtlsEndpointDetails buildEndpointDetails(DelegateMtlsEndpoint endpoint) {
     return DelegateMtlsEndpointDetails.builder()
         .uuid(endpoint.getUuid())
@@ -118,5 +146,36 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
         .caCertificates(endpoint.getCaCertificates())
         .mode(endpoint.getMode())
         .build();
+  }
+
+  private void validateEndpointRequest(DelegateMtlsEndpointRequest endpointRequest) {
+    // TODO: Add more CERT validations.
+    if (StringUtils.isBlank(endpointRequest.getCaCertificates())) {
+      throw new InvalidRequestException("No CA certificate was provided for the delegate mTLS endpoint.");
+    }
+
+    // validate FQDN (has to be single level and produce a valid fqdn)
+    if (StringUtils.isBlank(endpointRequest.getDomainPrefix())) {
+      throw new InvalidRequestException("No domain prefix was provided for the delegate mTLS endpoint.");
+    }
+
+    if (endpointRequest.getDomainPrefix().contains(".")) {
+      throw new InvalidRequestException(
+          String.format("Provided domain prefix '%s' has more than one level.", endpointRequest.getDomainPrefix()));
+    }
+
+    String fqdn = this.getFqdn(endpointRequest.getDomainPrefix());
+    if (!urlValidator.isValid("http://" + fqdn)) {
+      throw new InvalidRequestException(String.format(
+          "Provided domain prefix '%s' is invalid (full fqdn: '%s').", endpointRequest.getDomainPrefix(), fqdn));
+    }
+
+    if (endpointRequest.getMode() == null) {
+      throw new InvalidRequestException("No delegate mTLS mode was provided.");
+    }
+  }
+
+  private String getFqdn(String domainPrefix) {
+    return String.format("%s.%s", domainPrefix, this.delegateMtlsSubdomain);
   }
 }

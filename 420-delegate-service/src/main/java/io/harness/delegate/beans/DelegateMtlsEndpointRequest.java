@@ -25,7 +25,7 @@ import lombok.Value;
 @Value
 @Builder
 public class DelegateMtlsEndpointRequest {
-  private String fqdn;
+  private String domainPrefix;
   private String caCertificates;
   private DelegateMtlsMode mode;
 }

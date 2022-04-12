@@ -70,6 +70,7 @@ clusterName: ""
 deploymentClusterName: ""
 bugsnagApiKey: ""
 numberOfRemindersBeforeAccountDeletion: 3
+delegateMtlsSubdomain: "delegate.local.harness.io"
 
 jobsFrequencyConfig:
   accountLicenseCheckJobFrequencyInMinutes: 60
@@ -316,7 +317,7 @@ elasticsearch:
   mongoTagKey: none
   mongoTagValue: none
 
-watcherMetadataUrl: file:///local-storage/wingswatchers/watcherlocal.txt
+watcherMetadataUrl: file://t/local-storage/wingswatchers/watcherlocal.txt
 
 delegateMetadataUrl: file:///local-storage/wingsdelegates/delegatelocal.txt
 
