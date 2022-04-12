@@ -982,3 +982,7 @@ fi
 if [[ "" != "$TEMPLATE_SERVICE_ENDPOINT" ]]; then
   yq write -i $CONFIG_FILE templateServiceClientConfig.baseUrl "$TEMPLATE_SERVICE_ENDPOINT"
 fi
+
+if [[ "" != "$DELEGATE_MTLS_SUBDOMAIN" ]]; then
+  yq write -i $CONFIG_FILE delegateMtlsSubdomain $DELEGATE_MTLS_SUBDOMAIN
+fi

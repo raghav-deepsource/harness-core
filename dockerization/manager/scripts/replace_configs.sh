@@ -1002,3 +1002,7 @@ fi
 if [[ "" != "$INCORRECT_ATTEMPTS_UNTIL_SECOPS_NOTIFIED" ]]; then
  yq write -i config.yml totp.incorrectAttemptsUntilSecOpsNotified "$INCORRECT_ATTEMPTS_UNTIL_SECOPS_NOTIFIED"
 fi
+
+if [[ "" != "$DELEGATE_MTLS_SUBDOMAIN" ]]; then
+  yq write -i $CONFIG_FILE delegateMtlsSubdomain $DELEGATE_MTLS_SUBDOMAIN
+fi
