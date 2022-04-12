@@ -75,7 +75,10 @@ public class ACLResourceImpl implements ACLResource {
     io.harness.security.dto.Principal contextPrincipal = SecurityContextBuilder.getPrincipal();
     List<PermissionCheckDTO> permissionChecksDTOs = dto.getPermissions();
     Principal principalToCheckPermissionsFor = dto.getPrincipal();
-
+    if (permissionChecksDTOs == null || permissionChecksDTOs.isEmpty()) {
+      return ResponseDTO.newResponse(
+          AccessCheckResponseDTO.builder().principal(principalToCheckPermissionsFor).build());
+    }
     boolean preconditionsValid = checkPreconditions(contextPrincipal, principalToCheckPermissionsFor);
 
     if (serviceContextAndNoPrincipalInBody(contextPrincipal, principalToCheckPermissionsFor)) {
