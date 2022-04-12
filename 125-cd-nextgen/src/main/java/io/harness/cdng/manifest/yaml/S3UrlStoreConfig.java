@@ -80,6 +80,12 @@ public class S3UrlStoreConfig implements FileStorageStoreConfig, Visitable, With
     if (!ParameterField.isNull(s3UrlStoreConfig.getConnectorRef())) {
       resultantS3UrlStore = resultantS3UrlStore.withConnectorRef(s3UrlStoreConfig.getConnectorRef());
     }
+    if (!ParameterField.isNull(s3UrlStoreConfig.getUrls())) {
+      resultantS3UrlStore = resultantS3UrlStore.withUrls(s3UrlStoreConfig.getUrls());
+    }
+    if (!ParameterField.isNull(s3UrlStoreConfig.getRegion())) {
+      resultantS3UrlStore = resultantS3UrlStore.withRegion(s3UrlStoreConfig.getRegion());
+    }
     return resultantS3UrlStore;
   }
 

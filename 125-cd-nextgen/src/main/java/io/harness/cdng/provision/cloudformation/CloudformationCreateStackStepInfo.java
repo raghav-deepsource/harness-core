@@ -59,6 +59,9 @@ public class CloudformationCreateStackStepInfo
   public Map<String, ParameterField<String>> extractConnectorRefs() {
     Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
     // Extract connector refs from the step configuration
+    if (cloudformationStepConfiguration.getConnectorRef() != null) {
+      connectorRefMap.put("configuration.connectorRef", cloudformationStepConfiguration.getConnectorRef());
+    }
     if (cloudformationStepConfiguration.getTemplateFile().getSpec().getType().equals(
             CloudformationTemplateFileTypes.Remote)) {
       RemoteCloudformationTemplateFileSpec remoteTemplateFile =
@@ -105,7 +108,7 @@ public class CloudformationCreateStackStepInfo
   }
 
   void validateSpecParameters() {
-    Validator.notNullCheck("Terraform Step configuration is null", cloudformationStepConfiguration);
+    Validator.notNullCheck("Cloudformation Step configuration is null", cloudformationStepConfiguration);
     cloudformationStepConfiguration.validateParams();
   }
 }
