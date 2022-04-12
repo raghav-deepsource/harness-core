@@ -207,7 +207,8 @@ public class DelegateSetupResourceV3 {
       })
   public RestResponse<Double>
   getConnectedRatioWithPrimary(@Parameter(description = "Target version for which the ratio is calculated") @QueryParam(
-      "targetVersion") @NotEmpty String targetVersion, @QueryParam("accountId") String accountId) {
+                                   "targetVersion") @NotEmpty String targetVersion,
+      @QueryParam("accountId") String accountId) {
     return new RestResponse<>(delegateService.getConnectedRatioWithPrimary(targetVersion, accountId));
   }
 
@@ -217,15 +218,16 @@ public class DelegateSetupResourceV3 {
   @ExceptionMetered
   @PublicApi
   @Operation(operationId = "getConnectedDelegatesRatio",
-    summary = "Calculates ratio of connected Delegates with specific version.",
-    responses =
-    {
+      summary = "Calculates ratio of connected Delegates with specific version.",
+      responses =
+      {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Double value representing the calculated ratio.")
-    })
+      })
   public RestResponse<Double>
   getConnectedDelegatesRatio(@Parameter(description = "Target version for which the ratio is calculated") @QueryParam(
-          "targetVersion") @NotEmpty String targetVersion, @QueryParam("accountId") String accountId) {
+                                 "targetVersion") @NotEmpty String targetVersion,
+      @QueryParam("accountId") String accountId) {
     return new RestResponse<>(delegateService.getConnectedDelegatesRatio(targetVersion, accountId));
   }
 

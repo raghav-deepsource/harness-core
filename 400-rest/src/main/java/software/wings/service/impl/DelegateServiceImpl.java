@@ -73,7 +73,6 @@ import static org.apache.commons.lang3.StringUtils.substringAfter;
 import static org.apache.commons.lang3.StringUtils.substringBefore;
 import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
-import com.hazelcast.internal.util.CollectionUtil;
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -234,6 +233,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.protobuf.StringValue;
+import com.hazelcast.internal.util.CollectionUtil;
 import com.mongodb.DuplicateKeyException;
 import com.mongodb.MongoGridFSException;
 import freemarker.cache.ClassTemplateLoader;
@@ -589,7 +589,7 @@ public class DelegateServiceImpl implements DelegateService {
     DelegateConfiguration delegateConfiguration = accountService.getDelegateConfiguration(primaryDelegateForAccount);
 
     // This is a case when no prior delegate version is available for specific account_id
-    if(delegateConfiguration == null || CollectionUtil.isEmpty(delegateConfiguration.getDelegateVersions())) {
+    if (delegateConfiguration == null || CollectionUtil.isEmpty(delegateConfiguration.getDelegateVersions())) {
       return 1.0;
     }
     String primaryVersion = delegateConfiguration.getDelegateVersions().get(0).split("-")[0];
@@ -608,11 +608,14 @@ public class DelegateServiceImpl implements DelegateService {
   @Override
   public Double getConnectedDelegatesRatio(String version, String accountId) {
     long totalDelegatesWithVersion = delegateConnectionDao.numberOfDelegateConnectionsPerVersion(version, accountId);
-    if(totalDelegatesWithVersion == 0) {
+    if (totalDelegatesWithVersion == 0) {
       return 0.0;
     }
-    long connectedDelegatesWithVersion = delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(version, accountId);
-    return BigDecimal.valueOf((double) connectedDelegatesWithVersion / (double) totalDelegatesWithVersion).setScale(3, RoundingMode.HALF_UP).doubleValue();
+    long connectedDelegatesWithVersion =
+        delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(version, accountId);
+    return BigDecimal.valueOf((double) connectedDelegatesWithVersion / (double) totalDelegatesWithVersion)
+        .setScale(3, RoundingMode.HALF_UP)
+        .doubleValue();
   }
 
   @Override

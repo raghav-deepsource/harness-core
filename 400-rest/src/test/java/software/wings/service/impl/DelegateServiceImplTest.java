@@ -1457,14 +1457,14 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Owner(developers = ANUPAM)
   @Category(UnitTests.class)
   public void testGetConnectedRatioWithPrimary() {
-    DelegateConfiguration delegateConfiguration = DelegateConfiguration.builder()
-            .delegateVersions(Arrays.asList(VERSION))
-            .build();
+    DelegateConfiguration delegateConfiguration =
+        DelegateConfiguration.builder().delegateVersions(Arrays.asList(VERSION)).build();
     when(accountService.getDelegateConfiguration(ACCOUNT_ID)).thenReturn(delegateConfiguration);
     when(delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(VERSION, ACCOUNT_ID)).thenReturn(5L);
     when(delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(TARGET_VERSION, ACCOUNT_ID)).thenReturn(1L);
     Double ratio = delegateService.getConnectedRatioWithPrimary(TARGET_VERSION, ACCOUNT_ID);
-    Double expectedRatio = BigDecimal.valueOf((double) 1L / (double) 5L).setScale(3, RoundingMode.HALF_UP).doubleValue();
+    Double expectedRatio =
+        BigDecimal.valueOf((double) 1L / (double) 5L).setScale(3, RoundingMode.HALF_UP).doubleValue();
     assertThat(ratio).isEqualTo(expectedRatio);
   }
 
@@ -1472,14 +1472,14 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Owner(developers = ANUPAM)
   @Category(UnitTests.class)
   public void testGetConnectedRatioWithPrimaryWithNoAccountID() {
-    DelegateConfiguration delegateConfiguration = DelegateConfiguration.builder()
-            .delegateVersions(Arrays.asList(VERSION))
-            .build();
+    DelegateConfiguration delegateConfiguration =
+        DelegateConfiguration.builder().delegateVersions(Arrays.asList(VERSION)).build();
     when(accountService.getDelegateConfiguration(Account.GLOBAL_ACCOUNT_ID)).thenReturn(delegateConfiguration);
     when(delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(VERSION, null)).thenReturn(5L);
     when(delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(TARGET_VERSION, null)).thenReturn(1L);
     Double ratio = delegateService.getConnectedRatioWithPrimary(TARGET_VERSION, null);
-    Double expectedRatio = BigDecimal.valueOf((double) 1L / (double) 5L).setScale(3, RoundingMode.HALF_UP).doubleValue();
+    Double expectedRatio =
+        BigDecimal.valueOf((double) 1L / (double) 5L).setScale(3, RoundingMode.HALF_UP).doubleValue();
     assertThat(ratio).isEqualTo(expectedRatio);
   }
 

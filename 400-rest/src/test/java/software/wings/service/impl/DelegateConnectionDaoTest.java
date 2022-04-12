@@ -8,7 +8,6 @@
 package software.wings.service.impl;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-
 import static io.harness.rule.OwnerRule.ANUPAM;
 import static io.harness.rule.OwnerRule.ARPIT;
 import static io.harness.rule.OwnerRule.BRETT;
@@ -162,13 +161,13 @@ public class DelegateConnectionDaoTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testNumberOfActiveDelegateConnectionsPerVersionWithNoAccountID() {
     persistence.save(DelegateConnection.builder()
-            .accountId(accountId)
-            .uuid(generateUuid())
-            .delegateId(delegateId)
-            .disconnected(false)
-            .lastHeartbeat(System.currentTimeMillis())
-            .version(VERSION)
-            .build());
+                         .accountId(accountId)
+                         .uuid(generateUuid())
+                         .delegateId(delegateId)
+                         .disconnected(false)
+                         .lastHeartbeat(System.currentTimeMillis())
+                         .version(VERSION)
+                         .build());
 
     assertThat(delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(VERSION, null)).isEqualTo(1L);
   }
@@ -178,15 +177,14 @@ public class DelegateConnectionDaoTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testNumberOfActiveDelegateConnectionsPerVersion() {
     persistence.save(DelegateConnection.builder()
-            .accountId(accountId)
-            .uuid(generateUuid())
-            .delegateId(delegateId)
-            .disconnected(false)
-            .lastHeartbeat(System.currentTimeMillis())
-            .version(VERSION)
-            .build());
+                         .accountId(accountId)
+                         .uuid(generateUuid())
+                         .delegateId(delegateId)
+                         .disconnected(false)
+                         .lastHeartbeat(System.currentTimeMillis())
+                         .version(VERSION)
+                         .build());
 
     assertThat(delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(VERSION, accountId)).isEqualTo(1L);
   }
-
 }

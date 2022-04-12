@@ -21,7 +21,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateConnectionDetails;
 import io.harness.persistence.HPersistence;
 
-import org.jooq.tools.StringUtils;
 import software.wings.beans.DelegateConnection;
 import software.wings.beans.DelegateConnection.DelegateConnectionKeys;
 
@@ -33,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.jooq.tools.StringUtils;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
 
@@ -53,10 +53,12 @@ public class DelegateConnectionDao {
   }
 
   public long numberOfActiveDelegateConnectionsPerVersion(String version, String accountId) {
-    if(StringUtils.isEmpty(accountId)) {
+    if (StringUtils.isEmpty(accountId)) {
       return createQueryForAllActiveDelegateConnections(version).count();
     }
-    return createQueryForAllActiveDelegateConnections(version).filter(DelegateConnectionKeys.accountId, accountId).count();
+    return createQueryForAllActiveDelegateConnections(version)
+        .filter(DelegateConnectionKeys.accountId, accountId)
+        .count();
   }
 
   private Query<DelegateConnection> createQueryForAllActiveDelegateConnections(String version) {
@@ -69,9 +71,9 @@ public class DelegateConnectionDao {
   }
 
   public long numberOfDelegateConnectionsPerVersion(String version, String accountId) {
-    Query<DelegateConnection> query =  persistence.createQuery(DelegateConnection.class, excludeAuthority)
-        .filter(DelegateConnectionKeys.version, version);
-    if(StringUtils.isEmpty(accountId)) {
+    Query<DelegateConnection> query = persistence.createQuery(DelegateConnection.class, excludeAuthority)
+                                          .filter(DelegateConnectionKeys.version, version);
+    if (StringUtils.isEmpty(accountId)) {
       return query.count();
     }
     return query.filter(DelegateConnectionKeys.accountId, accountId).count();
