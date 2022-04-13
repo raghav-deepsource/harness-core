@@ -69,6 +69,19 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
     String impersonatedServiceAccount = gcpCloudCostConnectorDTO.getServiceAccountEmail();
     final List<CEFeatures> featuresEnabled = gcpCloudCostConnectorDTO.getFeaturesEnabled();
     final List<ErrorDetail> errorList = new ArrayList<>();
+    if (featuresEnabled.contains(CEFeatures.BILLING)
+        && (projectId.isEmpty() || datasetId.isEmpty() || impersonatedServiceAccount.isEmpty())) {
+      return ConnectorValidationResult.builder()
+          .errorSummary("Invalid connector configuration")
+          .errors(ImmutableList.of(ErrorDetail.builder()
+                                       .code(400)
+                                       .message("Verify if valid projectId/datasetId exists in connector. "
+                                           + "For more information, refer to the documentation.")
+                                       .reason("Invalid connector configuration")
+                                       .build()))
+          .status(ConnectivityStatus.FAILURE)
+          .build();
+    }
     try {
       ConnectorValidationResult connectorValidationResult =
           validateAccessToBillingReport(projectId, datasetId, gcpTableName, impersonatedServiceAccount);
@@ -82,7 +95,7 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
               && !ceConnectorsHelper.isDataSyncCheck(accountIdentifier, connectorIdentifier,
                   ConnectorType.GCP_CLOUD_COST, ceConnectorsHelper.JOB_TYPE_CLOUDFUNCTION)) {
             errorList.add(ErrorDetail.builder()
-                              .reason("Internal error with data processing")
+                              .reason("Error with processing data")
                               .message("") // UI adds "Contact Harness Support or Harness Community Forum." in this case
                               .code(500)
                               .build());
@@ -97,10 +110,7 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
     } catch (Exception ex) {
       // 5. Generic Error
       log.error(GENERIC_LOGGING_ERROR, accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, ex);
-      errorList.add(ErrorDetail.builder()
-                        .reason("Unknown error occurred")
-                        .message("Contact Harness Support or Harness Community Forum.")
-                        .build());
+      errorList.add(ErrorDetail.builder().reason("Unknown error occurred").message("").build());
       return ConnectorValidationResult.builder()
           .errorSummary("Unknown error occurred")
           .errors(errorList)
@@ -123,8 +133,8 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
     Credentials credentials = getGcpImpersonatedCredentials(sourceCredentials, impersonatedServiceAccount);
     BigQuery bigQuery;
     BigQueryOptions.Builder bigQueryOptionsBuilder = BigQueryOptions.newBuilder().setCredentials(credentials);
-    log.info(
-        "projectId {}, datasetId {}, impersonatedServiceAccount {}", projectId, datasetId, impersonatedServiceAccount);
+    log.info("projectId '{}', datasetId '{}', impersonatedServiceAccount '{}'", projectId, datasetId,
+        impersonatedServiceAccount);
     if (projectId != null) {
       bigQueryOptionsBuilder.setProjectId(projectId);
     }
@@ -135,11 +145,13 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
       Dataset dataset = bigQuery.getDataset(datasetId);
       if (dataset == null) {
         log.error("Unable to find the dataset :" + datasetId);
-        errorList.add(ErrorDetail.builder()
-                          .reason("Dataset doesnt exists or service account does not have permissions")
-                          .message("Please check if dataset " + datasetId + " exists and service account "
-                              + impersonatedServiceAccount + " has required permissions")
-                          .build());
+        errorList.add(
+            ErrorDetail.builder()
+                .reason("Dataset doesnt exists or service account does not have permissions")
+                .message("Please check if dataset " + datasetId + " and project " + projectId
+                    + " exists and service account " + impersonatedServiceAccount + " has required permissions"
+                    + "For more information, refer to the documentation.")
+                .build());
         return ConnectorValidationResult.builder()
             .status(ConnectivityStatus.FAILURE)
             .errors(errorList)
@@ -148,7 +160,7 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
             .build();
       } else {
         // 2. Check presence of table "gcp_billing_export_v1_*"
-        log.info("dataset {} is present in gcp project {}", datasetId, projectId);
+        log.info("dataset '{}' is present in gcp project '{}'", datasetId, projectId);
         if (!isEmpty(gcpTableName)) {
           TableId tableIdBq = TableId.of(projectId, datasetId, gcpTableName);
           tableGranularData = bigQuery.getTable(tableIdBq);
@@ -191,7 +203,7 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
                 .status(ConnectivityStatus.FAILURE)
                 .errors(ImmutableList.of(ErrorDetail.builder()
                                              .reason("Billing export configuration might have changed")
-                                             .message("Check the billing export configuration in your GCP Project"
+                                             .message("Check the billing export configuration in your GCP Project."
                                                  + " For more information, refer to the documentation.")
                                              .build()))
                 .errorSummary("Billing table " + gcpTableName + " is not updated in the last 24 hrs.")
@@ -202,16 +214,22 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
       }
     } catch (BigQueryException be) {
       // 3. Permissions check on the dataset
+      String message = "Please verify your billing export config in your GCP account and in the CCM connector."
+          + " For more information, refer to the documentation.";
       log.error("Unable to access BigQuery Dataset", be);
+      if (!be.getMessage().isEmpty() && be.getMessage().contains("has not enabled BigQuery")) {
+        message = "Enable BigQuery in project " + projectId + ". For more information, refer to the documentation.";
+      } else if (!be.getMessage().isEmpty() && be.getMessage().contains("Error requesting access token")) {
+        message = "Verify the service account " + impersonatedServiceAccount
+            + " exists. For more information, refer to the documentation.";
+      } else if (!be.getMessage().isEmpty() && be.getMessage().contains("Access Denied")) {
+        message = "Provide 'BigQuery Data Viewer' role to service account " + impersonatedServiceAccount
+            + "on the dataset. For more information, refer to the documentation." + datasetId;
+      }
       return ConnectorValidationResult.builder()
           .status(ConnectivityStatus.FAILURE)
           .errors(ImmutableList.of(
-              ErrorDetail.builder()
-                  .code(be.getCode())
-                  .reason(be.getMessage())
-                  .message("Please verify your billing export config in your GCP account and in the CCM connector."
-                      + " For more information, refer to the documentation.")
-                  .build()))
+              ErrorDetail.builder().code(be.getCode()).reason(be.getMessage()).message(message).build()))
           .errorSummary("Unable to access the dataset " + datasetId + " in project " + projectId)
           .testedAt(Instant.now().toEpochMilli())
           .build();

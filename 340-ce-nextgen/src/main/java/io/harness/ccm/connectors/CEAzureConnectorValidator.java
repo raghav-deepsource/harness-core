@@ -236,13 +236,13 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
     }
     log.info("Latest .csv.gz file in {} latestFileName: {} latestFileLastModifiedTime: {}", prefix, latestFileName,
         latestFileLastModifiedTime);
-    if (!latestFileName.isEmpty()
-        && latestFileLastModifiedTime.getEpochSecond() < (Instant.now().getEpochSecond() - 24 * 60 * 60)) {
+    if (latestFileLastModifiedTime.getEpochSecond() < (Instant.now().getEpochSecond() - 24 * 60 * 60)) {
+      String reason = String.format("No billing export csv file is found in last 24 hrs at %s. ", prefix);
       errorDetails.add(
           ErrorDetail.builder()
-              .reason("Incorrect billing export information")
+              .reason(reason)
               .message(
-                  "Verify the billing export configuration in Harness and in your Azure account. For more information, refer to the documentation.")
+                  "Verify the billing export configuration in CCM and in your Azure account. For more information, refer to the documentation.")
               .code(403)
               .build());
     }

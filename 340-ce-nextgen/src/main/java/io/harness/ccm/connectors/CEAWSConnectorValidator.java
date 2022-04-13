@@ -81,17 +81,6 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
     try {
       final AWSCredentialsProvider credentialsProvider = getCredentialProvider(crossAccountAccessDTO);
 
-      verifyPoliciesPerFeature(
-          featuresEnabled, credentialsProvider, awsCurAttributesDTO, crossAccountAccessDTO, errorList);
-      if (!errorList.isEmpty()) {
-        return ConnectorValidationResult.builder()
-            .status(ConnectivityStatus.FAILURE)
-            .errors(errorList)
-            .errorSummary("Missing AWS access permissions")
-            .testedAt(Instant.now().toEpochMilli())
-            .build();
-      }
-
       if (featuresEnabled.contains(CEFeatures.BILLING)) {
         Optional<ReportDefinition> report =
             validateReportResourceExists(credentialsProvider, awsCurAttributesDTO, errorList);
@@ -105,6 +94,8 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
         } else {
           validateReport(report.get(), awsCurAttributesDTO.getS3BucketName(), errorList);
           if (!errorList.isEmpty()) {
+            ErrorDetail errorDetail = errorList.get(errorList.size() - 1);
+            errorDetail.setMessage(errorDetail.getMessage() + " For more information, refer to the documentation.");
             return ConnectorValidationResult.builder()
                 .status(ConnectivityStatus.FAILURE)
                 .errors(errorList)
@@ -127,16 +118,29 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
               .build();
         }
       }
+
+      verifyPoliciesPerFeature(
+          featuresEnabled, credentialsProvider, awsCurAttributesDTO, crossAccountAccessDTO, errorList);
+      if (!errorList.isEmpty()) {
+        return ConnectorValidationResult.builder()
+            .status(ConnectivityStatus.FAILURE)
+            .errors(errorList)
+            .errorSummary("Missing AWS access permissions")
+            .testedAt(Instant.now().toEpochMilli())
+            .build();
+      }
+
     } catch (AWSSecurityTokenServiceException ex) {
       return ConnectorValidationResult.builder()
           .status(ConnectivityStatus.FAILURE)
-          .errors(
-              ImmutableList.of(ErrorDetail.builder()
-                                   .code(ex.getStatusCode())
-                                   .reason("Either the " + crossAccountAccessDTO.getCrossAccountRoleArn()
-                                       + " doesn't exist or Harness isn't a trusted entity on it or wrong externalId.")
-                                   .message(ex.getErrorMessage()) // What should be the suggestion here ?
-                                   .build()))
+          .errors(ImmutableList.of(
+              ErrorDetail.builder()
+                  .code(ex.getStatusCode())
+                  .reason("Either the " + crossAccountAccessDTO.getCrossAccountRoleArn()
+                      + " doesn't exist or Harness isn't a trusted entity on it or wrong externalId.")
+                  .message(
+                      "Verify if the roleArn and externalId are entered correctly. For more information, refer to the documentation.")
+                  .build()))
           .errorSummary(ex.getErrorMessage())
           .testedAt(Instant.now().toEpochMilli())
           .build();
@@ -155,10 +159,7 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
     } catch (InvalidArgumentsException ex) {
       return ConnectorValidationResult.builder()
           .status(ConnectivityStatus.FAILURE)
-          .errors(ImmutableList.of(ErrorDetail.builder()
-                                       .reason(ex.getMessage())
-                                       .message("Contact Harness Support or Harness Community Forum.")
-                                       .build()))
+          .errors(ImmutableList.of(ErrorDetail.builder().reason(ex.getMessage()).message("").build()))
           .errorSummary(ex.getMessage())
           .testedAt(Instant.now().toEpochMilli())
           .build();
@@ -167,11 +168,8 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
       log.error(GENERIC_LOGGING_ERROR, accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, ex);
       return ConnectorValidationResult.builder()
           .status(ConnectivityStatus.FAILURE)
-          .errors(ImmutableList.of(ErrorDetail.builder()
-                                       .reason(ex.getMessage())
-                                       .message("Contact Harness Support or Harness Community Forum.")
-                                       .build()))
-          .errorSummary(ex.getMessage())
+          .errors(ImmutableList.of(ErrorDetail.builder().reason("Unknown error occurred").message("").build()))
+          .errorSummary("Unknown error occurred")
           .testedAt(Instant.now().toEpochMilli())
           .build();
     }
@@ -185,7 +183,7 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
         return ConnectorValidationResult.builder()
             .errors(ImmutableList.of(
                 ErrorDetail.builder()
-                    .reason("Internal error with data processing ")
+                    .reason("Error with processing data")
                     .message("") // UI adds "Contact Harness Support or Harness Community Forum." in this case
                     .code(500)
                     .build()))
@@ -284,51 +282,46 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
     log.info("Validating cur report setting at source");
 
     if (!report.getS3Bucket().equals(s3BucketName)) {
-      String reason = String.format("Provided s3Bucket Name: %s, Actual s3bucket associated with the report: %s",
+      String reason = String.format("Provided s3 bucket name: %s,\n Current s3 bucket associated with the report: %s",
           s3BucketName, report.getS3Bucket());
-      errorList.add(
-          ErrorDetail.builder()
-              .reason(reason)
-              .message("Provide the correct s3 bucket name. For more information, refer to the documentation.")
-              .build());
+      errorList.add(ErrorDetail.builder()
+                        .reason(reason)
+                        .message("Provide the same s3 bucket name as associated with the report.")
+                        .build());
     }
     if (!report.getCompression().equals(COMPRESSION)) {
-      errorList.add(ErrorDetail.builder()
-                        .reason(String.format("Required: %s, Actual: %s", COMPRESSION, report.getCompression()))
-                        .message("Select GZIP for Compression Type. For more information, refer to the documentation.")
-                        .build());
+      errorList.add(
+          ErrorDetail.builder()
+              .reason(String.format("Required: %s, Current: %s", COMPRESSION, report.getCompression()))
+              .message("Select GZIP for 'Compression Type' for the chosen cost and usage report in your AWS account.")
+              .build());
     }
     if (!report.getTimeUnit().equals(TIME_GRANULARITY)) {
       errorList.add(
           ErrorDetail.builder()
-              .reason(String.format("Required: %s, Actual: %s", TIME_GRANULARITY, report.getTimeUnit()))
-              .message("Select Hourly for time Granularity. For more information, refer to the documentation.")
+              .reason(String.format("Required: %s, Current: %s", TIME_GRANULARITY, report.getTimeUnit()))
+              .message("Select Hourly for 'Time granularity' for the chosen cost and usage report in your AWS account.")
               .build());
     }
     if (!report.getReportVersioning().equals(REPORT_VERSIONING)) {
       errorList.add(
           ErrorDetail.builder()
-              .reason(String.format("Required: %s, Actual: %s", REPORT_VERSIONING, report.getReportVersioning()))
-              .message(
-                  "Select Overwrite existing report for Report Versioning. For more information, refer to the documentation.")
+              .reason(String.format("Required: %s, Current: %s", REPORT_VERSIONING, report.getReportVersioning()))
+              .message("Select Overwrite existing report for 'Report versioning'.")
               .build());
     }
     if (!report.isRefreshClosedReports()) {
       errorList.add(
           ErrorDetail.builder()
-              .reason(
-                  "Required: Automatically refresh your Cost & Usage Report when charges are detected for previous months with closed bills.")
-              .message(
-                  "Review the Cost and Usage report settings in your AWS account. For more information, refer to the documentation.")
+              .reason("'Data refresh settings' is not enabled for the chosen cost and usage report")
+              .message("Enable the 'Data refresh settings' for the chosen cost and usage report in your AWS account.")
               .build());
     }
     if (!report.getAdditionalSchemaElements().contains(RESOURCES)) {
-      errorList.add(
-          ErrorDetail.builder()
-              .reason("Required: Include resource IDs")
-              .message(
-                  "Include resource IDs in additional report details. For more information, refer to the documentation.")
-              .build());
+      errorList.add(ErrorDetail.builder()
+                        .reason("'Include resource IDs' is not enabled in CUR report")
+                        .message("Select 'Include resource IDs' in additional report details.")
+                        .build());
     }
   }
 
