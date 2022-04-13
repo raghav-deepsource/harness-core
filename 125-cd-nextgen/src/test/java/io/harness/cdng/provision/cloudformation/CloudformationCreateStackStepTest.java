@@ -14,6 +14,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
@@ -133,6 +134,7 @@ public class CloudformationCreateStackStepTest extends CategoryTest {
     assertThat(entityDetails.get(2).getEntityRef().getIdentifier()).isEqualTo(CONNECTOR_REF);
     assertThat(entityDetails.get(2).getEntityRef().getAccountIdentifier()).isEqualTo("test-account");
   }
+
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
@@ -173,6 +175,7 @@ public class CloudformationCreateStackStepTest extends CategoryTest {
     assertThat(entityDetails.get(3).getEntityRef().getIdentifier()).isEqualTo("test" + CONNECTOR_REF);
     assertThat(entityDetails.get(3).getEntityRef().getAccountIdentifier()).isEqualTo("test-account");
   }
+
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
@@ -285,11 +288,13 @@ public class CloudformationCreateStackStepTest extends CategoryTest {
     cloudformationCreateStackStep.finalizeExecutionWithSecurityContext(getAmbiance(), stepElementParameters,
         StepExceptionPassThroughData.builder().build(), () -> cloudformationTaskNGResponse);
     verify(cdStepHelper, times(1)).handleStepExceptionFailure(any());
+    reset(cloudformationStepHelper);
 
     cloudformationCreateStackStep.finalizeExecutionWithSecurityContext(getAmbiance(), stepElementParameters,
         passThroughData, () -> { throw new TaskNGDataException(UnitProgressData.builder().build(), null); });
 
     verify(cloudformationStepHelper, times(1)).getFailureResponse(any(), any());
+    reset(cloudformationStepHelper);
 
     CloudformationTaskNGResponse failedTaskResponse =
         CloudformationTaskNGResponse.builder()
@@ -304,6 +309,6 @@ public class CloudformationCreateStackStepTest extends CategoryTest {
 
     cloudformationCreateStackStep.finalizeExecutionWithSecurityContext(
         getAmbiance(), stepElementParameters, passThroughData, () -> failedTaskResponse);
-    verify(cloudformationStepHelper, times(2)).getFailureResponse(any(), any());
+    verify(cloudformationStepHelper, times(1)).getFailureResponse(any(), any());
   }
 }

@@ -117,6 +117,7 @@ public class CDStepHelperTest extends CategoryTest {
   public void setup() {
     initMocks(this);
   }
+
   @Test
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)

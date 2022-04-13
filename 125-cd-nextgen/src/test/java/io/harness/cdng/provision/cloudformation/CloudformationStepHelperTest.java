@@ -15,6 +15,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
@@ -35,6 +36,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.aws.s3.AwsS3FetchFilesResponse;
+import io.harness.delegate.beans.aws.s3.AwsS3FetchFilesTaskParams;
 import io.harness.delegate.beans.aws.s3.S3FileDetailResponse;
 import io.harness.delegate.beans.connector.appdynamicsconnector.AppDynamicsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -47,6 +49,7 @@ import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.delegate.task.cloudformation.CloudformationTaskNGParameters;
 import io.harness.delegate.task.cloudformation.CloudformationTaskType;
+import io.harness.delegate.task.git.GitFetchRequest;
 import io.harness.delegate.task.git.GitFetchResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.FetchFilesResult;
@@ -74,6 +77,7 @@ import software.wings.sm.states.provision.S3UriParser;
 import com.amazonaws.services.s3.AmazonS3URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -149,16 +153,16 @@ public class CloudformationStepHelperTest extends CategoryTest {
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
-  public void testStartChainLinkWithGit() {
+  public void testStartChainLinkWithGitAndNoTags() {
     StepElementParameters stepElementParameters = createStepParametersWithGit(false);
-    ConnectorInfoDTO connectorInfoDTO =
+    ConnectorInfoDTO awsConnectorDTO =
         ConnectorInfoDTO.builder().connectorConfig(AwsConnectorDTO.builder().build()).build();
-    doReturn(connectorInfoDTO).when(cdStepHelper).getConnector(any(), any());
-    ConnectorInfoDTO connectorInfoDTO1 =
+    doReturn(awsConnectorDTO).when(cdStepHelper).getConnector(any(), any());
+    ConnectorInfoDTO gitConnectorInfoDTO =
         ConnectorInfoDTO.builder()
             .connectorConfig(GitConfigDTO.builder().gitConnectionType(GitConnectionType.REPO).build())
             .build();
-    doReturn(connectorInfoDTO1).when(k8sStepHelper).getConnector(any(), any());
+    doReturn(gitConnectorInfoDTO).when(k8sStepHelper).getConnector(any(), any());
     SSHKeySpecDTO sshKeySpecDTO = SSHKeySpecDTO.builder().build();
 
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
@@ -175,42 +179,61 @@ public class CloudformationStepHelperTest extends CategoryTest {
     PowerMockito.verifyStatic(StepUtils.class, times(1));
     StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
-    assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
+    assertThat((GitFetchRequest) taskDataArgumentCaptor.getValue().getParameters()[0])
+        .isExactlyInstanceOf(GitFetchRequest.class);
     assertThat(taskDataArgumentCaptor.getValue().getTaskType()).isEqualTo(TaskType.GIT_FETCH_NEXT_GEN_TASK.name());
     assertThat(response.getTaskRequest()).isNotNull();
     assertThat(response.getPassThroughData()).isNotNull();
+  }
+  @Test
+  @Owner(developers = NGONZALEZ)
+  @Category(UnitTests.class)
+  public void testStartChainLinkWithGitAnTags() {
+    StepElementParameters stepElementParameters = createStepParametersWithGit(true);
+    ConnectorInfoDTO awsConnectorDTO =
+        ConnectorInfoDTO.builder().connectorConfig(AwsConnectorDTO.builder().build()).build();
+    doReturn(awsConnectorDTO).when(cdStepHelper).getConnector(any(), any());
+    ConnectorInfoDTO gitConnectorInfoDTO =
+        ConnectorInfoDTO.builder()
+            .connectorConfig(GitConfigDTO.builder().gitConnectionType(GitConnectionType.REPO).build())
+            .build();
+    doReturn(gitConnectorInfoDTO).when(k8sStepHelper).getConnector(any(), any());
+    SSHKeySpecDTO sshKeySpecDTO = SSHKeySpecDTO.builder().build();
 
-    StepElementParameters stepElementParametersWithTags = createStepParametersWithGit(true);
+    doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
+    List<EncryptedDataDetail> apiEncryptedDataDetails = new ArrayList<>();
+    doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
+
     mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
-    ArgumentCaptor<TaskData> taskDataArgumentCaptorWithTags = ArgumentCaptor.forClass(TaskData.class);
-    TaskChainResponse responseWithTags = cloudformationStepHelper.startChainLink(
-        cloudformationStepExecutor, getAmbiance(), stepElementParametersWithTags);
+    ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
+    TaskChainResponse response =
+        cloudformationStepHelper.startChainLink(cloudformationStepExecutor, getAmbiance(), stepElementParameters);
 
     PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptorWithTags.capture(), any(), any(), any(), any(), any());
-    assertThat(taskDataArgumentCaptorWithTags.getValue()).isNotNull();
-    assertThat(taskDataArgumentCaptorWithTags.getValue().getParameters()).isNotNull();
-    assertThat(taskDataArgumentCaptorWithTags.getValue().getTaskType())
-        .isEqualTo(TaskType.GIT_FETCH_NEXT_GEN_TASK.name());
-    assertThat(responseWithTags.getTaskRequest()).isNotNull();
-    assertThat(responseWithTags.getPassThroughData()).isNotNull();
+    StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
+    assertThat((GitFetchRequest) taskDataArgumentCaptor.getValue().getParameters()[0])
+        .isExactlyInstanceOf(GitFetchRequest.class);
+    assertThat(taskDataArgumentCaptor.getValue().getTaskType()).isEqualTo(TaskType.GIT_FETCH_NEXT_GEN_TASK.name());
+    assertThat(response.getTaskRequest()).isNotNull();
+    assertThat(response.getPassThroughData()).isNotNull();
   }
 
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
-  public void testStartChainLinkWithS3() {
+  public void testStartChainLinkWithS3AndNoTags() {
     StepElementParameters stepElementParameters = createStepParametersWithS3(false);
-    ConnectorInfoDTO connectorInfoDTO =
+    ConnectorInfoDTO awsConnectorDTO =
         ConnectorInfoDTO.builder()
             .connectorConfig(
                 AwsConnectorDTO.builder()
                     .credential(AwsCredentialDTO.builder().config(AwsManualConfigSpecDTO.builder().build()).build())
                     .build())
             .build();
-    doReturn(connectorInfoDTO).when(cdStepHelper).getConnector(any(), any());
+    doReturn(awsConnectorDTO).when(cdStepHelper).getConnector(any(), any());
     doReturn(new ArrayList<>()).when(secretManagerClientService).getEncryptionDetails(any(), any());
     AmazonS3URI s3URI = new AmazonS3URI("s3://bucket/key");
     doReturn(s3URI).when(s3UriParser).parseUrl(anyString());
@@ -224,42 +247,59 @@ public class CloudformationStepHelperTest extends CategoryTest {
     PowerMockito.verifyStatic(StepUtils.class, times(1));
     StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
-    assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
+    assertThat((AwsS3FetchFilesTaskParams) taskDataArgumentCaptor.getValue().getParameters()[0])
+        .isExactlyInstanceOf(AwsS3FetchFilesTaskParams.class);
     assertThat(taskDataArgumentCaptor.getValue().getTaskType()).isEqualTo(TaskType.FETCH_S3_FILE_TASK_NG.name());
     assertThat(response.getTaskRequest()).isNotNull();
     assertThat(response.getPassThroughData()).isNotNull();
-
-    StepElementParameters stepElementParametersWithTags = createStepParametersWithS3(true);
-    mockStatic(StepUtils.class);
-    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
-        .thenReturn(TaskRequest.newBuilder().build());
-    ArgumentCaptor<TaskData> taskDataArgumentCaptorWithTags = ArgumentCaptor.forClass(TaskData.class);
-    TaskChainResponse responseWithTags = cloudformationStepHelper.startChainLink(
-        cloudformationStepExecutor, getAmbiance(), stepElementParametersWithTags);
-
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptorWithTags.capture(), any(), any(), any(), any(), any());
-    assertThat(taskDataArgumentCaptorWithTags.getValue()).isNotNull();
-    assertThat(taskDataArgumentCaptorWithTags.getValue().getParameters()).isNotNull();
-    assertThat(taskDataArgumentCaptorWithTags.getValue().getTaskType())
-        .isEqualTo(TaskType.FETCH_S3_FILE_TASK_NG.name());
-    assertThat(responseWithTags.getTaskRequest()).isNotNull();
-    assertThat(responseWithTags.getPassThroughData()).isNotNull();
   }
 
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
-  public void testStartChainLinkWithInline() {
-    StepElementParameters stepElementParameters = createStepParameterInline(false);
-    ConnectorInfoDTO connectorInfoDTO =
+  public void testStartChainLinkWithS3AndTags() {
+    StepElementParameters stepElementParameters = createStepParametersWithS3(true);
+    ConnectorInfoDTO awsConnectorDTO =
         ConnectorInfoDTO.builder()
             .connectorConfig(
                 AwsConnectorDTO.builder()
                     .credential(AwsCredentialDTO.builder().config(AwsManualConfigSpecDTO.builder().build()).build())
                     .build())
             .build();
-    doReturn(connectorInfoDTO).when(cdStepHelper).getConnector(any(), any());
+    doReturn(awsConnectorDTO).when(cdStepHelper).getConnector(any(), any());
+    doReturn(new ArrayList<>()).when(secretManagerClientService).getEncryptionDetails(any(), any());
+    AmazonS3URI s3URI = new AmazonS3URI("s3://bucket/key");
+    doReturn(s3URI).when(s3UriParser).parseUrl(anyString());
+    mockStatic(StepUtils.class);
+    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+    ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
+    TaskChainResponse response =
+        cloudformationStepHelper.startChainLink(cloudformationStepExecutor, getAmbiance(), stepElementParameters);
+
+    PowerMockito.verifyStatic(StepUtils.class, times(1));
+    StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
+    assertThat((AwsS3FetchFilesTaskParams) taskDataArgumentCaptor.getValue().getParameters()[0])
+        .isExactlyInstanceOf(AwsS3FetchFilesTaskParams.class);
+    assertThat(taskDataArgumentCaptor.getValue().getTaskType()).isEqualTo(TaskType.FETCH_S3_FILE_TASK_NG.name());
+    assertThat(response.getTaskRequest()).isNotNull();
+    assertThat(response.getPassThroughData()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = NGONZALEZ)
+  @Category(UnitTests.class)
+  public void testStartChainLinkWithInlineAndNoTags() {
+    StepElementParameters stepElementParameters = createStepParameterInline(false);
+    ConnectorInfoDTO awsConnectorDTO =
+        ConnectorInfoDTO.builder()
+            .connectorConfig(
+                AwsConnectorDTO.builder()
+                    .credential(AwsCredentialDTO.builder().config(AwsManualConfigSpecDTO.builder().build()).build())
+                    .build())
+            .build();
+    doReturn(awsConnectorDTO).when(cdStepHelper).getConnector(any(), any());
 
     ArgumentCaptor<CloudformationTaskNGParameters> taskDataArgumentCaptor =
         ArgumentCaptor.forClass(CloudformationTaskNGParameters.class);
@@ -271,17 +311,34 @@ public class CloudformationStepHelperTest extends CategoryTest {
     assertThat(taskDataArgumentCaptor.getValue().getTaskType()).isEqualTo(CloudformationTaskType.CREATE_STACK);
     assertThat(taskDataArgumentCaptor.getValue().getRegion()).isEqualTo("region");
     assertThat(taskDataArgumentCaptor.getValue().getStackName()).isEqualTo("stack-name");
+    reset(cloudformationStepExecutor);
+  }
 
-    StepElementParameters stepElementParametersWithTags = createStepParameterInline(true);
-    ArgumentCaptor<CloudformationTaskNGParameters> taskDataArgumentCaptorWithTags =
+  @Test
+  @Owner(developers = NGONZALEZ)
+  @Category(UnitTests.class)
+  public void testStartChainLinkWithInlineAndTags() {
+    StepElementParameters stepElementParameters = createStepParameterInline(true);
+    ConnectorInfoDTO awsConnectorDTO =
+        ConnectorInfoDTO.builder()
+            .connectorConfig(
+                AwsConnectorDTO.builder()
+                    .credential(AwsCredentialDTO.builder().config(AwsManualConfigSpecDTO.builder().build()).build())
+                    .build())
+            .build();
+    doReturn(awsConnectorDTO).when(cdStepHelper).getConnector(any(), any());
+
+    ArgumentCaptor<CloudformationTaskNGParameters> taskDataArgumentCaptor =
         ArgumentCaptor.forClass(CloudformationTaskNGParameters.class);
-    cloudformationStepHelper.startChainLink(cloudformationStepExecutor, getAmbiance(), stepElementParametersWithTags);
-    verify(cloudformationStepExecutor, times(2))
-        .executeCloudformationTask(any(), any(), taskDataArgumentCaptorWithTags.capture());
-    assertThat(taskDataArgumentCaptorWithTags.getValue()).isNotNull();
-    assertThat(taskDataArgumentCaptorWithTags.getValue().getTaskType()).isEqualTo(CloudformationTaskType.CREATE_STACK);
-    assertThat(taskDataArgumentCaptorWithTags.getValue().getRegion()).isEqualTo("region");
-    assertThat(taskDataArgumentCaptorWithTags.getValue().getStackName()).isEqualTo("stack-name");
+    cloudformationStepHelper.startChainLink(cloudformationStepExecutor, getAmbiance(), stepElementParameters);
+
+    doReturn("test-template").when(engineExpressionService).renderExpression(any(), eq("test-template"));
+    verify(cloudformationStepExecutor).executeCloudformationTask(any(), any(), taskDataArgumentCaptor.capture());
+    assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
+    assertThat(taskDataArgumentCaptor.getValue().getTaskType()).isEqualTo(CloudformationTaskType.CREATE_STACK);
+    assertThat(taskDataArgumentCaptor.getValue().getRegion()).isEqualTo("region");
+    assertThat(taskDataArgumentCaptor.getValue().getStackName()).isEqualTo("stack-name");
+    reset(cloudformationStepExecutor);
   }
 
   @Test
@@ -289,14 +346,14 @@ public class CloudformationStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testStartChainLinkWithS3Template() {
     StepElementParameters stepElementParameters = createStepParameterS3WithNoParameterFiles();
-    ConnectorInfoDTO connectorInfoDTO =
+    ConnectorInfoDTO awsConnectorDTO =
         ConnectorInfoDTO.builder()
             .connectorConfig(
                 AwsConnectorDTO.builder()
                     .credential(AwsCredentialDTO.builder().config(AwsManualConfigSpecDTO.builder().build()).build())
                     .build())
             .build();
-    doReturn(connectorInfoDTO).when(cdStepHelper).getConnector(any(), any());
+    doReturn(awsConnectorDTO).when(cdStepHelper).getConnector(any(), any());
 
     ArgumentCaptor<CloudformationTaskNGParameters> taskDataArgumentCaptor =
         ArgumentCaptor.forClass(CloudformationTaskNGParameters.class);
@@ -316,14 +373,14 @@ public class CloudformationStepHelperTest extends CategoryTest {
   // This test is going to test the executeNextLink with the param files been only in github and with the template files
   // being in git, inline and s3
   public void executeNextLinkGitNoS3() throws Exception {
-    ConnectorInfoDTO connectorInfoDTO =
+    ConnectorInfoDTO awsConnectorDTO =
         ConnectorInfoDTO.builder()
             .connectorConfig(
                 AwsConnectorDTO.builder()
                     .credential(AwsCredentialDTO.builder().config(AwsManualConfigSpecDTO.builder().build()).build())
                     .build())
             .build();
-    doReturn(connectorInfoDTO).when(cdStepHelper).getConnector(any(), any());
+    doReturn(awsConnectorDTO).when(cdStepHelper).getConnector(any(), any());
 
     StepElementParameters stepElementParameters = createStepParametersWithGit(false);
 
@@ -341,23 +398,23 @@ public class CloudformationStepHelperTest extends CategoryTest {
 
     filesFromMultiRepo.put("param1",
         FetchFilesResult.builder()
-            .files(Arrays.asList(GitFile.builder()
-                                     .fileContent("[\n"
-                                         + "  {\n"
-                                         + "    \"ParameterKey\": \"AlarmEMail\",\n"
-                                         + "    \"ParameterValue\": \"nasser.gonzalez@harness.io\"\n"
-                                         + "  }\n"
-                                         + "]")
-                                     .filePath("file-path")
-                                     .build()))
+            .files(Collections.singletonList(GitFile.builder()
+                                                 .fileContent("[\n"
+                                                     + "  {\n"
+                                                     + "    \"ParameterKey\": \"AlarmEMail\",\n"
+                                                     + "    \"ParameterValue\": \"nasser.gonzalez@harness.io\"\n"
+                                                     + "  }\n"
+                                                     + "]")
+                                                 .filePath("file-path")
+                                                 .build()))
             .build());
     filesFromMultiRepo.put("tagsFile",
         FetchFilesResult.builder()
-            .files(Arrays.asList(GitFile.builder().fileContent(TAGS).filePath("file-path").build()))
+            .files(Collections.singletonList(GitFile.builder().fileContent(TAGS).filePath("file-path").build()))
             .build());
     filesFromMultiRepo.put("templateFile",
         FetchFilesResult.builder()
-            .files(Arrays.asList(GitFile.builder().fileContent("foobar").filePath("file-path").build()))
+            .files(Collections.singletonList(GitFile.builder().fileContent("foobar").filePath("file-path").build()))
             .build());
 
     GitFetchResponse response = GitFetchResponse.builder().filesFromMultipleRepo(filesFromMultiRepo).build();
@@ -378,8 +435,10 @@ public class CloudformationStepHelperTest extends CategoryTest {
     assertThat(taskDataArgumentCaptor.getValue().getStackName()).isEqualTo("stack-name");
     assertThat(taskDataArgumentCaptor.getValue().getParameters().get("AlarmEMail"))
         .isEqualTo("nasser.gonzalez@harness.io");
-    assertThat(taskDataArgumentCaptor.getValue().getTags().equals(TAGS));
+    assertThat(taskDataArgumentCaptor.getValue().getTags()).isEqualTo(TAGS);
+    reset(cloudformationStepExecutor);
 
+    // Test without template files
     filesFromMultiRepo.remove("templateFile");
 
     // Test now the same scenario but with the template been Inline
@@ -390,7 +449,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
 
     cloudformationStepHelper.executeNextLink(
         cloudformationStepExecutor, getAmbiance(), stepElementParametersInline, passThroughData, () -> response);
-    verify(cloudformationStepExecutor, times(2))
+    verify(cloudformationStepExecutor, times(1))
         .executeCloudformationTask(any(), any(), taskDataArgumentCaptorInline.capture());
     assertThat(taskDataArgumentCaptorInline.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptorInline.getValue().getTemplateBody()).isEqualTo("test-template");
@@ -399,7 +458,8 @@ public class CloudformationStepHelperTest extends CategoryTest {
     assertThat(taskDataArgumentCaptorInline.getValue().getStackName()).isEqualTo("stack-name");
     assertThat(taskDataArgumentCaptorInline.getValue().getParameters().get("AlarmEMail"))
         .isEqualTo("nasser.gonzalez@harness.io");
-    assertThat(taskDataArgumentCaptor.getValue().getTags().equals(TAGS));
+    assertThat(taskDataArgumentCaptor.getValue().getTags()).isEqualTo(TAGS);
+    reset(cloudformationStepExecutor);
 
     // Test now the same scenario but with the template been in S3 URL
     StepElementParameters stepElementParametersS3Url = createStepParameterS3WithNoParameterFiles();
@@ -408,7 +468,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
 
     cloudformationStepHelper.executeNextLink(
         cloudformationStepExecutor, getAmbiance(), stepElementParametersS3Url, passThroughData, () -> response);
-    verify(cloudformationStepExecutor, times(3))
+    verify(cloudformationStepExecutor, times(1))
         .executeCloudformationTask(any(), any(), taskDataArgumentCaptorS3Url.capture());
     assertThat(taskDataArgumentCaptorS3Url.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptorS3Url.getValue().getTemplateUrl()).isEqualTo("test-url");
@@ -424,15 +484,15 @@ public class CloudformationStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   // This test is going to test the executeNextLink with the param files been only in S3 and with the template files
   // being in git, inline and s3
-  public void executeNextLinkS3NoGit() throws Exception {
-    ConnectorInfoDTO connectorInfoDTO =
+  public void executeNextLinkS3TemplatesInGit() throws Exception {
+    ConnectorInfoDTO awsConnectorDTO =
         ConnectorInfoDTO.builder()
             .connectorConfig(
                 AwsConnectorDTO.builder()
                     .credential(AwsCredentialDTO.builder().config(AwsManualConfigSpecDTO.builder().build()).build())
                     .build())
             .build();
-    doReturn(connectorInfoDTO).when(cdStepHelper).getConnector(any(), any());
+    doReturn(awsConnectorDTO).when(cdStepHelper).getConnector(any(), any());
 
     StepElementParameters stepElementParameters = createStepParametersWithS3(false);
 
@@ -441,6 +501,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
     parameters.put("param1", null);
 
     CloudFormationCreateStackPassThroughData passThroughData = CloudFormationCreateStackPassThroughData.builder()
+                                                                   .templateBody("template-from-git")
                                                                    .hasGitFiles(false)
                                                                    .hasS3Files(true)
                                                                    .parametersFilesContent(parameters)
@@ -449,24 +510,23 @@ public class CloudformationStepHelperTest extends CategoryTest {
     Map<String, List<S3FileDetailResponse>> filesFromMultiRepo = new HashMap<>();
 
     filesFromMultiRepo.put("param1",
-        Arrays.asList(S3FileDetailResponse.builder()
-                          .fileContent("[\n"
-                              + "  {\n"
-                              + "    \"ParameterKey\": \"AlarmEMail\",\n"
-                              + "    \"ParameterValue\": \"nasser.gonzalez@harness.io\"\n"
-                              + "  }\n"
-                              + "]")
-                          .build()));
+        Collections.singletonList(S3FileDetailResponse.builder()
+                                      .fileContent("[\n"
+                                          + "  {\n"
+                                          + "    \"ParameterKey\": \"AlarmEMail\",\n"
+                                          + "    \"ParameterValue\": \"nasser.gonzalez@harness.io\"\n"
+                                          + "  }\n"
+                                          + "]")
+                                      .build()));
 
-    filesFromMultiRepo.put("tagsFile", Arrays.asList(S3FileDetailResponse.builder().fileContent(TAGS).build()));
     filesFromMultiRepo.put(
-        "templateFile", Arrays.asList(S3FileDetailResponse.builder().fileContent("template-content").build()));
+        "tagsFile", Collections.singletonList(S3FileDetailResponse.builder().fileContent(TAGS).build()));
 
     AwsS3FetchFilesResponse response = AwsS3FetchFilesResponse.builder().s3filesDetails(filesFromMultiRepo).build();
 
     ArgumentCaptor<CloudformationTaskNGParameters> taskDataArgumentCaptor =
         ArgumentCaptor.forClass(CloudformationTaskNGParameters.class);
-    doReturn("template-content").when(engineExpressionService).renderExpression(any(), eq("template-content"));
+    doReturn("template-from-git").when(engineExpressionService).renderExpression(any(), eq("template-from-git"));
     doReturn(TAGS).when(engineExpressionService).renderExpression(any(), eq(TAGS));
 
     cloudformationStepHelper.executeNextLink(
@@ -474,43 +534,52 @@ public class CloudformationStepHelperTest extends CategoryTest {
 
     verify(cloudformationStepExecutor).executeCloudformationTask(any(), any(), taskDataArgumentCaptor.capture());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
-    assertThat(taskDataArgumentCaptor.getValue().getTemplateBody()).isEqualTo("template-content");
+    assertThat(taskDataArgumentCaptor.getValue().getTemplateBody()).isEqualTo("template-from-git");
     assertThat(taskDataArgumentCaptor.getValue().getTaskType()).isEqualTo(CloudformationTaskType.CREATE_STACK);
     assertThat(taskDataArgumentCaptor.getValue().getRegion()).isEqualTo("region");
     assertThat(taskDataArgumentCaptor.getValue().getStackName()).isEqualTo("stack-name");
     assertThat(taskDataArgumentCaptor.getValue().getParameters().get("AlarmEMail"))
         .isEqualTo("nasser.gonzalez@harness.io");
-    assertThat(taskDataArgumentCaptor.getValue().getTags().equals(TAGS));
+    assertThat(taskDataArgumentCaptor.getValue().getTags()).isEqualTo(TAGS);
+    reset(cloudformationStepExecutor);
 
+    // Test now without template files
     filesFromMultiRepo.remove("templateFile");
 
     // Test now the same scenario but with the template been Inline
     StepElementParameters stepElementParametersInline = createStepParameterInline(false);
     ArgumentCaptor<CloudformationTaskNGParameters> taskDataArgumentCaptorInline =
         ArgumentCaptor.forClass(CloudformationTaskNGParameters.class);
-    doReturn("test-template").when(engineExpressionService).renderExpression(any(), eq("test-template"));
+    doReturn("template-from-git").when(engineExpressionService).renderExpression(any(), eq("template-from-git"));
 
     cloudformationStepHelper.executeNextLink(
         cloudformationStepExecutor, getAmbiance(), stepElementParametersInline, passThroughData, () -> response);
-    verify(cloudformationStepExecutor, times(2))
+    verify(cloudformationStepExecutor, times(1))
         .executeCloudformationTask(any(), any(), taskDataArgumentCaptorInline.capture());
     assertThat(taskDataArgumentCaptorInline.getValue()).isNotNull();
-    assertThat(taskDataArgumentCaptorInline.getValue().getTemplateBody()).isEqualTo("test-template");
+    assertThat(taskDataArgumentCaptorInline.getValue().getTemplateBody()).isEqualTo("template-from-git");
     assertThat(taskDataArgumentCaptorInline.getValue().getTaskType()).isEqualTo(CloudformationTaskType.CREATE_STACK);
     assertThat(taskDataArgumentCaptorInline.getValue().getRegion()).isEqualTo("region");
     assertThat(taskDataArgumentCaptorInline.getValue().getStackName()).isEqualTo("stack-name");
     assertThat(taskDataArgumentCaptorInline.getValue().getParameters().get("AlarmEMail"))
         .isEqualTo("nasser.gonzalez@harness.io");
-    assertThat(taskDataArgumentCaptor.getValue().getTags().equals(TAGS));
+    assertThat(taskDataArgumentCaptor.getValue().getTags()).isEqualTo(TAGS);
+    reset(cloudformationStepExecutor);
 
     // Test now the same scenario but with the template been in S3 URL
+    CloudFormationCreateStackPassThroughData passThroughDataWithoutTemplate =
+        CloudFormationCreateStackPassThroughData.builder()
+            .hasGitFiles(false)
+            .hasS3Files(true)
+            .parametersFilesContent(parameters)
+            .build();
     StepElementParameters stepElementParametersS3Url = createStepParameterS3WithNoParameterFiles();
     ArgumentCaptor<CloudformationTaskNGParameters> taskDataArgumentCaptorS3Url =
         ArgumentCaptor.forClass(CloudformationTaskNGParameters.class);
 
-    cloudformationStepHelper.executeNextLink(
-        cloudformationStepExecutor, getAmbiance(), stepElementParametersS3Url, passThroughData, () -> response);
-    verify(cloudformationStepExecutor, times(3))
+    cloudformationStepHelper.executeNextLink(cloudformationStepExecutor, getAmbiance(), stepElementParametersS3Url,
+        passThroughDataWithoutTemplate, () -> response);
+    verify(cloudformationStepExecutor, times(1))
         .executeCloudformationTask(any(), any(), taskDataArgumentCaptorS3Url.capture());
     assertThat(taskDataArgumentCaptorS3Url.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptorS3Url.getValue().getTemplateUrl()).isEqualTo("test-url");
@@ -519,7 +588,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
     assertThat(taskDataArgumentCaptorS3Url.getValue().getStackName()).isEqualTo("stack-name");
     assertThat(taskDataArgumentCaptorS3Url.getValue().getParameters().get("AlarmEMail"))
         .isEqualTo("nasser.gonzalez@harness.io");
-    assertThat(taskDataArgumentCaptor.getValue().getTags().equals(TAGS));
+    assertThat(taskDataArgumentCaptor.getValue().getTags()).isEqualTo(TAGS);
   }
 
   @Test
@@ -527,14 +596,14 @@ public class CloudformationStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   // This test is going to test the executeNextLink with the param files been stored in an unsupported store
   public void executeNextLinkWithoutS3OrGit() throws Exception {
-    ConnectorInfoDTO connectorInfoDTO =
+    ConnectorInfoDTO awsConnectorDTO =
         ConnectorInfoDTO.builder()
             .connectorConfig(
                 AwsConnectorDTO.builder()
                     .credential(AwsCredentialDTO.builder().config(AwsManualConfigSpecDTO.builder().build()).build())
                     .build())
             .build();
-    doReturn(connectorInfoDTO).when(cdStepHelper).getConnector(any(), any());
+    doReturn(awsConnectorDTO).when(cdStepHelper).getConnector(any(), any());
 
     StepElementParameters stepElementParameters = createStepParameterInline(false);
 
@@ -561,14 +630,14 @@ public class CloudformationStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   // This test is going to test the executeNextLink with exceptions scenarios
   public void executeNextLinkWithExceptions() throws Exception {
-    ConnectorInfoDTO connectorInfoDTO =
+    ConnectorInfoDTO awsConnectorDTO =
         ConnectorInfoDTO.builder()
             .connectorConfig(
                 AwsConnectorDTO.builder()
                     .credential(AwsCredentialDTO.builder().config(AwsManualConfigSpecDTO.builder().build()).build())
                     .build())
             .build();
-    doReturn(connectorInfoDTO).when(cdStepHelper).getConnector(any(), any());
+    doReturn(awsConnectorDTO).when(cdStepHelper).getConnector(any(), any());
 
     StepElementParameters stepElementParameters = createStepParametersWithS3(false);
 
@@ -586,13 +655,13 @@ public class CloudformationStepHelperTest extends CategoryTest {
         AwsS3FetchFilesResponse.builder()
             .unitProgressData(
                 UnitProgressData.builder()
-                    .unitProgresses(Arrays.asList(
+                    .unitProgresses(Collections.singletonList(
                         UnitProgress.newBuilder().setUnitName("name").setStatus(UnitStatus.FAILURE).build()))
                     .build())
             .build();
     doReturn(UnitProgressData.builder()
-                 .unitProgresses(
-                     Arrays.asList(UnitProgress.newBuilder().setUnitName("name").setStatus(UnitStatus.FAILURE).build()))
+                 .unitProgresses(Collections.singletonList(
+                     UnitProgress.newBuilder().setUnitName("name").setStatus(UnitStatus.FAILURE).build()))
                  .build())
         .when(cdStepHelper)
         .completeUnitProgressData(any(), any(), any());
@@ -618,7 +687,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
         StoreConfigWrapper.builder()
             .spec(GithubStore.builder()
                       .repoName(ParameterField.createValueField("repoName"))
-                      .paths(ParameterField.createValueField(Arrays.asList("path1")))
+                      .paths(ParameterField.createValueField(Collections.singletonList("path1")))
                       .branch(ParameterField.createValueField("branch1"))
                       .gitFetchType(FetchType.BRANCH)
                       .connectorRef(ParameterField.createValueField("test-connector"))
@@ -682,7 +751,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
         StoreConfigWrapper.builder()
             .type(StoreConfigType.S3URL)
             .spec(S3UrlStoreConfig.builder()
-                      .urls(ParameterField.createValueField(Arrays.asList("url1")))
+                      .urls(ParameterField.createValueField(Collections.singletonList("url1")))
                       .region(ParameterField.createValueField("region"))
                       .connectorRef(ParameterField.createValueField("test-connector"))
                       .build())
@@ -757,7 +826,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
             .type(StoreConfigType.GIT)
             .spec(GithubStore.builder()
                       .repoName(ParameterField.createValueField("repoName"))
-                      .paths(ParameterField.createValueField(Arrays.asList("path1")))
+                      .paths(ParameterField.createValueField(Collections.singletonList("path1")))
                       .branch(ParameterField.createValueField("branch1"))
                       .gitFetchType(FetchType.BRANCH)
                       .connectorRef(ParameterField.createValueField("test-connector"))

@@ -340,13 +340,10 @@ public class CloudformationStepHelper {
 
   private CloudFormationCreateStackPassThroughData getCloudFormationCreateStackPassThroughData(
       CloudformationCreateStackStepConfiguration stepConfiguration) {
-    boolean hasS3Files = false;
-    boolean hasGitFiles = false;
-    if (isNotEmpty(stepConfiguration.getParametersFilesSpecs())) {
-      hasS3Files = hasS3StoredParameters(stepConfiguration) || areTagsStoredOnS3(stepConfiguration);
-      hasGitFiles = hasGitStoredParameters(stepConfiguration) || areTagsStoredOnGit(stepConfiguration)
-          || isTemplateStoredOnGit(stepConfiguration.getTemplateFile().getSpec());
-    }
+    boolean hasS3Files = hasS3StoredParameters(stepConfiguration) || areTagsStoredOnS3(stepConfiguration);
+    boolean hasGitFiles = hasGitStoredParameters(stepConfiguration) || areTagsStoredOnGit(stepConfiguration)
+        || isTemplateStoredOnGit(stepConfiguration.getTemplateFile().getSpec());
+
     CloudFormationCreateStackPassThroughData passThroughData =
         CloudFormationCreateStackPassThroughData.builder().hasGitFiles(hasGitFiles).hasS3Files(hasS3Files).build();
 
@@ -362,13 +359,15 @@ public class CloudformationStepHelper {
   }
 
   private boolean hasS3StoredParameters(CloudformationCreateStackStepConfiguration stepConfiguration) {
-    return stepConfiguration.getParametersFilesSpecs().stream().anyMatch(cloudformationParametersFileSpec
-        -> cloudformationParametersFileSpec.getStore().getSpec().getKind().equals(ManifestStoreType.S3URL));
+    return stepConfiguration.getParametersFilesSpecs() != null
+        && stepConfiguration.getParametersFilesSpecs().stream().anyMatch(cloudformationParametersFileSpec
+            -> cloudformationParametersFileSpec.getStore().getSpec().getKind().equals(ManifestStoreType.S3URL));
   }
 
   private boolean hasGitStoredParameters(CloudformationCreateStackStepConfiguration stepConfiguration) {
-    return stepConfiguration.getParametersFilesSpecs().stream().anyMatch(cloudformationParametersFileSpec
-        -> ManifestStoreType.isInGitSubset(cloudformationParametersFileSpec.getStore().getSpec().getKind()));
+    return stepConfiguration.getParametersFilesSpecs() != null
+        && stepConfiguration.getParametersFilesSpecs().stream().anyMatch(cloudformationParametersFileSpec
+            -> ManifestStoreType.isInGitSubset(cloudformationParametersFileSpec.getStore().getSpec().getKind()));
   }
 
   private GitFetchFilesConfig getTemplateGitFetchFileConfig(
@@ -418,12 +417,12 @@ public class CloudformationStepHelper {
         (CloudformationCreateStackStepParameters) stepElementParameters.getSpec();
     CloudformationCreateStackStepConfiguration stepConfiguration =
         cloudformationCreateStackStepParameters.getConfiguration();
-    List<StackStatus> stackStatus = new ArrayList<>();
+    List<StackStatus> stackStatuses = new ArrayList<>();
     if (isNotEmpty(getParameterFieldValue(stepConfiguration.getSkipOnStackStatuses()))) {
-      stackStatus = getParameterFieldValue(stepConfiguration.getSkipOnStackStatuses())
-                        .stream()
-                        .map(StackStatus::fromValue)
-                        .collect(Collectors.toList());
+      stackStatuses = getParameterFieldValue(stepConfiguration.getSkipOnStackStatuses())
+                          .stream()
+                          .map(StackStatus::fromValue)
+                          .collect(Collectors.toList());
     }
     return CloudformationTaskNGParameters.builder()
         .accountId(AmbianceUtils.getAccountId(ambiance))
@@ -440,7 +439,7 @@ public class CloudformationStepHelper {
         .parameters(parameters)
         .capabilities(getParameterFieldValue(stepConfiguration.getCapabilities()))
         .tags(isNotEmpty(tags) ? engineExpressionService.renderExpression(ambiance, tags) : tags)
-        .stackStatusesToMarkAsSuccess(stackStatus)
+        .stackStatusesToMarkAsSuccess(stackStatuses)
         .timeoutInMs(StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), DEFAULT_TIMEOUT))
         .build();
   }
@@ -462,11 +461,10 @@ public class CloudformationStepHelper {
       CloudFormationCreateStackPassThroughData cloudFormationCreateStackPassThroughData,
       AwsS3FetchFilesResponse responseData) {
     Set<String> identifiers = cloudFormationCreateStackPassThroughData.getParametersFilesContent().keySet();
-    Map<String, List<S3FileDetailResponse>> s3Files = responseData.getS3filesDetails();
-    s3Files.forEach((s, s3FileDetailResponses) -> {
-      if (identifiers.contains(s)) {
-        cloudFormationCreateStackPassThroughData.getParametersFilesContent().put(
-            s, s3FileDetailResponses.stream().map(S3FileDetailResponse::getFileContent).collect(Collectors.toList()));
+    responseData.getS3filesDetails().forEach((identifier, s3FileDetailResponses) -> {
+      if (identifiers.contains(identifier)) {
+        cloudFormationCreateStackPassThroughData.getParametersFilesContent().put(identifier,
+            s3FileDetailResponses.stream().map(S3FileDetailResponse::getFileContent).collect(Collectors.toList()));
       }
     });
 
@@ -480,8 +478,8 @@ public class CloudformationStepHelper {
     String templateUrl = null;
 
     CloudformationTemplateFileSpec cloudformationTemplateFileSpec = stepConfiguration.getTemplateFile().getSpec();
-    if (s3Files.get(TEMPLATE_FILE_IDENTIFIER) != null) {
-      templateBody = s3Files.get(TEMPLATE_FILE_IDENTIFIER).get(0).getFileContent();
+    if (isNotEmpty(cloudFormationCreateStackPassThroughData.getTemplateBody())) {
+      templateBody = cloudFormationCreateStackPassThroughData.getTemplateBody();
     } else if (cloudformationTemplateFileSpec.getType().equals(CloudformationTemplateFileTypes.Inline)) {
       templateBody = getParameterFieldValue(
           ((InlineCloudformationTemplateFileSpec) cloudformationTemplateFileSpec).getTemplateBody());
