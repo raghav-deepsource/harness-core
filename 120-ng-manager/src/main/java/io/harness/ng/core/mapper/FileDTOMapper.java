@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.file.beans.NGBaseFile;
 import io.harness.ng.core.dto.filestore.FileDTO;
+import io.harness.ng.core.dto.filestore.ResponseFileDTO;
 import io.harness.ng.core.entities.NGFile;
 
 import java.util.Collections;
@@ -49,6 +50,41 @@ public class FileDTOMapper {
         .entityId(fileDto.getEntityId())
         .mimeType(fileDto.getMimeType())
         .build();
+  }
+
+  public static NGFile getNGFileFromDTO(FileDTO fileDto, boolean draft) {
+    if (fileDto.isFolder()) {
+      return NGFile.builder()
+          .accountIdentifier(fileDto.getAccountIdentifier())
+          .orgIdentifier(fileDto.getOrgIdentifier())
+          .projectIdentifier(fileDto.getProjectIdentifier())
+          .identifier(fileDto.getIdentifier())
+          .parentIdentifier(fileDto.getParentIdentifier())
+          .name(fileDto.getName())
+          .type(fileDto.getType())
+          .build();
+    }
+
+    return NGFile.builder()
+        .accountIdentifier(fileDto.getAccountIdentifier())
+        .orgIdentifier(fileDto.getOrgIdentifier())
+        .projectIdentifier(fileDto.getProjectIdentifier())
+        .identifier(fileDto.getIdentifier())
+        .name(fileDto.getName())
+        .fileUsage(fileDto.getFileUsage())
+        .type(fileDto.getType())
+        .parentIdentifier(fileDto.getParentIdentifier())
+        .description(fileDto.getDescription())
+        .tags(!EmptyPredicate.isEmpty(fileDto.getTags()) ? fileDto.getTags() : Collections.emptyList())
+        .entityType(fileDto.getEntityType())
+        .entityId(fileDto.getEntityId())
+        .mimeType(fileDto.getMimeType())
+        .draft(draft)
+        .build();
+  }
+
+  public static ResponseFileDTO getResponseFileDTOFromNGFile(NGFile ngFile) {
+    return ResponseFileDTO.builder().draft(ngFile.isDraft()).fileDTO(getFileDTOFromNGFile(ngFile)).build();
   }
 
   public FileDTO getFileDTOFromNGFile(NGFile ngFile) {

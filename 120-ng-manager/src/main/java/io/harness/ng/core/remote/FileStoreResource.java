@@ -9,6 +9,7 @@ package io.harness.ng.core.remote;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_KEY;
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.APPLICATION_YAML_MEDIA_TYPE;
 import static io.harness.NGCommonEntityConstants.FILE_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.ORG_KEY;
 import static io.harness.NGCommonEntityConstants.ORG_PARAM_MESSAGE;
@@ -29,6 +30,8 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.filestore.FileDTO;
+import io.harness.ng.core.dto.filestore.FileDtoYamlWrapper;
+import io.harness.ng.core.dto.filestore.ResponseFileDTO;
 import io.harness.ng.core.dto.filestore.node.FolderNodeDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.serializer.JsonUtils;
@@ -213,5 +216,28 @@ public class FileStoreResource {
       @NotNull FolderNodeDTO folderNodeDTO) {
     return ResponseDTO.newResponse(
         fileStoreService.listFolderNodes(accountIdentifier, orgIdentifier, projectIdentifier, folderNodeDTO));
+  }
+
+  @POST
+  @Path("/yaml")
+  @Consumes({APPLICATION_YAML_MEDIA_TYPE})
+  @ApiOperation(value = "Create file or folder via YAML", nickname = "createViaYAML")
+  @Operation(operationId = "createViaYAML", summary = "Creates file or folder via YAML",
+      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns create response") })
+  public ResponseDTO<ResponseFileDTO>
+  createViaYaml(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                    ACCOUNT_KEY) @EntityIdentifier String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) @EntityIdentifier(
+          allowBlank = true) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) @EntityIdentifier(
+          allowBlank = true) String projectIdentifier,
+      @RequestBody(required = true,
+          description = "YAML definition of file or folder") @NotNull @Valid FileDtoYamlWrapper fileDtoYamlWrapper) {
+    FileDTO file = fileDtoYamlWrapper.getFile();
+    file.setAccountIdentifier(accountIdentifier);
+    file.setOrgIdentifier(orgIdentifier);
+    file.setProjectIdentifier(projectIdentifier);
+
+    return ResponseDTO.newResponse(fileStoreService.createDraft(file));
   }
 }

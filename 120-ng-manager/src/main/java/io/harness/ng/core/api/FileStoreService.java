@@ -10,6 +10,7 @@ package io.harness.ng.core.api;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.filestore.FileDTO;
+import io.harness.ng.core.dto.filestore.ResponseFileDTO;
 import io.harness.ng.core.dto.filestore.node.FolderNodeDTO;
 
 import java.io.File;
@@ -73,4 +74,12 @@ public interface FileStoreService {
    */
   FolderNodeDTO listFolderNodes(@NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier,
       @NotNull FolderNodeDTO folderNodeDTO);
+
+  /**
+   * Create draft file (file without content).
+   *
+   * @param fileDto the file DTO object
+   * @return created file DTO object
+   */
+  ResponseFileDTO createDraft(FileDTO fileDto);
 }
