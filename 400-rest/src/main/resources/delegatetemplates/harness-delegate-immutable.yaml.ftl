@@ -90,7 +90,7 @@ spec:
 <#if ciEnabled == "true">
 ---
 
-    <@delegateService.cg />
+    <@delegateService.ng />
 </#if>
 
 ---

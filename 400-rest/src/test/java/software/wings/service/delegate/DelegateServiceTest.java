@@ -2143,6 +2143,39 @@ public class DelegateServiceTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = ALEKSANDAR)
+  @Category(UnitTests.class)
+  public void shouldDownloadKubernetesImmutableWithCiEnabled() throws IOException {
+    Account account = anAccount().withAccountKey("ACCOUNT_KEY").withUuid(ACCOUNT_ID).withNextGenEnabled(true).build();
+    featureTestHelper.enableFeatureFlag(USE_IMMUTABLE_DELEGATE);
+    when(delegateRingService.getDelegateImageTag(ACCOUNT_ID)).thenReturn(DELEGATE_IMAGE_TAG);
+    when(delegateRingService.getUpgraderImageTag(ACCOUNT_ID)).thenReturn(UPGRADER_IMAGE_TAG);
+    when(accountService.get(ACCOUNT_ID)).thenReturn(account);
+    when(accountService.isNextGenEnabled(ACCOUNT_ID)).thenReturn(true);
+    File gzipFile = delegateService.downloadKubernetes(
+            "https://localhost:9090", "https://localhost:7070", ACCOUNT_ID, "harness-delegate", "", null);
+    File tarFile = File.createTempFile(DELEGATE_DIR, ".tar");
+    uncompressGzipFile(gzipFile, tarFile);
+    try (TarArchiveInputStream tarArchiveInputStream = new TarArchiveInputStream(new FileInputStream(tarFile))) {
+      assertThat(tarArchiveInputStream.getNextEntry().getName()).isEqualTo(KUBERNETES_DELEGATE + "/");
+
+      TarArchiveEntry file = (TarArchiveEntry) tarArchiveInputStream.getNextEntry();
+      assertThat(file).extracting(ArchiveEntry::getName).isEqualTo(KUBERNETES_DELEGATE + "/harness-delegate.yaml");
+      byte[] buffer = new byte[(int) file.getSize()];
+      IOUtils.read(tarArchiveInputStream, buffer);
+      assertThat(new String(buffer))
+              .isEqualTo(CharStreams
+                      .toString(new InputStreamReader(
+                              getClass().getResourceAsStream("/expectedHarnessDelegateImmutableWithCiEnabled.yaml")))
+                      .replaceAll("8888", "" + port));
+
+      file = (TarArchiveEntry) tarArchiveInputStream.getNextEntry();
+      assertThat(file).extracting(TarArchiveEntry::getName).isEqualTo(KUBERNETES_DELEGATE + "/README.txt");
+    }
+  }
+
+
+  @Test
   @Owner(developers = BRETT)
   @Category(UnitTests.class)
   public void shouldSignalForDelegateUpgradeWhenUpdateIsPresent() throws IOException {
