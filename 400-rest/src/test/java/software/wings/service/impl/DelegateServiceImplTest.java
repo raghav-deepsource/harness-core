@@ -198,7 +198,6 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Mock private DelegateCache delegateCache;
   @Mock private FeatureFlagService featureFlagService;
   @Mock private LicenseService licenseService;
-  @Mock private DelegateConnectionDao delegateConnectionDao;
   @Inject @Spy private MainConfiguration mainConfiguration;
   @InjectMocks @Inject private DelegateServiceImpl delegateService;
   @InjectMocks @Inject private DelegateTaskServiceClassicImpl delegateTaskServiceClassic;
@@ -1457,30 +1456,48 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Owner(developers = ANUPAM)
   @Category(UnitTests.class)
   public void testGetConnectedRatioWithPrimary() {
+    String delegateId = generateUuid();
+
+    DelegateConnection delegateConnection = DelegateConnection.builder()
+                                                .accountId(ACCOUNT_ID)
+                                                .delegateId(delegateId)
+                                                .version(VERSION)
+                                                .disconnected(false)
+                                                .lastHeartbeat(System.currentTimeMillis())
+                                                .build();
+
+    persistence.save(delegateConnection);
+
     DelegateConfiguration delegateConfiguration =
         DelegateConfiguration.builder().delegateVersions(Arrays.asList(VERSION)).build();
     when(accountService.getDelegateConfiguration(ACCOUNT_ID)).thenReturn(delegateConfiguration);
-    when(delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(VERSION, ACCOUNT_ID)).thenReturn(5L);
-    when(delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(TARGET_VERSION, ACCOUNT_ID)).thenReturn(1L);
-    Double ratio = delegateService.getConnectedRatioWithPrimary(TARGET_VERSION, ACCOUNT_ID);
-    Double expectedRatio =
-        BigDecimal.valueOf((double) 1L / (double) 5L).setScale(3, RoundingMode.HALF_UP).doubleValue();
-    assertThat(ratio).isEqualTo(expectedRatio);
+
+    Double ratio = delegateService.getConnectedRatioWithPrimary(VERSION, ACCOUNT_ID);
+    assertThat(ratio).isEqualTo(1.0);
   }
 
   @Test
   @Owner(developers = ANUPAM)
   @Category(UnitTests.class)
   public void testGetConnectedRatioWithPrimaryWithNoAccountID() {
+    String delegateId = generateUuid();
+
+    DelegateConnection delegateConnection = DelegateConnection.builder()
+                                                .accountId(Account.GLOBAL_ACCOUNT_ID)
+                                                .delegateId(delegateId)
+                                                .version(VERSION)
+                                                .disconnected(false)
+                                                .lastHeartbeat(System.currentTimeMillis())
+                                                .build();
+
+    persistence.save(delegateConnection);
+
     DelegateConfiguration delegateConfiguration =
         DelegateConfiguration.builder().delegateVersions(Arrays.asList(VERSION)).build();
     when(accountService.getDelegateConfiguration(Account.GLOBAL_ACCOUNT_ID)).thenReturn(delegateConfiguration);
-    when(delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(VERSION, null)).thenReturn(5L);
-    when(delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(TARGET_VERSION, null)).thenReturn(1L);
-    Double ratio = delegateService.getConnectedRatioWithPrimary(TARGET_VERSION, null);
-    Double expectedRatio =
-        BigDecimal.valueOf((double) 1L / (double) 5L).setScale(3, RoundingMode.HALF_UP).doubleValue();
-    assertThat(ratio).isEqualTo(expectedRatio);
+
+    Double ratio = delegateService.getConnectedRatioWithPrimary(VERSION, null);
+    assertThat(ratio).isEqualTo(1.0);
   }
 
   @Test
@@ -1488,8 +1505,6 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testGetConnectedRatioWithPrimaryWithNoDelegateConfiguration() {
     when(accountService.getDelegateConfiguration(ACCOUNT_ID)).thenReturn(null);
-    when(delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(VERSION, ACCOUNT_ID)).thenReturn(5L);
-    when(delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(TARGET_VERSION, ACCOUNT_ID)).thenReturn(1L);
     Double ratio = delegateService.getConnectedRatioWithPrimary(TARGET_VERSION, ACCOUNT_ID);
     assertThat(ratio).isEqualTo(1.0);
   }
@@ -1498,10 +1513,27 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Owner(developers = ANUPAM)
   @Category(UnitTests.class)
   public void testGetConnectedDelegatesRatio() {
-    when(delegateConnectionDao.numberOfDelegateConnectionsPerVersion(VERSION, ACCOUNT_ID)).thenReturn(5L);
-    when(delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(VERSION, ACCOUNT_ID)).thenReturn(1L);
+    DelegateConnection delegateConnection1 = DelegateConnection.builder()
+                                                 .accountId(ACCOUNT_ID)
+                                                 .delegateId(generateUuid())
+                                                 .version(VERSION)
+                                                 .disconnected(false)
+                                                 .lastHeartbeat(System.currentTimeMillis())
+                                                 .build();
+
+    DelegateConnection delegateConnection2 = DelegateConnection.builder()
+                                                 .accountId(ACCOUNT_ID)
+                                                 .delegateId(generateUuid())
+                                                 .version(VERSION)
+                                                 .disconnected(true)
+                                                 .lastHeartbeat(System.currentTimeMillis())
+                                                 .build();
+
+    persistence.save(delegateConnection1);
+    persistence.save(delegateConnection2);
+
     Double ratio = delegateService.getConnectedDelegatesRatio(VERSION, ACCOUNT_ID);
-    assertThat(ratio).isEqualTo(0.2);
+    assertThat(ratio).isEqualTo(0.5);
   }
 
   private List<String> setUpDelegatesForInitializationTest() {
