@@ -7,6 +7,17 @@
 
 package io.harness.cdng.provision.cloudformation;
 
+import static io.harness.rule.OwnerRule.NGONZALEZ;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
+
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -45,6 +56,13 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+
+import software.wings.beans.TaskType;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -55,22 +73,6 @@ import org.mockito.Mock;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-import software.wings.beans.TaskType;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-
-import static io.harness.rule.OwnerRule.NGONZALEZ;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 @PrepareForTest({StepUtils.class})
 @RunWith(PowerMockRunner.class)
@@ -84,7 +86,7 @@ public class CloudformationCreateStackStepTest extends CategoryTest {
   @InjectMocks private CloudformationCreateStackStep cloudformationCreateStackStep;
 
   @Captor ArgumentCaptor<List<EntityDetail>> captor;
-
+  private static final String CONNECTOR_REF = "test-connector";
   private Ambiance getAmbiance() {
     return Ambiance.newBuilder()
         .putSetupAbstractions("accountId", "test-account")
@@ -104,12 +106,13 @@ public class CloudformationCreateStackStepTest extends CategoryTest {
 
     StoreConfigWrapper storeConfigWrapper =
         StoreConfigWrapper.builder()
-            .spec(GithubStore.builder().connectorRef(ParameterField.createValueField("test-connector")).build())
+            .spec(GithubStore.builder().connectorRef(ParameterField.createValueField(CONNECTOR_REF)).build())
             .build();
     parametersFileSpec.setStore(storeConfigWrapper);
     parametersFileSpec2.setStore(storeConfigWrapper);
     templateFileSpec.setTemplateBody(ParameterField.createValueField("data"));
     parameters.setConfiguration(CloudformationCreateStackStepConfiguration.builder()
+                                    .connectorRef(ParameterField.createValueField(CONNECTOR_REF))
                                     .parametersFilesSpecs(Arrays.asList(parametersFileSpec, parametersFileSpec2))
                                     .templateFile(CloudformationTemplateFile.builder()
                                                       .spec(templateFileSpec)
@@ -122,11 +125,13 @@ public class CloudformationCreateStackStepTest extends CategoryTest {
     verify(pipelineRbacHelper, times(1)).checkRuntimePermissions(eq(getAmbiance()), captor.capture(), eq(true));
 
     List<EntityDetail> entityDetails = captor.getValue();
-    assertThat(entityDetails.size()).isEqualTo(2);
-    assertThat(entityDetails.get(0).getEntityRef().getIdentifier()).isEqualTo("test-connector");
+    assertThat(entityDetails.size()).isEqualTo(3);
+    assertThat(entityDetails.get(0).getEntityRef().getIdentifier()).isEqualTo(CONNECTOR_REF);
     assertThat(entityDetails.get(0).getEntityRef().getAccountIdentifier()).isEqualTo("test-account");
-    assertThat(entityDetails.get(1).getEntityRef().getIdentifier()).isEqualTo("test-connector");
+    assertThat(entityDetails.get(1).getEntityRef().getIdentifier()).isEqualTo(CONNECTOR_REF);
     assertThat(entityDetails.get(1).getEntityRef().getAccountIdentifier()).isEqualTo("test-account");
+    assertThat(entityDetails.get(2).getEntityRef().getIdentifier()).isEqualTo(CONNECTOR_REF);
+    assertThat(entityDetails.get(2).getEntityRef().getAccountIdentifier()).isEqualTo("test-account");
   }
   @Test
   @Owner(developers = NGONZALEZ)
@@ -139,12 +144,13 @@ public class CloudformationCreateStackStepTest extends CategoryTest {
 
     StoreConfigWrapper storeConfigWrapper =
         StoreConfigWrapper.builder()
-            .spec(GithubStore.builder().connectorRef(ParameterField.createValueField("test-connector")).build())
+            .spec(GithubStore.builder().connectorRef(ParameterField.createValueField(CONNECTOR_REF)).build())
             .build();
     parametersFileSpec.setStore(storeConfigWrapper);
     parametersFileSpec2.setStore(storeConfigWrapper);
     templateFileSpec.setStore(storeConfigWrapper);
     parameters.setConfiguration(CloudformationCreateStackStepConfiguration.builder()
+                                    .connectorRef(ParameterField.createValueField("test" + CONNECTOR_REF))
                                     .parametersFilesSpecs(Arrays.asList(parametersFileSpec, parametersFileSpec2))
                                     .templateFile(CloudformationTemplateFile.builder()
                                                       .spec(templateFileSpec)
@@ -157,13 +163,15 @@ public class CloudformationCreateStackStepTest extends CategoryTest {
     verify(pipelineRbacHelper, times(1)).checkRuntimePermissions(eq(getAmbiance()), captor.capture(), eq(true));
 
     List<EntityDetail> entityDetails = captor.getValue();
-    assertThat(entityDetails.size()).isEqualTo(3);
-    assertThat(entityDetails.get(0).getEntityRef().getIdentifier()).isEqualTo("test-connector");
+    assertThat(entityDetails.size()).isEqualTo(4);
+    assertThat(entityDetails.get(0).getEntityRef().getIdentifier()).isEqualTo(CONNECTOR_REF);
     assertThat(entityDetails.get(0).getEntityRef().getAccountIdentifier()).isEqualTo("test-account");
-    assertThat(entityDetails.get(1).getEntityRef().getIdentifier()).isEqualTo("test-connector");
+    assertThat(entityDetails.get(1).getEntityRef().getIdentifier()).isEqualTo(CONNECTOR_REF);
     assertThat(entityDetails.get(1).getEntityRef().getAccountIdentifier()).isEqualTo("test-account");
-    assertThat(entityDetails.get(2).getEntityRef().getIdentifier()).isEqualTo("test-connector");
+    assertThat(entityDetails.get(2).getEntityRef().getIdentifier()).isEqualTo(CONNECTOR_REF);
     assertThat(entityDetails.get(2).getEntityRef().getAccountIdentifier()).isEqualTo("test-account");
+    assertThat(entityDetails.get(3).getEntityRef().getIdentifier()).isEqualTo("test" + CONNECTOR_REF);
+    assertThat(entityDetails.get(3).getEntityRef().getAccountIdentifier()).isEqualTo("test-account");
   }
   @Test
   @Owner(developers = NGONZALEZ)
@@ -176,7 +184,7 @@ public class CloudformationCreateStackStepTest extends CategoryTest {
 
     StoreConfigWrapper storeConfigWrapper =
         StoreConfigWrapper.builder()
-            .spec(GithubStore.builder().connectorRef(ParameterField.createValueField("test-connector")).build())
+            .spec(GithubStore.builder().connectorRef(ParameterField.createValueField(CONNECTOR_REF)).build())
             .build();
     parametersFileSpec.setStore(storeConfigWrapper);
     parametersFileSpec2.setStore(storeConfigWrapper);
@@ -233,14 +241,13 @@ public class CloudformationCreateStackStepTest extends CategoryTest {
     CloudformationParametersFileSpec parametersFileSpec = new CloudformationParametersFileSpec();
     CloudformationParametersFileSpec parametersFileSpec2 = new CloudformationParametersFileSpec();
 
-    StoreConfigWrapper storeConfigWrapper =
-        StoreConfigWrapper.builder()
-            .spec(S3UrlStoreConfig.builder()
-                      .urls(ParameterField.createValueField(Arrays.asList("url1")))
-                      .region(ParameterField.createValueField("region"))
-                      .connectorRef(ParameterField.createValueField("test-connector"))
-                      .build())
-            .build();
+    StoreConfigWrapper storeConfigWrapper = StoreConfigWrapper.builder()
+                                                .spec(S3UrlStoreConfig.builder()
+                                                          .urls(ParameterField.createValueField(Arrays.asList("url1")))
+                                                          .region(ParameterField.createValueField("region"))
+                                                          .connectorRef(ParameterField.createValueField(CONNECTOR_REF))
+                                                          .build())
+                                                .build();
     parametersFileSpec.setStore(storeConfigWrapper);
     parametersFileSpec2.setStore(storeConfigWrapper);
     templateFileSpec.setStore(storeConfigWrapper);

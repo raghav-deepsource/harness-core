@@ -70,7 +70,8 @@ public class CloudformationCreateStackStepInfo
           remoteTemplateFile.getStore().getSpec().getConnectorReference());
     }
 
-    if (cloudformationStepConfiguration.getTags().getSpec().getType().equals(CloudformationTagsFileTypes.Remote)) {
+    if (cloudformationStepConfiguration.getTags() != null
+        && cloudformationStepConfiguration.getTags().getSpec().getType().equals(CloudformationTagsFileTypes.Remote)) {
       RemoteCloudformationTagsFileSpec remoteTemplateFile =
           (RemoteCloudformationTagsFileSpec) cloudformationStepConfiguration.getTags().getSpec();
       connectorRefMap.put("configuration.spec.tags.store.spec.connectorRef",

@@ -22,7 +22,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
@@ -76,6 +76,7 @@ public class CloudformationCreateStackStepInfoTest extends CategoryTest {
     CloudformationCreateStackStepInfo cloudformationCreateStackStepInfo = new CloudformationCreateStackStepInfo();
     RemoteCloudformationTemplateFileSpec templateFileSpec = new RemoteCloudformationTemplateFileSpec();
     CloudformationParametersFileSpec parametersFileSpec = new CloudformationParametersFileSpec();
+    RemoteCloudformationTagsFileSpec tagsFileSpec = new RemoteCloudformationTagsFileSpec();
 
     StoreConfigWrapper storeConfigWrapper =
         StoreConfigWrapper.builder()
@@ -84,11 +85,12 @@ public class CloudformationCreateStackStepInfoTest extends CategoryTest {
     parametersFileSpec.setStore(storeConfigWrapper);
     parametersFileSpec.setIdentifier("test-identifier");
     templateFileSpec.setStore(storeConfigWrapper);
-
+    tagsFileSpec.setStore(storeConfigWrapper);
     cloudformationCreateStackStepInfo.setCloudformationStepConfiguration(
         CloudformationCreateStackStepConfiguration.builder()
             .connectorRef(ParameterField.createValueField("connectorRef"))
-            .parametersFilesSpecs((Arrays.asList(parametersFileSpec)))
+            .parametersFilesSpecs(Collections.singletonList(parametersFileSpec))
+            .tags(CloudformationTags.builder().spec(tagsFileSpec).build())
             .templateFile(CloudformationTemplateFile.builder()
                               .spec(templateFileSpec)
                               .type(CloudformationTemplateFileTypes.Remote)
@@ -96,12 +98,13 @@ public class CloudformationCreateStackStepInfoTest extends CategoryTest {
             .build());
 
     Map<String, ParameterField<String>> response = cloudformationCreateStackStepInfo.extractConnectorRefs();
-    assertThat(response.size()).isEqualTo(3);
+    assertThat(response.size()).isEqualTo(4);
     assertThat(response.get("configuration.connectorRef").getValue()).isEqualTo("connectorRef");
     assertThat(response.get("configuration.spec.templateFile.store.spec.connectorRef").getValue())
         .isEqualTo("test-connector");
     assertThat(response.get("configuration.spec.parameters.test-identifier.store.spec.connectorRef").getValue())
         .isEqualTo("test-connector");
+    assertThat(response.get("configuration.spec.tags.store.spec.connectorRef").getValue()).isEqualTo("test-connector");
   }
 
   @Test
@@ -124,7 +127,7 @@ public class CloudformationCreateStackStepInfoTest extends CategoryTest {
         CloudformationCreateStackStepConfiguration.builder()
             .region(ParameterField.createValueField("test"))
             .connectorRef(ParameterField.createValueField("connectorRef"))
-            .parametersFilesSpecs((Arrays.asList(parametersFileSpec)))
+            .parametersFilesSpecs(Collections.singletonList(parametersFileSpec))
             .templateFile(CloudformationTemplateFile.builder()
                               .spec(templateFileSpec)
                               .type(CloudformationTemplateFileTypes.Remote)

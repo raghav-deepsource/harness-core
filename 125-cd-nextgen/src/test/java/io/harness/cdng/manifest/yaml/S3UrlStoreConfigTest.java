@@ -26,9 +26,9 @@ public class S3UrlStoreConfigTest extends CategoryTest {
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
   public void testApplyOverrides() {
-    ParameterField<List<String>> urls = ParameterField.createValueField(Collections.singletonList(("url1")));
+    ParameterField<List<String>> urls = ParameterField.createValueField(Collections.singletonList("url1"));
     ParameterField<List<String>> urlsOverride =
-        ParameterField.createValueField(Collections.singletonList(("url-override")));
+        ParameterField.createValueField(Collections.singletonList("url-override"));
 
     S3UrlStoreConfig origin = S3UrlStoreConfig.builder()
                                   .connectorRef(ParameterField.createValueField("connector-ref"))
@@ -52,7 +52,7 @@ public class S3UrlStoreConfigTest extends CategoryTest {
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
   public void testApplyOverridesEmpty() {
-    ParameterField<List<String>> urls = ParameterField.createValueField(Collections.singletonList(("url1")));
+    ParameterField<List<String>> urls = ParameterField.createValueField(Collections.singletonList("url1"));
     S3UrlStoreConfig origin = S3UrlStoreConfig.builder()
                                   .connectorRef(ParameterField.createValueField("connector-ref"))
                                   .urls(urls)
@@ -72,7 +72,7 @@ public class S3UrlStoreConfigTest extends CategoryTest {
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
   public void testCloneInternal() {
-    ParameterField<List<String>> urls = ParameterField.createValueField(Collections.singletonList(("url1")));
+    ParameterField<List<String>> urls = ParameterField.createValueField(Collections.singletonList("url1"));
     S3UrlStoreConfig origin = S3UrlStoreConfig.builder()
                                   .connectorRef(ParameterField.createValueField("connector-ref"))
                                   .urls(urls)
@@ -90,7 +90,7 @@ public class S3UrlStoreConfigTest extends CategoryTest {
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
   public void testExtractConnectorRefs() {
-    ParameterField<List<String>> urls = ParameterField.createValueField(Collections.singletonList(("url1")));
+    ParameterField<List<String>> urls = ParameterField.createValueField(Collections.singletonList("url1"));
     S3UrlStoreConfig origin = S3UrlStoreConfig.builder()
                                   .connectorRef(ParameterField.createValueField("connector-ref"))
                                   .urls(urls)
