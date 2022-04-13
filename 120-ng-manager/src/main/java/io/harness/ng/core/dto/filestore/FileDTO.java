@@ -13,7 +13,6 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.Condition;
 import io.harness.data.validator.EntityIdentifier;
-import io.harness.data.validator.NGEntityName;
 import io.harness.ng.core.common.beans.NGTag;
 
 import software.wings.beans.EntityType;
@@ -52,7 +51,7 @@ public class FileDTO {
   @FormDataParam("identifier")
   private String identifier;
 
-  @NGEntityName @Schema(description = "Name of the File") @FormDataParam("name") private String name;
+  @NotBlank @Schema(description = "Name of the File") @FormDataParam("name") private String name;
   @Schema(description = "This specifies the file usage") @FormDataParam("fileUsage") private FileUsage fileUsage;
   @NotNull @Schema(description = "This specifies the type of the File") @FormDataParam("type") private NGFileType type;
   @NotBlank
