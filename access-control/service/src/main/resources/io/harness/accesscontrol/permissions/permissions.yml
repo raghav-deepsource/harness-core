@@ -708,7 +708,7 @@ permissions:
   - identifier: gitops_agent_view
     name: View a Gitops Agent
     status: ACTIVE
-    includeInAllRoles: true
+    includeInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
@@ -764,7 +764,7 @@ permissions:
   - identifier: gitops_repository_view
     name: View a Gitops Repository
     status: ACTIVE
-    includeInAllRoles: true
+    includeInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
@@ -788,7 +788,7 @@ permissions:
   - identifier: gitops_cluster_view
     name: View a Gitops Cluster
     status: ACTIVE
-    includeInAllRoles: true
+    includeInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
@@ -812,7 +812,7 @@ permissions:
   - identifier: gitops_gpgkey_view
     name: View a Gitops Gpgkey
     status: ACTIVE
-    includeInAllRoles: true
+    includeInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
@@ -836,7 +836,7 @@ permissions:
   - identifier: gitops_cert_view
     name: View a Gitops Cert
     status: ACTIVE
-    includeInAllRoles: true
+    includeInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
