@@ -24,9 +24,10 @@ public interface FileStoreService {
    *
    * @param fileDto the file DTO object
    * @param content file content
+   * @param draft
    * @return created file DTO object
    */
-  FileDTO create(@NotNull FileDTO fileDto, InputStream content);
+  ResponseFileDTO create(@NotNull FileDTO fileDto, InputStream content, boolean draft);
 
   /**
    * Update file.
@@ -74,12 +75,4 @@ public interface FileStoreService {
    */
   FolderNodeDTO listFolderNodes(@NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier,
       @NotNull FolderNodeDTO folderNodeDTO);
-
-  /**
-   * Create draft file (file without content).
-   *
-   * @param fileDto the file DTO object
-   * @return created file DTO object
-   */
-  ResponseFileDTO createDraft(FileDTO fileDto);
 }

@@ -67,16 +67,16 @@ public class FileStoreServiceImpl implements FileStoreService {
   }
 
   @Override
-  public FileDTO create(@NotNull FileDTO fileDto, InputStream content) {
+  public ResponseFileDTO create(@NotNull FileDTO fileDto, InputStream content, boolean draft) {
     log.info("Creating {}: {}", fileDto.getType().name().toLowerCase(), fileDto);
 
     if (existInDatabase(fileDto)) {
       throw new DuplicateEntityException(getDuplicateEntityMessage(fileDto));
     }
 
-    NGFile ngFile = FileDTOMapper.getNGFileFromDTO(fileDto);
+    NGFile ngFile = FileDTOMapper.getNGFileFromDTO(fileDto, draft);
 
-    if (fileDto.isFile()) {
+    if (shouldStoreFileContent(ngFile)) {
       if (content == null) {
         throw new InvalidArgumentsException(format("File content is empty. Identifier: %s", fileDto.getIdentifier()));
       }
@@ -85,7 +85,7 @@ public class FileStoreServiceImpl implements FileStoreService {
 
     try {
       ngFile = fileStoreRepository.save(ngFile);
-      return FileDTOMapper.getFileDTOFromNGFile(ngFile);
+      return FileDTOMapper.getResponseFileDTOFromNGFile(ngFile);
     } catch (DuplicateKeyException e) {
       throw new DuplicateEntityException(getDuplicateEntityMessage(fileDto));
     }
@@ -176,29 +176,15 @@ public class FileStoreServiceImpl implements FileStoreService {
     return populateFolderNode(folderNodeDTO, accountIdentifier, orgIdentifier, projectIdentifier);
   }
 
-  @Override
-  public ResponseFileDTO createDraft(FileDTO fileDto) {
-    log.info("Creating {}: {}", fileDto.getType().name().toLowerCase(), fileDto);
-
-    if (existInDatabase(fileDto)) {
-      throw new DuplicateEntityException(getDuplicateEntityMessage(fileDto));
-    }
-
-    NGFile ngFile = FileDTOMapper.getNGFileFromDTO(fileDto, true);
-
-    try {
-      ngFile = fileStoreRepository.save(ngFile);
-      return FileDTOMapper.getResponseFileDTOFromNGFile(ngFile);
-    } catch (DuplicateKeyException e) {
-      throw new DuplicateEntityException(getDuplicateEntityMessage(fileDto));
-    }
-  }
-
   private boolean existInDatabase(FileDTO fileDto) {
     return fileStoreRepository
         .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(fileDto.getAccountIdentifier(),
             fileDto.getOrgIdentifier(), fileDto.getProjectIdentifier(), fileDto.getIdentifier())
         .isPresent();
+  }
+
+  private boolean shouldStoreFileContent(NGFile ngFile) {
+    return !ngFile.isDraft() && ngFile.isFile();
   }
 
   private String getDuplicateEntityMessage(@NotNull FileDTO fileDto) {

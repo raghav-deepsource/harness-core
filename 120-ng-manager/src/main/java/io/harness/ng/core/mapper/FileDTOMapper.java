@@ -22,36 +22,6 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(CDP)
 @UtilityClass
 public class FileDTOMapper {
-  public NGFile getNGFileFromDTO(FileDTO fileDto) {
-    if (fileDto.isFolder()) {
-      return NGFile.builder()
-          .accountIdentifier(fileDto.getAccountIdentifier())
-          .orgIdentifier(fileDto.getOrgIdentifier())
-          .projectIdentifier(fileDto.getProjectIdentifier())
-          .identifier(fileDto.getIdentifier())
-          .parentIdentifier(fileDto.getParentIdentifier())
-          .name(fileDto.getName())
-          .type(fileDto.getType())
-          .build();
-    }
-
-    return NGFile.builder()
-        .accountIdentifier(fileDto.getAccountIdentifier())
-        .orgIdentifier(fileDto.getOrgIdentifier())
-        .projectIdentifier(fileDto.getProjectIdentifier())
-        .identifier(fileDto.getIdentifier())
-        .name(fileDto.getName())
-        .fileUsage(fileDto.getFileUsage())
-        .type(fileDto.getType())
-        .parentIdentifier(fileDto.getParentIdentifier())
-        .description(fileDto.getDescription())
-        .tags(!EmptyPredicate.isEmpty(fileDto.getTags()) ? fileDto.getTags() : Collections.emptyList())
-        .entityType(fileDto.getEntityType())
-        .entityId(fileDto.getEntityId())
-        .mimeType(fileDto.getMimeType())
-        .build();
-  }
-
   public static NGFile getNGFileFromDTO(FileDTO fileDto, boolean draft) {
     if (fileDto.isFolder()) {
       return NGFile.builder()

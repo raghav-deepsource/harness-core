@@ -102,7 +102,7 @@ public class FileStoreResource {
   @ApiOperation(value = "Create file or folder", nickname = "create")
   @Operation(operationId = "create", summary = "Creates file or folder",
       responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns create response") })
-  public ResponseDTO<FileDTO>
+  public ResponseDTO<ResponseFileDTO>
   create(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
              ACCOUNT_KEY) @EntityIdentifier String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) @EntityIdentifier(
@@ -117,7 +117,7 @@ public class FileStoreResource {
 
     validate(file);
 
-    return ResponseDTO.newResponse(fileStoreService.create(file, content));
+    return ResponseDTO.newResponse(fileStoreService.create(file, content, false));
   }
 
   @PUT
@@ -238,6 +238,6 @@ public class FileStoreResource {
     file.setOrgIdentifier(orgIdentifier);
     file.setProjectIdentifier(projectIdentifier);
 
-    return ResponseDTO.newResponse(fileStoreService.createDraft(file));
+    return ResponseDTO.newResponse(fileStoreService.create(file, null, true));
   }
 }

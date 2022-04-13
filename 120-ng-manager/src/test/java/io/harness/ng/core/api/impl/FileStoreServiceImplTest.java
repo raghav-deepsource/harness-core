@@ -179,7 +179,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
     final FileDTO fileDto = aFileDto();
 
     // When
-    fileStoreService.create(fileDto, getStreamWithDummyContent());
+    fileStoreService.create(fileDto, getStreamWithDummyContent(), false);
 
     // Then
     NGFile expected = NGFile.builder()
@@ -202,7 +202,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
     final FileDTO fileDto = aFileDto();
 
     // When
-    fileStoreService.create(fileDto, getStreamWithDummyContent());
+    fileStoreService.create(fileDto, getStreamWithDummyContent(), false);
 
     // Then
     NGBaseFile baseFile = new NGBaseFile();
@@ -220,7 +220,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
     final FileDTO folderDto = aFolderDto();
 
     // When
-    fileStoreService.create(folderDto, null);
+    fileStoreService.create(folderDto, null, false);
 
     // Then
     verifyZeroInteractions(fileService);
@@ -234,7 +234,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
 
     FileDTO folderDto = aFolderDto();
 
-    assertThatThrownBy(() -> fileStoreService.create(folderDto, null))
+    assertThatThrownBy(() -> fileStoreService.create(folderDto, null, false))
         .isInstanceOf(DuplicateEntityException.class)
         .hasMessageContaining(
             "Try creating another folder, folder with identifier [%s] already exists in the parent folder",
@@ -249,7 +249,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
 
     FileDTO fileDTO = aFileDto();
 
-    assertThatThrownBy(() -> fileStoreService.create(fileDTO, getStreamWithDummyContent()))
+    assertThatThrownBy(() -> fileStoreService.create(fileDTO, getStreamWithDummyContent(), false))
         .isInstanceOf(DuplicateEntityException.class)
         .hasMessageContaining(
             "Try creating another file, file with identifier [%s] already exists in the parent folder",
@@ -264,7 +264,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
 
     FileDTO fileDTO = aFileDto();
 
-    assertThatThrownBy(() -> fileStoreService.create(fileDTO, getStreamWithDummyContent()))
+    assertThatThrownBy(() -> fileStoreService.create(fileDTO, getStreamWithDummyContent(), false))
         .isInstanceOf(DuplicateEntityException.class)
         .hasMessageContaining(
             "Try creating another file, file with identifier [%s] already exists in the parent folder",
@@ -277,7 +277,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
   public void shouldHandleEmptyFileExceptionForFile() {
     FileDTO fileDTO = aFileDto();
 
-    assertThatThrownBy(() -> fileStoreService.create(fileDTO, null))
+    assertThatThrownBy(() -> fileStoreService.create(fileDTO, null, false))
         .isInstanceOf(InvalidArgumentsException.class)
         .hasMessageContaining("File content is empty. Identifier: " + fileDTO.getIdentifier(), fileDTO.getIdentifier());
   }
