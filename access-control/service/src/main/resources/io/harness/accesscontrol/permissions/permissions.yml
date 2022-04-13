@@ -732,7 +732,7 @@ permissions:
   - identifier: gitops_application_view
     name: View a Gitops Application
     status: ACTIVE
-    includeInAllRoles: true
+    includeInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
