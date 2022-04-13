@@ -650,7 +650,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         startUpgradeCheck(getVersion());
       }
 
-      log.info("Delegate started");
+      log.info("Delegate started with config {} ", getDelegateConfig());
       log.info("Manager Authority:{}, Manager Target:{}", delegateConfiguration.getManagerAuthority(),
           delegateConfiguration.getManagerTarget());
 
@@ -748,6 +748,12 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     } catch (RuntimeException | IOException e) {
       log.error("Exception while starting/running delegate", e);
     }
+  }
+
+  private String getDelegateConfig() {
+    String delegateConfig = delegateConfiguration.getDelegateConfigAsString();
+    delegateConfig += ", Multiversion: " + String.valueOf(multiVersion);
+    return delegateConfig;
   }
 
   private void maybeUpdateTaskRejectionStatus() {
