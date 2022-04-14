@@ -315,7 +315,8 @@ public enum FeatureName {
   HIDE_ABORT,
   CUSTOM_ARTIFACT_NG,
   APPLICATION_DROPDOWN_MULTISELECT,
-  NG_AZURE;
+  NG_AZURE,
+  NG_PIPELINE_TEMPLATE;
 
   FeatureName() {
     scope = Scope.PER_ACCOUNT;

@@ -82,11 +82,7 @@ public class PipelineInfoConfig {
   @VariableExpression List<NGVariable> variables;
   @VariableExpression NGProperties properties;
 
-  @NotNull
-  @Singular
-  @Size(min = 1)
-  @VariableExpression(skipVariableExpression = true)
-  List<StageElementWrapperConfig> stages;
+  @Singular @Size(min = 1) @VariableExpression(skipVariableExpression = true) List<StageElementWrapperConfig> stages;
   @VariableExpression(skipVariableExpression = true) List<NotificationRules> notificationRules;
 
   @VariableExpression(skipVariableExpression = true) String orgIdentifier;
