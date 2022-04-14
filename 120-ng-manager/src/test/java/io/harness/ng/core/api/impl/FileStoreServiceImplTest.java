@@ -49,6 +49,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -189,6 +190,9 @@ public class FileStoreServiceImplTest extends CategoryTest {
                           .name(fileDto.getName())
                           .type(fileDto.getType())
                           .checksumType(ChecksumType.MD5)
+                          .draft(false)
+                          .tags(Collections.emptyList())
+                          .size(0L)
                           .build();
 
     verify(fileStoreRepository).save(expected);
