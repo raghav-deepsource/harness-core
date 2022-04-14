@@ -10,7 +10,6 @@ package io.harness.ng.core.api;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.filestore.FileDTO;
-import io.harness.ng.core.dto.filestore.ResponseFileDTO;
 import io.harness.ng.core.dto.filestore.node.FolderNodeDTO;
 
 import java.io.File;
@@ -27,7 +26,7 @@ public interface FileStoreService {
    * @param draft
    * @return created file DTO object
    */
-  ResponseFileDTO create(@NotNull FileDTO fileDto, InputStream content, boolean draft);
+  FileDTO create(@NotNull FileDTO fileDto, InputStream content, boolean draft);
 
   /**
    * Update file.

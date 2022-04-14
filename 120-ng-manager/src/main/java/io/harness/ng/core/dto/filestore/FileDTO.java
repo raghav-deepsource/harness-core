@@ -20,6 +20,8 @@ import software.wings.beans.EntityType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
@@ -63,11 +65,12 @@ public class FileDTO {
   @Schema(description = "Content of the File") @FormDataParam("entityType") private EntityType entityType;
   @Schema(description = "Content of the File") @FormDataParam("entityId") private String entityId;
   @Schema(description = "Mime type of the File") @FormDataParam("mimeType") private String mimeType;
+  @Schema(description = "Whether File is draft or not") @JsonProperty(access = Access.READ_ONLY) private Boolean draft;
 
   @Builder
   public FileDTO(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier,
       String name, FileUsage fileUsage, NGFileType type, String parentIdentifier, String description, List<NGTag> tags,
-      EntityType entityType, String entityId, String mimeType) {
+      EntityType entityType, String entityId, String mimeType, Boolean draft) {
     this.accountIdentifier = accountIdentifier;
     this.orgIdentifier = orgIdentifier;
     this.projectIdentifier = projectIdentifier;
@@ -81,6 +84,7 @@ public class FileDTO {
     this.entityType = entityType;
     this.entityId = entityId;
     this.mimeType = mimeType;
+    this.draft = draft;
   }
 
   @JsonIgnore

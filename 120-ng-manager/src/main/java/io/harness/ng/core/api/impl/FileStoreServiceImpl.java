@@ -23,7 +23,6 @@ import io.harness.filestore.FileStoreConstants;
 import io.harness.ng.core.api.FileStoreService;
 import io.harness.ng.core.dto.filestore.FileDTO;
 import io.harness.ng.core.dto.filestore.NGFileType;
-import io.harness.ng.core.dto.filestore.ResponseFileDTO;
 import io.harness.ng.core.dto.filestore.node.FileStoreNodeDTO;
 import io.harness.ng.core.dto.filestore.node.FolderNodeDTO;
 import io.harness.ng.core.entities.NGFile;
@@ -67,7 +66,7 @@ public class FileStoreServiceImpl implements FileStoreService {
   }
 
   @Override
-  public ResponseFileDTO create(@NotNull FileDTO fileDto, InputStream content, boolean draft) {
+  public FileDTO create(@NotNull FileDTO fileDto, InputStream content, boolean draft) {
     log.info("Creating {}: {}", fileDto.getType().name().toLowerCase(), fileDto);
 
     if (existInDatabase(fileDto)) {
@@ -85,7 +84,7 @@ public class FileStoreServiceImpl implements FileStoreService {
 
     try {
       ngFile = fileStoreRepository.save(ngFile);
-      return FileDTOMapper.getResponseFileDTOFromNGFile(ngFile);
+      return FileDTOMapper.getFileDTOFromNGFile(ngFile);
     } catch (DuplicateKeyException e) {
       throw new DuplicateEntityException(getDuplicateEntityMessage(fileDto));
     }

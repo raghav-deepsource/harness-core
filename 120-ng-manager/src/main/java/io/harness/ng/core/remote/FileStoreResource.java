@@ -31,7 +31,6 @@ import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.filestore.FileDTO;
 import io.harness.ng.core.dto.filestore.FileDtoYamlWrapper;
-import io.harness.ng.core.dto.filestore.ResponseFileDTO;
 import io.harness.ng.core.dto.filestore.node.FolderNodeDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.serializer.JsonUtils;
@@ -102,7 +101,7 @@ public class FileStoreResource {
   @ApiOperation(value = "Create file or folder", nickname = "create")
   @Operation(operationId = "create", summary = "Creates file or folder",
       responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns create response") })
-  public ResponseDTO<ResponseFileDTO>
+  public ResponseDTO<FileDTO>
   create(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
              ACCOUNT_KEY) @EntityIdentifier String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) @EntityIdentifier(
@@ -224,7 +223,7 @@ public class FileStoreResource {
   @ApiOperation(value = "Create file or folder via YAML", nickname = "createViaYAML")
   @Operation(operationId = "createViaYAML", summary = "Creates file or folder via YAML",
       responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns create response") })
-  public ResponseDTO<ResponseFileDTO>
+  public ResponseDTO<FileDTO>
   createViaYaml(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                     ACCOUNT_KEY) @EntityIdentifier String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) @EntityIdentifier(

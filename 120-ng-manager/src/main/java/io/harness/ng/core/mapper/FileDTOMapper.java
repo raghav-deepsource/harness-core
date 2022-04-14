@@ -13,7 +13,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.file.beans.NGBaseFile;
 import io.harness.ng.core.dto.filestore.FileDTO;
-import io.harness.ng.core.dto.filestore.ResponseFileDTO;
 import io.harness.ng.core.entities.NGFile;
 
 import java.util.Collections;
@@ -53,10 +52,6 @@ public class FileDTOMapper {
         .build();
   }
 
-  public static ResponseFileDTO getResponseFileDTOFromNGFile(NGFile ngFile) {
-    return ResponseFileDTO.builder().draft(ngFile.isDraft()).fileDTO(getFileDTOFromNGFile(ngFile)).build();
-  }
-
   public FileDTO getFileDTOFromNGFile(NGFile ngFile) {
     if (ngFile.isFolder()) {
       return FileDTO.builder()
@@ -67,6 +62,7 @@ public class FileDTOMapper {
           .name(ngFile.getName())
           .type(ngFile.getType())
           .parentIdentifier(ngFile.getParentIdentifier())
+          .draft(ngFile.isDraft())
           .build();
     }
 
@@ -84,6 +80,7 @@ public class FileDTOMapper {
         .entityType(ngFile.getEntityType())
         .entityId(ngFile.getEntityId())
         .mimeType(ngFile.getMimeType())
+        .draft(ngFile.isDraft())
         .build();
   }
 
