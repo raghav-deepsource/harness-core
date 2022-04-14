@@ -588,10 +588,6 @@ public class DelegateServiceImpl implements DelegateService {
 
     DelegateConfiguration delegateConfiguration = accountService.getDelegateConfiguration(primaryDelegateForAccount);
 
-    // This is a case when no prior delegate version is available for specific account_id
-    if (delegateConfiguration == null || CollectionUtil.isEmpty(delegateConfiguration.getDelegateVersions())) {
-      return 1.0;
-    }
     String primaryVersion = delegateConfiguration.getDelegateVersions().get(0).split("-")[0];
     long primary = delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(primaryVersion, accountId);
 
