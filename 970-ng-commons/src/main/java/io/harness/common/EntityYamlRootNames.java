@@ -28,6 +28,7 @@ public class EntityYamlRootNames {
   public static String PIPELINE_STEP = "pipelineStep";
   public static String CONNECTOR = "connector";
   public static String SECRET = "secret";
+  public static String FILE = "file";
   public static String SERVICE = "service";
   public static String ENVIRONMENT = "environment";
   public static String INPUT_SET = "inputSet";

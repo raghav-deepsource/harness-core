@@ -105,6 +105,8 @@ public enum EntityType {
   CONNECTORS(ModuleType.CORE, EntityTypeConstants.CONNECTORS, IdentifierRef.class, EntityYamlRootNames.CONNECTOR),
   @JsonProperty(EntityTypeConstants.SECRETS)
   SECRETS(ModuleType.CORE, EntityTypeConstants.SECRETS, IdentifierRef.class, EntityYamlRootNames.SECRET),
+  @JsonProperty(EntityTypeConstants.FILES)
+  FILES(ModuleType.CORE, EntityTypeConstants.FILES, IdentifierRef.class, EntityYamlRootNames.FILE),
   @JsonProperty(EntityTypeConstants.SERVICE)
   SERVICE(ModuleType.CORE, EntityTypeConstants.SERVICE, IdentifierRef.class, EntityYamlRootNames.SERVICE),
   @JsonProperty(EntityTypeConstants.ENVIRONMENT)

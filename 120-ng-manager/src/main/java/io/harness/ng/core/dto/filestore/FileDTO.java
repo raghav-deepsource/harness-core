@@ -48,14 +48,24 @@ public class FileDTO {
   @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) private String orgIdentifier;
   @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) private String projectIdentifier;
 
+  @ApiModelProperty(required = true)
   @EntityIdentifier
   @Schema(description = "Identifier of the File")
   @FormDataParam("identifier")
   private String identifier;
 
-  @NotBlank @Schema(description = "Name of the File") @FormDataParam("name") private String name;
+  @ApiModelProperty(required = true)
+  @NotBlank
+  @Schema(description = "Name of the File")
+  @FormDataParam("name")
+  private String name;
   @Schema(description = "This specifies the file usage") @FormDataParam("fileUsage") private FileUsage fileUsage;
-  @NotNull @Schema(description = "This specifies the type of the File") @FormDataParam("type") private NGFileType type;
+  @ApiModelProperty(required = true)
+  @NotNull
+  @Schema(description = "This specifies the type of the File")
+  @FormDataParam("type")
+  private NGFileType type;
+  @ApiModelProperty(required = true)
   @NotBlank
   @Schema(description = "This specifies parent identifier")
   @FormDataParam("parentIdentifier")
@@ -89,11 +99,11 @@ public class FileDTO {
 
   @JsonIgnore
   public boolean isFile() {
-    return type == NGFileType.FILE;
+    return type == NGFileType.File;
   }
 
   @JsonIgnore
   public boolean isFolder() {
-    return type == NGFileType.FOLDER;
+    return type == NGFileType.Folder;
   }
 }

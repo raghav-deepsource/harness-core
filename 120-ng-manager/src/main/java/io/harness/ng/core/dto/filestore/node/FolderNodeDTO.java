@@ -32,7 +32,7 @@ public final class FolderNodeDTO extends FileStoreNodeDTO {
 
   @Builder
   public FolderNodeDTO(String identifier, String name) {
-    super(NGFileType.FOLDER, identifier, name);
+    super(NGFileType.Folder, identifier, name);
   }
 
   public FileStoreNodeDTO addChild(FileStoreNodeDTO child) {

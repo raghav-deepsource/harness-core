@@ -18,6 +18,7 @@ public interface EntityTypeConstants {
   String PIPELINE_STEPS = "PipelineSteps";
   String CONNECTORS = "Connectors";
   String SECRETS = "Secrets";
+  String FILES = "Files";
   String SERVICE = "Service";
   String ENVIRONMENT = "Environment";
   String INPUT_SETS = "InputSets";
