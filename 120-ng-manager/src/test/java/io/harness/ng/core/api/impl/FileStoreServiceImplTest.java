@@ -233,6 +233,44 @@ public class FileStoreServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = FILIP)
   @Category(UnitTests.class)
+  public void shouldNotInvokeSaveFileOnFileServiceForDraftFile() {
+    // Given
+    final FileDTO fileDto = aFileDto();
+
+    // When
+    fileStoreService.create(fileDto, null, true);
+
+    // Then
+    verifyZeroInteractions(fileService);
+  }
+
+  @Test
+  @Owner(developers = FILIP)
+  @Category(UnitTests.class)
+  public void shouldSaveDraftNgFile() {
+    // Given
+    final FileDTO fileDto = aFileDto();
+
+    // When
+    fileStoreService.create(fileDto, getStreamWithDummyContent(), true);
+
+    // Then
+    NGFile expected = NGFile.builder()
+                          .identifier(fileDto.getIdentifier())
+                          .accountIdentifier(fileDto.getAccountIdentifier())
+                          .description(fileDto.getDescription())
+                          .name(fileDto.getName())
+                          .type(fileDto.getType())
+                          .draft(true)
+                          .tags(Collections.emptyList())
+                          .build();
+
+    verify(fileStoreRepository).save(expected);
+  }
+
+  @Test
+  @Owner(developers = FILIP)
+  @Category(UnitTests.class)
   public void shouldThrowExceptionWhenFolderAlreadyExistsInDatabase() {
     givenThatFileExistsInDatabase();
 
