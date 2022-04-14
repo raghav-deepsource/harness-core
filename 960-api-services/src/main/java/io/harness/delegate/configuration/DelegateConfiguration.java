@@ -15,17 +15,17 @@ import io.harness.event.client.impl.EventPublisherConstants;
 import java.util.Optional;
 import lombok.Builder;
 import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
+import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 
-@Slf4j
 @Data
 @Builder
+@ToString
 @OwnedBy(DEL)
 public class DelegateConfiguration {
   private String accountId;
-  private String accountSecret;
-  private String delegateToken;
+  @ToString.Exclude private String accountSecret;
+  @ToString.Exclude private String delegateToken;
   private String managerUrl;
   private String verificationServiceUrl;
   private String cvNextGenUrl;
@@ -74,27 +74,5 @@ public class DelegateConfiguration {
 
   public String getQueueFilePath() {
     return Optional.ofNullable(queueFilePath).orElse(EventPublisherConstants.DEFAULT_QUEUE_FILE_PATH);
-  }
-
-  public String getDelegateConfigAsString() {
-    try {
-      String delegateConfig = this.toString();
-
-      // Remove accountSecret and delegateToken from this object.
-      int startIndex = delegateConfig.indexOf("accountSecret");
-      int endIndex = delegateConfig.indexOf(",", startIndex);
-      String toBeReplaced = delegateConfig.substring(startIndex, endIndex + 1);
-      delegateConfig = delegateConfig.replace(toBeReplaced, "");
-
-      startIndex = delegateConfig.indexOf("delegateToken");
-      endIndex = delegateConfig.indexOf(",", startIndex);
-      toBeReplaced = delegateConfig.substring(startIndex, endIndex + 1);
-      delegateConfig = delegateConfig.replace(toBeReplaced, "");
-
-      return delegateConfig;
-    } catch (Exception ex) {
-      log.error("Encountered error while serializing delegateConfiguration ", ex);
-      return "Config: NA";
-    }
   }
 }

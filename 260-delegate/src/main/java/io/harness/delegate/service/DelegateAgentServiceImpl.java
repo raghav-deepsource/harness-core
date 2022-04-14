@@ -751,7 +751,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private String getDelegateConfig() {
-    String delegateConfig = delegateConfiguration.getDelegateConfigAsString();
+    String delegateConfig = delegateConfiguration.toString();
     delegateConfig += ", Multiversion: " + String.valueOf(multiVersion);
     return delegateConfig;
   }
