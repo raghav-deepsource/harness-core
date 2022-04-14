@@ -971,6 +971,16 @@ public class WatcherServiceImpl implements WatcherService {
   }
 
   private boolean isPrimaryDelegate(String delegateVersion, List<String> expectedVersions) {
+    if (isEmpty(delegateVersion)) {
+      if (expectedVersions.size() == 1) {
+        // If we do not have valid delegateVersion and there is only one expected version,
+        // consider that to be primary.
+        log.info("Delegate version is not valid, assuming {} as primary", expectedVersions.get(0));
+        return true;
+      }
+      log.error("Invalid delegate version, expected version {}", expectedVersions.toString());
+      return false;
+    }
     return delegateVersion.equals(getPrimaryDelegate(expectedVersions));
   }
 
