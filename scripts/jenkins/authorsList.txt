@@ -59,6 +59,7 @@ Diptiman Adak diptiman.adak@harness.io
 diptiman.adak diptiman.adak@harness.io
 Deepak Chhikara deepak.chhikara@harness.io
 Duc Nguyen duc@harness.io
+Fernando Dourado fernando.dourado@harness.io
 Filip Petrovic filip.petrovic@harness.io
 Garvit Pahal garvit.pahal@harness.io
 George Georgiev george@harness.io
@@ -88,6 +89,7 @@ Kapil Kumawat kapil.kumawat@harness.io
 Karan Siwach karan.siwach@harness.io
 Lazar Matovic lazar.matovic@harness.io
 Lucas Mari lucas.mari@harness.io
+Lucas Sales lucas.sales@harness.io
 Mankrit Singh mankrit.singh@harness.io
 Magdalene Lee magdalene.lee@harness.io
 Mark Lu mark.lu@harness.io
@@ -257,3 +259,4 @@ Satyam Goel satyam.goel@harness.io
 Hen Amar hen.amar@harness.io
 Utkarsh Choubey utkarsh.choubey@harness.io
 Sahildeep Singh sahildeep.singh@harness.io
+Dhruv dhruv@harness.io

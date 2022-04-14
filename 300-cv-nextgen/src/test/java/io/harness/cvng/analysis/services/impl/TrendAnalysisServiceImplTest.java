@@ -352,6 +352,7 @@ public class TrendAnalysisServiceImplTest extends CvNextGenTestBase {
     timeSeriesLearningEngineTask.setVerificationTaskId(verificationTaskId);
     timeSeriesLearningEngineTask.setAnalysisStartTime(start);
     timeSeriesLearningEngineTask.setAnalysisEndTime(end);
+    timeSeriesLearningEngineTask.setPickedAt(end.plus(Duration.ofMinutes(2)));
     return learningEngineTaskService.createLearningEngineTask(timeSeriesLearningEngineTask);
   }
 

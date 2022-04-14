@@ -686,6 +686,17 @@ message GetUserReposResponse {
   string error = 4;
 }
 
+message GetUserRepoRequest {
+  string slug = 1;
+  Provider provider = 2;
+}
+
+message GetUserRepoResponse {
+  Repository repo = 1;
+  int32 status = 2;
+  string error = 3;
+}
+
 message FindPRRequest {
   int64 number = 1;
   string slug = 2;
@@ -745,6 +756,7 @@ service SCM {
   // User functions
   rpc GetAuthenticatedUser(GetAuthenticatedUserRequest) returns (GetAuthenticatedUserResponse);
   rpc GetUserRepos(GetUserReposRequest) returns (GetUserReposResponse);
+  rpc GetUserRepo(GetUserRepoRequest) returns (GetUserRepoResponse);
 
   // repo functions from go-scm
   rpc CreateWebhook(CreateWebhookRequest) returns (CreateWebhookResponse);

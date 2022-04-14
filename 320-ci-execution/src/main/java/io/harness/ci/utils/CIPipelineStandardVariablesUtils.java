@@ -20,6 +20,6 @@ import lombok.Builder;
 @OwnedBy(HarnessTeam.CI)
 public class CIPipelineStandardVariablesUtils {
   public static BuildStandardVariables fetchBuildStandardVariables(CIExecutionArgs ciExecutionArgs) {
-    return BuildStandardVariables.builder().number(ciExecutionArgs.getBuildNumberDetails().getBuildNumber()).build();
+    return BuildStandardVariables.builder().build();
   }
 }

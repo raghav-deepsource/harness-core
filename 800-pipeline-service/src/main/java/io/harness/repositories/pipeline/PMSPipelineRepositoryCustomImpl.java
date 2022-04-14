@@ -29,7 +29,6 @@ import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.springdata.TransactionHelper;
 
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
@@ -106,15 +105,22 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
       PipelineEntity savedEntity = gitAwarePersistence.save(
           pipelineToSave, pipelineToSave.getYaml(), ChangeType.ADD, PipelineEntity.class, supplier);
       makeSupplierCallIfGitSyncIsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, supplierWithGitSyncTrue);
-      ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal(savedEntity);
-      PipelineMetadataV2 metadata = PipelineMetadataV2.builder()
-                                        .accountIdentifier(savedEntity.getAccountIdentifier())
-                                        .orgIdentifier(savedEntity.getOrgIdentifier())
-                                        .projectIdentifier(savedEntity.getProjectIdentifier())
-                                        .runSequence(0)
-                                        .identifier(savedEntity.getIdentifier())
-                                        .build();
-      pipelineMetadataService.save(metadata);
+
+      // checking if PipelineMetadata exists or not, if exists don't re-save the entity, as only one entry across git
+      // repos should be there.
+      Optional<PipelineMetadataV2> metadataOptional =
+          pipelineMetadataService.getMetadata(savedEntity.getAccountIdentifier(), savedEntity.getOrgIdentifier(),
+              savedEntity.getProjectIdentifier(), savedEntity.getIdentifier());
+      if (!metadataOptional.isPresent()) {
+        PipelineMetadataV2 metadata = PipelineMetadataV2.builder()
+                                          .accountIdentifier(savedEntity.getAccountIdentifier())
+                                          .orgIdentifier(savedEntity.getOrgIdentifier())
+                                          .projectIdentifier(savedEntity.getProjectIdentifier())
+                                          .runSequence(0)
+                                          .identifier(savedEntity.getIdentifier())
+                                          .build();
+        pipelineMetadataService.save(metadata);
+      }
       return savedEntity;
     });
   }

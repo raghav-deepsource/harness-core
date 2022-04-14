@@ -134,6 +134,7 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
     timeSeriesLearningEngineTask.setVerificationTaskId(verificationTaskId);
     timeSeriesLearningEngineTask.setAnalysisStartTime(Instant.now());
     timeSeriesLearningEngineTask.setAnalysisEndTime(Instant.now().plus(Duration.ofMinutes(5)));
+    timeSeriesLearningEngineTask.setPickedAt(Instant.now().plus(Duration.ofMinutes(2)));
     timeSeriesLearningEngineTask.setWindowSize(5);
     learningEngineTaskId = learningEngineTaskService.createLearningEngineTask(timeSeriesLearningEngineTask);
     orgIdentifier = generateUuid();
@@ -614,6 +615,7 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
     fillCommon(task, LearningEngineTaskType.SERVICE_GUARD_TIME_SERIES);
     Instant start = instant.minus(10, ChronoUnit.MINUTES).truncatedTo(ChronoUnit.MINUTES);
     Instant end = start.plus(5, ChronoUnit.MINUTES);
+    task.setPickedAt(end.plus(Duration.ofMinutes(2)));
     task.setAnalysisStartTime(start);
     task.setAnalysisEndTime(end);
 

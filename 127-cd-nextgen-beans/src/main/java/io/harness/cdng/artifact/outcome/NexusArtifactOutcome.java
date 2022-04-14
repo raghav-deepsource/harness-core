@@ -54,6 +54,8 @@ public class NexusArtifactOutcome implements ArtifactOutcome {
   /** imagePullSecret for nexus credentials base encoded.*/
   String imagePullSecret;
 
+  String registryHostname;
+
   @Override
   public ArtifactSummary getArtifactSummary() {
     return NexusArtifactSummary.builder().artifactPath(getArtifactPath()).tag(getTag()).build();

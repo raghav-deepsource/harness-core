@@ -8,11 +8,13 @@
 package io.harness.pms.sdk.core.pipeline.variables;
 
 import io.harness.pms.sdk.core.variables.AbstractStageVariableCreator;
+import io.harness.pms.sdk.core.variables.VariableCreatorHelper;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationContext;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationResponse;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
+import io.harness.steps.approval.stage.ApprovalStageNode;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -20,7 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class ApprovalStageVariableCreator extends AbstractStageVariableCreator {
+public class ApprovalStageVariableCreator extends AbstractStageVariableCreator<ApprovalStageNode> {
   @Override
   public LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodes(
       VariableCreationContext ctx, YamlField config) {
@@ -43,5 +45,16 @@ public class ApprovalStageVariableCreator extends AbstractStageVariableCreator {
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
     return Collections.singletonMap(YAMLFieldNameConstants.STAGE, Collections.singleton("Approval"));
+  }
+
+  @Override
+  public LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodesV2(
+      VariableCreationContext ctx, ApprovalStageNode config) {
+    return createVariablesForChildrenNodes(ctx, ctx.getCurrentField());
+  }
+
+  @Override
+  public Class<ApprovalStageNode> getFieldClass() {
+    return ApprovalStageNode.class;
   }
 }

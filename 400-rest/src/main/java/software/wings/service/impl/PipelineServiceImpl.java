@@ -1009,6 +1009,7 @@ public class PipelineServiceImpl implements PipelineService {
     pipeline.setEnvParameterized(envParameterized);
     pipeline.setDeploymentTypes(deploymentTypes);
     pipeline.setHasBuildWorkflow(hasBuildWorkflow);
+    pipeline.setEnvIds(envIds);
   }
 
   @VisibleForTesting

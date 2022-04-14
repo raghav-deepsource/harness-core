@@ -9,9 +9,12 @@ package io.harness.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.TargetModule;
 
 @OwnedBy(PIPELINE)
+@TargetModule(HarnessModule._860_ORCHESTRATION_STEPS)
 public interface StepSpecTypeConstants {
   String SHELL_SCRIPT = "ShellScript";
   String BARRIER = "Barrier";

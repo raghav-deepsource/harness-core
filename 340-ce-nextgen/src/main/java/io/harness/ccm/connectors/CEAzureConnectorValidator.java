@@ -67,6 +67,12 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
       log.error("No billing export spec found for this connector {}", connectorIdentifier);
       return ConnectorValidationResult.builder()
           .status(ConnectivityStatus.FAILURE)
+          .errors(ImmutableList.of(
+              ErrorDetail.builder()
+                  .reason("No billing export spec found")
+                  .message(
+                      "Verify the billing export configuration in Harness and in your Azure account. For more information, refer to the documentation.")
+                  .build()))
           .errorSummary("Invalid connector configuration")
           .testedAt(Instant.now().toEpochMilli())
           .build();
@@ -89,19 +95,21 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
           return ConnectorValidationResult.builder()
               .status(ConnectivityStatus.FAILURE)
               .errors(errorList)
-              .errorSummary("No billing export file is found")
+              .errorSummary("No billing export file is found in last 24hrs in " + prefix)
               .testedAt(Instant.now().toEpochMilli())
               .build();
         }
       }
     } catch (BlobStorageException ex) {
+      log.error("Error", ex);
       if (ex.getErrorCode().toString().equals("ContainerNotFound")) {
         return ConnectorValidationResult.builder()
             .status(ConnectivityStatus.FAILURE)
             .errors(ImmutableList.of(ErrorDetail.builder()
                                          .code(ex.getStatusCode())
-                                         .reason(ex.getErrorCode().toString())
-                                         .message("Exception while validating storage account details")
+                                         .reason("Container not found")
+                                         .message("Review the billing export settings in your Azure account."
+                                             + " For more information, refer to the documentation.")
                                          .build()))
             .errorSummary("The specified container does not exist")
             .testedAt(Instant.now().toEpochMilli())
@@ -109,11 +117,13 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
       } else if (ex.getErrorCode().toString().equals("AuthorizationPermissionMismatch")) {
         return ConnectorValidationResult.builder()
             .status(ConnectivityStatus.FAILURE)
-            .errors(ImmutableList.of(ErrorDetail.builder()
-                                         .code(ex.getStatusCode())
-                                         .reason(ex.getErrorCode().toString())
-                                         .message("Exception while validating storage account details")
-                                         .build()))
+            .errors(ImmutableList.of(
+                ErrorDetail.builder()
+                    .code(ex.getStatusCode())
+                    .reason("Missing required permissions on the storage account")
+                    .message(
+                        "Review the permissions on your storage account. For more information, refer to the documentation.")
+                    .build()))
             .errorSummary("Authorization permission mismatch")
             .testedAt(Instant.now().toEpochMilli())
             .build();
@@ -122,33 +132,50 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
           .status(ConnectivityStatus.FAILURE)
           .errors(ImmutableList.of(ErrorDetail.builder()
                                        .code(ex.getStatusCode())
-                                       .reason(ex.getErrorCode().toString())
-                                       .message("Exception while validating storage account details")
+                                       .reason(ex.getMessage())
+                                       .message("Review the billing export settings in your Azure account."
+                                           + " For more information, refer to the documentation.")
                                        .build()))
-          .errorSummary(ex.getErrorCode().toString())
+          .errorSummary("Exception while validating storage account details")
           .testedAt(Instant.now().toEpochMilli())
           .build();
     } catch (MsalServiceException ex) {
+      log.error("Error", ex);
       return ConnectorValidationResult.builder()
           .status(ConnectivityStatus.FAILURE)
-          .errors(ImmutableList.of(ErrorDetail.builder()
-                                       .code(ex.statusCode())
-                                       .reason(ex.errorCode())
-                                       .message("The specified tenantId does not exist")
-                                       .build()))
-          .errorSummary("Exception while validating tenantId")
+          .errors(ImmutableList.of(
+              ErrorDetail.builder()
+                  .code(ex.statusCode())
+                  .reason("Incorrect tenantID.")
+                  .message(
+                      "Verify if you have entered the correct tenant ID in Harness. For more information, refer to the documentation.")
+                  .build()))
+          .errorSummary("The specified tenantID does not exist")
           .testedAt(Instant.now().toEpochMilli())
           .build();
     } catch (Exception ex) {
+      log.error("Error", ex);
       if (ex.getCause() instanceof UnknownHostException) {
         return ConnectorValidationResult.builder()
             .status(ConnectivityStatus.FAILURE)
+            .errors(ImmutableList.of(
+                ErrorDetail.builder()
+                    .reason("Incorrect storage account.")
+                    .message(
+                        "Verify if you have entered the correct storage account in Harness. For more information, refer to the documentation.")
+                    .build()))
             .errorSummary("The specified storage account does not exist")
             .testedAt(Instant.now().toEpochMilli())
             .build();
       } else if (ex.getMessage() != null && ex.getMessage().startsWith("No billing export file")) {
         return ConnectorValidationResult.builder()
             .status(ConnectivityStatus.FAILURE)
+            .errors(ImmutableList.of(
+                ErrorDetail.builder()
+                    .message(
+                        "Verify the billing export configuration in Harness and in your Azure account. For more information, refer to the documentation.")
+                    .reason("")
+                    .build()))
             .errorSummary(ex.getMessage())
             .testedAt(Instant.now().toEpochMilli())
             .build();
@@ -156,7 +183,11 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
         log.error(GENERIC_LOGGING_ERROR, accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, ex);
         return ConnectorValidationResult.builder()
             .status(ConnectivityStatus.FAILURE)
-            .errorSummary("Exception while validating billing export details")
+            .errors(ImmutableList.of(ErrorDetail.builder()
+                                         .reason("Unknown error while validating billing export details")
+                                         .message("Contact Harness Support or Harness Community Forum.")
+                                         .build()))
+            .errorSummary("Unknown error")
             .testedAt(Instant.now().toEpochMilli())
             .build();
       }
@@ -169,7 +200,13 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
               ceConnectorsHelper.JOB_TYPE_CLOUDFUNCTION)) {
         // Issue with CFs
         return ConnectorValidationResult.builder()
-            .errorSummary("Error with processing data. Please contact Harness support")
+            .errors(ImmutableList.of(
+                ErrorDetail.builder()
+                    .reason("Internal error with data processing")
+                    .message("") // UI adds "Contact Harness Support or Harness Community Forum." in this case
+                    .code(500)
+                    .build()))
+            .errorSummary("Error with processing data")
             .status(ConnectivityStatus.FAILURE)
             .build();
       }
@@ -203,11 +240,9 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
         && latestFileLastModifiedTime.getEpochSecond() < (Instant.now().getEpochSecond() - 24 * 60 * 60)) {
       errorDetails.add(
           ErrorDetail.builder()
-              .reason(String.format("No billing export file is found in last 24 hrs in %s. "
-                      + "Please verify your billing export config in your Azure account and CCM connector. "
-                      + "Follow CCM documentation for more information",
-                  prefix))
-              .message("No billing export file is found")
+              .reason("Incorrect billing export information")
+              .message(
+                  "Verify the billing export configuration in Harness and in your Azure account. For more information, refer to the documentation.")
               .code(403)
               .build());
     }

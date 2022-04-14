@@ -20,9 +20,6 @@ directories:
   800-pipeline-service
   810-ng-triggers
   820-platform-service
-  830-notification-service
-  830-resource-group
-  835-notification-senders
   860-orchestration-steps
   860-orchestration-visualization
   865-cg-events
@@ -52,10 +49,8 @@ directories:
   937-persistence-tracer
   940-cg-audit-service
   940-feature-flag
-  940-ng-audit-service
   940-notification-client
   940-primary-version-manager
-  940-resource-group-beans
   940-secret-manager-client
   945-account-mgmt
   945-ng-audit-client
@@ -74,7 +69,6 @@ directories:
   950-telemetry
   950-wait-engine
   950-walktree-visitor
-  951-ng-audit-commons
   952-scm-java-client
   953-events-api
   953-git-sync-commons
@@ -98,7 +92,6 @@ directories:
   960-ng-core-beans
   960-ng-license-beans
   960-ng-license-usage-beans
-  960-notification-beans
   960-persistence
   960-yaml-sdk
   965-api-key-filter

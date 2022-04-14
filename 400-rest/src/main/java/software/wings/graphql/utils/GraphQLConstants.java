@@ -33,4 +33,11 @@ public class GraphQLConstants {
   public static final String DELETE_USERGROUP_API = "deleteUserGroup";
   public static final String UPDATE_USERGROUP_API = "updateUserGroup";
   public static final String UPDATE_USERGROUP_PERMISSIONS_API = "updateUserGroupPermissions";
+  public static final String ADD_USER_TO_USERGROUP = "addUserToUserGroup";
+  public static final String REMOVE_USER_FROM_USERGROUP = "removeUserFromUserGroup";
+  public static final String ADD_ACCOUNT_PERMISSION = "addAccountPermission";
+  public static final String ADD_APP_PERMISSION = "addAppPermission";
+  public static final String CREATE_API_KEY = "createApiKey";
+  public static final String UPDATE_API_KEY = "updateApiKey";
+  public static final String DELETE_API_KEY = "deleteApiKey";
 }

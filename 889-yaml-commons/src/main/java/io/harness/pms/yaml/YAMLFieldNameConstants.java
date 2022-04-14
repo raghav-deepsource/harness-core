@@ -53,9 +53,9 @@ public class YAMLFieldNameConstants {
   public final String FAILED_CHILDREN_OUTPUT = "failedChildrenOutput";
   public final String STOP_STAGE_SEQUENCE = "stopStageSequence";
 
-  public final String PIPELINE_GROUP = "PIPELINE";
   public final String STORE = "store";
   public final String PIPELINE_INFRASTRUCTURE = "infrastructure";
   public final String COMMAND_TYPE = "commandType";
   public final String STOP_STEPS_SEQUENCE = "stopStepsSequence";
+  public final String DELEGATE_SELECTORS = "delegateSelectors";
 }

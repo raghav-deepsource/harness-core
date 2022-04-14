@@ -14,6 +14,7 @@ import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPL
 import static org.mockito.Mockito.mock;
 
 import io.harness.AccessControlClientConfiguration;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.connector.helper.DecryptionHelper;
@@ -136,6 +137,7 @@ public class ConnectorTestRule implements InjectorRuleMixin, MethodRule, MongoRu
         bind(YamlGitConfigClient.class).toInstance(mock(YamlGitConfigClient.class));
         bind(NGHostValidationService.class).toInstance(mock(NGHostValidationService.class));
         bind(FeatureFlagService.class).toInstance(mock(FeatureFlagService.class));
+        bind(AccountClient.class).toInstance(mock(AccountClient.class));
       }
     });
     modules.add(mongoTypeModule(annotations));

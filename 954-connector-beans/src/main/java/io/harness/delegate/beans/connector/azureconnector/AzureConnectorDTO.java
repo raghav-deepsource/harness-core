@@ -50,6 +50,13 @@ public class AzureConnectorDTO extends ConnectorConfigDTO implements DelegateSel
     if (credential.getAzureCredentialType() == AzureCredentialType.MANUAL_CREDENTIALS) {
       return Collections.singletonList(((AzureManualDetailsDTO) credential.getConfig()).getAuthDTO().getCredentials());
     }
+    if (credential.getAzureCredentialType() == AzureCredentialType.INHERIT_FROM_DELEGATE) {
+      AzureMSIAuthDTO azureMSIAuthDTO = ((AzureInheritFromDelegateDetailsDTO) credential.getConfig()).getAuthDTO();
+
+      if (azureMSIAuthDTO instanceof AzureMSIAuthUADTO) {
+        return Collections.singletonList(((AzureMSIAuthUADTO) azureMSIAuthDTO).getCredentials());
+      }
+    }
     return null;
   }
 

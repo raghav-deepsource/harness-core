@@ -310,6 +310,7 @@ public class LogClusterServiceImplTest extends CvNextGenTestBase {
     taskToSave.setVerificationTaskId(serviceGuardVerificationTaskId);
     taskToSave.setAnalysisStartTime(Instant.parse("2020-07-27T10:45:00.000Z"));
     taskToSave.setAnalysisEndTime(Instant.parse("2020-07-27T10:50:00.000Z"));
+    taskToSave.setPickedAt(Instant.parse("2020-07-27T10:53:00.000Z"));
     learningEngineTaskService.createLearningEngineTask(taskToSave);
     logClusterService.saveClusteredData(
         clusterDTOList, serviceGuardVerificationTaskId, end, taskToSave.getUuid(), LogClusterLevel.L2);

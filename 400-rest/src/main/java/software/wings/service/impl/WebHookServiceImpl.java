@@ -80,6 +80,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -474,14 +475,24 @@ public class WebHookServiceImpl implements WebHookService {
 
     Map<String, Object> payLoadMap = JsonUtils.asObject(payload, new TypeReference<Map<String, Object>>() {});
 
-    String branchName = webhookEventUtils.obtainBranchName(webhookSource, httpHeaders, payLoadMap);
+    List<String> branchNames = new ArrayList<>();
+    if (webhookSource == BITBUCKET) {
+      BitBucketEventType bitBucketEventType = webhookEventUtils.getBitBucketEventType(httpHeaders);
+      if (bitBucketEventType == BitBucketEventType.PUSH) {
+        branchNames = webhookEventUtils.obtainBranchNameFromBitBucketPush(payLoadMap);
+      } else {
+        branchNames.add(webhookEventUtils.obtainBranchName(webhookSource, httpHeaders, payLoadMap));
+      }
+    } else {
+      branchNames.add(webhookEventUtils.obtainBranchName(webhookSource, httpHeaders, payLoadMap));
+    }
     String storedBranchRegex = webhookTriggerCondition.getBranchRegex();
-    if (EmptyPredicate.isNotEmpty(storedBranchRegex) && EmptyPredicate.isNotEmpty(branchName)) {
-      validateBranchWithRegex(storedBranchRegex, branchName);
+    if (EmptyPredicate.isNotEmpty(storedBranchRegex) && EmptyPredicate.isNotEmpty(branchNames)) {
+      validateBranchWithRegex(storedBranchRegex, branchNames);
     }
     validateWebHook(webhookSource, trigger, webhookTriggerCondition, payLoadMap, httpHeaders, payload);
     webhookEventDetails.setPayload(payload);
-    webhookEventDetails.setBranchName(branchName);
+    webhookEventDetails.setBranchNames(branchNames);
     webhookEventDetails.setCommitId(webhookEventUtils.obtainCommitId(webhookSource, httpHeaders, payLoadMap));
     webhookEventDetails.setWebhookSource(webhookSource.name());
     webhookEventDetails.setWebhookEventType(webhookEventUtils.obtainEventType(webhookSource, httpHeaders));
@@ -589,13 +600,14 @@ public class WebHookServiceImpl implements WebHookService {
     log.info("Webhook is Authenticated");
   }
 
-  private void validateBranchWithRegex(String storedBranch, String inputBranchName) {
-    if (Pattern.compile(storedBranch).matcher(inputBranchName).matches()) {
+  private void validateBranchWithRegex(String storedBranch, List<String> inputBranchNames) {
+    Pattern branchPattern = Pattern.compile(storedBranch);
+    if (inputBranchNames.stream().anyMatch(inputBranchName -> branchPattern.matcher(inputBranchName).matches())) {
       return;
     }
     String msg = String.format(
         "WebHook event branch name filter [%s] does not match with the trigger condition branch name [%s]",
-        inputBranchName, storedBranch);
+        inputBranchNames, storedBranch);
     throw new InvalidRequestException(msg, WingsException.USER);
   }
 

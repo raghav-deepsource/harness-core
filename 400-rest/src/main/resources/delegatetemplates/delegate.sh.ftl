@@ -121,13 +121,17 @@ fi
 
 if [ ! -e config-delegate.yml ]; then
   echo "accountId: ${accountId}" > config-delegate.yml
-  <#if delegateToken??>
-  echo "delegateToken: ${delegateToken}" >> config-delegate.yml
-  <#else>
-  echo "delegateToken: ${accountSecret}" >> config-delegate.yml
-  </#if>
 fi
 test "$(tail -c 1 config-delegate.yml)" && `echo "" >> config-delegate.yml`
+<#if delegateToken??>
+if ! `grep delegateToken config-delegate.yml > /dev/null`; then
+  echo "delegateToken: ${delegateToken}" >> config-delegate.yml
+fi
+<#else>
+if ! `grep delegateToken config-delegate.yml > /dev/null`; then
+  echo "delegateToken: ${accountSecret}" >> config-delegate.yml
+fi
+</#if>
 if ! `grep dynamicHandlingOfRequestEnabled config-delegate.yml > /dev/null`; then
   echo "dynamicHandlingOfRequestEnabled: ${dynamicHandlingOfRequestEnabled}" >> config-delegate.yml
 fi

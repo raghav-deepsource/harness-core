@@ -18,7 +18,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 @OwnedBy(PIPELINE)
 public class NoOpExpansionHandler implements JsonExpansionHandler {
   @Override
-  public ExpansionResponse expand(JsonNode fieldValue, ExpansionRequestMetadata metadata) {
+  public ExpansionResponse expand(JsonNode fieldValue, ExpansionRequestMetadata metadata, String fqn) {
     return ExpansionResponse.builder()
         .success(true)
         .errorMessage("")

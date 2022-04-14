@@ -25,5 +25,9 @@ public interface TriggerEventHistoryRepository
   List<TriggerEventHistory> findFirst1ByAccountIdAndOrgIdentifierAndProjectIdentifierAndTriggerIdentifier(
       String accountId, String orgIdentifier, String projectIdentifier, String triggerIdentifier, Sort sort);
 
+  List<TriggerEventHistory>
+  findFirst1ByAccountIdAndOrgIdentifierAndProjectIdentifierAndTargetIdentifierAndTriggerIdentifier(String accountId,
+      String orgIdentifier, String projectIdentifier, String targetIdentifier, String triggerIdentifier, Sort sort);
+
   TriggerEventHistory findByAccountIdAndEventCorrelationId(String accountId, String eventCorrelationId);
 }

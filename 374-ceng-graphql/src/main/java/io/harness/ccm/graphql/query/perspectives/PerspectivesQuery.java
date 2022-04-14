@@ -180,11 +180,15 @@ public class PerspectivesQuery {
     }
     isClusterQuery = isClusterQuery != null && isClusterQuery;
 
+    String businessMappingId = viewsQueryHelper.getBusinessMappingIdFromGroupBy(groupBy);
+    // If group by business mapping is present, query unified table
+    isClusterQuery = isClusterQuery && businessMappingId == null;
+
     PerspectiveTimeSeriesData data = perspectiveTimeSeriesHelper.fetch(
         viewsBillingService.getTimeSeriesStatsNg(bigQuery, filters, groupBy, aggregateFunction, sortCriteria,
             cloudProviderTableName, includeOthers, limit,
             viewsQueryHelper.buildQueryParams(accountId, true, false, isClusterQuery, false)),
-        timePeriod, conversionField, accountId);
+        timePeriod, conversionField, businessMappingId, accountId);
 
     return perspectiveTimeSeriesHelper.postFetch(data, limit, includeOthers);
   }

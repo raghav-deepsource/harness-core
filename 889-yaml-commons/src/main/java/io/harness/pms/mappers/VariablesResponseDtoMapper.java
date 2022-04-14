@@ -8,6 +8,7 @@
 package io.harness.pms.mappers;
 
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.pms.contracts.plan.YamlExtraProperties;
 import io.harness.pms.contracts.plan.YamlOutputProperties;
 import io.harness.pms.contracts.plan.YamlProperties;
 import io.harness.pms.contracts.service.ServiceExpressionPropertiesProto;
@@ -71,6 +72,9 @@ public class VariablesResponseDtoMapper {
         .setYamlOutputProperties(variableResponseMapValue.getYamlOutputProperties() == null
                 ? YamlOutputProperties.newBuilder().build()
                 : variableResponseMapValue.getYamlOutputProperties())
+        .setYamlExtraProperties(variableResponseMapValue.getYamlExtraProperties() == null
+                ? YamlExtraProperties.newBuilder().build()
+                : variableResponseMapValue.getYamlExtraProperties())
         .build();
   }
 
@@ -91,6 +95,7 @@ public class VariablesResponseDtoMapper {
     return VariableResponseMapValue.builder()
         .yamlOutputProperties(variableResponseMapValueProto.getYamlOutputProperties())
         .yamlProperties(variableResponseMapValueProto.getYamlProperties())
+        .yamlExtraProperties(variableResponseMapValueProto.getYamlExtraProperties())
         .build();
   }
 

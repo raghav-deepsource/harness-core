@@ -88,12 +88,18 @@ public class K8sRollingBaseHandler {
     }
   }
 
-  public void addLabelsInDeploymentSelectorForCanary(
-      boolean inCanaryWorkflow, List<KubernetesResource> managedWorkloads) {
-    if (!inCanaryWorkflow || isEmpty(managedWorkloads)) {
+  public void addLabelsInDeploymentSelectorForCanary(boolean inCanaryWorkflow,
+      List<KubernetesResource> managedWorkloads, boolean skipAddingTrackSelectorToDeployment) {
+    if (!inCanaryWorkflow && !skipAddingTrackSelectorToDeployment) {
       return;
     }
+    addDeploymentSelector(managedWorkloads);
+  }
 
+  private void addDeploymentSelector(List<KubernetesResource> managedWorkloads) {
+    if (isEmpty(managedWorkloads)) {
+      return;
+    }
     for (KubernetesResource kubernetesResource : managedWorkloads) {
       if (ImmutableSet.of(Kind.Deployment.name(), Kind.DeploymentConfig.name())
               .contains(kubernetesResource.getResourceId().getKind())) {
@@ -177,12 +183,13 @@ public class K8sRollingBaseHandler {
   public void addLabelsInDeploymentSelectorForCanary(boolean inCanaryWorkflow,
       boolean skipAddingTrackSelectorToDeployment, List<KubernetesResource> managedWorkloads,
       KubernetesConfig kubernetesConfig) {
-    if (skipAddingTrackSelectorToDeployment && inCanaryWorkflow) {
+    if (skipAddingTrackSelectorToDeployment) {
       List<KubernetesResource> workloadsFromServer = k8sTaskHelperBase.getDeploymentContainingTrackStableSelector(
           kubernetesConfig, managedWorkloads, HARNESS_TRACK_STABLE_SELECTOR);
-      addLabelsInDeploymentSelectorForCanary(inCanaryWorkflow, workloadsFromServer);
+      addLabelsInDeploymentSelectorForCanary(
+          inCanaryWorkflow, workloadsFromServer, skipAddingTrackSelectorToDeployment);
     } else {
-      addLabelsInDeploymentSelectorForCanary(inCanaryWorkflow, managedWorkloads);
+      addLabelsInDeploymentSelectorForCanary(inCanaryWorkflow, managedWorkloads, false);
     }
   }
 }

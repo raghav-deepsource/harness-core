@@ -20,11 +20,13 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.dependencies.ServiceDependency;
+import io.harness.beans.environment.BuildJobEnvInfo;
 import io.harness.beans.environment.K8BuildJobEnvInfo;
 import io.harness.beans.environment.VmBuildJobInfo;
 import io.harness.beans.environment.pod.PodSetupInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.environment.pod.container.ContainerImageDetails;
+import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.outcomes.DependencyOutcome;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
@@ -32,6 +34,7 @@ import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.StepLogKeyDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
+import io.harness.ci.integrationstage.BuildJobEnvInfoBuilder;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
@@ -49,6 +52,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
+import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -106,6 +110,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   private static final String DEPENDENCY_OUTCOME = "dependencies";
   public static final StepType STEP_TYPE = InitializeStepInfo.STEP_TYPE;
+  @Inject private BuildJobEnvInfoBuilder buildJobEnvInfoBuilder;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -122,8 +127,14 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     if (EmptyPredicate.isEmpty(principal)) {
       return;
     }
-
     InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepElementParameters.getSpec();
+
+    try {
+      initializeStepInfo.setBuildJobEnvInfo(fetchBuildJobEnvInfo(initializeStepInfo, ambiance));
+    } catch (Exception ex) {
+      log.error("Failed to update build info", ex);
+    }
+
     List<EntityDetail> connectorsEntityDetails =
         getConnectorIdentifiers(initializeStepInfo, accountIdentifier, projectIdentifier, orgIdentifier);
 
@@ -135,14 +146,20 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   @Override
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
-    InitializeStepInfo stepParameters = (InitializeStepInfo) stepElementParameters.getSpec();
+    InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepElementParameters.getSpec();
+
+    try {
+      initializeStepInfo.setBuildJobEnvInfo(fetchBuildJobEnvInfo(initializeStepInfo, ambiance));
+    } catch (Exception ex) {
+      log.error("Failed to update build info", ex);
+    }
 
     Map<String, String> taskIds = new HashMap<>();
     String logPrefix = getLogPrefix(ambiance);
-    Map<String, String> stepLogKeys = getStepLogKeys(stepParameters, ambiance, logPrefix);
+    Map<String, String> stepLogKeys = getStepLogKeys(initializeStepInfo, ambiance, logPrefix);
 
     CIInitializeTaskParams buildSetupTaskParams =
-        buildSetupUtils.getBuildSetupTaskParams(stepParameters, ambiance, taskIds, logPrefix, stepLogKeys);
+        buildSetupUtils.getBuildSetupTaskParams(initializeStepInfo, ambiance, taskIds, logPrefix, stepLogKeys);
     log.info("Created params for build task: {}", buildSetupTaskParams);
 
     return StepUtils.prepareTaskRequest(
@@ -175,13 +192,42 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
         .build();
   }
 
+  /**
+     This code has been moved from plan creation to execution because expression resolution happens during execution.
+      It sets buildJobEnvInfo to step parameters which is being used to create delegate task parameters.
+      Plan creation code takes StageElementConfig however failure strategy does not get serialized on ci manager due
+      to which we have to create own copy of StageElementConfig without failure strategy.
+      Jira: https://harness.atlassian.net/browse/CI-3717
+   */
+
+  private BuildJobEnvInfo fetchBuildJobEnvInfo(InitializeStepInfo initializeStepInfo, Ambiance ambiance) {
+    return buildJobEnvInfoBuilder.getCIBuildJobEnvInfo(StageElementConfig.builder()
+                                                           .type("CI")
+                                                           .identifier(initializeStepInfo.getStageIdentifier())
+                                                           .variables(initializeStepInfo.getVariables())
+                                                           .stageType(initializeStepInfo.getStageElementConfig())
+                                                           .build(),
+        initializeStepInfo.getInfrastructure(),
+        CIExecutionArgs.builder()
+            .runSequence(String.valueOf(ambiance.getMetadata().getRunSequence()))
+            .executionSource(initializeStepInfo.getExecutionSource())
+            .build(),
+        initializeStepInfo.getExecutionElementConfig().getSteps(), AmbianceUtils.getAccountId(ambiance));
+  }
+
   private StepResponse handleK8TaskResponse(
       Ambiance ambiance, StepElementParameters stepElementParameters, CITaskExecutionResponse ciTaskExecutionResponse) {
     K8sTaskExecutionResponse k8sTaskExecutionResponse = (K8sTaskExecutionResponse) ciTaskExecutionResponse;
-    InitializeStepInfo stepParameters = (InitializeStepInfo) stepElementParameters.getSpec();
+    InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepElementParameters.getSpec();
+
+    try {
+      initializeStepInfo.setBuildJobEnvInfo(fetchBuildJobEnvInfo(initializeStepInfo, ambiance));
+    } catch (Exception ex) {
+      log.error("Failed to update build info", ex);
+    }
 
     DependencyOutcome dependencyOutcome =
-        getK8DependencyOutcome(ambiance, stepParameters, k8sTaskExecutionResponse.getK8sTaskResponse());
+        getK8DependencyOutcome(ambiance, initializeStepInfo, k8sTaskExecutionResponse.getK8sTaskResponse());
     LiteEnginePodDetailsOutcome liteEnginePodDetailsOutcome =
         getPodDetailsOutcome(k8sTaskExecutionResponse.getK8sTaskResponse());
 

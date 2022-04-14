@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
@@ -133,6 +134,9 @@ public class ArtifactUtils {
                 ? artifactoryRegistryArtifactConfig.getTagRegex().getValue()
                 : artifactoryRegistryArtifactConfig.getTag().getValue(),
             artifactoryRegistryArtifactConfig.getConnectorRef().getValue());
+      case CUSTOM_ARTIFACT:
+        CustomArtifactConfig customArtifactConfig = (CustomArtifactConfig) artifactConfig;
+        return String.format("type: %s, build: %s", sourceType, customArtifactConfig.getVersion().getValue());
       default:
         throw new UnsupportedOperationException(String.format("Unknown Artifact Config type: [%s]", sourceType));
     }

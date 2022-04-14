@@ -83,4 +83,5 @@ message RepoDetails {
 
 message BranchDetails {
   string default_branch = 1;
+  string error = 2;
 }

@@ -23,6 +23,7 @@ import io.harness.template.yaml.TemplateLinkConfig;
 import io.harness.validation.OneOfSet;
 import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.when.beans.StageWhenCondition;
+import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 import io.harness.yaml.core.variables.NGVariable;
 
@@ -51,28 +52,37 @@ import org.springframework.data.annotation.TypeAlias;
 @OneOfSet(fields = {"skipCondition, when, failureStrategies, type, stageType, variables, tags", "template"},
     requiredFieldNames = {"type", "template"})
 @RecasterAlias("io.harness.plancreator.stages.stage.StageElementConfig")
+// @deprecated: Use the AbstractStageNode instead.
+@Deprecated
 public class StageElementConfig {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   String uuid;
 
-  @NotNull @EntityIdentifier @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN) String identifier;
-  @NotNull @EntityName @Pattern(regexp = NGRegexValidatorConstants.NAME_PATTERN) String name;
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> description;
+  @NotNull
+  @EntityIdentifier
+  @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN)
+  @VariableExpression
+  String identifier;
+  @NotNull @EntityName @Pattern(regexp = NGRegexValidatorConstants.NAME_PATTERN) @VariableExpression String name;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @VariableExpression
+  ParameterField<String> description;
 
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   ParameterField<String> skipCondition;
 
-  StageWhenCondition when;
+  @VariableExpression StageWhenCondition when;
 
   List<FailureStrategyConfig> failureStrategies;
-  List<NGVariable> variables;
-  Map<String, String> tags;
-  String type;
+  @VariableExpression List<NGVariable> variables;
+  @VariableExpression Map<String, String> tags;
+  @VariableExpression String type;
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
+  @VariableExpression
   StageInfoConfig stageType;
   TemplateLinkConfig template;
 

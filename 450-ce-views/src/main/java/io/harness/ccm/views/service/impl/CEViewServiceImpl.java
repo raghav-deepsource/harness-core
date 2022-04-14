@@ -104,7 +104,11 @@ public class CEViewServiceImpl implements CEViewService {
   @Override
   public CEView save(CEView ceView) {
     validateView(ceView);
-    ceView.setViewState(ViewState.DRAFT);
+    if (ceView.getViewState() != null && ceView.getViewState() == ViewState.COMPLETED) {
+      ceView.setViewState(ViewState.COMPLETED);
+    } else {
+      ceView.setViewState(ViewState.DRAFT);
+    }
     ceView.setUuid(null);
     ceViewDao.save(ceView);
     return ceView;

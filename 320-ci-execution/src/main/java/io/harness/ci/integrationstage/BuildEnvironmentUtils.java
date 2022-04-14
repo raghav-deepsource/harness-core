@@ -58,8 +58,10 @@ import io.harness.beans.executionargs.CIExecutionArgs;
 
 import java.util.HashMap;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CI)
+@Slf4j
 public class BuildEnvironmentUtils {
   private static final String REPO_SCM = "git";
   private static final int MAX_ENV_VAR_LEN = 8191;
@@ -70,7 +72,11 @@ public class BuildEnvironmentUtils {
       return envVarMap;
     }
 
-    envVarMap.put(DRONE_BUILD_NUMBER, ciExecutionArgs.getBuildNumberDetails().getBuildNumber().toString());
+    try {
+      envVarMap.put(DRONE_BUILD_NUMBER, ciExecutionArgs.getRunSequence());
+    } catch (Exception ex) {
+      log.error("Failed to put build number env var", ex);
+    }
     if (ciExecutionArgs.getExecutionSource() == null) {
       return envVarMap;
     }

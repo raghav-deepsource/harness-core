@@ -35,6 +35,7 @@ import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccessWithEncryptionConsumer;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -147,7 +148,8 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
   }
 
   private JiraTaskNGParameters prepareJiraTaskParameters(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String issueId, String connectorRef, ParameterField<List<String>> delegateSelectors) {
+      String projectIdentifier, String issueId, String connectorRef,
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     JiraConnectorDTO jiraConnectorDTO =
         getJiraConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);
     BaseNGAccess baseNGAccess = BaseNGAccess.builder()
@@ -158,15 +160,15 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
 
     NGAccessWithEncryptionConsumer ngAccessWithEncryptionConsumer =
         NGAccessWithEncryptionConsumer.builder().ngAccess(baseNGAccess).decryptableEntity(jiraConnectorDTO).build();
-    List<EncryptedDataDetail> encryptionDataDetails =
-        NGRestUtils.getResponse(secretManagerClient.getEncryptionDetails(ngAccessWithEncryptionConsumer));
+    List<EncryptedDataDetail> encryptionDataDetails = NGRestUtils.getResponse(
+        secretManagerClient.getEncryptionDetails(accountIdentifier, ngAccessWithEncryptionConsumer));
 
     return JiraTaskNGParameters.builder()
         .action(JiraActionNG.GET_ISSUE)
         .encryptionDetails(encryptionDataDetails)
         .jiraConnectorDTO(jiraConnectorDTO)
         .issueKey(issueId)
-        .delegateSelectors(StepUtils.getDelegateSelectorList(delegateSelectors))
+        .delegateSelectors(StepUtils.getDelegateSelectorListFromTaskSelectorYaml(delegateSelectors))
         .build();
   }
 

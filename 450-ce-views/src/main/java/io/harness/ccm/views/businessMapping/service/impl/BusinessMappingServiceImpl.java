@@ -15,6 +15,7 @@ import io.harness.ccm.views.entities.ViewFieldIdentifier;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class BusinessMappingServiceImpl implements BusinessMappingService {
@@ -46,7 +47,9 @@ public class BusinessMappingServiceImpl implements BusinessMappingService {
 
   @Override
   public List<BusinessMapping> list(String accountId) {
-    return businessMappingDao.findByAccountId(accountId);
+    List<BusinessMapping> businessMappings = businessMappingDao.findByAccountId(accountId);
+    businessMappings.sort(Comparator.comparing(BusinessMapping::getLastUpdatedAt).reversed());
+    return businessMappings;
   }
 
   @Override

@@ -25,10 +25,13 @@ import lombok.NoArgsConstructor;
 public class TimeSeriesAnomaliesDTO {
   private String transactionName;
   // in LE we pass metric identifier as the metric_name, as metric_name is the identifier for LE
-  @JsonProperty("metricName") private String metricIdentifier;
+  private String metricIdentifier;
   private List<Double> testData;
   private List<Long> anomalousTimestamps;
-
+  @JsonProperty("metricName")
+  public String getMetricIdentifier() {
+    return metricIdentifier.toLowerCase(); // TODO: remove this in the next release. Only for migration.
+  }
   public TimeSeriesAnomalies toTimeSeriesAnomalies() {
     return TimeSeriesAnomalies.builder()
         .metricIdentifier(metricIdentifier)

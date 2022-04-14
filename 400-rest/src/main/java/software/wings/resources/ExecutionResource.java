@@ -76,6 +76,7 @@ import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.sm.ExecutionInterrupt;
 import software.wings.sm.RollbackConfirmation;
 import software.wings.sm.StateExecutionData;
+import software.wings.sm.states.ApprovalState.ApprovalStateType;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
@@ -186,7 +187,6 @@ public class ExecutionResource {
     // We will ask for one more than limit, and if its not exactly one more, we know we are at the end of the list.
     pageRequest.setLimit(Integer.toString(Integer.parseInt(pageRequest.getLimit()) + 1));
 
-    pageRequest.addFieldsExcluded(WorkflowExecutionKeys.stateMachine);
     PageResponse<WorkflowExecution> workflowExecutions =
         workflowExecutionService.listExecutions(pageRequest, includeGraph, true, true, false, true);
 
@@ -426,6 +426,11 @@ public class ExecutionResource {
     ApprovalStateExecutionData approvalStateExecutionData =
         workflowExecutionService.fetchApprovalStateExecutionDataFromWorkflowExecution(
             appId, workflowExecutionId, stateExecutionId, approvalDetails);
+
+    if (!ApprovalStateType.USER_GROUP.equals(approvalStateExecutionData.getApprovalStateType())) {
+      throw new InvalidRequestException(
+          approvalStateExecutionData.getApprovalStateType() + " Approval Type not supported", USER);
+    }
 
     if (isEmpty(approvalStateExecutionData.getUserGroups())) {
       deploymentAuthHandler.authorize(appId, workflowExecutionId);

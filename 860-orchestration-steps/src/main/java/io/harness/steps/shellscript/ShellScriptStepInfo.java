@@ -10,7 +10,9 @@ package io.harness.steps.shellscript;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
+import io.harness.plancreator.steps.common.WithDelegateSelector;
 import io.harness.plancreator.steps.internal.PMSStepInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -18,6 +20,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.utils.NGVariablesUtils;
 
@@ -38,15 +41,16 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("shellScriptStepInfo")
 @OwnedBy(HarnessTeam.CDC)
 @RecasterAlias("io.harness.cdng.pipeline.stepinfo.ShellScriptStepInfo")
-public class ShellScriptStepInfo extends ShellScriptBaseStepInfo implements PMSStepInfo, Visitable {
-  List<NGVariable> outputVariables;
+public class ShellScriptStepInfo
+    extends ShellScriptBaseStepInfo implements PMSStepInfo, Visitable, WithDelegateSelector {
+  @VariableExpression(skipVariableExpression = true) List<NGVariable> outputVariables;
   List<NGVariable> environmentVariables;
 
   @Builder(builderMethodName = "infoBuilder")
   public ShellScriptStepInfo(ShellType shell, ShellScriptSourceWrapper source, ExecutionTarget executionTarget,
       ParameterField<Boolean> onDelegate, List<NGVariable> outputVariables, List<NGVariable> environmentVariables,
-      ParameterField<List<String>> delegateSelectors) {
-    super(shell, source, executionTarget, onDelegate, delegateSelectors);
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String uuid) {
+    super(uuid, shell, source, executionTarget, onDelegate, delegateSelectors);
     this.outputVariables = outputVariables;
     this.environmentVariables = environmentVariables;
   }

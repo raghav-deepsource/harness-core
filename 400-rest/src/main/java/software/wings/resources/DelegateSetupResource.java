@@ -40,6 +40,7 @@ import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateApproval;
 import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateSizeDetails;
+import io.harness.delegate.beans.DelegateTags;
 import io.harness.delegate.task.DelegateLogContext;
 import io.harness.k8s.KubernetesConvention;
 import io.harness.logging.AccountLogContext;
@@ -326,17 +327,6 @@ public class DelegateSetupResource {
       Delegate delegate = delegateCache.get(accountId, delegateId, true);
       delegate.setTags(delegateTags.getTags());
       return new RestResponse<>(delegateService.updateTags(delegate));
-    }
-  }
-
-  @VisibleForTesting
-  protected static class DelegateTags {
-    private List<String> tags;
-    public List<String> getTags() {
-      return tags;
-    }
-    public void setTags(List<String> tags) {
-      this.tags = tags;
     }
   }
 

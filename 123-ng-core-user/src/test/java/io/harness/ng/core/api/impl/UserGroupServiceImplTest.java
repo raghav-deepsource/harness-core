@@ -228,4 +228,40 @@ public class UserGroupServiceImplTest extends CategoryTest {
           .addMember(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, userGroupId, userId);
     }
   }
+
+  @Test
+  @Owner(developers = KARAN)
+  @Category(UnitTests.class)
+  public void testSanitize() {
+    Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    String userGroupIdentifier = randomAlphabetic(10);
+    String validUser = randomAlphabetic(11);
+    String invalidUser = randomAlphabetic(12);
+    UserGroup userGroup = UserGroup.builder()
+                              .accountIdentifier(scope.getAccountIdentifier())
+                              .orgIdentifier(scope.getOrgIdentifier())
+                              .projectIdentifier(scope.getProjectIdentifier())
+                              .identifier(userGroupIdentifier)
+                              .users(Lists.newArrayList(validUser, invalidUser))
+                              .build();
+    doReturn(Optional.of(userGroup))
+        .when(userGroupService)
+        .get(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), userGroupIdentifier);
+    when(ngUserService.listUserIds(scope)).thenReturn(Lists.newArrayList(validUser));
+    UserGroup updatedUserGroup = UserGroup.builder()
+                                     .accountIdentifier(scope.getAccountIdentifier())
+                                     .orgIdentifier(scope.getOrgIdentifier())
+                                     .projectIdentifier(scope.getProjectIdentifier())
+                                     .identifier(userGroupIdentifier)
+                                     .users(Lists.newArrayList(validUser))
+                                     .build();
+    when(userGroupRepository.save(updatedUserGroup)).thenReturn(updatedUserGroup);
+
+    userGroupService.sanitize(scope, userGroupIdentifier);
+
+    verify(userGroupService, times(1))
+        .get(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), userGroupIdentifier);
+    verify(ngUserService, times(1)).listUserIds(scope);
+    verify(userGroupRepository, times(1)).save(updatedUserGroup);
+  }
 }

@@ -105,7 +105,7 @@ public class GitFetchTaskNG extends AbstractDelegateRunnableTask {
           gitFetchFilesResult =
               fetchFilesFromRepo(gitFetchFilesConfig, executionLogCallback, gitFetchRequest.getAccountId());
         } catch (Exception ex) {
-          String exceptionMsg = ex.getMessage();
+          String exceptionMsg = gitFetchFilesTaskHelper.extractErrorMessage(ex);
 
           // Values.yaml in service spec is optional.
           if (ex.getCause() instanceof NoSuchFileException && gitFetchFilesConfig.isSucceedIfFileNotFound()) {

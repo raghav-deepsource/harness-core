@@ -17,7 +17,6 @@ import static io.harness.threading.Morpheus.sleep;
 
 import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
 import static java.util.Collections.emptyList;
@@ -47,7 +46,6 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.AWSTemporaryCredentials;
 import software.wings.beans.AwsConfig;
-import software.wings.beans.AwsInfrastructureMapping;
 import software.wings.beans.EcrConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
@@ -66,8 +64,6 @@ import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Regions;
-import com.amazonaws.services.applicationautoscaling.AWSApplicationAutoScaling;
-import com.amazonaws.services.applicationautoscaling.AWSApplicationAutoScalingClientBuilder;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClientBuilder;
 import com.amazonaws.services.autoscaling.model.Activity;
@@ -79,8 +75,6 @@ import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsResult;
 import com.amazonaws.services.autoscaling.model.DescribeScalingActivitiesRequest;
 import com.amazonaws.services.autoscaling.model.DescribeScalingActivitiesResult;
 import com.amazonaws.services.autoscaling.model.SetDesiredCapacityRequest;
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClientBuilder;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchClient;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder;
 import com.amazonaws.services.cloudwatch.model.ListMetricsRequest;
@@ -203,7 +197,6 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.ResponseBody;
-import org.apache.commons.collections.CollectionUtils;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
@@ -216,7 +209,6 @@ public class AwsHelperService {
   @Inject private EncryptionService encryptionService;
   @Inject private TimeLimiter timeLimiter;
   @Inject private ManagerExpressionEvaluator expressionEvaluator;
-  @Inject private AwsUtils awsUtils;
   @Inject private AwsCallTracker tracker;
   @Inject private AwsApiHelperService awsApiHelperService;
 
@@ -284,14 +276,6 @@ public class AwsHelperService {
     return (AmazonECSClient) builder.build();
   }
 
-  private AWSApplicationAutoScaling getAWSApplicationAutoScalingClient(
-      String region, String accessKey, char[] secretKey) {
-    return AWSApplicationAutoScalingClientBuilder.standard()
-        .withRegion(region)
-        .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey, new String(secretKey))))
-        .build();
-  }
-
   public AmazonECRClient getAmazonEcrClient(EcrConfig ecrConfig, List<EncryptedDataDetail> encryptedDataDetails) {
     encryptionService.decrypt(ecrConfig, encryptedDataDetails, false);
     return (AmazonECRClient) AmazonECRClientBuilder.standard()
@@ -353,14 +337,6 @@ public class AwsHelperService {
     awsApiHelperService.attachCredentialsAndBackoffPolicy(
         builder, AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig));
     return (AmazonCodeDeployClient) builder.build();
-  }
-
-  @VisibleForTesting
-  AmazonCloudFormationClient getAmazonCloudFormationClient(Regions region, AwsConfig awsConfig) {
-    AmazonCloudFormationClientBuilder builder = AmazonCloudFormationClientBuilder.standard().withRegion(region);
-    awsApiHelperService.attachCredentialsAndBackoffPolicy(
-        builder, AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig));
-    return (AmazonCloudFormationClient) builder.build();
   }
 
   @VisibleForTesting
@@ -1269,44 +1245,6 @@ public class AwsHelperService {
     return allRunning;
   }
 
-  public List<Instance> listAutoScalingGroupInstances(
-      AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails, String region, String autoScalingGroupName) {
-    List<Instance> instanceList = newArrayList();
-    encryptionService.decrypt(awsConfig, encryptionDetails, false);
-    try (CloseableAmazonWebServiceClient<AmazonEC2Client> closeableAmazonEC2Client =
-             new CloseableAmazonWebServiceClient(getAmazonEc2Client(region, awsConfig))) {
-      List<String> instanceIds =
-          listInstanceIdsFromAutoScalingGroup(awsConfig, encryptionDetails, region, autoScalingGroupName);
-
-      if (CollectionUtils.isEmpty(instanceIds)) {
-        return instanceList;
-      }
-
-      // This will return only RUNNING instances
-      DescribeInstancesRequest describeInstancesRequest =
-          getDescribeInstancesRequestWithRunningFilter().withInstanceIds(instanceIds);
-      DescribeInstancesResult describeInstancesResult;
-
-      do {
-        tracker.trackEC2Call("Describe Instances.");
-        describeInstancesResult = closeableAmazonEC2Client.getClient().describeInstances(describeInstancesRequest);
-        describeInstancesResult.getReservations().forEach(
-            reservation -> instanceList.addAll(reservation.getInstances()));
-
-        describeInstancesRequest.withNextToken(describeInstancesResult.getNextToken());
-
-      } while (describeInstancesResult.getNextToken() != null);
-    } catch (AmazonServiceException amazonServiceException) {
-      awsApiHelperService.handleAmazonServiceException(amazonServiceException);
-    } catch (AmazonClientException amazonClientException) {
-      awsApiHelperService.handleAmazonClientException(amazonClientException);
-    } catch (Exception e) {
-      log.error("Exception listAutoScalingGroupInstances", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
-    }
-    return instanceList;
-  }
-
   public List<String> listInstanceIdsFromAutoScalingGroup(
       AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails, String region, String autoScalingGroupName) {
     AutoScalingGroup group = getAutoScalingGroup(awsConfig, encryptionDetails, region, autoScalingGroupName);
@@ -1591,14 +1529,6 @@ public class AwsHelperService {
 
     log.info("Failed in ECS validation, failed to fetch current region");
     return false;
-  }
-
-  public List<Filter> getAwsFiltersForRunningState() {
-    return awsUtils.getAwsFilters(AwsInfrastructureMapping.Builder.anAwsInfrastructureMapping().build(), null);
-  }
-
-  public DescribeInstancesRequest getDescribeInstancesRequestWithRunningFilter() {
-    return new DescribeInstancesRequest().withFilters(getAwsFiltersForRunningState());
   }
 
   public TagResourceResult tagService(String region, List<EncryptedDataDetail> encryptedDataDetails,

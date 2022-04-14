@@ -28,7 +28,6 @@ directories:
   940-feature-flag
   940-notification-client
   940-primary-version-manager
-  940-resource-group-beans
   940-secret-manager-client
   945-account-mgmt
   945-ng-audit-client
@@ -62,7 +61,6 @@ directories:
   960-api-services
   960-continuous-features
   960-ng-core-beans
-  960-notification-beans
   960-persistence
   960-yaml-sdk
   965-api-key-filter

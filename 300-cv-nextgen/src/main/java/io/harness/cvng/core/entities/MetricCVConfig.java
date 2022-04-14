@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -42,7 +43,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 @EqualsAndHashCode(callSuper = true)
 public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
   private MetricPack metricPack;
-
+  public abstract Optional<String> maybeGetGroupName();
   public abstract List<I> getMetricInfos();
   public abstract void setMetricInfos(List<I> metricInfos);
 

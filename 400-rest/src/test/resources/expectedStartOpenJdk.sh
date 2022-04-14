@@ -273,8 +273,8 @@ if [ ! -e config-watcher.yml ]; then
 fi
 test "$(tail -c 1 config-watcher.yml)" && `echo "" >> config-watcher.yml`
 set +x
-if ! `grep accountSecret config-watcher.yml > /dev/null`; then
-  echo "accountSecret: ACCOUNT_KEY" >> config-watcher.yml
+if ! `grep delegateToken config-watcher.yml > /dev/null`; then
+  echo "delegateToken: ACCOUNT_KEY" >> config-watcher.yml
 fi
 set -x
 if ! `grep managerUrl config-watcher.yml > /dev/null`; then

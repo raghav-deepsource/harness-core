@@ -663,4 +663,24 @@ public class AccountResource {
           .build();
     }
   }
+
+  @POST
+  @Path("{accountId}/reset-cache")
+  public RestResponse<Boolean> resetCache(@PathParam("accountId") String accountId) {
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+
+    if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      authService.evictUserPermissionAndRestrictionCacheForAccount(accountId, true, true);
+      log.info("Reset cache successful for account id {}", accountId);
+      return new RestResponse<>(Boolean.TRUE);
+    } else {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(
+              Lists.newArrayList(ResponseMessage.builder().message("User not allowed to reset cache").build()))
+          .build();
+    }
+  }
 }

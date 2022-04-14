@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.steps.ArtifactStep;
+import io.harness.cdng.artifact.steps.ArtifactSyncStep;
 import io.harness.cdng.artifact.steps.ArtifactsStep;
 import io.harness.cdng.artifact.steps.SidecarsStep;
 import io.harness.cdng.helm.HelmDeployStep;
@@ -73,6 +74,7 @@ public class NgStepRegistrar {
     engineSteps.put(ArtifactsStep.STEP_TYPE, ArtifactsStep.class);
     engineSteps.put(SidecarsStep.STEP_TYPE, SidecarsStep.class);
     engineSteps.put(ArtifactStep.STEP_TYPE, ArtifactStep.class);
+    engineSteps.put(ArtifactSyncStep.STEP_TYPE, ArtifactSyncStep.class);
     engineSteps.put(ManifestsStep.STEP_TYPE, ManifestsStep.class);
     engineSteps.put(ManifestStep.STEP_TYPE, ManifestStep.class);
     engineSteps.put(K8sDeleteStep.STEP_TYPE, K8sDeleteStep.class);

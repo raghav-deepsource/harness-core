@@ -88,6 +88,7 @@ import software.wings.features.api.UsageLimitedFeature;
 import software.wings.scheduler.LdapGroupSyncJobHelper;
 import software.wings.security.AppFilter;
 import software.wings.security.EnvFilter;
+import software.wings.security.ExecutableElementsFilter;
 import software.wings.security.Filter;
 import software.wings.security.GenericEntityFilter;
 import software.wings.security.PermissionAttribute;
@@ -1106,6 +1107,15 @@ public class UserGroupServiceImpl implements UserGroupService {
       if (filter != null && filter.getIds() != null && filter.getIds().removeIf(entityIds::contains)) {
         isModified = true;
         if (isEmpty(filter.getIds()) && isEntityFilterSelected(filter)) {
+          includeCurrentPermission = false;
+        }
+      }
+      if (filter instanceof ExecutableElementsFilter && ((ExecutableElementsFilter) filter).getFilter().getIds() != null
+          && ((ExecutableElementsFilter) filter).getFilter().getIds().removeIf(entityIds::contains)) {
+        isModified = true;
+        if (isEmpty(((ExecutableElementsFilter) filter).getFilter().getIds())
+            && GenericEntityFilter.FilterType.SELECTED.equals(
+                ((ExecutableElementsFilter) filter).getFilter().getFilterType())) {
           includeCurrentPermission = false;
         }
       }

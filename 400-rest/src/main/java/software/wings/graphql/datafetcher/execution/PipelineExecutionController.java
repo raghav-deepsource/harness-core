@@ -8,6 +8,7 @@
 package software.wings.graphql.datafetcher.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -72,10 +73,12 @@ import software.wings.graphql.schema.type.QLWorkflowStageExecution;
 import software.wings.graphql.schema.type.QLWorkflowStageExecution.QLWorkflowStageExecutionBuilder;
 import software.wings.graphql.schema.type.aggregation.deployment.QLDeploymentTag;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.security.ExecutableElementsFilter;
 import software.wings.security.PermissionAttribute;
 import software.wings.service.impl.AppLogContext;
 import software.wings.service.impl.WorkflowLogContext;
 import software.wings.service.impl.security.auth.AuthHandler;
+import software.wings.service.impl.security.auth.DeploymentAuthHandler;
 import software.wings.service.impl.workflow.WorkflowServiceTemplateHelper;
 import software.wings.service.intfc.AuthService;
 import software.wings.service.intfc.EnvironmentService;
@@ -93,6 +96,7 @@ import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -116,6 +120,7 @@ public class PipelineExecutionController {
   @Inject InfrastructureDefinitionService infrastructureDefinitionService;
   @Inject ExecutionController executionController;
   @Inject FeatureFlagService featureFlagService;
+  @Inject DeploymentAuthHandler deploymentAuthHandler;
 
   public void populatePipelineExecution(
       @NotNull WorkflowExecution workflowExecution, QLPipelineExecutionBuilder builder) {
@@ -160,7 +165,8 @@ public class PipelineExecutionController {
                                           .collect(Collectors.toList()));
     }
     String failureDetails = null;
-    if (workflowExecution.getStatus() == ExecutionStatus.FAILED) {
+    if (workflowExecution.getStatus() == ExecutionStatus.FAILED
+        || workflowExecution.getStatus() == ExecutionStatus.REJECTED) {
       failureDetails =
           workflowExecutionService.fetchFailureDetails(workflowExecution.getAppId(), workflowExecution.getUuid());
     }
@@ -266,7 +272,10 @@ public class PipelineExecutionController {
 
       String envId = resolveEnvId(pipeline, variableInputs, true);
       authService.checkIfUserAllowedToDeployPipelineToEnv(appId, envId);
-
+      if (featureFlagService.isEnabled(PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION, pipeline.getAccountId())) {
+        deploymentAuthHandler.authorizeExecutableDeployableInEnv(
+            new HashSet<>(pipeline.getEnvIds()), appId, pipelineId, ExecutableElementsFilter.FilterType.PIPELINE);
+      }
       List<String> extraVariables = new ArrayList<>();
       Map<String, String> variableValues =
           validateAndResolvePipelineVariables(pipeline, variableInputs, envId, extraVariables, false);

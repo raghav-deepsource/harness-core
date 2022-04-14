@@ -417,7 +417,7 @@ public class HelmTaskHelper {
           helmChartConfigParams.getChartVersion(), chartDirectory, helmChartConfigParams.getHelmVersion(),
           helmCommandFlag, timeoutInMillis, helmChartConfigParams.isCheckIncorrectChartVersion(), cacheDir);
     } finally {
-      if (helmChartConfigParams.isDeleteRepoCacheDir()) {
+      if (helmChartConfigParams.isUseRepoFlags() && helmChartConfigParams.isDeleteRepoCacheDir()) {
         try {
           FileUtils.forceDelete(new File(cacheDir));
         } catch (IOException ie) {

@@ -19,19 +19,17 @@ import io.harness.ng.core.dto.FailureDTO;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.TelemetryOption;
 import io.harness.telemetry.TelemetryReporter;
+import io.harness.telemetry.utils.TelemetryDataUtils;
 
 import com.google.inject.Singleton;
 import io.dropwizard.jersey.errors.ErrorMessage;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.glassfish.jersey.server.internal.routing.UriRoutingContext;
-import org.glassfish.jersey.uri.UriTemplate;
 
 @OwnedBy(PIPELINE)
 @Singleton
@@ -62,7 +60,7 @@ public class APIErrorsTelemetrySenderFilter implements ContainerResponseFilter {
     int responseCode = containerResponseContext.getStatus();
     HashMap<String, Object> properties = new HashMap<>();
 
-    if (!StringUtils.isEmpty(accountIdentifier) && (responseCode < 200 || responseCode > 299)) {
+    if (!StringUtils.isEmpty(accountIdentifier) && (responseCode < 200 || responseCode > 399)) {
       properties.put(ACCOUNT_IDENTIFIER, accountIdentifier);
       properties.put(
           ORG_IDENTIFIER, getParameterValueFromUri(containerRequestContext, NGCommonEntityConstants.ORG_KEY));
@@ -70,7 +68,7 @@ public class APIErrorsTelemetrySenderFilter implements ContainerResponseFilter {
           PROJECT_IDENTIFIER, getParameterValueFromUri(containerRequestContext, NGCommonEntityConstants.PROJECT_KEY));
       properties.put(SERVICE_NAME, serviceName);
       properties.put(API_ENDPOINT, containerRequestContext.getUriInfo().getRequestUri().toString());
-      properties.put(API_PATTERN, getApiPattern(containerRequestContext));
+      properties.put(API_PATTERN, TelemetryDataUtils.getApiPattern(containerRequestContext));
       properties.put(API_TYPE, containerRequestContext.getMethod());
       properties.put(RESPONSE_CODE, responseCode);
       if (containerResponseContext.getEntity() instanceof ErrorDTO) {
@@ -79,6 +77,10 @@ public class APIErrorsTelemetrySenderFilter implements ContainerResponseFilter {
         properties.put(ERROR_MESSAGE, ((FailureDTO) containerResponseContext.getEntity()).getMessage());
       } else if (containerResponseContext.getEntity() instanceof ErrorMessage) {
         properties.put(ERROR_MESSAGE, ((ErrorMessage) containerResponseContext.getEntity()).getMessage());
+      }
+      if (!properties.containsKey(ERROR_MESSAGE)) {
+        log.warn("Error message is not captured for error: {}. and for Error entity class: {}",
+            containerResponseContext.getEntity(), containerResponseContext.getEntity().getClass());
       }
       try {
         telemetryReporter.sendTrackEvent(API_ERRORS, null, accountIdentifier, properties,
@@ -97,15 +99,6 @@ public class APIErrorsTelemetrySenderFilter implements ContainerResponseFilter {
       paramValue = containerRequestContext.getUriInfo().getPathParameters().getFirst(param);
     }
     return StringUtils.isEmpty(paramValue) ? "" : paramValue;
-  }
-
-  private String getApiPattern(ContainerRequestContext containerRequestContext) {
-    List<UriTemplate> templates = ((UriRoutingContext) containerRequestContext.getUriInfo()).getMatchedTemplates();
-    StringBuilder pattern = new StringBuilder("");
-    for (int i = 0; i < templates.size(); i++) {
-      pattern.append(templates.get(templates.size() - 1 - i).getTemplate());
-    }
-    return pattern.toString();
   }
 
   private String generateErrorMessage(ErrorDTO errorDTO) {

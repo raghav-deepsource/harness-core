@@ -29,6 +29,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -63,6 +64,11 @@ public class StackdriverCVConfig extends MetricCVConfig<MetricInfo> {
   @Override
   public boolean isDeploymentVerificationEnabled() {
     return AnalysisInfoUtility.anyDeploymentVerificationEnabled(metricInfoList);
+  }
+
+  @Override
+  public Optional<String> maybeGetGroupName() {
+    return Optional.empty(); // does not have group name. Need to refactor the UI and backend.
   }
 
   @Override

@@ -8,6 +8,7 @@
 package io.harness.engine.pms.execution.strategy;
 
 import io.harness.engine.OrchestrationEngine;
+import io.harness.engine.pms.execution.SdkResponseProcessorFactory;
 import io.harness.event.handlers.SdkResponseProcessor;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PmsNodeExecutionMetadata;
@@ -16,7 +17,6 @@ import io.harness.plan.Node;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.registries.SdkResponseProcessorFactory;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;

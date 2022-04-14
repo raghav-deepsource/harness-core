@@ -230,6 +230,9 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
         bind(Producer.class)
             .annotatedWith(Names.named(EventsFrameworkConstants.ENTITY_CRUD))
             .toInstance(mock(NoOpProducer.class));
+        bind(Producer.class)
+            .annotatedWith(Names.named(EventsFrameworkConstants.SETUP_USAGE))
+            .toInstance(mock(NoOpProducer.class));
       }
     });
     modules.add(TimeModule.getInstance());

@@ -10,17 +10,14 @@ package io.harness.steps.resourcerestraint.service;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.distribution.constraint.Consumer.State.ACTIVE;
 import static io.harness.distribution.constraint.Consumer.State.BLOCKED;
-import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 
 import static java.time.Duration.ofSeconds;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.WingsException;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
-import io.harness.logging.ExceptionLogger;
 import io.harness.mongo.iterator.IteratorConfig;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
@@ -29,7 +26,6 @@ import io.harness.mongo.iterator.provider.SpringPersistenceProvider;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance.ResourceRestraintInstanceKeys;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -64,27 +60,10 @@ public class ResourceRestraintPersistenceMonitor implements Handler<ResourceRest
 
   @Override
   public void handle(ResourceRestraintInstance instance) {
-    String constraintId = instance.getResourceRestraintId();
-    boolean toUnblock = false;
     try {
-      if (BLOCKED == instance.getState()) {
-        toUnblock = true;
-      } else if (ACTIVE == instance.getState()) {
-        if (resourceRestraintInstanceService.updateActiveConstraintsForInstance(instance)) {
-          log.info("The following resource constraint needs to be unblocked: {}", constraintId);
-          toUnblock = true;
-        }
-      }
-
-      if (toUnblock) {
-        // unblock the constraints
-        resourceRestraintInstanceService.updateBlockedConstraints(ImmutableSet.of(constraintId));
-      }
-
-    } catch (WingsException e) {
-      ExceptionLogger.logProcessedMessages(e, MANAGER, log);
-    } catch (RuntimeException e) {
-      log.error("", e);
+      resourceRestraintInstanceService.processRestraint(instance);
+    } catch (Exception exception) {
+      log.error("Failed to process restraint {}", instance.getUuid(), exception);
     }
   }
 }

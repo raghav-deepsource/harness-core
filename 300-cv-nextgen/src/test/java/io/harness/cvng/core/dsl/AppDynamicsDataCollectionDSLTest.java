@@ -50,6 +50,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -156,9 +157,9 @@ public class AppDynamicsDataCollectionDSLTest extends HoverflyCVNextGenTestBase 
                                               .build();
     List<TimeSeriesRecord> timeSeriesRecords =
         (List<TimeSeriesRecord>) dataCollectionDSLService.execute(code, runtimeParameters, callDetails -> {});
-    assertThat(Sets.newHashSet(timeSeriesRecords))
-        .isEqualTo(new Gson().fromJson(readJson("performance-service-guard-expectation.json"),
-            new TypeToken<Set<TimeSeriesRecord>>() {}.getType()));
+    assertThat(new HashSet<>(timeSeriesRecords))
+        .isEqualTo(new HashSet<>(new Gson().fromJson(readJson("performance-service-guard-expectation.json"),
+            new TypeToken<Set<TimeSeriesRecord>>() {}.getType())));
   }
 
   @Test

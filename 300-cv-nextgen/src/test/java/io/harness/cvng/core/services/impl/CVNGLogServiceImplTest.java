@@ -25,6 +25,7 @@ import io.harness.cvng.beans.cvnglog.ApiCallLogDTO.ApiCallLogDTOField;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.beans.cvnglog.CVNGLogType;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
+import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
 import io.harness.cvng.beans.cvnglog.TraceableType;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.DeploymentLogsFilter;
@@ -248,10 +249,9 @@ public class CVNGLogServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
   public void testGetCVNGLogs_forExecutionLogWithNoFilters() throws IllegalAccessException {
-    List<CVNGLogDTO> cvngLogDTOs =
-        IntStream.range(0, 3)
-            .mapToObj(index -> createExecutionLogDTOVerification(ExecutionLogDTO.LogLevel.INFO))
-            .collect(Collectors.toList());
+    List<CVNGLogDTO> cvngLogDTOs = IntStream.range(0, 3)
+                                       .mapToObj(index -> createExecutionLogDTOVerification(LogLevel.INFO))
+                                       .collect(Collectors.toList());
     cvngLogService.save(cvngLogDTOs);
     Set<String> traceableIds =
         cvngLogDTOs.stream().map(cvngLogDTO -> cvngLogDTO.getTraceableId()).collect(Collectors.toSet());
@@ -275,7 +275,7 @@ public class CVNGLogServiceImplTest extends CvNextGenTestBase {
 
     assertThat(executionLogDTOS.size()).isEqualTo(3);
     executionLogDTOS.forEach(executionLogDTO -> {
-      assertThat(executionLogDTO.getLogLevel()).isEqualTo(ExecutionLogDTO.LogLevel.INFO);
+      assertThat(executionLogDTO.getLogLevel()).isEqualTo(LogLevel.INFO);
       assertThat(executionLogDTO.getType()).isEqualTo(CVNGLogType.EXECUTION_LOG);
       assertThat(executionLogDTO.getTraceableType()).isEqualTo(TraceableType.VERIFICATION_TASK);
     });
@@ -285,11 +285,10 @@ public class CVNGLogServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
   public void testGetCVNGLogs_forExecutionLogWithErrorLogsOnlyFilter() throws IllegalAccessException {
-    List<CVNGLogDTO> cvngLogDTOs =
-        IntStream.range(0, 2)
-            .mapToObj(index -> createExecutionLogDTOVerification(ExecutionLogDTO.LogLevel.INFO))
-            .collect(Collectors.toList());
-    cvngLogDTOs.add(createExecutionLogDTOVerification(ExecutionLogDTO.LogLevel.ERROR));
+    List<CVNGLogDTO> cvngLogDTOs = IntStream.range(0, 2)
+                                       .mapToObj(index -> createExecutionLogDTOVerification(LogLevel.INFO))
+                                       .collect(Collectors.toList());
+    cvngLogDTOs.add(createExecutionLogDTOVerification(LogLevel.ERROR));
     cvngLogService.save(cvngLogDTOs);
     Set<String> traceableIds =
         cvngLogDTOs.stream().map(cvngLogDTO -> cvngLogDTO.getTraceableId()).collect(Collectors.toSet());
@@ -313,7 +312,7 @@ public class CVNGLogServiceImplTest extends CvNextGenTestBase {
 
     assertThat(executionLogDTOS.size()).isEqualTo(1);
     executionLogDTOS.forEach(executionLogDTO -> {
-      assertThat(executionLogDTO.getLogLevel()).isEqualTo(ExecutionLogDTO.LogLevel.ERROR);
+      assertThat(executionLogDTO.getLogLevel()).isEqualTo(LogLevel.ERROR);
       assertThat(executionLogDTO.getType()).isEqualTo(CVNGLogType.EXECUTION_LOG);
       assertThat(executionLogDTO.getTraceableType()).isEqualTo(TraceableType.VERIFICATION_TASK);
     });
@@ -396,10 +395,9 @@ public class CVNGLogServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
   public void testGetCVNGLogs_forExecutionLogWithTimeRangeFilter() throws IllegalAccessException {
-    List<CVNGLogDTO> cvngLogDTOs =
-        IntStream.range(0, 3)
-            .mapToObj(index -> createExecutionLogDTOVerification(ExecutionLogDTO.LogLevel.INFO))
-            .collect(Collectors.toList());
+    List<CVNGLogDTO> cvngLogDTOs = IntStream.range(0, 3)
+                                       .mapToObj(index -> createExecutionLogDTOVerification(LogLevel.INFO))
+                                       .collect(Collectors.toList());
     cvngLogService.save(cvngLogDTOs);
     Set<String> traceableIds =
         cvngLogDTOs.stream().map(cvngLogDTO -> cvngLogDTO.getTraceableId()).collect(Collectors.toSet());
@@ -423,7 +421,7 @@ public class CVNGLogServiceImplTest extends CvNextGenTestBase {
 
     assertThat(executionLogDTOS.size()).isEqualTo(1);
     executionLogDTOS.forEach(executionLogDTO -> {
-      assertThat(executionLogDTO.getLogLevel()).isEqualTo(ExecutionLogDTO.LogLevel.INFO);
+      assertThat(executionLogDTO.getLogLevel()).isEqualTo(LogLevel.INFO);
       assertThat(executionLogDTO.getType()).isEqualTo(CVNGLogType.EXECUTION_LOG);
       assertThat(executionLogDTO.getTraceableType()).isEqualTo(TraceableType.VERIFICATION_TASK);
     });
@@ -433,11 +431,10 @@ public class CVNGLogServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
   public void testGetCVNGLogs_forExecutionLogWithErrorLogsOnlyFilterAndTimeRangeFilter() throws IllegalAccessException {
-    List<CVNGLogDTO> cvngLogDTOs =
-        IntStream.range(0, 2)
-            .mapToObj(index -> createExecutionLogDTOVerification(ExecutionLogDTO.LogLevel.INFO))
-            .collect(Collectors.toList());
-    cvngLogDTOs.add(createExecutionLogDTOVerification(ExecutionLogDTO.LogLevel.ERROR));
+    List<CVNGLogDTO> cvngLogDTOs = IntStream.range(0, 2)
+                                       .mapToObj(index -> createExecutionLogDTOVerification(LogLevel.INFO))
+                                       .collect(Collectors.toList());
+    cvngLogDTOs.add(createExecutionLogDTOVerification(LogLevel.ERROR));
     cvngLogService.save(cvngLogDTOs);
     Set<String> traceableIds =
         cvngLogDTOs.stream().map(cvngLogDTO -> cvngLogDTO.getTraceableId()).collect(Collectors.toSet());
@@ -461,7 +458,7 @@ public class CVNGLogServiceImplTest extends CvNextGenTestBase {
 
     assertThat(executionLogDTOS.size()).isEqualTo(1);
     executionLogDTOS.forEach(executionLogDTO -> {
-      assertThat(executionLogDTO.getLogLevel()).isEqualTo(ExecutionLogDTO.LogLevel.ERROR);
+      assertThat(executionLogDTO.getLogLevel()).isEqualTo(LogLevel.ERROR);
       assertThat(executionLogDTO.getType()).isEqualTo(CVNGLogType.EXECUTION_LOG);
       assertThat(executionLogDTO.getTraceableType()).isEqualTo(TraceableType.VERIFICATION_TASK);
     });
@@ -523,7 +520,7 @@ public class CVNGLogServiceImplTest extends CvNextGenTestBase {
         .build();
   }
 
-  private CVNGLogDTO createExecutionLogDTOVerification(ExecutionLogDTO.LogLevel logLevel) {
+  private CVNGLogDTO createExecutionLogDTOVerification(LogLevel logLevel) {
     startTime = startTime.plusSeconds(10);
     endTime = endTime.plusSeconds(10);
     return ExecutionLogDTO.builder()

@@ -39,10 +39,12 @@ import io.harness.accesscontrol.roleassignments.api.RoleAssignmentCreateRequestD
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTO;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentFilterDTO;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentResponseDTO;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.Scope.ScopeKeys;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.UnexpectedException;
 import io.harness.licensing.Edition;
 import io.harness.licensing.services.LicenseService;
 import io.harness.ng.beans.PageRequest;
@@ -88,19 +90,26 @@ import io.harness.repositories.user.spring.UserMetadataRepository;
 import io.harness.scim.PatchRequest;
 import io.harness.scim.ScimListResponse;
 import io.harness.scim.ScimUser;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.SourcePrincipalContextBuilder;
+import io.harness.security.dto.Principal;
 import io.harness.user.remote.UserClient;
 import io.harness.user.remote.UserFilterNG;
 import io.harness.utils.PageUtils;
+import io.harness.utils.RetryUtils;
 import io.harness.utils.ScopeUtils;
 import io.harness.utils.TimeLogger;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -139,6 +148,7 @@ public class NgUserServiceImpl implements NgUserService {
       ImmutableList.of(ACCOUNT_VIEWER, ORGANIZATION_VIEWER, PROJECT_VIEWER);
   public static final int DEFAULT_PAGE_SIZE = 10000;
   private final UserClient userClient;
+  private final AccountClient accountClient;
   private final UserMembershipRepository userMembershipRepository;
   private final AccessControlAdminClient accessControlAdminClient;
   private final TransactionTemplate transactionTemplate;
@@ -152,14 +162,21 @@ public class NgUserServiceImpl implements NgUserService {
   private final LastAdminCheckService lastAccountAdminCheckService;
   private static final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
 
+  private static final RetryPolicy<Object> harnessSupportUsersFetchRetryPolicy =
+      RetryUtils.getRetryPolicy("Unexpected error, could not fetch the harness support group users",
+          "Unexpected error, could not fetch the harness support group users",
+          Lists.newArrayList(InvalidRequestException.class), Duration.ofSeconds(5), 3, log);
+
   @Inject
-  public NgUserServiceImpl(UserClient userClient, UserMembershipRepository userMembershipRepository,
+  public NgUserServiceImpl(UserClient userClient, AccountClient accountClient,
+      UserMembershipRepository userMembershipRepository,
       @Named("PRIVILEGED") AccessControlAdminClient accessControlAdminClient,
       @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, OutboxService outboxService,
       UserGroupService userGroupService, UserMetadataRepository userMetadataRepository, InviteService inviteService,
       NotificationClient notificationClient, AccountOrgProjectHelper accountOrgProjectHelper,
       LicenseService licenseService, LastAdminCheckService lastAccountAdminCheckService) {
     this.userClient = userClient;
+    this.accountClient = accountClient;
     this.userMembershipRepository = userMembershipRepository;
     this.accessControlAdminClient = accessControlAdminClient;
     this.transactionTemplate = transactionTemplate;
@@ -724,7 +741,7 @@ public class NgUserServiceImpl implements NgUserService {
           userMembership -> Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
             userMembershipRepository.delete(userMembership);
             outboxService.save(new RemoveCollaboratorEvent(
-                scope.getAccountIdentifier(), scope, publicIdentifier, userId, userName, source));
+                scope.getAccountIdentifier(), userMembership.getScope(), publicIdentifier, userId, userName, source));
             return userMembership;
           })));
     }
@@ -846,5 +863,25 @@ public class NgUserServiceImpl implements NgUserService {
   @Override
   public boolean updateUserDisabled(String accountId, String userId, boolean disabled) {
     return RestClientUtils.getResponse(userClient.updateUserDisabled(accountId, userId, disabled));
+  }
+
+  @Override
+  public boolean verifyHarnessSupportGroupUser() {
+    try {
+      Collection<io.harness.ng.core.user.UserMetadata> supportUsers =
+          Failsafe.with(harnessSupportUsersFetchRetryPolicy)
+              .get(() -> RestClientUtils.getResponse(accountClient.listAllHarnessSupportUsers()));
+      if (supportUsers == null) {
+        throw new UnexpectedException("Unexpected error, could not fetch the harness support group users");
+      }
+      Principal currentPrincipal = SourcePrincipalContextBuilder.getSourcePrincipal() == null
+          ? SecurityContextBuilder.getPrincipal()
+          : SourcePrincipalContextBuilder.getSourcePrincipal();
+      return supportUsers.stream().anyMatch(userMetadata
+          -> currentPrincipal != null && io.harness.security.dto.PrincipalType.USER.equals(currentPrincipal.getType())
+              && userMetadata.getId().equals(currentPrincipal.getName()));
+    } catch (InvalidRequestException e) {
+      throw new UnexpectedException("Unexpected error, could not fetch the harness support group users");
+    }
   }
 }

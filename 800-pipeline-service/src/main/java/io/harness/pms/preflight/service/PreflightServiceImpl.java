@@ -7,6 +7,10 @@
 
 package io.harness.pms.preflight.service;
 
+import static io.harness.pms.instrumentaion.PipelineInstrumentationConstants.ORG_IDENTIFIER;
+import static io.harness.pms.instrumentaion.PipelineInstrumentationConstants.PIPELINE_ID;
+import static io.harness.pms.instrumentaion.PipelineInstrumentationConstants.PROJECT_IDENTIFIER;
+
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -16,6 +20,7 @@ import io.harness.manage.ManagedExecutorService;
 import io.harness.ng.core.EntityDetail;
 import io.harness.pms.inputset.InputSetErrorDTOPMS;
 import io.harness.pms.inputset.InputSetErrorResponseDTOPMS;
+import io.harness.pms.instrumentaion.PipelineTelemetryHelper;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.InputSetErrorsHelper;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -44,6 +49,7 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -58,16 +64,18 @@ import org.springframework.data.mongodb.core.query.Update;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PreflightServiceImpl implements PreflightService {
   private static final ExecutorService executorService = new ManagedExecutorService(Executors.newFixedThreadPool(1));
-
+  private static final String PREFLIGHT_EVENT_NAME = "ng_preflight_execution";
   @Inject PreFlightRepository preFlightRepository;
   @Inject ConnectorPreflightHandler connectorPreflightHandler;
   @Inject PMSPipelineService pmsPipelineService;
   @Inject PipelineSetupUsageHelper pipelineSetupUsageHelper;
   @Inject PipelineRbacService pipelineRbacServiceImpl;
+  @Inject PipelineTelemetryHelper pipelineTelemetryHelper;
 
   @Override
   public String startPreflightCheck(@NotNull String accountId, @NotNull String orgIdentifier,
       @NotNull String projectIdentifier, @NotNull String pipelineIdentifier, String inputSetPipelineYaml) {
+    sendPreflightTelemetryEvent(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
     Optional<PipelineEntity> pipelineEntity =
         pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
     if (!pipelineEntity.isPresent()) {
@@ -186,5 +194,14 @@ public class PreflightServiceImpl implements PreflightService {
                   .build());
     });
     return res;
+  }
+
+  private void sendPreflightTelemetryEvent(
+      String accountId, String orgId, String projectId, String pipelineIdentifier) {
+    HashMap<String, Object> propertiesMap = new HashMap<>();
+    propertiesMap.put(PROJECT_IDENTIFIER, projectId);
+    propertiesMap.put(ORG_IDENTIFIER, orgId);
+    propertiesMap.put(PIPELINE_ID, pipelineIdentifier);
+    pipelineTelemetryHelper.sendTelemetryEventWithAccountName(PREFLIGHT_EVENT_NAME, accountId, propertiesMap);
   }
 }

@@ -36,6 +36,7 @@ import io.harness.cvng.beans.change.PagerDutyEventMetaData;
 import io.harness.cvng.beans.customhealth.TimestampInfo;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.ExecutionLogDTOBuilder;
+import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
 import io.harness.cvng.beans.cvnglog.TraceableType;
 import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.cdng.beans.CVNGStepInfo;
@@ -1072,7 +1073,7 @@ public class BuilderFactory {
         .accountId(context.getAccountId())
         .traceableId("traceableId")
         .log("Data Collection successfully completed.")
-        .logLevel(ExecutionLogDTO.LogLevel.INFO)
+        .logLevel(LogLevel.INFO)
         .startTime(startTime.toEpochMilli())
         .endTime(endTime.toEpochMilli())
         .createdAt(createdAt)

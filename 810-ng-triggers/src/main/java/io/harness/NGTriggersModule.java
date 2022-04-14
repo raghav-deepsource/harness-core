@@ -13,6 +13,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.TriggerConfiguration;
 import io.harness.ngtriggers.beans.source.webhook.WebhookSourceRepo;
+import io.harness.ngtriggers.helpers.TriggerHelper;
 import io.harness.ngtriggers.service.NGTriggerService;
 import io.harness.ngtriggers.service.NGTriggerWebhookRegistrationService;
 import io.harness.ngtriggers.service.NGTriggerYamlSchemaService;
@@ -29,7 +30,6 @@ import io.harness.webhook.WebhookConfigProvider;
 import com.google.inject.AbstractModule;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -59,9 +59,8 @@ public class NGTriggersModule extends AbstractModule {
   protected void configure() {
     MapBinder<String, List<String>> variablesMapBinder =
         MapBinder.newMapBinder(binder(), new TypeLiteral<String>() {}, new TypeLiteral<List<String>>() {});
-    List<String> triggerExpressions = new ArrayList<>();
-    // TODO: add trigger expressions in this list
-    variablesMapBinder.addBinding("trigger").toInstance(triggerExpressions);
+    // TODO(Harsh): add all trigger expressions in this list
+    variablesMapBinder.addBinding("trigger").toInstance(TriggerHelper.getAllTriggerExpressions());
 
     install(SCMJavaClientModule.getInstance());
     bind(NGTriggerService.class).to(NGTriggerServiceImpl.class);

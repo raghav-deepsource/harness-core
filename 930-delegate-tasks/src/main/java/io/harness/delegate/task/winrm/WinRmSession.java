@@ -109,7 +109,8 @@ public class WinRmSession implements AutoCloseable {
             .environment(processedEnvironmentMap)
             .retriesForConnectionFailures(retryCount)
             .context(context)
-            .operationTimeout(config.getTimeout());
+            .operationTimeout(config.getTimeout())
+            .retryReceiveAfterOperationTimeout(WinRmClientBuilder.neverRetryReceiveAfterOperationTimeout());
 
     client = clientBuilder.build();
     shell = client.createShell();

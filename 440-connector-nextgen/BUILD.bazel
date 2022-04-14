@@ -8,6 +8,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//820-platform-service/contracts/audit-service:module",
         "//890-sm-core:module",
         "//900-git-sync-sdk:module",
         "//910-delegate-service-driver:module",
@@ -22,7 +23,6 @@ java_library(
         "//950-delegate-tasks-beans:module",
         "//950-ng-core:module",
         "//950-ng-project-n-orgs:module",
-        "//951-ng-audit-commons:module",
         "//953-events-api:module",
         "//953-git-sync-commons:module",
         "//954-connector-beans:module",

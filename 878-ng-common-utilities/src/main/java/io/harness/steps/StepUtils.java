@@ -10,6 +10,10 @@ package io.harness.steps;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.DELEGATE_SELECTORS;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGE;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
 import static software.wings.beans.LogHelper.COMMAND_UNIT_PLACEHOLDER;
 
@@ -39,6 +43,8 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.LogStreamingHelper;
+import io.harness.plancreator.steps.TaskSelectorYaml;
+import io.harness.plancreator.steps.common.WithDelegateSelector;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
@@ -47,17 +53,25 @@ import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ResponseData;
 import io.harness.tasks.Task;
+import io.harness.yaml.core.StepSpecType;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Duration;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -66,10 +80,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
 
 @OwnedBy(PIPELINE)
+@Slf4j
 public class StepUtils {
   private StepUtils() {}
 
@@ -366,6 +383,17 @@ public class StepUtils {
     return delegateSelectors.getValue();
   }
 
+  public static List<String> getDelegateSelectorListFromTaskSelectorYaml(
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+    if (ParameterField.isNull(delegateSelectors) || delegateSelectors.getValue() == null) {
+      return new ArrayList<>();
+    }
+    return delegateSelectors.getValue()
+        .stream()
+        .map(TaskSelectorYaml::getDelegateSelectors)
+        .collect(Collectors.toList());
+  }
+
   public static Status getStepStatus(CommandExecutionStatus commandExecutionStatus) {
     if (commandExecutionStatus == null) {
       return null;
@@ -385,5 +413,60 @@ public class StepUtils {
         throw new InvalidRequestException(
             "Unhandled type CommandExecutionStatus: " + commandExecutionStatus, WingsException.USER);
     }
+  }
+
+  public static ParameterField<List<TaskSelectorYaml>> delegateSelectorsFromFqn(PlanCreationContext ctx, String fqn)
+      throws IOException {
+    ParameterField<List<TaskSelectorYaml>> delegateSelectors = null;
+    YamlNode node = YamlUtils.getGivenYamlNodeFromParentPath(ctx.getCurrentField().getNode(), fqn);
+    if (node == null) {
+      return delegateSelectors;
+    }
+    YamlField delegateSelectorStageField = node.getField(DELEGATE_SELECTORS);
+    if (delegateSelectorStageField != null) {
+      delegateSelectors = YamlUtils.read(delegateSelectorStageField.getNode().toString(),
+          new TypeReference<ParameterField<List<TaskSelectorYaml>>>() {});
+    }
+    return delegateSelectors;
+  }
+
+  public static void appendDelegateSelectorsToSpecParameters(StepSpecType stepSpecType, PlanCreationContext ctx) {
+    try {
+      if (stepSpecType instanceof WithDelegateSelector) {
+        WithDelegateSelector withDelegateSelector = (WithDelegateSelector) stepSpecType;
+        // Delegate Selector Precedence: 1)Step -> 2)stepGroup -> 3)Stage ->  4)Pipeline
+
+        ParameterField<List<TaskSelectorYaml>> delegateSelectors = withDelegateSelector.getDelegateSelectors();
+        if (!ParameterField.isNull(withDelegateSelector.getDelegateSelectors())) {
+          setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, STEP);
+          return;
+        }
+
+        delegateSelectors = delegateSelectorsFromFqn(ctx, STEP_GROUP);
+        if (!ParameterField.isNull(delegateSelectors)) {
+          setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, STEP_GROUP);
+          return;
+        }
+
+        delegateSelectors = delegateSelectorsFromFqn(ctx, STAGE);
+        if (!ParameterField.isNull(delegateSelectors)) {
+          setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, STAGE);
+          return;
+        }
+
+        delegateSelectors = delegateSelectorsFromFqn(ctx, YAMLFieldNameConstants.PIPELINE);
+        if (!ParameterField.isNull(delegateSelectors)) {
+          setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, YAMLFieldNameConstants.PIPELINE);
+        }
+      }
+    } catch (Exception e) {
+      log.error("Error while appending delegate selector to spec params ", e);
+    }
+  }
+
+  private static void setOriginAndDelegateSelectors(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      WithDelegateSelector withDelegateSelector, String origin) {
+    delegateSelectors.getValue().forEach(selector -> selector.setOrigin(origin));
+    withDelegateSelector.setDelegateSelectors(delegateSelectors);
   }
 }

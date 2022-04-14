@@ -41,10 +41,13 @@ public class ServiceGuardTxnMetricAnalysisDataDTO {
   @JsonIgnoreProperties(ignoreUnknown = true)
   public static class MetricSumDTO {
     // in LE we pass metric identifier as the metric_name, as metric_name is the identifier for LE
-    @JsonProperty("metricName") private String metricIdentifier;
+    private String metricIdentifier;
     private double risk;
     private double data;
-
+    @JsonProperty("metricName")
+    public String getMetricIdentifier() {
+      return metricIdentifier.toLowerCase(); // TODO: remove this in the next release. Only for migration.
+    }
     public MetricSum toMetricSum() {
       return MetricSum.builder().metricIdentifier(metricIdentifier).risk(risk).data(data).build();
     }

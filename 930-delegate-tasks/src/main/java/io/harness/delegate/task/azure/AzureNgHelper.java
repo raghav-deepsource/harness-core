@@ -9,16 +9,13 @@ package io.harness.delegate.task.azure;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.azure.AzureEnvironmentType;
 import io.harness.azure.client.AzureManagementClient;
+import io.harness.azure.client.AzureNgClient;
+import io.harness.azure.model.AzureNGConfig;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
-import io.harness.delegate.beans.connector.azureconnector.AzureAuthCredentialDTO;
-import io.harness.delegate.beans.connector.azureconnector.AzureClientKeyCertDTO;
-import io.harness.delegate.beans.connector.azureconnector.AzureClientSecretKeyDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
-import io.harness.delegate.beans.connector.azureconnector.AzureCredentialDTO;
-import io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO;
+import io.harness.delegate.task.artifacts.mappers.AcrRequestResponseMapper;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
@@ -32,6 +29,7 @@ import java.util.List;
 @Singleton
 public class AzureNgHelper {
   @Inject private SecretDecryptionService secretDecryptionService;
+  @Inject private AzureNgClient azureNgClient;
   @Inject private AzureManagementClient azureManagementClient;
   @Inject private NGErrorHelper ngErrorHelper;
 
@@ -39,18 +37,11 @@ public class AzureNgHelper {
       List<EncryptedDataDetail> encryptedDataDetails, AzureConnectorDTO connectorDTO) {
     ConnectorValidationResult connectorValidationResult;
     try {
-      switch (connectorDTO.getCredential().getAzureCredentialType()) {
-        case INHERIT_FROM_DELEGATE:
-          throw new IllegalStateException(
-              "Credential type not supported yet: " + connectorDTO.getCredential().getAzureCredentialType());
-        case MANUAL_CREDENTIALS:
-          handleValidateManualCredentialsTask(
-              connectorDTO.getCredential(), encryptedDataDetails, connectorDTO.getAzureEnvironmentType());
-          break;
-        default:
-          throw new IllegalStateException(
-              "Unexpected credential type : " + connectorDTO.getCredential().getAzureCredentialType());
-      }
+      AzureNGConfig azureNGConfig = AcrRequestResponseMapper.toAzureInternalConfig(connectorDTO.getCredential(),
+          encryptedDataDetails, connectorDTO.getCredential().getAzureCredentialType(),
+          connectorDTO.getAzureEnvironmentType(), secretDecryptionService);
+
+      azureNgClient.validateAzureConnection(azureNGConfig);
       connectorValidationResult = ConnectorValidationResult.builder()
                                       .status(ConnectivityStatus.SUCCESS)
                                       .testedAt(System.currentTimeMillis())
@@ -65,28 +56,5 @@ public class AzureNgHelper {
                                       .build();
     }
     return connectorValidationResult;
-  }
-
-  private void handleValidateManualCredentialsTask(AzureCredentialDTO credential,
-      List<EncryptedDataDetail> encryptedDataDetails, AzureEnvironmentType azureEnvironmentType) {
-    AzureManualDetailsDTO azureConfig = (AzureManualDetailsDTO) credential.getConfig();
-    AzureAuthCredentialDTO authCredentials = azureConfig.getAuthDTO().getCredentials();
-    secretDecryptionService.decrypt(authCredentials, encryptedDataDetails);
-
-    String secret;
-    switch (azureConfig.getAuthDTO().getAzureSecretType()) {
-      case SECRET_KEY:
-        secret = String.valueOf(((AzureClientSecretKeyDTO) authCredentials).getSecretKey().getDecryptedValue());
-        azureManagementClient.validateAzureConnection(
-            azureConfig.getClientId(), azureConfig.getTenantId(), secret, azureEnvironmentType);
-        break;
-      case KEY_CERT:
-        secret = String.valueOf(((AzureClientKeyCertDTO) authCredentials).getClientCertRef().getDecryptedValue());
-        azureManagementClient.validateAzureConnectionWithCert(
-            azureConfig.getClientId(), azureConfig.getTenantId(), secret.getBytes(), azureEnvironmentType);
-        break;
-      default:
-        throw new IllegalStateException("Unexpected secret type : " + azureConfig.getAuthDTO().getAzureSecretType());
-    }
   }
 }

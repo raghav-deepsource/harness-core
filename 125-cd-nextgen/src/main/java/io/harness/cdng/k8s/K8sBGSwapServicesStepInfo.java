@@ -46,6 +46,7 @@ public class K8sBGSwapServicesStepInfo implements CDStepInfo, Visitable {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   @JsonIgnore String blueGreenStepFqn;
+
   @JsonIgnore String blueGreenSwapServicesStepFqn;
 
   // For Visitor Framework Impl

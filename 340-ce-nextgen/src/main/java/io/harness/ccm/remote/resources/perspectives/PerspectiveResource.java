@@ -129,7 +129,6 @@ public class PerspectiveResource {
   @GET
   @Path("lastPeriodCost")
   @Timed
-  @Hidden
   @LogAccountIdentifier
   @ExceptionMetered
   @ApiOperation(value = "Get last period cost for perspective", nickname = "getLastPeriodCost")
@@ -147,7 +146,7 @@ public class PerspectiveResource {
       @NotNull @Valid @QueryParam("perspectiveId") @Parameter(
           required = true, description = "The Perspective identifier for which we want the cost") String perspectiveId,
       @NotNull @Valid @QueryParam("startTime") @Parameter(
-          required = true, description = "The Start time (timestamp in millis) for the period") long startTime,
+          required = true, description = "The Start time (timestamp in millis) for the current period") long startTime,
       @NotNull @Valid @QueryParam("period") @Parameter(required = true,
           description = "The period (DAILY, WEEKLY, MONTHLY, QUARTERLY, YEARLY) for which we want the cost")
       BudgetPeriod period) {

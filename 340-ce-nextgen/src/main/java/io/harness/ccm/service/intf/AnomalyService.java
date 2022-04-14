@@ -14,7 +14,7 @@ import io.harness.ccm.commons.entities.anomaly.AnomalySummary;
 import io.harness.ccm.commons.entities.anomaly.AnomalyWidget;
 import io.harness.ccm.commons.entities.anomaly.AnomalyWidgetData;
 import io.harness.ccm.commons.entities.anomaly.PerspectiveAnomalyData;
-import io.harness.ccm.graphql.dto.perspectives.PerspectiveQueryDTO;
+import io.harness.ccm.views.dto.PerspectiveQueryDTO;
 
 import java.util.List;
 import lombok.NonNull;

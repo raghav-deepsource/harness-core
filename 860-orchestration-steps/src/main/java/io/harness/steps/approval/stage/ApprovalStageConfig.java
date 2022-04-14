@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.stages.stage.StageInfoConfig;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -40,5 +41,5 @@ public class ApprovalStageConfig implements StageInfoConfig {
   @ApiModelProperty(hidden = true)
   String uuid;
 
-  @NotNull private ExecutionElementConfig execution;
+  @NotNull @VariableExpression(skipVariableExpression = true) private ExecutionElementConfig execution;
 }

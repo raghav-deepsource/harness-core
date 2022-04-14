@@ -13,12 +13,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
+import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
@@ -68,6 +70,9 @@ public class ArtifactResponseToOutcomeMapper {
             (ArtifactoryArtifactDelegateResponse) artifactDelegateResponse;
         return getArtifactoryArtifactOutcome(
             artifactoryRegistryArtifactConfig, artifactoryDelegateResponse, useDelegateResponse);
+      case CUSTOM_ARTIFACT:
+        CustomArtifactConfig customArtifactConfig = (CustomArtifactConfig) artifactConfig;
+        return getCustomArtifactOutcome(customArtifactConfig);
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
@@ -139,6 +144,7 @@ public class ArtifactResponseToOutcomeMapper {
         .type(ArtifactSourceType.NEXUS3_REGISTRY.getDisplayName())
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
         .imagePullSecret(IMAGE_PULL_SECRET + ArtifactUtils.getArtifactKey(artifactConfig) + ">")
+        .registryHostname(getRegistryHostnameValue(artifactDelegateResponse))
         .build();
   }
 
@@ -157,6 +163,15 @@ public class ArtifactResponseToOutcomeMapper {
         .type(ArtifactSourceType.ARTIFACTORY_REGISTRY.getDisplayName())
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
         .imagePullSecret(IMAGE_PULL_SECRET + ArtifactUtils.getArtifactKey(artifactConfig) + ">")
+        .registryHostname(getRegistryHostnameValue(artifactDelegateResponse))
+        .build();
+  }
+
+  private CustomArtifactOutcome getCustomArtifactOutcome(CustomArtifactConfig artifactConfig) {
+    return CustomArtifactOutcome.builder()
+        .identifier(artifactConfig.getIdentifier())
+        .primaryArtifact(artifactConfig.isPrimaryArtifact())
+        .version(artifactConfig.getVersion().getValue())
         .build();
   }
 
@@ -166,6 +181,15 @@ public class ArtifactResponseToOutcomeMapper {
     }
     return EmptyPredicate.isNotEmpty(artifactDelegateResponse.getBuildDetails().getMetadata())
         ? artifactDelegateResponse.getBuildDetails().getMetadata().get(ArtifactMetadataKeys.IMAGE)
+        : null;
+  }
+
+  private String getRegistryHostnameValue(ArtifactDelegateResponse artifactDelegateResponse) {
+    if (artifactDelegateResponse == null || artifactDelegateResponse.getBuildDetails() == null) {
+      return null;
+    }
+    return EmptyPredicate.isNotEmpty(artifactDelegateResponse.getBuildDetails().getMetadata())
+        ? artifactDelegateResponse.getBuildDetails().getMetadata().get(ArtifactMetadataKeys.REGISTRY_HOSTNAME)
         : null;
   }
 }

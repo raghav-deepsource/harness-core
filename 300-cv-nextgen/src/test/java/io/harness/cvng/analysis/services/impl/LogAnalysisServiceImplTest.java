@@ -666,6 +666,7 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
     learningEngineTask.setFailureUrl("failure-url");
     learningEngineTask.setAnalysisStartTime(instant.minus(Duration.ofMinutes(10)));
     learningEngineTask.setAnalysisEndTime(instant);
+    learningEngineTask.setPickedAt(instant.plus(Duration.ofMinutes(2)));
   }
 
   private VerificationJob newTestVerificationJob() {

@@ -88,6 +88,9 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
+import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessMapping.entities.UnallocatedCostStrategy;
+import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ClusterData;
 import io.harness.ccm.views.entities.ClusterData.ClusterDataBuilder;
@@ -133,6 +136,7 @@ import io.harness.ccm.views.graphql.ViewsQueryMetadata;
 import io.harness.ccm.views.helper.InstanceDetailsHelper;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.ViewsBillingService;
+import io.harness.ccm.views.utils.ViewFieldUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 
@@ -184,6 +188,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   @Inject FeatureFlagService featureFlagService;
   @Inject InstanceDetailsHelper instanceDetailsHelper;
   @Inject EntityMetadataService entityMetadataService;
+  @Inject BusinessMappingService businessMappingService;
 
   public static final String nullStringValueConstant = "Others";
   private static final String COST_DESCRIPTION = "of %s - %s";
@@ -213,6 +218,12 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   @Override
   public List<String> getFilterValueStatsNg(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
       String cloudProviderTableName, Integer limit, Integer offset, ViewQueryParams queryParams) {
+    boolean isClusterQuery = queryParams.isClusterQuery();
+    String businessMappingId = viewsQueryHelper.getBusinessMappingIdFromFilters(filters);
+
+    // If filter values of business mapping are requested, query unified table
+    isClusterQuery = isClusterQuery && businessMappingId == null;
+
     List<ViewRule> viewRuleList = new ArrayList<>();
     Optional<QLCEViewFilterWrapper> viewMetadataFilter = getViewMetadataFilter(filters);
     List<QLCEViewFilter> idFilters = getIdFilters(filters);
@@ -236,7 +247,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     // account id is not passed in current gen queries
     if (queryParams.getAccountId() != null) {
       cloudProviderTableName = getUpdatedCloudProviderTableName(
-          filters, null, null, queryParams.getAccountId(), cloudProviderTableName, queryParams.isClusterQuery());
+          filters, null, null, queryParams.getAccountId(), cloudProviderTableName, isClusterQuery);
     }
 
     ViewsQueryMetadata viewsQueryMetadata = viewsQueryBuilder.getFilterValuesQuery(
@@ -251,7 +262,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       Thread.currentThread().interrupt();
       return null;
     }
-    return convertToFilterValuesData(result, viewsQueryMetadata.getFields());
+    return costCategoriesPostFetchResponseUpdate(
+        convertToFilterValuesData(result, viewsQueryMetadata.getFields()), businessMappingId);
   }
 
   @Override
@@ -270,6 +282,11 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort,
       String cloudProviderTableName, Integer limit, Integer offset, ViewQueryParams queryParams) {
     boolean isClusterPerspective = isClusterTableQuery(filters, queryParams);
+    String businessMappingId = viewsQueryHelper.getBusinessMappingIdFromGroupBy(groupBy);
+
+    // If group by business mapping is present, query unified table
+    isClusterPerspective = isClusterPerspective && businessMappingId == null;
+
     // Conversion field is not null in case entity id to name conversion is required for a field
     String conversionField = null;
     if (isDataGroupedByAwsAccount(filters, groupBy) && !queryParams.isUsedByTimeSeriesStats()) {
@@ -294,9 +311,11 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       Thread.currentThread().interrupt();
       return null;
     }
-    return convertToEntityStatsData(result, costTrendData, startTimeForTrendData, isClusterPerspective,
-        queryParams.isUsedByTimeSeriesStats(), queryParams.isSkipRoundOff(), conversionField,
-        queryParams.getAccountId());
+    return costCategoriesPostFetchResponseUpdate(
+        convertToEntityStatsData(result, costTrendData, startTimeForTrendData, isClusterPerspective,
+            queryParams.isUsedByTimeSeriesStats(), queryParams.isSkipRoundOff(), conversionField,
+            queryParams.getAccountId()),
+        businessMappingId);
   }
 
   @Override
@@ -775,6 +794,9 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
           ViewVisualization viewVisualization = ceView.getViewVisualization();
           ViewField defaultGroupByField = viewVisualization.getGroupBy();
           ViewTimeGranularity defaultTimeGranularity = viewVisualization.getGranularity();
+          if (defaultTimeGranularity == null) {
+            defaultTimeGranularity = ViewTimeGranularity.DAY;
+          }
           modifiedGroupBy = getModifiedGroupBy(groupBy, defaultGroupByField, defaultTimeGranularity,
               queryParams.isTimeTruncGroupByRequired(), skipDefaultGroupBy);
         }
@@ -1053,6 +1075,50 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     return QLCEViewGridData.builder().data(entityStatsDataPoints).fields(fieldNames).build();
   }
 
+  private QLCEViewGridData costCategoriesPostFetchResponseUpdate(QLCEViewGridData response, String businessMappingId) {
+    if (businessMappingId != null) {
+      BusinessMapping businessMapping = businessMappingService.get(businessMappingId);
+      List<QLCEViewEntityStatsDataPoint> updatedDataPoints = new ArrayList<>();
+      if (businessMapping.getUnallocatedCost() != null) {
+        UnallocatedCostStrategy strategy = businessMapping.getUnallocatedCost().getStrategy();
+        switch (strategy) {
+          case DISPLAY_NAME:
+            response.getData().forEach(dataPoint -> {
+              if (dataPoint.getName().equals(ViewFieldUtils.getBusinessMappingUnallocatedCostDefaultName())) {
+                updatedDataPoints.add(QLCEViewEntityStatsDataPoint.builder()
+                                          .name(businessMapping.getUnallocatedCost().getLabel())
+                                          .id(businessMapping.getUnallocatedCost().getLabel())
+                                          .pricingSource(dataPoint.getPricingSource())
+                                          .cost(dataPoint.getCost())
+                                          .costTrend(dataPoint.getCostTrend())
+                                          .isClusterPerspective(dataPoint.isClusterPerspective())
+                                          .clusterData(dataPoint.getClusterData())
+                                          .instanceDetails(dataPoint.getInstanceDetails())
+                                          .storageDetails(dataPoint.getStorageDetails())
+                                          .build());
+              } else {
+                updatedDataPoints.add(dataPoint);
+              }
+            });
+            break;
+          case HIDE:
+            response.getData().forEach(dataPoint -> {
+              if (!dataPoint.getName().equals(ViewFieldUtils.getBusinessMappingUnallocatedCostDefaultName())) {
+                updatedDataPoints.add(dataPoint);
+              }
+            });
+            break;
+          case SHARE:
+          default:
+            throw new InvalidRequestException(
+                "Invalid Unallocated Cost Strategy / Unallocated Cost Strategy not supported");
+        }
+        return QLCEViewGridData.builder().data(updatedDataPoints).fields(response.getFields()).build();
+      }
+    }
+    return response;
+  }
+
   private List<String> getFieldNames(FieldList fields) {
     List<String> fieldNames = new ArrayList<>();
     for (Field field : fields) {
@@ -1078,6 +1144,40 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       }
     }
     return filterValues;
+  }
+
+  public List<String> costCategoriesPostFetchResponseUpdate(List<String> response, String businessMappingId) {
+    if (businessMappingId != null) {
+      BusinessMapping businessMapping = businessMappingService.get(businessMappingId);
+      List<String> updatedResponse = new ArrayList<>();
+      if (businessMapping.getUnallocatedCost() != null) {
+        UnallocatedCostStrategy strategy = businessMapping.getUnallocatedCost().getStrategy();
+        switch (strategy) {
+          case DISPLAY_NAME:
+            response.forEach(value -> {
+              if (value.equals(ViewFieldUtils.getBusinessMappingUnallocatedCostDefaultName())) {
+                updatedResponse.add(businessMapping.getUnallocatedCost().getLabel());
+              } else {
+                updatedResponse.add(value);
+              }
+            });
+            break;
+          case HIDE:
+            response.forEach(value -> {
+              if (!value.equals(ViewFieldUtils.getBusinessMappingUnallocatedCostDefaultName())) {
+                updatedResponse.add(value);
+              }
+            });
+            break;
+          case SHARE:
+          default:
+            throw new InvalidRequestException(
+                "Invalid Unallocated Cost Strategy / Unallocated Cost Strategy not supported");
+        }
+        return updatedResponse;
+      }
+    }
+    return response;
   }
 
   private long getTimeStampValue(FieldValueList row, Field field) {

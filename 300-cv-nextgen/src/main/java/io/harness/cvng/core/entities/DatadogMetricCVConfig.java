@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -110,6 +111,11 @@ public class DatadogMetricCVConfig extends MetricCVConfig<MetricInfo> {
   @Override
   public boolean isDeploymentVerificationEnabled() {
     return AnalysisInfoUtility.anyDeploymentVerificationEnabled(metricInfoList);
+  }
+
+  @Override
+  public Optional<String> maybeGetGroupName() {
+    return Optional.empty(); // it does not have group name for some reason. Need to check and refactor.
   }
 
   @Override

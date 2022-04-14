@@ -9,6 +9,7 @@ package io.harness.pms.sdk.core.pipeline.variables;
 
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.variables.ChildrenVariableCreator;
+import io.harness.pms.sdk.core.variables.VariableCreatorHelper;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationContext;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationResponse;
 import io.harness.pms.yaml.DependenciesUtils;
@@ -23,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class ExecutionVariableCreator extends ChildrenVariableCreator {
+public class ExecutionVariableCreator extends ChildrenVariableCreator<YamlField> {
   @Override
   public LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodes(
       VariableCreationContext ctx, YamlField config) {
@@ -62,5 +63,21 @@ public class ExecutionVariableCreator extends ChildrenVariableCreator {
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
     return Collections.singletonMap(YAMLFieldNameConstants.EXECUTION, Collections.singleton(PlanCreatorUtils.ANY_TYPE));
+  }
+
+  @Override
+  public Class<YamlField> getFieldClass() {
+    return YamlField.class;
+  }
+
+  @Override
+  public LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodesV2(
+      VariableCreationContext ctx, YamlField config) {
+    return createVariablesForChildrenNodes(ctx, config);
+  }
+
+  @Override
+  public VariableCreationResponse createVariablesForParentNodeV2(VariableCreationContext ctx, YamlField config) {
+    return createVariablesForParentNode(ctx, config);
   }
 }

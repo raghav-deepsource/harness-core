@@ -630,11 +630,14 @@ public class ArtifactoryClientImpl {
         String repoName = ArtifactUtilities.getArtifactoryRepositoryName(artifactoryConfig.getArtifactoryUrl(),
             ArtifactUtilities.trimSlashforwardChars(artifactoryConfig.getArtifactRepositoryUrl()), repositoryKey,
             artifactPath);
+        String registryHostname = ArtifactUtilities.extractRegistryHost(repoName);
+
         buildDetailsInternals = tags.stream()
                                     .map(tag -> {
                                       Map<String, String> metadata = new HashMap();
                                       metadata.put(ArtifactMetadataKeys.IMAGE, repoName + ":" + tag);
                                       metadata.put(ArtifactMetadataKeys.TAG, tag);
+                                      metadata.put(ArtifactMetadataKeys.REGISTRY_HOSTNAME, registryHostname);
                                       return BuildDetailsInternal.builder()
                                           .number(tag)
                                           .buildUrl(tagUrl + tag)

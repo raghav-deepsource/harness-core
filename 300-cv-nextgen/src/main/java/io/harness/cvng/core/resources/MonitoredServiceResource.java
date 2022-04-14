@@ -109,16 +109,9 @@ public class MonitoredServiceResource {
   @ApiOperation(value = "created default monitored service", nickname = "createDefaultMonitoredService")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = EDIT_PERMISSION)
   public RestResponse<MonitoredServiceResponse> createDefaultMonitoredService(
-      @ApiParam(required = true) @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @ApiParam(required = true) @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @ApiParam(required = true) @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier,
+      @NotNull @Valid @BeanParam ProjectParams projectParams,
       @ApiParam(required = true) @NotEmpty @QueryParam("environmentIdentifier") String environmentIdentifier,
       @ApiParam(required = true) @NotEmpty @QueryParam("serviceIdentifier") String serviceIdentifier) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
     return new RestResponse<>(
         monitoredServiceService.createDefault(projectParams, serviceIdentifier, environmentIdentifier));
   }
@@ -149,16 +142,9 @@ public class MonitoredServiceResource {
   @ApiOperation(value = "updates monitored service data", nickname = "setHealthMonitoringFlag")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = TOGGLE_PERMISSION)
   public RestResponse<HealthMonitoringFlagResponse> setHealthMonitoringFlag(
+      @NotNull @Valid @BeanParam ProjectParams projectParams,
       @NotNull @PathParam("identifier") @ResourceIdentifier String identifier,
-      @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier,
       @NotNull @QueryParam("enable") Boolean enable) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
     return new RestResponse<>(monitoredServiceService.setHealthMonitoringFlag(projectParams, identifier, enable));
   }
 
@@ -170,16 +156,9 @@ public class MonitoredServiceResource {
       value = "get monitored service overall health score data ", nickname = "getMonitoredServiceOverAllHealthScore")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
   public ResponseDTO<HistoricalTrend>
-  getOverAllHealthScore(@NotNull @NotEmpty @PathParam("identifier") @ResourceIdentifier String identifier,
-      @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier,
+  getOverAllHealthScore(@NotNull @Valid @BeanParam ProjectParams projectParams,
+      @NotNull @NotEmpty @PathParam("identifier") @ResourceIdentifier String identifier,
       @NotNull @QueryParam("duration") DurationDTO durationDTO, @NotNull @QueryParam("endTime") Long endTime) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
     return ResponseDTO.newResponse(monitoredServiceService.getOverAllHealthScore(
         projectParams, identifier, durationDTO, Instant.ofEpochMilli(endTime)));
   }
@@ -190,17 +169,10 @@ public class MonitoredServiceResource {
   @ApiOperation(value = "list monitored service data ", nickname = "listMonitoredService")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
   public ResponseDTO<PageResponse<MonitoredServiceListItemDTO>> list(
-      @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier,
+      @NotNull @Valid @BeanParam ProjectParams projectParams,
       @QueryParam("environmentIdentifier") String environmentIdentifier, @QueryParam("offset") @NotNull Integer offset,
       @QueryParam("pageSize") @NotNull Integer pageSize, @QueryParam("filter") String filter,
       @NotNull @QueryParam("servicesAtRiskFilter") @ApiParam(defaultValue = "false") boolean servicesAtRiskFilter) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
     return ResponseDTO.newResponse(monitoredServiceService.list(
         projectParams, environmentIdentifier, offset, pageSize, filter, servicesAtRiskFilter));
   }
@@ -224,18 +196,11 @@ public class MonitoredServiceResource {
   @ApiOperation(value = "get list of monitored service data ", nickname = "getMonitoredServiceList")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
   public ResponseDTO<PageResponse<MonitoredServiceResponse>> getList(
-      @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier,
+      @NotNull @Valid @BeanParam ProjectParams projectParams,
       @QueryParam("environmentIdentifier") String environmentIdentifier,
       @QueryParam("environmentIdentifiers") List<String> environmentIdentifiers,
       @QueryParam("offset") @NotNull Integer offset, @QueryParam("pageSize") @NotNull Integer pageSize,
       @QueryParam("filter") String filter) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
     // for backward comparability. Need to remove this.
     if (isNotEmpty(environmentIdentifier)) {
       environmentIdentifiers = Collections.singletonList(environmentIdentifier);
@@ -252,14 +217,7 @@ public class MonitoredServiceResource {
       nickname = "getAllMonitoredServicesWithTimeSeriesHealthSources")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
   public ResponseDTO<List<MonitoredServiceWithHealthSources>>
-  getAllMonitoredServicesWithHealthSources(@NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
+  getAllMonitoredServicesWithHealthSources(@NotNull @Valid @BeanParam ProjectParams projectParams) {
     return ResponseDTO.newResponse(monitoredServiceService.getAllWithTimeSeriesHealthSources(projectParams));
   }
 
@@ -271,17 +229,15 @@ public class MonitoredServiceResource {
       nickname = "getMonitoredServiceFromServiceAndEnvironment")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
   public ResponseDTO<MonitoredServiceResponse>
-  getMonitoredServiceFromServiceAndEnvironment(@NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier,
+  getMonitoredServiceFromServiceAndEnvironment(@NotNull @Valid @BeanParam ProjectParams projectParams,
       @NotNull @QueryParam("serviceIdentifier") String serviceIdentifier,
       @NotNull @QueryParam("environmentIdentifier") String environmentIdentifier) {
     ServiceEnvironmentParams serviceEnvironmentParams = ServiceEnvironmentParams.builder()
                                                             .serviceIdentifier(serviceIdentifier)
                                                             .environmentIdentifier(environmentIdentifier)
-                                                            .accountIdentifier(accountId)
-                                                            .orgIdentifier(orgIdentifier)
-                                                            .projectIdentifier(projectIdentifier)
+                                                            .accountIdentifier(projectParams.getAccountIdentifier())
+                                                            .orgIdentifier(projectParams.getOrgIdentifier())
+                                                            .projectIdentifier(projectParams.getProjectIdentifier())
                                                             .build();
     return ResponseDTO.newResponse(monitoredServiceService.get(serviceEnvironmentParams));
   }
@@ -292,15 +248,12 @@ public class MonitoredServiceResource {
   @Path("{identifier}/scores")
   @ApiOperation(value = "get monitored service scores", nickname = "getMonitoredServiceScores")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
-  public ResponseDTO<HealthScoreDTO> getMonitoredServiceScore(
-      @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier,
+  public ResponseDTO<HealthScoreDTO> getMonitoredServiceScore(@NotNull @Valid @BeanParam ProjectParams projectParams,
       @NotNull @PathParam("identifier") @ResourceIdentifier String identifier) {
     MonitoredServiceParams serviceEnvironmentParams = MonitoredServiceParams.builder()
-                                                          .accountIdentifier(accountId)
-                                                          .orgIdentifier(orgIdentifier)
-                                                          .projectIdentifier(projectIdentifier)
+                                                          .accountIdentifier(projectParams.getAccountIdentifier())
+                                                          .orgIdentifier(projectParams.getOrgIdentifier())
+                                                          .projectIdentifier(projectParams.getProjectIdentifier())
                                                           .monitoredServiceIdentifier(identifier)
                                                           .build();
     return ResponseDTO.newResponse(
@@ -313,17 +266,8 @@ public class MonitoredServiceResource {
   @Path("{identifier}")
   @ApiOperation(value = "delete monitored service data ", nickname = "deleteMonitoredService")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = DELETE_PERMISSION)
-  public RestResponse<Boolean> delete(
-      @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier,
-      @ApiParam(required = true) @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @ApiParam(required = true) @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @ApiParam(required = true) @NotNull @QueryParam(
-          "projectIdentifier") @ProjectIdentifier String projectIdentifier) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
+  public RestResponse<Boolean> delete(@NotNull @Valid @BeanParam ProjectParams projectParams,
+      @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier) {
     return new RestResponse<>(monitoredServiceService.delete(projectParams, identifier));
   }
 
@@ -349,16 +293,8 @@ public class MonitoredServiceResource {
   @ApiOperation(value = "yaml template for monitored service", nickname = "getMonitoredServiceYamlTemplate")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
   public RestResponse<String> yamlTemplate(
-      @ApiParam(required = true) @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @ApiParam(required = true) @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @ApiParam(required = true) @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier,
-      @ApiParam @QueryParam("type") MonitoredServiceType type) {
-    return new RestResponse<>(monitoredServiceService.getYamlTemplate(ProjectParams.builder()
-                                                                          .accountIdentifier(accountId)
-                                                                          .orgIdentifier(orgIdentifier)
-                                                                          .projectIdentifier(projectIdentifier)
-                                                                          .build(),
-        type));
+      @NotNull @Valid @BeanParam ProjectParams projectParams, @ApiParam @QueryParam("type") MonitoredServiceType type) {
+    return new RestResponse<>(monitoredServiceService.getYamlTemplate(projectParams, type));
   }
 
   @GET
@@ -369,15 +305,13 @@ public class MonitoredServiceResource {
       nickname = "getAllHealthSourcesForServiceAndEnvironment")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
   public RestResponse<List<HealthSourceDTO>>
-  getHealthSources(@ApiParam(required = true) @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @ApiParam(required = true) @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @ApiParam(required = true) @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier,
+  getHealthSources(@NotNull @Valid @BeanParam ProjectParams projectParams,
       @ApiParam(required = true) @NotNull @QueryParam("serviceIdentifier") String serviceIdentifier,
       @ApiParam(required = true) @NotNull @QueryParam("environmentIdentifier") String environmentIdentifier) {
     ServiceEnvironmentParams serviceEnvironmentParams = ServiceEnvironmentParams.builder()
-                                                            .accountIdentifier(accountId)
-                                                            .orgIdentifier(orgIdentifier)
-                                                            .projectIdentifier(projectIdentifier)
+                                                            .accountIdentifier(projectParams.getAccountIdentifier())
+                                                            .orgIdentifier(projectParams.getOrgIdentifier())
+                                                            .projectIdentifier(projectParams.getProjectIdentifier())
                                                             .serviceIdentifier(serviceIdentifier)
                                                             .environmentIdentifier(environmentIdentifier)
                                                             .build();
@@ -393,16 +327,8 @@ public class MonitoredServiceResource {
       nickname = "getAllHealthSourcesForMonitoredServiceIdentifier")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
   public RestResponse<List<HealthSourceDTO>>
-  getHealthSourcesForMonitoredServiceIdentifier(
-      @ApiParam(required = true) @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @ApiParam(required = true) @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @ApiParam(required = true) @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier,
+  getHealthSourcesForMonitoredServiceIdentifier(@NotNull @Valid @BeanParam ProjectParams projectParams,
       @NotNull @PathParam("monitoredServiceIdentifier") @ResourceIdentifier String monitoredServiceIdentifier) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
     return new RestResponse<>(monitoredServiceService.getHealthSources(projectParams, monitoredServiceIdentifier));
   }
 
@@ -412,18 +338,10 @@ public class MonitoredServiceResource {
   @ExceptionMetered
   @ApiOperation(value = "get anomalies summary details", nickname = "getAnomaliesSummary")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
-  public RestResponse<AnomaliesSummaryDTO> getAnomaliesSummary(
-      @ApiParam(required = true) @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @ApiParam(required = true) @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @ApiParam(required = true) @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier,
+  public RestResponse<AnomaliesSummaryDTO> getAnomaliesSummary(@NotNull @Valid @BeanParam ProjectParams projectParams,
       @NotNull @PathParam("identifier") @ResourceIdentifier String identifier,
       @ApiParam(required = true) @NotNull @QueryParam("startTime") long startTime,
       @ApiParam(required = true) @NotNull @QueryParam("endTime") long endTime) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
     TimeRangeParams timeRangeParams = TimeRangeParams.builder()
                                           .startTime(Instant.ofEpochMilli(startTime))
                                           .endTime(Instant.ofEpochMilli(endTime))
@@ -439,15 +357,8 @@ public class MonitoredServiceResource {
       nickname = "getCountOfServices")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
   public CountServiceDTO
-  getCountOfServices(@NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier,
+  getCountOfServices(@NotNull @Valid @BeanParam ProjectParams projectParams,
       @QueryParam("environmentIdentifier") String environmentIdentifier, @QueryParam("filter") String filter) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
     return monitoredServiceService.getCountOfServices(projectParams, environmentIdentifier, filter);
   }
 
@@ -457,17 +368,9 @@ public class MonitoredServiceResource {
   @Path("/{monitoredServiceIdentifier}/health-source/{healthSourceIdentifier}/slo-metrics")
   @ApiOperation(value = "get slo metrics in a healthSource ", nickname = "getSloMetrcs")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
-  public RestResponse<List<MetricDTO>> getSloMetrics(
-      @ApiParam(required = true) @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @ApiParam(required = true) @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @ApiParam(required = true) @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier,
+  public RestResponse<List<MetricDTO>> getSloMetrics(@NotNull @Valid @BeanParam ProjectParams projectParams,
       @PathParam("monitoredServiceIdentifier") @ResourceIdentifier String monitoredServiceIdentifier,
       @PathParam("healthSourceIdentifier") String healthSourceIdentifier) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
     return new RestResponse<>(
         monitoredServiceService.getSloMetrics(projectParams, monitoredServiceIdentifier, healthSourceIdentifier));
   }
@@ -480,16 +383,8 @@ public class MonitoredServiceResource {
       nickname = "getMonitoredServiceDetailsWithServiceId")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
   public MonitoredServiceListItemDTO
-  getMonitoredServiceDetails(
-      @ApiParam(required = true) @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @ApiParam(required = true) @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @ApiParam(required = true) @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier,
+  getMonitoredServiceDetails(@NotNull @Valid @BeanParam ProjectParams projectParams,
       @PathParam("monitoredServiceIdentifier") @ResourceIdentifier String monitoredServiceIdentifier) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
     return monitoredServiceService.getMonitoredServiceDetails(
         MonitoredServiceParams.builderWithProjectParams(projectParams)
             .monitoredServiceIdentifier(monitoredServiceIdentifier)
@@ -505,16 +400,13 @@ public class MonitoredServiceResource {
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
   @Deprecated
   public MonitoredServiceListItemDTO
-  getMonitoredServiceDetails(
-      @ApiParam(required = true) @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @ApiParam(required = true) @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @ApiParam(required = true) @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier,
+  getMonitoredServiceDetails(@NotNull @Valid @BeanParam ProjectParams projectParams,
       @ApiParam(required = true) @NotNull @QueryParam("serviceIdentifier") String serviceIdentifier,
       @ApiParam(required = true) @NotNull @QueryParam("environmentIdentifier") String environmentIdentifier) {
     ServiceEnvironmentParams serviceEnvironmentParams = ServiceEnvironmentParams.builder()
-                                                            .accountIdentifier(accountId)
-                                                            .orgIdentifier(orgIdentifier)
-                                                            .projectIdentifier(projectIdentifier)
+                                                            .accountIdentifier(projectParams.getAccountIdentifier())
+                                                            .orgIdentifier(projectParams.getOrgIdentifier())
+                                                            .projectIdentifier(projectParams.getProjectIdentifier())
                                                             .serviceIdentifier(serviceIdentifier)
                                                             .environmentIdentifier(environmentIdentifier)
                                                             .build();
@@ -528,17 +420,10 @@ public class MonitoredServiceResource {
   @ApiOperation(value = "get monitored service logs", nickname = "getMonitoredServiceLogs")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
   public RestResponse<PageResponse<CVNGLogDTO>> getMonitoredServiceLogs(
-      @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier,
+      @NotNull @Valid @BeanParam ProjectParams projectParams,
       @ApiParam(required = true) @NotNull @PathParam(
           "monitoredServiceIdentifier") @ResourceIdentifier String monitoredServiceIdentifier,
       @BeanParam LiveMonitoringLogsFilter liveMonitoringLogsFilter, @BeanParam PageParams pageParams) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
     return new RestResponse<>(
         monitoredServiceService.getCVNGLogs(MonitoredServiceParams.builderWithProjectParams(projectParams)
                                                 .monitoredServiceIdentifier(monitoredServiceIdentifier)

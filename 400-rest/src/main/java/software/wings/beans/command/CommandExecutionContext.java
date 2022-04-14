@@ -275,6 +275,7 @@ public class CommandExecutionContext implements ExecutionCapabilityDemander {
         .username(winrmConnectionAttributes.getUsername())
         .password(winrmConnectionAttributes.isUseKeyTab() ? StringUtils.EMPTY
                                                           : String.valueOf(winrmConnectionAttributes.getPassword()))
+        .timeout(timeout)
         .port(winrmConnectionAttributes.getPort())
         .useSSL(winrmConnectionAttributes.isUseSSL())
         .skipCertChecks(winrmConnectionAttributes.isSkipCertChecks())

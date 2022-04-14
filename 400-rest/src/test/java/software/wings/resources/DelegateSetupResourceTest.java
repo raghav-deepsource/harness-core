@@ -56,6 +56,7 @@ import io.harness.delegate.beans.DelegateGroupListing;
 import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateSize;
 import io.harness.delegate.beans.DelegateSizeDetails;
+import io.harness.delegate.beans.DelegateTags;
 import io.harness.delegate.beans.DelegateType;
 import io.harness.delegate.filter.DelegateFilterPropertiesDTO;
 import io.harness.delegate.resources.DelegateSetupResourceV2;
@@ -70,7 +71,6 @@ import software.wings.beans.DelegateStatus;
 import software.wings.exception.WingsExceptionMapper;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.resources.DelegateSetupResource.DelegateScopes;
-import software.wings.resources.DelegateSetupResource.DelegateTags;
 import software.wings.service.impl.DelegateServiceImpl;
 import software.wings.service.intfc.DelegateScopeService;
 import software.wings.service.intfc.DelegateService;
@@ -458,8 +458,7 @@ public class DelegateSetupResourceTest extends CategoryTest {
   public void shouldUpdateTags() {
     Delegate delegate = Delegate.builder().accountId(ACCOUNT_ID).uuid(ID_KEY).build();
 
-    DelegateTags delegateTags = new DelegateTags();
-    delegateTags.setTags(asList("tag"));
+    DelegateTags delegateTags = new DelegateTags(asList("tag"));
 
     when(delegateCache.get(anyString(), anyString(), anyBoolean())).thenReturn(delegate);
 

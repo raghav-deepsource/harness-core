@@ -369,10 +369,13 @@ public class NexusThreeClientImpl {
 
           String repoName = ArtifactUtilities.getNexusRepositoryNameNG(
               nexusConfig.getNexusUrl(), port, nexusConfig.getArtifactRepositoryUrl(), artifactName);
+          String registryHostname = ArtifactUtilities.extractRegistryHost(repoName);
+
           log.info("Retrieving docker tags for repository {} imageName {} ", repository, artifactName);
           Map<String, String> metadata = new HashMap<>();
           metadata.put(ArtifactMetadataKeys.IMAGE, repoName + ":" + actualTag);
           metadata.put(ArtifactMetadataKeys.TAG, actualTag);
+          metadata.put(ArtifactMetadataKeys.REGISTRY_HOSTNAME, registryHostname);
 
           BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder()
                                                           .number(component.getVersion())

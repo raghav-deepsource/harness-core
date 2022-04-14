@@ -152,12 +152,22 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
 
   @Override
   public AnalysisStatus executeStateMachine(AnalysisStateMachine analysisStateMachine) {
+    if (Instant.ofEpochMilli(analysisStateMachine.getNextAttemptTime()).isAfter(clock.instant())) {
+      log.info("The next attempt time for the statemachine {} is {}. skipping for now", analysisStateMachine.getUuid(),
+          analysisStateMachine.getNextAttemptTime());
+      return analysisStateMachine.getCurrentState().getStatus();
+    }
     log.info("Executing state machine {} for verificationTask {}", analysisStateMachine.getUuid(),
         analysisStateMachine.getVerificationTaskId());
-
     AnalysisState currentState = analysisStateMachine.getCurrentState();
     AnalysisStateExecutor analysisStateExecutor = stateTypeAnalysisStateExecutorMap.get(currentState.getType());
     AnalysisStatus status = analysisStateExecutor.getExecutionStatus(currentState);
+    if (status.equals(AnalysisStatus.RETRY) && !currentState.getStatus().equals(AnalysisStatus.RETRY)) {
+      analysisStateMachine.getCurrentState().setStatus(AnalysisStatus.RETRY);
+      analysisStateMachine.setNextAttemptTimeUsingRetryCount(clock.instant());
+      hPersistence.save(analysisStateMachine);
+      return analysisStateMachine.getCurrentState().getStatus();
+    }
     AnalysisState nextState = null;
     switch (status) {
       case CREATED:
@@ -192,6 +202,7 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
         log.info("Analysis is going to be RETRIED for {} and analysis range {} to {}. We will call handleRetry.",
             analysisStateMachine.getVerificationTaskId(), analysisStateMachine.getAnalysisStartTime(),
             analysisStateMachine.getAnalysisEndTime());
+        analysisStateMachine.incrementTotalRetryCount();
         nextState = analysisStateExecutor.handleRetry(currentState);
         break;
       case SUCCESS:
@@ -222,8 +233,7 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
       analysisStateMachine.setStatus(AnalysisStatus.SUCCESS);
       nextStateExecutor.handleFinalStatuses(nextState);
     } else if (AnalysisStatus.getFinalStates().contains(nextState.getStatus())) {
-      analysisStateMachine.setNextAttemptTime(
-          nextStateExecutor.getNextValidAfter(clock.instant(), nextState.getRetryCount()).toEpochMilli());
+      analysisStateMachine.setNextAttemptTimeUsingRetryCount(clock.instant());
       analysisStateMachine.setStatus(nextState.getStatus());
       nextStateExecutor.handleFinalStatuses(nextState);
       try (AutoMetricContext ignore =

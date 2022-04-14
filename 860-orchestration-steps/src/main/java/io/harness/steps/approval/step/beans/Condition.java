@@ -17,12 +17,13 @@ import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Value;
+import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(CDC)
 @Value
 @Builder
 public class Condition {
   @NotNull String key;
-  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> value;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @NotEmpty ParameterField<String> value;
   @NotNull Operator operator;
 }

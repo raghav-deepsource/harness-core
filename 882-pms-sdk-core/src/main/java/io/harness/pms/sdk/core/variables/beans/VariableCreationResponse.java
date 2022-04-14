@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.VariablesCreationBlobResponse;
+import io.harness.pms.contracts.plan.YamlExtraProperties;
 import io.harness.pms.contracts.plan.YamlOutputProperties;
 import io.harness.pms.contracts.plan.YamlProperties;
 import io.harness.pms.contracts.plan.YamlUpdates;
@@ -30,13 +31,30 @@ import lombok.Singular;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class VariableCreationResponse implements CreatorResponse {
   @Singular Map<String, YamlProperties> yamlProperties;
+  // deprecated
   @Singular Map<String, YamlOutputProperties> yamlOutputProperties;
+  @Singular Map<String, YamlExtraProperties> yamlExtraProperties;
   @Builder.Default Dependencies dependencies = Dependencies.newBuilder().build();
   @Builder.Default Dependencies resolvedDependencies = Dependencies.newBuilder().build();
   YamlUpdates yamlUpdates;
 
   public Dependencies getDependencies() {
     return dependencies;
+  }
+
+  public void mergeResponses(VariableCreationResponse response) {
+    addYamlProperties(response.getYamlProperties());
+    addYamlOutputProperties(response.getYamlOutputProperties());
+    addYamlExtraProperties(response.getYamlExtraProperties());
+    addYamlUpdates(response.getYamlUpdates());
+  }
+
+  public void updateYamlInDependencies(String updatedYaml) {
+    if (dependencies == null) {
+      dependencies = Dependencies.newBuilder().setYaml(updatedYaml).build();
+      return;
+    }
+    dependencies = dependencies.toBuilder().setYaml(updatedYaml).build();
   }
 
   public void addResolvedDependencies(Dependencies resolvedDependencies) {
@@ -115,6 +133,40 @@ public class VariableCreationResponse implements CreatorResponse {
     this.yamlOutputProperties.put(uuid, yamlOutputPropertyEntry);
   }
 
+  public void addYamlExtraProperties(Map<String, YamlExtraProperties> yamlExtraPropertiesMap) {
+    if (EmptyPredicate.isEmpty(yamlExtraPropertiesMap)) {
+      return;
+    }
+    yamlExtraPropertiesMap.forEach(this::addYamlExtraProperty);
+  }
+
+  private void addYamlExtraProperty(String uuid, YamlExtraProperties yamlExtraPropertyEntry) {
+    if (this.yamlExtraProperties == null) {
+      this.yamlExtraProperties = new HashMap<>();
+    } else if (!(this.yamlExtraProperties instanceof HashMap)) {
+      this.yamlExtraProperties = new HashMap<>(this.yamlExtraProperties);
+    }
+    if (yamlExtraProperties.containsKey(uuid)) {
+      YamlExtraProperties yamlExtraPropertiesValue = this.yamlExtraProperties.get(uuid);
+      YamlExtraProperties.Builder yamlExtraPropertiesBuilder = yamlExtraPropertiesValue.toBuilder();
+      yamlExtraPropertiesBuilder.addAllOutputProperties(yamlExtraPropertyEntry.getOutputPropertiesList());
+      yamlExtraPropertiesBuilder.addAllProperties(yamlExtraPropertyEntry.getPropertiesList());
+      yamlExtraProperties.put(uuid, yamlExtraPropertiesBuilder.build());
+    }
+    this.yamlExtraProperties.put(uuid, yamlExtraPropertyEntry);
+  }
+
+  public void addYamlUpdates(YamlUpdates otherYamlUpdates) {
+    if (otherYamlUpdates == null) {
+      return;
+    }
+    if (yamlUpdates == null) {
+      yamlUpdates = otherYamlUpdates;
+      return;
+    }
+    yamlUpdates = yamlUpdates.toBuilder().putAllFqnToYaml(otherYamlUpdates.getFqnToYamlMap()).build();
+  }
+
   public VariablesCreationBlobResponse toBlobResponse() {
     VariablesCreationBlobResponse.Builder finalBuilder = VariablesCreationBlobResponse.newBuilder();
 
@@ -136,6 +188,13 @@ public class VariableCreationResponse implements CreatorResponse {
         finalBuilder.putYamlOutputProperties(outputPropertiesEntry.getKey(), outputPropertiesEntry.getValue());
       }
     }
+    if (isNotEmpty(yamlExtraProperties)) {
+      finalBuilder.putAllYamlExtraProperties(yamlExtraProperties);
+    }
+    if (yamlUpdates != null) {
+      finalBuilder.setYamlUpdates(yamlUpdates);
+    }
+
     return finalBuilder.build();
   }
 }

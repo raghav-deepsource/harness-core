@@ -60,5 +60,6 @@ public enum SnippetTag implements YamlSnippetTags {
   servicenow,
   errortracking,
   azure,
-  pdc
+  pdc,
+  azurerepo
 }

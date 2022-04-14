@@ -86,4 +86,6 @@ public interface UserGroupService {
 
   UserGroup unlinkSsoGroup(@NotBlank String accountId, String orgIdentifier, String projectIdentifier,
       @NotBlank String userGroupId, boolean retainMembers);
+
+  void sanitize(Scope scope, String identifier);
 }

@@ -76,7 +76,8 @@ public class JiraUpdateStep extends TaskExecutableWithRollbackAndRbac<JiraTaskNG
                     ? null
                     : (String) specParameters.getTransitionTo().getTransitionName().fetchFinalValue())
             .fields(JiraStepUtils.processJiraFieldsInParameters(specParameters.getFields()))
-            .delegateSelectors(StepUtils.getDelegateSelectorList(specParameters.getDelegateSelectors()));
+            .delegateSelectors(
+                StepUtils.getDelegateSelectorListFromTaskSelectorYaml(specParameters.getDelegateSelectors()));
     return jiraStepHelperService.prepareTaskRequest(paramsBuilder, ambiance,
         specParameters.getConnectorRef().getValue(), stepParameters.getTimeout().getValue(), "Jira Task: Update Issue");
   }

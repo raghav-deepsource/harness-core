@@ -388,6 +388,18 @@ public class ArtifactServiceImpl implements ArtifactService {
   }
 
   @Override
+  public void updateMetadataAndRevision(
+      String artifactId, String accountId, Map<String, String> newMetadata, String revision) {
+    Query<Artifact> query = wingsPersistence.createQuery(Artifact.class)
+                                .filter(ID_KEY, artifactId)
+                                .filter(ArtifactKeys.accountId, accountId);
+    UpdateOperations<Artifact> ops = wingsPersistence.createUpdateOperations(Artifact.class);
+    ops.set(ArtifactKeys.metadata, newMetadata);
+    ops.set(ArtifactKeys.revision, revision);
+    wingsPersistence.update(query, ops);
+  }
+
+  @Override
   public void updateStatus(String artifactId, String accountId, Status status) {
     Query<Artifact> query = wingsPersistence.createQuery(Artifact.class)
                                 .filter(ID_KEY, artifactId)

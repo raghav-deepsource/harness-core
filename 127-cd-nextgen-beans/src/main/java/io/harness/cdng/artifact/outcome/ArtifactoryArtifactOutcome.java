@@ -54,6 +54,8 @@ public class ArtifactoryArtifactOutcome implements ArtifactOutcome {
   /** imagePullSecret for artifactory credentials base encoded.*/
   String imagePullSecret;
 
+  String registryHostname;
+
   @Override
   public ArtifactSummary getArtifactSummary() {
     return ArtifactoryArtifactSummary.builder().artifactPath(getArtifactPath()).tag(getTag()).build();

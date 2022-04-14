@@ -130,11 +130,17 @@ import io.harness.delegate.beans.connector.awsconnector.AwsValidateTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsValidationParams;
 import io.harness.delegate.beans.connector.awskmsconnector.AwsKmsValidationParams;
 import io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerValidationParams;
+import io.harness.delegate.beans.connector.azureconnector.AzureAdditionalParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureContainerRegistryConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskType;
-import io.harness.delegate.beans.connector.azureconnector.AzureValidateTaskResponse;
 import io.harness.delegate.beans.connector.azureconnector.AzureValidationParams;
+import io.harness.delegate.beans.connector.azureconnector.response.AzureClustersResponse;
+import io.harness.delegate.beans.connector.azureconnector.response.AzureRegistriesResponse;
+import io.harness.delegate.beans.connector.azureconnector.response.AzureRepositoriesResponse;
+import io.harness.delegate.beans.connector.azureconnector.response.AzureResourceGroupsResponse;
+import io.harness.delegate.beans.connector.azureconnector.response.AzureSubscriptionsResponse;
+import io.harness.delegate.beans.connector.azureconnector.response.AzureValidateTaskResponse;
 import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultValidationParams;
 import io.harness.delegate.beans.connector.cvconnector.CVConnectorTaskParams;
 import io.harness.delegate.beans.connector.cvconnector.CVConnectorTaskResponse;
@@ -229,10 +235,13 @@ import io.harness.delegate.command.CommandExecutionResult;
 import io.harness.delegate.exception.DelegateRetryableException;
 import io.harness.delegate.exception.HelmNGException;
 import io.harness.delegate.exception.TaskNGDataException;
+import io.harness.delegate.task.ListNotifyResponseData;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.ArtifactTaskType;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
@@ -560,6 +569,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(YamlGitConfig.class, 5547);
     kryo.register(YamlGitConfig.SyncMode.class, 5548);
     kryo.register(SettingAttribute.SettingCategory.class, 5069);
+    kryo.register(ListNotifyResponseData.class, 5133);
     kryo.register(JenkinsExecutionResponse.class, 5146);
 
     kryo.register(software.wings.beans.yaml.GitCommand.GitCommandType.class, 5190);
@@ -1138,5 +1148,13 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(PhysicalDataCenterConnectorValidationParams.class, 543489);
     kryo.register(ContainerSecurityContext.class, 543490);
     kryo.register(ContainerCapabilities.class, 543491);
+    kryo.register(AzureSubscriptionsResponse.class, 543495);
+    kryo.register(AzureRegistriesResponse.class, 543496);
+    kryo.register(AzureAdditionalParams.class, 543497);
+    kryo.register(AzureRepositoriesResponse.class, 543498);
+    kryo.register(AcrArtifactDelegateRequest.class, 543499);
+    kryo.register(AcrArtifactDelegateResponse.class, 543500);
+    kryo.register(AzureResourceGroupsResponse.class, 543501);
+    kryo.register(AzureClustersResponse.class, 543502);
   }
 }

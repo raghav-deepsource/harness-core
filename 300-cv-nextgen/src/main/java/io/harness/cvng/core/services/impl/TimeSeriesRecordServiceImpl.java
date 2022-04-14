@@ -29,7 +29,9 @@ import io.harness.cvng.beans.TimeSeriesDataCollectionRecord.TimeSeriesDataRecord
 import io.harness.cvng.beans.TimeSeriesDataCollectionRecord.TimeSeriesDataRecordMetricValue;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.core.beans.TimeSeriesMetricDefinition;
+import io.harness.cvng.core.beans.demo.DemoMetricParams;
 import io.harness.cvng.core.beans.demo.DemoTemplate;
+import io.harness.cvng.core.entities.AnalysisInfo;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.MetricCVConfig;
 import io.harness.cvng.core.entities.MetricPack;
@@ -57,6 +59,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -79,6 +82,8 @@ import org.reflections.scanners.ResourcesScanner;
 @OwnedBy(HarnessTeam.CV)
 @Slf4j
 public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
+  private static final List<Integer> DEMO_DATA =
+      Arrays.asList(30, 81, 70, 43, 20, 20, 41, 51, 10, 80, 50, 40, 30, 70, 80);
   @Inject private HPersistence hPersistence;
   @Inject private CVConfigService cvConfigService;
   @Inject private MetricPackService metricPackService;
@@ -566,12 +571,12 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
 
   @Override
   public void createDemoAnalysisData(String accountId, String verificationTaskId, String dataCollectionWorkerId,
-      DemoTemplate demoTemplate, Instant startTime, Instant endTime) throws IOException {
+      Instant startTime, Instant endTime, DemoMetricParams demoMetricParams) throws IOException {
     Instant time = startTime;
 
-    String demoTemplatePath = getDemoTemplate(demoTemplate.getDemoTemplateIdentifier());
+    String demoTemplatePath = getDemoTemplate(demoMetricParams.getDemoTemplate().getDemoTemplateIdentifier());
     Map<String, ArrayList<Long>> metricToRiskScore =
-        getDemoRiskScoreForAllTheMetrics(demoTemplate.getDemoTemplateIdentifier());
+        getDemoRiskScoreForAllTheMetrics(demoMetricParams.getDemoTemplate().getDemoTemplateIdentifier());
     // todo: check the metrics have the same size
     int index = cvngDemoDataIndexService.readIndexForDemoData(accountId, dataCollectionWorkerId, verificationTaskId);
     List<TimeSeriesDataCollectionRecord> timeSeriesDataCollectionRecords = new ArrayList<>();
@@ -593,11 +598,32 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
             if (index >= metricToRiskScore.get(fileName).size()) {
               index = index % metricToRiskScore.get(fileName).size();
             }
-            timeSeriesDataRecordGroupValue.setValue(demoTemplate.isHighRisk()
-                    ? (metricToRiskScore.get(fileName).get(index) + 1) * (new Random().nextInt(20) + 11)
-                    : metricToRiskScore.get(fileName).get(index));
+            timeSeriesDataRecordGroupValue.setValue(
+                metricValue(metricToRiskScore.get(fileName).get(index), demoMetricParams.getDemoTemplate()));
           }
         }
+      }
+      if (demoMetricParams.isCustomMetric()) {
+        for (AnalysisInfo analysisInfo : demoMetricParams.getAnalysisInfos()) {
+          timeSeriesDataCollectionRecord.getMetricValues().add(
+              TimeSeriesDataRecordMetricValue.builder()
+                  .metricName(analysisInfo.getMetricName())
+                  .metricIdentifier(analysisInfo.getIdentifier())
+                  .timeSeriesValues(Collections.singleton(
+                      TimeSeriesDataRecordGroupValue.builder()
+                          .groupName(demoMetricParams.getGroupName())
+                          .value(
+                              metricValue(DEMO_DATA.get(index % DEMO_DATA.size()), demoMetricParams.getDemoTemplate()))
+                          .build()))
+                  .build());
+        }
+        Set<String> selectedMetricIdentifiers =
+            demoMetricParams.getAnalysisInfos().stream().map(AnalysisInfo::getIdentifier).collect(Collectors.toSet());
+        timeSeriesDataCollectionRecord.setMetricValues(
+            timeSeriesDataCollectionRecord.getMetricValues()
+                .stream()
+                .filter(metricValue -> selectedMetricIdentifiers.contains(metricValue.getMetricIdentifier()))
+                .collect(Collectors.toSet()));
       }
       timeSeriesDataCollectionRecords.add(timeSeriesDataCollectionRecord);
       index++;
@@ -605,6 +631,10 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
     }
     cvngDemoDataIndexService.saveIndexForDemoData(accountId, dataCollectionWorkerId, verificationTaskId, index);
     save(timeSeriesDataCollectionRecords);
+  }
+
+  private double metricValue(long value, DemoTemplate demoTemplate) {
+    return demoTemplate.isHighRisk() ? (value + 1) * (new Random().nextInt(20) + 11) : value;
   }
 
   private String getDemoTemplate(String templateIdentifier) throws IOException {

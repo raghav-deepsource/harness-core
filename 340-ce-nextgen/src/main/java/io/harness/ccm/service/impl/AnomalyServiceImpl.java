@@ -32,14 +32,13 @@ import io.harness.ccm.commons.entities.anomaly.AnomalyQueryDTO;
 import io.harness.ccm.commons.entities.anomaly.AnomalySummary;
 import io.harness.ccm.commons.entities.anomaly.AnomalyWidget;
 import io.harness.ccm.commons.entities.anomaly.AnomalyWidgetData;
-import io.harness.ccm.commons.entities.anomaly.EntityInfo;
 import io.harness.ccm.commons.entities.anomaly.PerspectiveAnomalyData;
 import io.harness.ccm.commons.utils.AnomalyQueryBuilder;
-import io.harness.ccm.graphql.dto.perspectives.PerspectiveQueryDTO;
+import io.harness.ccm.commons.utils.AnomalyUtils;
 import io.harness.ccm.service.intf.AnomalyService;
-import io.harness.ccm.utils.AnomalyUtils;
-import io.harness.ccm.utils.PerspectiveToAnomalyQueryHelper;
+import io.harness.ccm.views.dto.PerspectiveQueryDTO;
 import io.harness.ccm.views.entities.CEView;
+import io.harness.ccm.views.helper.PerspectiveToAnomalyQueryHelper;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.timescaledb.tables.pojos.Anomalies;
 
@@ -63,11 +62,6 @@ public class AnomalyServiceImpl implements AnomalyService {
   @Inject CEViewService viewService;
   @Inject PerspectiveToAnomalyQueryHelper perspectiveToAnomalyQueryHelper;
 
-  private static final Integer DEFAULT_LIMIT = 1000;
-  private static final Integer DEFAULT_OFFSET = 0;
-  private static final String ANOMALY_RELATIVE_TIME_TEMPLATE = "since %s %s";
-  private static final String STATUS_RELATIVE_TIME_TEMPLATE = "%s %s ago";
-
   @Override
   public List<AnomalyData> listAnomalies(@NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery) {
     if (anomalyQuery == null) {
@@ -80,11 +74,11 @@ public class AnomalyServiceImpl implements AnomalyService {
     List<Anomalies> anomalies = anomalyDao.fetchAnomalies(accountIdentifier, condition,
         anomalyQueryBuilder.getOrderByFields(
             anomalyQuery.getOrderBy() != null ? anomalyQuery.getOrderBy() : Collections.emptyList()),
-        anomalyQuery.getOffset() != null ? anomalyQuery.getOffset() : DEFAULT_OFFSET,
-        anomalyQuery.getLimit() != null ? anomalyQuery.getLimit() : DEFAULT_LIMIT);
+        anomalyQuery.getOffset() != null ? anomalyQuery.getOffset() : AnomalyUtils.DEFAULT_OFFSET,
+        anomalyQuery.getLimit() != null ? anomalyQuery.getLimit() : AnomalyUtils.DEFAULT_LIMIT);
 
     List<AnomalyData> anomalyData = new ArrayList<>();
-    anomalies.forEach(anomaly -> anomalyData.add(buildAnomalyData(anomaly)));
+    anomalies.forEach(anomaly -> anomalyData.add(AnomalyUtils.buildAnomalyData(anomaly)));
     return anomalyData;
   }
 
@@ -98,8 +92,8 @@ public class AnomalyServiceImpl implements AnomalyService {
         AnomalyQueryDTO.builder()
             .filter(filters)
             .orderBy(Collections.emptyList())
-            .limit(DEFAULT_LIMIT)
-            .offset(DEFAULT_OFFSET)
+            .limit(AnomalyUtils.DEFAULT_LIMIT)
+            .offset(AnomalyUtils.DEFAULT_OFFSET)
             .build());
     return buildPerspectiveAnomalyData(anomalyData);
   }
@@ -126,7 +120,12 @@ public class AnomalyServiceImpl implements AnomalyService {
         : DSL.noCondition();
 
     if (anomalyQuery.getGroupBy().isEmpty()) {
-      return anomalyDao.fetchAnomaliesTotalCost(accountIdentifier, condition);
+      List<AnomalySummary> totalCostSummary = anomalyDao.fetchAnomaliesTotalCost(accountIdentifier, condition);
+      List<AnomalySummary> updatedTotalCostSummary = new ArrayList<>();
+      totalCostSummary.forEach(entry
+          -> updatedTotalCostSummary.add(buildAnomalySummary(entry.getName(), entry.getCount(), entry.getActualCost(),
+              entry.getActualCost() - entry.getExpectedCost())));
+      return updatedTotalCostSummary;
     } else {
       List<AnomalyData> anomalies = listAnomalies(accountIdentifier, anomalyQuery);
       if (anomalyQuery.getGroupBy().get(0).getGroupByField() == ALL) {
@@ -156,8 +155,9 @@ public class AnomalyServiceImpl implements AnomalyService {
 
   private List<AnomalySummary> buildTopAnomaliesSummary(List<AnomalyData> anomalies) {
     List<AnomalySummary> topAnomalies = new ArrayList<>();
-    anomalies.forEach(
-        anomaly -> topAnomalies.add(buildAnomalySummary(anomaly.getResourceName(), 1.0, anomaly.getActualAmount())));
+    anomalies.forEach(anomaly
+        -> topAnomalies.add(buildAnomalySummary(
+            anomaly.getResourceName(), 1.0, anomaly.getActualAmount(), anomaly.getAnomalousSpend())));
     return topAnomalies;
   }
 
@@ -168,10 +168,11 @@ public class AnomalyServiceImpl implements AnomalyService {
       if (cloudProviderToSummaryMap.containsKey(cloudProvider)) {
         cloudProviderToSummaryMap.put(cloudProvider,
             buildAnomalySummary(cloudProvider, 1 + cloudProviderToSummaryMap.get(cloudProvider).getCount(),
-                anomaly.getActualAmount() + cloudProviderToSummaryMap.get(cloudProvider).getActualCost()));
+                anomaly.getActualAmount() + cloudProviderToSummaryMap.get(cloudProvider).getActualCost(),
+                anomaly.getAnomalousSpend() + cloudProviderToSummaryMap.get(cloudProvider).getAnomalousCost()));
       } else {
-        cloudProviderToSummaryMap.put(
-            cloudProvider, buildAnomalySummary(cloudProvider, 1.0, anomaly.getActualAmount()));
+        cloudProviderToSummaryMap.put(cloudProvider,
+            buildAnomalySummary(cloudProvider, 1.0, anomaly.getActualAmount(), anomaly.getAnomalousSpend()));
       }
     });
     List<AnomalySummary> cloudProviderSummary = new ArrayList<>(cloudProviderToSummaryMap.values());
@@ -182,7 +183,8 @@ public class AnomalyServiceImpl implements AnomalyService {
   private List<AnomalySummary> buildAnomalyByStatusSummary(List<AnomalyData> anomalies) {
     Double count = (double) anomalies.size();
     Double cost = anomalies.stream().mapToDouble(AnomalyData::getActualAmount).sum();
-    return Collections.singletonList(buildAnomalySummary("Open", count, cost));
+    Double anomalousCost = anomalies.stream().mapToDouble(AnomalyData::getAnomalousSpend).sum();
+    return Collections.singletonList(buildAnomalySummary("Open", count, cost, anomalousCost));
   }
 
   @Override
@@ -216,8 +218,8 @@ public class AnomalyServiceImpl implements AnomalyService {
     List<CCMGroupBy> groupBy = new ArrayList<>();
     List<CCMAggregation> aggregations = new ArrayList<>();
     List<CCMSort> sortOrders = new ArrayList<>();
-    Integer limit = DEFAULT_LIMIT;
-    Integer offset = DEFAULT_OFFSET;
+    Integer limit = AnomalyUtils.DEFAULT_LIMIT;
+    Integer offset = AnomalyUtils.DEFAULT_OFFSET;
     switch (widget) {
       case TOTAL_COST_IMPACT:
         aggregations.add(CCMAggregation.builder().operationType(SUM).field(COST_IMPACT).build());
@@ -249,25 +251,6 @@ public class AnomalyServiceImpl implements AnomalyService {
         .orderBy(sortOrders)
         .limit(limit)
         .offset(offset)
-        .build();
-  }
-
-  private AnomalyData buildAnomalyData(Anomalies anomaly) {
-    long anomalyTime = anomaly.getAnomalytime().toEpochSecond() * 1000;
-    return AnomalyData.builder()
-        .id(anomaly.getId())
-        .time(anomalyTime)
-        .anomalyRelativeTime(AnomalyUtils.getRelativeTime(anomalyTime, ANOMALY_RELATIVE_TIME_TEMPLATE))
-        .actualAmount(anomaly.getActualcost())
-        .expectedAmount(anomaly.getExpectedcost())
-        .trend(AnomalyUtils.getAnomalyTrend(anomaly.getActualcost(), anomaly.getExpectedcost()))
-        .entity(getEntityInfo(anomaly))
-        .resourceName(AnomalyUtils.getResourceName(anomaly))
-        .resourceInfo(AnomalyUtils.getResourceInfo(anomaly))
-        // Todo : Remove default assignment when status column is added to anomaly table
-        .status("Open")
-        .statusRelativeTime(AnomalyUtils.getRelativeTime(anomalyTime, STATUS_RELATIVE_TIME_TEMPLATE))
-        .cloudProvider(AnomalyUtils.getCloudProvider(anomaly))
         .build();
   }
 
@@ -310,36 +293,17 @@ public class AnomalyServiceImpl implements AnomalyService {
         .build();
   }
 
-  private EntityInfo getEntityInfo(Anomalies anomaly) {
-    return EntityInfo.builder()
-        .field(AnomalyUtils.getGroupByField(anomaly))
-        .clusterId(anomaly.getClusterid())
-        .clusterName(anomaly.getClustername())
-        .namespace(anomaly.getNamespace())
-        .workloadName(anomaly.getWorkloadname())
-        .workloadType(anomaly.getWorkloadtype())
-        .gcpProjectId(anomaly.getGcpproject())
-        .gcpSKUId(anomaly.getGcpskuid())
-        .gcpSKUDescription(anomaly.getGcpskudescription())
-        .gcpProduct(anomaly.getGcpproduct())
-        .awsUsageAccountId(anomaly.getAwsaccount())
-        .awsServiceCode(anomaly.getAwsservice())
-        .awsUsageType(anomaly.getAwsusagetype())
-        .awsInstancetype(anomaly.getAwsinstancetype())
-        .build();
-  }
-
   private AnomalyQueryDTO getDefaultAnomalyQuery() {
     return AnomalyQueryDTO.builder()
         .filter(null)
         .groupBy(new ArrayList<>())
         .orderBy(new ArrayList<>())
-        .limit(DEFAULT_LIMIT)
-        .offset(DEFAULT_OFFSET)
+        .limit(AnomalyUtils.DEFAULT_LIMIT)
+        .offset(AnomalyUtils.DEFAULT_OFFSET)
         .build();
   }
 
-  private AnomalySummary buildAnomalySummary(String name, Double count, Double actualCost) {
-    return AnomalySummary.builder().name(name).count(count).actualCost(actualCost).build();
+  private AnomalySummary buildAnomalySummary(String name, Double count, Double actualCost, Double anomalousCost) {
+    return AnomalySummary.builder().name(name).count(count).actualCost(actualCost).anomalousCost(anomalousCost).build();
   }
 }

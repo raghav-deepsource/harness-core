@@ -13,6 +13,7 @@ import io.harness.ModuleType;
 import io.harness.SchemaCacheKey;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.InputSetValidatorType;
+import io.harness.cd.CDLicenseType;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.cvng.beans.appd.AppDynamicsApplication;
@@ -91,5 +92,7 @@ public class NGCommonsKryoRegistrar implements KryoRegistrar {
 
     kryo.register(AppDynamicsApplication.class, 9020);
     kryo.register(AppDynamicsTier.class, 9021);
+
+    kryo.register(CDLicenseType.class, 930010);
   }
 }

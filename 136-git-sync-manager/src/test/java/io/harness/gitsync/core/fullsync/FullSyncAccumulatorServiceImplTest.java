@@ -7,11 +7,13 @@
 
 package io.harness.gitsync.core.fullsync;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.MEET;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -31,6 +33,7 @@ import io.harness.gitsync.ScopeDetails;
 import io.harness.gitsync.common.helper.GitSyncGrpcClientUtils;
 import io.harness.gitsync.common.service.GitBranchService;
 import io.harness.gitsync.common.service.YamlGitConfigService;
+import io.harness.gitsync.core.beans.GitFullSyncEntityInfo;
 import io.harness.gitsync.core.fullsync.entity.GitFullSyncJob;
 import io.harness.gitsync.core.fullsync.service.FullSyncJobService;
 import io.harness.ng.core.EntityDetail;
@@ -38,6 +41,8 @@ import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.rule.Owner;
 
 import com.google.protobuf.StringValue;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.lang3.reflect.FieldUtils;
@@ -84,6 +89,7 @@ public class FullSyncAccumulatorServiceImplTest extends GitSyncTestBase {
   @Before
   public void setup() throws Exception {
     fullSyncServiceBlockingStubMap.put(Microservice.CD, fullSyncServiceBlockingStub);
+    fullSyncServiceBlockingStubMap.put(Microservice.POLICYMGMT, fullSyncServiceBlockingStub);
     FieldUtils.writeField(
         fullSyncAccumulatorService, "fullSyncServiceBlockingStubMap", fullSyncServiceBlockingStubMap, true);
   }
@@ -116,14 +122,39 @@ public class FullSyncAccumulatorServiceImplTest extends GitSyncTestBase {
     doNothing().when(gitBranchService).updateBranchSyncStatus(any(), any(), any(), any());
     doThrow(DuplicateKeyException.class).when(fullSyncJobService).save(any());
     fullSyncAccumulatorService.triggerFullSync(fullSyncEventRequest, messageId);
-    verify(fullSyncServiceBlockingStub).getEntitiesForFullSync(any());
+    verify(fullSyncServiceBlockingStub, times(2)).getEntitiesForFullSync(any());
     verify(fullSyncJobService).save(any());
+  }
 
-    fullSyncServiceBlockingStubMap.remove(Microservice.CD);
-    fullSyncServiceBlockingStubMap.put(Microservice.POLICYMGMT, fullSyncServiceBlockingStub);
-    FieldUtils.writeField(
-        fullSyncAccumulatorService, "fullSyncServiceBlockingStubMap", fullSyncServiceBlockingStubMap, true);
-    fullSyncAccumulatorService.triggerFullSync(fullSyncEventRequest, messageId);
-    verify(fullSyncJobService, times(1)).save(any());
+  @Test
+  @Owner(developers = DEEPAK)
+  @Category(UnitTests.class)
+  public void markTheQueuedFilesAsSuccessfullySynced_Test() {
+    GitFullSyncEntityInfo gitFullSyncEntityInfo = GitFullSyncEntityInfo.builder()
+                                                      .accountIdentifier(accountId)
+                                                      .orgIdentifier(orgId)
+                                                      .projectIdentifier(projectId)
+                                                      .filePath("filePath1")
+                                                      .build();
+    GitFullSyncEntityInfo gitFullSyncEntityInfo1 = GitFullSyncEntityInfo.builder()
+                                                       .accountIdentifier(accountId)
+                                                       .orgIdentifier(orgId)
+                                                       .projectIdentifier(projectId)
+                                                       .filePath("filePath2")
+                                                       .build();
+    when(gitFullSyncEntityService.getQueuedEntitiesFromPreviousJobs(accountId, orgId, projectId, messageId))
+        .thenReturn(Arrays.asList(gitFullSyncEntityInfo, gitFullSyncEntityInfo1));
+    fullSyncAccumulatorService.markTheQueuedFilesAsSuccessfullySynced(accountId, orgId, projectId, messageId);
+    verify(gitFullSyncEntityService, times(2)).updateStatus(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = DEEPAK)
+  @Category(UnitTests.class)
+  public void markTheQueuedFilesAsSuccessfullySynced_Test1() {
+    when(gitFullSyncEntityService.getQueuedEntitiesFromPreviousJobs(accountId, orgId, projectId, messageId))
+        .thenReturn(Collections.emptyList());
+    fullSyncAccumulatorService.markTheQueuedFilesAsSuccessfullySynced(accountId, orgId, projectId, messageId);
+    verify(gitFullSyncEntityService, never()).updateStatus(any(), any(), any(), any());
   }
 }

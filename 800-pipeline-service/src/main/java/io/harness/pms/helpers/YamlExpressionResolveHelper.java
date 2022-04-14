@@ -34,6 +34,8 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
 @Slf4j
+// TODO: Merge with having same expression support instead of null return for unresolved expressions in
+// engineExpressionEvaluator
 public class YamlExpressionResolveHelper {
   @Inject private PmsEngineExpressionService pmsEngineExpressionService;
   @Inject private NodeExecutionService nodeExecutionService;
@@ -66,18 +68,18 @@ public class YamlExpressionResolveHelper {
 
   private void resolveExpressions(YamlField field, EngineExpressionEvaluator engineExpressionEvaluator) {
     if (field.getNode().isObject()) {
-      resolveExpressionsInObject(field, engineExpressionEvaluator);
+      resolveExpressionsInObject(field.getNode(), engineExpressionEvaluator);
     } else if (field.getNode().isArray()) {
       resolveExpressionsInArray(field.getNode(), engineExpressionEvaluator);
     }
   }
 
-  private void resolveExpressionsInObject(YamlField field, EngineExpressionEvaluator engineExpressionEvaluator) {
-    for (YamlField childYamlField : field.getNode().fields()) {
+  private void resolveExpressionsInObject(YamlNode parentNode, EngineExpressionEvaluator engineExpressionEvaluator) {
+    for (YamlField childYamlField : parentNode.fields()) {
       if (childYamlField.getNode().getCurrJsonNode().isValueNode()) {
-        resolveExpressionInValueNode(field, childYamlField.getName(),
+        resolveExpressionInValueNode(parentNode, childYamlField.getName(),
             childYamlField.getNode().getCurrJsonNode().asText(), engineExpressionEvaluator);
-      } else if (YamlUtils.checkIfNodeIsArrayWithPrimitiveTypes(field.getNode().getCurrJsonNode())) {
+      } else if (YamlUtils.checkIfNodeIsArrayWithPrimitiveTypes(parentNode.getCurrJsonNode())) {
         continue;
       } else {
         resolveExpressions(childYamlField, engineExpressionEvaluator);
@@ -85,28 +87,32 @@ public class YamlExpressionResolveHelper {
     }
   }
 
-  private void resolveExpressionsInArray(YamlNode yamlNode, EngineExpressionEvaluator engineExpressionEvaluator) {
-    for (YamlNode arrayElement : yamlNode.asArray()) {
+  private void resolveExpressionsInArray(YamlNode arrayNode, EngineExpressionEvaluator engineExpressionEvaluator) {
+    for (YamlNode arrayElement : arrayNode.asArray()) {
       if (arrayElement.isObject()) {
-        for (YamlField field : arrayElement.fields()) {
-          resolveExpressions(field, engineExpressionEvaluator);
-        }
+        resolveExpressionsInObject(arrayElement, engineExpressionEvaluator);
       } else if (arrayElement.isArray()) {
         resolveExpressionsInArray(arrayElement, engineExpressionEvaluator);
+      } else if (arrayElement.getCurrJsonNode().isValueNode()) {
+        resolveExpressionInValueNode(
+            arrayNode, arrayElement.getName(), arrayElement.getCurrJsonNode().asText(), engineExpressionEvaluator);
       }
     }
   }
 
   private void resolveExpressionInValueNode(
-      YamlField parentField, String childName, String childValue, EngineExpressionEvaluator engineExpressionEvaluator) {
-    ObjectNode objectNode = (ObjectNode) parentField.getNode().getCurrJsonNode();
+      YamlNode parentNode, String childName, String childValue, EngineExpressionEvaluator engineExpressionEvaluator) {
+    ObjectNode objectNode = (ObjectNode) parentNode.getCurrJsonNode();
     if (EngineExpressionEvaluator.hasExpressions(childValue)) {
-      String expression = "<+" + YamlUtils.getFullyQualifiedName(parentField.getNode()) + "." + childName + ">";
-      String resolvedExpression = engineExpressionEvaluator.renderExpression(expression, true);
+      String resolvedExpression = engineExpressionEvaluator.renderExpression(childValue, true);
       // Update node value only if expression was successfully resolved
-      if (!resolvedExpression.equals(expression)) {
+      if (isExpressionResolved(resolvedExpression) && !resolvedExpression.equals(childValue)) {
         objectNode.put(childName, resolvedExpression);
       }
     }
+  }
+
+  private boolean isExpressionResolved(String resolvedValue) {
+    return resolvedValue != null && !resolvedValue.equals("null");
   }
 }

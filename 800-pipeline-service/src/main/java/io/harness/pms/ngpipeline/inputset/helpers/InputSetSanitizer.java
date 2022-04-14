@@ -62,7 +62,7 @@ public class InputSetSanitizer {
                                     .filter(entry -> !invalidFQNsInInputSet.contains(entry.getKey()))
                                     .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-    return new YamlConfig(filtered, inputSetConfig.getYamlMap()).getYaml();
+    return new YamlConfig(filtered, inputSetConfig.getYamlMap(), true).getYaml();
   }
 
   public String trimValues(String yaml) {

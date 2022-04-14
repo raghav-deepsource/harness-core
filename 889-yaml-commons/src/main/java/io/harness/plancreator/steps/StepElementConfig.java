@@ -47,6 +47,8 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("stepElementConfig")
 @OwnedBy(CDC)
 @RecasterAlias("io.harness.plancreator.steps.StepElementConfig")
+// @deprecated: Use the AbstractStepNode instead.
+@Deprecated
 public class StepElementConfig {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
