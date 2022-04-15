@@ -333,7 +333,7 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
                    .equal(accountId)
                    .get();
 
-    assertNull("Endpoint jsut got deleted.", endpoint);
+    assertNull("Endpoint just got deleted.", endpoint);
   }
 
   @Test

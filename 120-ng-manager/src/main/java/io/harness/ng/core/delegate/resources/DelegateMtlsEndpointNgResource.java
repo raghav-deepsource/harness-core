@@ -232,8 +232,10 @@ public class DelegateMtlsEndpointNgResource {
   }
 
   /**
-   * Throws if the user executing the command isn't a harness support user.
+   * Throws if the user executing the command isn't a Harness Support Group member.
    * This is required initially to ensure only harness support can add / remove endpoints in prod.
+   *
+   * @throws AccessDeniedException If the user isn't a member of the Harness Support Group.
    */
   private void ensureOperationIsExecutedByHarnessSupport() {
     if (!this.ngUserService.verifyHarnessSupportGroupUser()) {

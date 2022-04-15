@@ -18,12 +18,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateMtlsEndpointDetails;
 import io.harness.delegate.beans.DelegateMtlsEndpointRequest;
 import io.harness.delegate.utils.DelegateMtlsConstants;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.rest.RestResponse;
 import io.harness.service.intfc.DelegateMtlsEndpointService;
 
+import software.wings.beans.User;
 import software.wings.security.UserThreadLocal;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
@@ -45,7 +47,7 @@ import lombok.extern.slf4j.Slf4j;
  * Note:
  *    As of now limited access for harness support only.
  */
-@Api(value = DelegateMtlsConstants.API_PATH)
+@Api(DelegateMtlsConstants.API_PATH)
 @Path(DelegateMtlsConstants.API_PATH)
 @Produces("application/json")
 @Consumes("application/json")
@@ -153,12 +155,19 @@ public class DelegateMtlsEndpointResource {
   }
 
   /**
-   * Throws if the user executing the command isn't a harness support user.
+   * Throws if the user executing the command isn't a Harness Support Group member.
    * This is required initially to ensure only harness support can add / remove endpoints in prod.
+   *
+   * @throws InvalidRequestException If no user information are available.
+   * @throws UnauthorizedException If the user isn't a member of the Harness Support Group.
    */
   private void ensureOperationIsExecutedByHarnessSupport() {
-    String userId = UserThreadLocal.get().getUuid();
-    if (!this.harnessUserGroupService.isHarnessSupportUser(userId)) {
+    User user = UserThreadLocal.get();
+    if (user == null) {
+      throw new InvalidRequestException("No user information available.", USER);
+    }
+
+    if (!this.harnessUserGroupService.isHarnessSupportUser(user.getUuid())) {
       throw new UnauthorizedException("Only Harness Support Group Users can access this endpoint.", USER);
     }
   }

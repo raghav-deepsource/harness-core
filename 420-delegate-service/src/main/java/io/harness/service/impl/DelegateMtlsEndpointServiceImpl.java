@@ -40,7 +40,7 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
   private static final String ERROR_ENDPOINT_FOR_ACCOUNT_NOT_FOUND_FORMAT =
       "Delegate mTLS endpoint for account '%s' was not found.";
 
-  private static UrlValidator urlValidator = new UrlValidator(UrlValidator.ALLOW_ALL_SCHEMES);
+  private static final UrlValidator urlValidator = new UrlValidator(UrlValidator.ALLOW_ALL_SCHEMES);
 
   private final HPersistence persistence;
   private final String delegateMtlsSubdomain;
@@ -55,12 +55,15 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
   @Override
   public DelegateMtlsEndpointDetails createEndpointForAccount(
       String accountId, DelegateMtlsEndpointRequest endpointRequest) {
-    // validate request before further processing
+    log.info("Create delegate mTLS endpoint for account '{}' with domain prefix '{}' and mode '{}'.", accountId,
+        endpointRequest.getDomainPrefix(), endpointRequest.getMode());
+
     this.validateEndpointRequest(endpointRequest);
 
-    String fqdn = this.getFqdn(endpointRequest.getDomainPrefix());
+    String uuid = generateUuid();
+    String fqdn = this.buildFqdn(endpointRequest.getDomainPrefix());
     DelegateMtlsEndpoint endpoint = DelegateMtlsEndpoint.builder()
-                                        .uuid(generateUuid())
+                                        .uuid(uuid)
                                         .accountId(accountId)
                                         .fqdn(fqdn)
                                         .mode(endpointRequest.getMode())
@@ -70,9 +73,10 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
     try {
       persistence.save(endpoint);
     } catch (DuplicateKeyException e) {
-      // For the exception message we assume that uuid / accountId isn't the cause of the duplicate, but it's the fqdn.
-      throw new InvalidRequestException(format(
-          "Delegate mTLS endpoint with given domain prefix '%s' already exists.", endpointRequest.getDomainPrefix()));
+      // We assume it's not the uuid that collides (very unlikely)
+      throw new InvalidRequestException(
+          format("Delegate mTLS endpoint with domain prefix '%s' or accountId '%s' already exists.",
+              endpointRequest.getDomainPrefix(), accountId));
     }
 
     return this.buildEndpointDetails(endpoint);
@@ -81,13 +85,15 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
   @Override
   public DelegateMtlsEndpointDetails updateEndpointForAccount(
       String accountId, DelegateMtlsEndpointRequest endpointRequest) {
-    // validate request before further processing
+    log.info("Update delegate mTLS endpoint for account '{}' with domain prefix '{}' and mode '{}'.", accountId,
+        endpointRequest.getDomainPrefix(), endpointRequest.getMode());
+
     this.validateEndpointRequest(endpointRequest);
 
-    String fqdn = this.getFqdn(endpointRequest.getDomainPrefix());
     Query<DelegateMtlsEndpoint> query =
         persistence.createQuery(DelegateMtlsEndpoint.class).filter(DelegateMtlsEndpointKeys.accountId, accountId);
 
+    String fqdn = this.buildFqdn(endpointRequest.getDomainPrefix());
     UpdateOperations<DelegateMtlsEndpoint> updateOperations =
         persistence.createUpdateOperations(DelegateMtlsEndpoint.class)
             .set(DelegateMtlsEndpointKeys.fqdn, fqdn)
@@ -96,8 +102,8 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
 
     // only update (no insert) and return the resulting endpoint.
     FindAndModifyOptions options = new FindAndModifyOptions();
-    options.returnNew(true);
     options.upsert(false);
+    options.returnNew(true);
 
     DelegateMtlsEndpoint updatedEndpoint = persistence.findAndModify(query, updateOperations, options);
 
@@ -111,6 +117,8 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
   @Override
   public DelegateMtlsEndpointDetails patchEndpointForAccount(
       String accountId, DelegateMtlsEndpointRequest patchRequest) {
+    log.info("Patch delegate mTLS endpoint for account '{}'.", accountId);
+
     Query<DelegateMtlsEndpoint> query =
         persistence.createQuery(DelegateMtlsEndpoint.class).filter(DelegateMtlsEndpointKeys.accountId, accountId);
 
@@ -121,15 +129,18 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
 
     // patch domain prefix
     if (patchRequest.getDomainPrefix() != null) {
+      log.info("Patch request contains domainPrefix '{}'.", patchRequest.getDomainPrefix());
+
       this.validateDomainPrefix(patchRequest.getDomainPrefix());
 
-      String fqdn = this.getFqdn(patchRequest.getDomainPrefix());
+      String fqdn = this.buildFqdn(patchRequest.getDomainPrefix());
       updateOperations = updateOperations.set(DelegateMtlsEndpointKeys.fqdn, fqdn);
       emptyPatch = false;
     }
 
     // patch CA certificates
     if (patchRequest.getCaCertificates() != null) {
+      log.info("Patch request contains CA certificate.");
       this.validateCaCertificates(patchRequest.getCaCertificates());
 
       updateOperations =
@@ -139,6 +150,8 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
 
     // patch mode
     if (patchRequest.getMode() != null) {
+      log.info("Patch request contains mode '{}'.", patchRequest.getMode());
+
       updateOperations = updateOperations.set(DelegateMtlsEndpointKeys.mode, patchRequest.getMode());
       emptyPatch = false;
     }
@@ -150,8 +163,8 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
 
     // only update (no insert) and return the full resulting endpoint.
     FindAndModifyOptions options = new FindAndModifyOptions();
-    options.returnNew(true);
     options.upsert(false);
+    options.returnNew(true);
 
     DelegateMtlsEndpoint updatedEndpoint = persistence.findAndModify(query, updateOperations, options);
 
@@ -178,6 +191,8 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
 
   @Override
   public boolean deleteEndpointForAccount(String accountId) {
+    log.info("Delete delegate mTLS endpoint for account '{}'.", accountId);
+
     Query<DelegateMtlsEndpoint> query =
         persistence.createQuery(DelegateMtlsEndpoint.class).filter(DelegateMtlsEndpointKeys.accountId, accountId);
 
@@ -188,7 +203,7 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
   public boolean isDomainPrefixAvailable(String domainPrefix) {
     this.validateDomainPrefix(domainPrefix);
 
-    String fqdn = this.getFqdn(domainPrefix);
+    String fqdn = this.buildFqdn(domainPrefix);
     DelegateMtlsEndpoint endpoint =
         persistence.createQuery(DelegateMtlsEndpoint.class).field(DelegateMtlsEndpointKeys.fqdn).equal(fqdn).get();
 
@@ -212,13 +227,10 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
    * @throws InvalidRequestException If the request is invalid.
    */
   private void validateEndpointRequest(DelegateMtlsEndpointRequest endpointRequest) {
-    // validate certificates
     this.validateCaCertificates(endpointRequest.getCaCertificates());
 
-    // validate domain prefix
     this.validateDomainPrefix(endpointRequest.getDomainPrefix());
 
-    // validate mode
     if (endpointRequest.getMode() == null) {
       throw new InvalidRequestException("No delegate mTLS mode was provided.");
     }
@@ -256,7 +268,7 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
     }
 
     // ensure the resulting fqdn is valid.
-    String fqdn = this.getFqdn(domainPrefix);
+    String fqdn = this.buildFqdn(domainPrefix);
     if (!urlValidator.isValid("http://" + fqdn)) {
       throw new InvalidRequestException(
           String.format("Provided domain prefix '%s' is invalid (full fqdn: '%s').", domainPrefix, fqdn));
@@ -269,7 +281,7 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
    * @param domainPrefix The domain prefix.
    * @return The FQDN.
    */
-  private String getFqdn(String domainPrefix) {
+  private String buildFqdn(String domainPrefix) {
     return String.format("%s.%s", domainPrefix, this.delegateMtlsSubdomain);
   }
 }

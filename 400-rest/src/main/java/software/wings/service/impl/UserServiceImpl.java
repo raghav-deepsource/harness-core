@@ -2937,7 +2937,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public List<User> getUsers(Set<String> userIds) {
-    Query<User> query = wingsPersistence.createQuery(User.class).field("uuid").in(userIds);
+    Query<User> query = wingsPersistence.createQuery(User.class, excludeAuthority).field("uuid").in(userIds);
     return query.asList();
   }
 
