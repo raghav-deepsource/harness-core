@@ -16,16 +16,21 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.api.impl.FileStoreServiceImpl;
+import io.harness.ng.core.api.impl.utils.SearchPageParams;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.filestore.node.FolderNodeDTO;
+import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.rule.Owner;
 
 import java.io.File;
+import java.util.Collections;
 import javax.ws.rs.core.Response;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,6 +38,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 
 @OwnedBy(HarnessTeam.CDP)
 @RunWith(MockitoJUnitRunner.class)
@@ -111,5 +118,24 @@ public class FileStoreResourceTest extends CategoryTest {
     assertThatThrownBy(() -> fileStoreResource.listFolderNodes(ACCOUNT, ORG, PROJECT, folderDTO))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Unable to list folder nodes");
+  }
+
+  @Test
+  @Owner(developers = VLAD)
+  @Category(UnitTests.class)
+  public void shouldListReferencedBy() {
+    EntitySetupUsageDTO entitySetupUsage = EntitySetupUsageDTO.builder().build();
+    int page = 1;
+    int size = 10;
+    SearchPageParams pageParams = SearchPageParams.builder().page(page).size(size).build();
+    final Page<EntitySetupUsageDTO> entityServiceUsageList =
+        new PageImpl<>(Collections.singletonList(entitySetupUsage));
+    when(fileStoreService.listReferencedBy(pageParams, ACCOUNT, ORG, PROJECT, IDENTIFIER, EntityType.PIPELINES))
+        .thenReturn(entityServiceUsageList);
+    ResponseDTO<PageResponse<EntitySetupUsageDTO>> response =
+        fileStoreResource.getReferencedBy(page, size, ACCOUNT, ORG, PROJECT, IDENTIFIER, EntityType.PIPELINES, null);
+    verify(fileStoreService).listReferencedBy(pageParams, ACCOUNT, ORG, PROJECT, IDENTIFIER, EntityType.PIPELINES);
+    assertThat(response).isNotNull();
+    assertThat(response.getData().getContent()).containsExactly(entitySetupUsage);
   }
 }

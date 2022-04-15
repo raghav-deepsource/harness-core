@@ -94,4 +94,5 @@ public class EntityYamlRootNames {
   public static String BUILD_AND_PUSH_GCR = "BuildAndPushGCR";
   public static String BUILD_AND_PUSH_ECR = "BuildAndPushECR";
   public static String BUILD_AND_PUSH_DOCKER_REGISTRY = "BuildAndPushDockerRegistry";
+  public static String NG_FILE = "NgFile";
 }

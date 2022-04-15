@@ -27,17 +27,18 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.hibernate.validator.constraints.NotBlank;
 
 @OwnedBy(CDP)
 @Data
-@Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(name = "File", description = "This is details of the file entity defined in Harness.")
 @Condition(property = "type", propertyValue = "FILE", requiredProperties = {"fileUsage"},
     message = "FileUsage is required for file.")
+@NoArgsConstructor
 public class FileDTO {
   @ApiModelProperty(required = true)
   @Schema(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE)
@@ -69,5 +70,22 @@ public class FileDTO {
   @JsonIgnore
   public boolean isFolder() {
     return type == NGFileType.FOLDER;
+  }
+
+  @Builder
+  public FileDTO(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier,
+      String name, FileUsage fileUsage, NGFileType type, String parentIdentifier, String description, List<NGTag> tags,
+      String mimeType) {
+    this.accountIdentifier = accountIdentifier;
+    this.orgIdentifier = orgIdentifier;
+    this.projectIdentifier = projectIdentifier;
+    this.identifier = identifier;
+    this.name = name;
+    this.fileUsage = fileUsage;
+    this.type = type;
+    this.parentIdentifier = parentIdentifier;
+    this.description = description;
+    this.tags = tags;
+    this.mimeType = mimeType;
   }
 }

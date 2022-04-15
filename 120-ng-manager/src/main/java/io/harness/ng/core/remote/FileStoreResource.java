@@ -9,6 +9,7 @@ package io.harness.ng.core.remote;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_KEY;
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.ENTITY_TYPE;
 import static io.harness.NGCommonEntityConstants.FILE_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.ORG_KEY;
 import static io.harness.NGCommonEntityConstants.ORG_PARAM_MESSAGE;
@@ -16,20 +17,26 @@ import static io.harness.NGCommonEntityConstants.PROJECT_KEY;
 import static io.harness.NGCommonEntityConstants.PROJECT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.ng.core.utils.NGUtils.validate;
+import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM;
 import static javax.ws.rs.core.MediaType.MULTIPART_FORM_DATA;
 
+import io.harness.EntityType;
 import io.harness.NGCommonEntityConstants;
+import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.api.FileStoreService;
+import io.harness.ng.core.api.impl.utils.SearchPageParams;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.filestore.FileDTO;
 import io.harness.ng.core.dto.filestore.node.FolderNodeDTO;
+import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.serializer.JsonUtils;
 
@@ -53,6 +60,7 @@ import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -212,5 +220,34 @@ public class FileStoreResource {
       @NotNull FolderNodeDTO folderNodeDTO) {
     return ResponseDTO.newResponse(
         fileStoreService.listFolderNodes(accountIdentifier, orgIdentifier, projectIdentifier, folderNodeDTO));
+  }
+
+  @GET
+  @Consumes({"application/json"})
+  @Path("referenced-by")
+  @ApiOperation(value = "Get referenced by entities", nickname = "getReferencedBy")
+  @Operation(operationId = "getReferencedBy", summary = "Get Referenced by Entities.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the list of entities file is referenced by")
+      })
+  public ResponseDTO<PageResponse<EntitySetupUsageDTO>>
+  getReferencedBy(@Parameter(description = "Page number of navigation. The default value is 0") @QueryParam(
+                      NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
+      @Parameter(description = "Number of entries per page. The default value is 100") @QueryParam(
+          NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size,
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          ACCOUNT_KEY) @EntityIdentifier String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) @EntityIdentifier(
+          allowBlank = true) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) @EntityIdentifier(
+          allowBlank = true) String projectIdentifier,
+      @Parameter(description = FILE_PARAM_MESSAGE) @EntityIdentifier @QueryParam(NGCommonEntityConstants.IDENTIFIER_KEY)
+      String identifier, @Parameter(description = "Entity type") @QueryParam(ENTITY_TYPE) EntityType entityType,
+      @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm) {
+    return ResponseDTO.newResponse(getNGPageResponse(fileStoreService.listReferencedBy(
+        SearchPageParams.builder().page(page).size(size).searchTerm(searchTerm).build(), accountIdentifier,
+        orgIdentifier, projectIdentifier, identifier, entityType)));
   }
 }

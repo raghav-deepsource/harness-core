@@ -36,6 +36,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.file.beans.NGBaseFile;
 import io.harness.filestore.FileStoreConstants;
 import io.harness.filestore.NGFileType;
+import io.harness.ng.core.api.impl.utils.FileReferencedByHelper;
 import io.harness.ng.core.dto.filestore.FileDTO;
 import io.harness.ng.core.dto.filestore.node.FileNodeDTO;
 import io.harness.ng.core.dto.filestore.node.FolderNodeDTO;
@@ -76,6 +77,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
   @Mock private FileStoreRepository fileStoreRepository;
   @Mock private FileService fileService;
   @Mock private MainConfiguration configuration;
+  @Mock private FileReferencedByHelper fileReferencedByHelper;
 
   @InjectMocks private FileStoreServiceImpl fileStoreService;
 
@@ -424,12 +426,12 @@ public class FileStoreServiceImplTest extends CategoryTest {
     when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndParentIdentifier(
              ACCOUNT_IDENTIFIER, null, null, folder1))
         .thenReturn(Arrays.asList(file));
-    boolean result =
-        fileStoreService.delete(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "account." + folder1);
-    assertThat(result).isTrue();
-    verify(fileStoreRepository).delete(file);
-    verify(fileStoreRepository).delete(parentFolder);
-    verify(fileService).deleteFile(fileUuid, FileBucket.FILE_STORE);
+
+    assertThatThrownBy(
+        () -> fileStoreService.delete(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "account." + folder1))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage(
+            "File or folder with identifier [account.folder1], account [accountIdentifier], org [orgIdentifier] and project [projectIdentifier] could not be retrieved from file store.");
   }
 
   @Test

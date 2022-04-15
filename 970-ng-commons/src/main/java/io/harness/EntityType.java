@@ -216,7 +216,9 @@ public enum EntityType {
       EntityYamlRootNames.BUILD_AND_PUSH_ECR),
   @JsonProperty(EntityTypeConstants.BUILD_AND_PUSH_DOCKER_REGISTRY)
   BUILD_AND_PUSH_DOCKER_REGISTRY(ModuleType.CI, EntityTypeConstants.BUILD_AND_PUSH_DOCKER_REGISTRY, IdentifierRef.class,
-      EntityYamlRootNames.BUILD_AND_PUSH_DOCKER_REGISTRY);
+      EntityYamlRootNames.BUILD_AND_PUSH_DOCKER_REGISTRY),
+  @JsonProperty(EntityTypeConstants.NG_FILE)
+  NG_FILE(ModuleType.CD, EntityTypeConstants.NG_FILE, IdentifierRef.class, EntityYamlRootNames.NG_FILE);
 
   private final ModuleType moduleType;
   String yamlName;

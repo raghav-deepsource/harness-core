@@ -7,14 +7,18 @@
 
 package io.harness.ng.core.api;
 
+import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.core.api.impl.utils.SearchPageParams;
 import io.harness.ng.core.dto.filestore.FileDTO;
 import io.harness.ng.core.dto.filestore.node.FolderNodeDTO;
+import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 
 import java.io.File;
 import java.io.InputStream;
 import javax.validation.constraints.NotNull;
+import org.springframework.data.domain.Page;
 
 @OwnedBy(HarnessTeam.CDP)
 public interface FileStoreService {
@@ -73,4 +77,16 @@ public interface FileStoreService {
    */
   FolderNodeDTO listFolderNodes(@NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier,
       @NotNull FolderNodeDTO folderNodeDTO);
+
+  /**
+   * Get list of entities file is referenced by.
+   *
+   * @param accountIdentifier the account identifier
+   * @param orgIdentifier the organization identifier
+   * @param projectIdentifier the project identifier
+   * @param identifier the file identifier
+   * @return list of entities file is referenced by
+   */
+  Page<EntitySetupUsageDTO> listReferencedBy(SearchPageParams pageParams, @NotNull String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, @NotNull String identifier, EntityType entityType);
 }
