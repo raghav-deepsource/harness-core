@@ -83,21 +83,35 @@ public class InstallUtils {
 
   private static final List<String> kustomizeVersions = Arrays.asList(kustomizeVersionOld, kustomizeVersionNew);
 
-  private static String goTemplateToolPath = Paths.get(goTemplateClientBaseDir, goTemplateClientVersion, "go-template").toAbsolutePath().normalize().toString();
-  private static String harnessPywinrmToolPath = Paths.get(harnessPywinrmBaseDir, harnessPywinrmVersion, "harness-pywinrm").toAbsolutePath().normalize().toString();
+  private static String goTemplateToolPath = Paths.get(goTemplateClientBaseDir, goTemplateClientVersion, "go-template")
+                                                 .toAbsolutePath()
+                                                 .normalize()
+                                                 .toString();
+  private static String harnessPywinrmToolPath =
+      Paths.get(harnessPywinrmBaseDir, harnessPywinrmVersion, "harness-pywinrm")
+          .toAbsolutePath()
+          .normalize()
+          .toString();
 
   private static final Map<String, String> helmPaths = new HashMap<>();
 
   static {
-    chartMuseumPaths.put(chartMuseumVersionOld, Paths.get(chartMuseumBaseDir, chartMuseumVersionOld, "chartmuseum").toAbsolutePath().normalize().toString());
-    chartMuseumPaths.put(chartMuseumVersionNew, Paths.get(chartMuseumBaseDir, chartMuseumVersionNew, "chartmuseum").toAbsolutePath().normalize().toString());
+    chartMuseumPaths.put(chartMuseumVersionOld,
+        Paths.get(chartMuseumBaseDir, chartMuseumVersionOld, "chartmuseum").toAbsolutePath().normalize().toString());
+    chartMuseumPaths.put(chartMuseumVersionNew,
+        Paths.get(chartMuseumBaseDir, chartMuseumVersionNew, "chartmuseum").toAbsolutePath().normalize().toString());
     helmPaths.put(helm2Version, Paths.get(helmBaseDir, helm2Version, "helm").toAbsolutePath().normalize().toString());
     helmPaths.put(helm3Version, Paths.get(helmBaseDir, helm3Version, "helm").toAbsolutePath().normalize().toString());
-    helmPaths.put(helm3VersionNew, Paths.get(helmBaseDir, helm3VersionNew, "helm").toAbsolutePath().normalize().toString());
-    kubectlPaths.put(defaultKubectlVersion, Paths.get(kubectlBaseDir, defaultKubectlVersion, "kubectl").toAbsolutePath().normalize().toString());
-    kubectlPaths.put(newKubectlVersion, Paths.get(kubectlBaseDir, newKubectlVersion, "kubectl").toAbsolutePath().normalize().toString());
-    kustomizePaths.put(kustomizeVersionOld, Paths.get(kustomizeBaseDir, kustomizeVersionOld, "kustomize").toAbsolutePath().normalize().toString());
-    kustomizePaths.put(kustomizeVersionNew, Paths.get(kustomizeBaseDir, kustomizeVersionNew, "kustomize").toAbsolutePath().normalize().toString());
+    helmPaths.put(
+        helm3VersionNew, Paths.get(helmBaseDir, helm3VersionNew, "helm").toAbsolutePath().normalize().toString());
+    kubectlPaths.put(defaultKubectlVersion,
+        Paths.get(kubectlBaseDir, defaultKubectlVersion, "kubectl").toAbsolutePath().normalize().toString());
+    kubectlPaths.put(newKubectlVersion,
+        Paths.get(kubectlBaseDir, newKubectlVersion, "kubectl").toAbsolutePath().normalize().toString());
+    kustomizePaths.put(kustomizeVersionOld,
+        Paths.get(kustomizeBaseDir, kustomizeVersionOld, "kustomize").toAbsolutePath().normalize().toString());
+    kustomizePaths.put(kustomizeVersionNew,
+        Paths.get(kustomizeBaseDir, kustomizeVersionNew, "kustomize").toAbsolutePath().normalize().toString());
   }
 
   private static String ocPath = Paths.get(ocBaseDir, ocVersion, "oc").toAbsolutePath().normalize().toString();
@@ -131,16 +145,26 @@ public class InstallUtils {
   private static final String SCM_CDN_PATH = "public/shared/tools/scm/release/%s/bin/%s/amd64/scm";
 
   private static String getTerraformConfigInspectPath(String version) {
-    return Paths.get(terraformConfigInspectBaseDir, version, getOsPath(), "amd64", terraformConfigInspectBinary).toAbsolutePath().normalize().toString();
+    return Paths.get(terraformConfigInspectBaseDir, version, getOsPath(), "amd64", terraformConfigInspectBinary)
+        .toAbsolutePath()
+        .normalize()
+        .toString();
   }
 
   public static String getTerraformConfigInspectPath(boolean useLatestVersion) {
-    final String version = useLatestVersion ? terraformConfigInspectLatestVersion : terraformConfigInspectCurrentVersion;
-    return Paths.get(terraformConfigInspectBaseDir, version, getOsPath(), "amd64", terraformConfigInspectBinary).toAbsolutePath().normalize().toString();
+    final String version =
+        useLatestVersion ? terraformConfigInspectLatestVersion : terraformConfigInspectCurrentVersion;
+    return Paths.get(terraformConfigInspectBaseDir, version, getOsPath(), "amd64", terraformConfigInspectBinary)
+        .toAbsolutePath()
+        .normalize()
+        .toString();
   }
 
   public static String getScmPath() {
-    return Paths.get(scmBaseDir, getScmVersion(), getOsPath(), "amd64", scmBinary).toAbsolutePath().normalize().toString();
+    return Paths.get(scmBaseDir, getScmVersion(), getOsPath(), "amd64", scmBinary)
+        .toAbsolutePath()
+        .normalize()
+        .toString();
   }
 
   public static String getScmBinary() {
