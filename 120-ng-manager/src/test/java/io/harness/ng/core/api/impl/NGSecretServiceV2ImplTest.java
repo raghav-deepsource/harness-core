@@ -47,6 +47,7 @@ import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.SSHAuthScheme;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.services.SshKeySpecDTOHelper;
+import io.harness.secretmanagerclient.services.WinRmCredentialsSpecDTOHelper;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import com.google.common.collect.ImmutableMap;
@@ -70,6 +71,7 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
   private OutboxService outboxService;
   private TaskSetupAbstractionHelper taskSetupAbstractionHelper;
   private TransactionTemplate transactionTemplate;
+  private WinRmCredentialsSpecDTOHelper winRmCredentialsSpecDTOHelper;
 
   @Before
   public void setup() {
@@ -80,8 +82,11 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
     outboxService = mock(OutboxService.class);
     transactionTemplate = mock(TransactionTemplate.class);
     taskSetupAbstractionHelper = new TaskSetupAbstractionHelper();
+    winRmCredentialsSpecDTOHelper = mock(WinRmCredentialsSpecDTOHelper.class);
+
     secretServiceV2 = new NGSecretServiceV2Impl(secretRepository, delegateGrpcClientWrapper, sshKeySpecDTOHelper,
-        ngSecretActivityService, outboxService, transactionTemplate, taskSetupAbstractionHelper);
+        ngSecretActivityService, outboxService, transactionTemplate, taskSetupAbstractionHelper,
+        winRmCredentialsSpecDTOHelper);
     secretServiceV2Spy = spy(secretServiceV2);
   }
 

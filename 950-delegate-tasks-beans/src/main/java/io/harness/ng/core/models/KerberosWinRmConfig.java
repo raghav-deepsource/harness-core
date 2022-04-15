@@ -23,8 +23,6 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName("Kerberos")
 public class KerberosWinRmConfig extends KerberosBaseConfig implements BaseWinRmSpec {
-  private String domain;
-  private String username;
   private boolean useSSL;
   private boolean skipCertChecks;
   private boolean useNoProfile;
@@ -32,8 +30,6 @@ public class KerberosWinRmConfig extends KerberosBaseConfig implements BaseWinRm
   @Override
   public BaseWinRmSpecDTO toDTO() {
     return KerberosWinRmConfigDTO.builder()
-        .domain(domain)
-        .username(username)
         .useSSL(useSSL)
         .skipCertChecks(skipCertChecks)
         .useNoProfile(useNoProfile)

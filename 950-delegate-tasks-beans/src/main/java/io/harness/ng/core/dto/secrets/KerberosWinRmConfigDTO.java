@@ -30,10 +30,6 @@ import lombok.experimental.SuperBuilder;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(Include.NON_NULL)
 public class KerberosWinRmConfigDTO extends KerberosBaseConfigDTO implements BaseWinRmSpecDTO {
-  @Schema(description = "This is the Kerberos domain name.") @NotNull private String domain;
-
-  @Schema(description = "This is the Kerberos user name.") @NotNull private String username;
-
   @Schema(description = "This is the Kerberos either to use SSL/https .") private boolean useSSL = true;
 
   @Schema(description = "This is the Kerberos either to skip certificate checks .")
@@ -44,8 +40,6 @@ public class KerberosWinRmConfigDTO extends KerberosBaseConfigDTO implements Bas
   @Override
   public BaseWinRmSpec toEntity() {
     return KerberosWinRmConfig.builder()
-        .domain(domain)
-        .username(username)
         .useSSL(useSSL)
         .skipCertChecks(skipCertChecks)
         .useNoProfile(useNoProfile)

@@ -10,4 +10,4 @@ package io.harness.delegate.beans.secrets;
 import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
-public class SSHConfigValidationTaskResponse extends BaseConfigValidationTaskResponse {}
+public class WinRmConfigValidationTaskResponse extends BaseConfigValidationTaskResponse {}

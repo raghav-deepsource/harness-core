@@ -22,7 +22,10 @@ import io.harness.beans.DelegateTaskRequest.DelegateTaskRequestBuilder;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
 import io.harness.delegate.beans.SSHTaskParams;
+import io.harness.delegate.beans.WinRmTaskParams;
+import io.harness.delegate.beans.secrets.BaseConfigValidationTaskResponse;
 import io.harness.delegate.beans.secrets.SSHConfigValidationTaskResponse;
+import io.harness.delegate.beans.secrets.WinRmConfigValidationTaskResponse;
 import io.harness.delegate.utils.TaskSetupAbstractionHelper;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
@@ -32,6 +35,7 @@ import io.harness.ng.core.api.NGSecretActivityService;
 import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
+import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 import io.harness.ng.core.events.SecretCreateEvent;
 import io.harness.ng.core.events.SecretDeleteEvent;
 import io.harness.ng.core.events.SecretUpdateEvent;
@@ -40,14 +44,18 @@ import io.harness.ng.core.models.Secret.SecretKeys;
 import io.harness.ng.core.remote.SSHKeyValidationMetadata;
 import io.harness.ng.core.remote.SecretValidationMetaData;
 import io.harness.ng.core.remote.SecretValidationResultDTO;
+import io.harness.ng.core.remote.WinRmCredentialsValidationMetadata;
 import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.ng.core.spring.SecretRepository;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.services.SshKeySpecDTOHelper;
+import io.harness.secretmanagerclient.services.WinRmCredentialsSpecDTOHelper;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
 import io.harness.utils.PageUtils;
+
+import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -76,6 +84,7 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
   private final SecretRepository secretRepository;
   private final DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   private final SshKeySpecDTOHelper sshKeySpecDTOHelper;
+  private final WinRmCredentialsSpecDTOHelper winRmCredentialsSpecDTOHelper;
   private final NGSecretActivityService ngSecretActivityService;
   private final OutboxService outboxService;
   private final TransactionTemplate transactionTemplate;
@@ -86,7 +95,8 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
   public NGSecretServiceV2Impl(SecretRepository secretRepository, DelegateGrpcClientWrapper delegateGrpcClientWrapper,
       SshKeySpecDTOHelper sshKeySpecDTOHelper, NGSecretActivityService ngSecretActivityService,
       OutboxService outboxService, @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
-      TaskSetupAbstractionHelper taskSetupAbstractionHelper) {
+      TaskSetupAbstractionHelper taskSetupAbstractionHelper,
+      WinRmCredentialsSpecDTOHelper winRmCredentialsSpecDTOHelper) {
     this.secretRepository = secretRepository;
     this.outboxService = outboxService;
     this.delegateGrpcClientWrapper = delegateGrpcClientWrapper;
@@ -94,6 +104,7 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
     this.ngSecretActivityService = ngSecretActivityService;
     this.transactionTemplate = transactionTemplate;
     this.taskSetupAbstractionHelper = taskSetupAbstractionHelper;
+    this.winRmCredentialsSpecDTOHelper = winRmCredentialsSpecDTOHelper;
   }
 
   @Override
@@ -204,43 +215,111 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
   public SecretValidationResultDTO validateSecret(@NotNull String accountIdentifier, String orgIdentifier,
       String projectIdentifier, @NotNull String identifier, @NotNull SecretValidationMetaData metadata) {
     Optional<Secret> secretV2Optional = get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-    if (secretV2Optional.isPresent() && secretV2Optional.get().getType() == SecretType.SSHKey) {
-      SSHKeyValidationMetadata sshKeyValidationMetadata = (SSHKeyValidationMetadata) metadata;
-      SSHKeySpecDTO secretSpecDTO = (SSHKeySpecDTO) secretV2Optional.get().getSecretSpec().toDTO();
-      BaseNGAccess baseNGAccess = BaseNGAccess.builder()
-                                      .accountIdentifier(accountIdentifier)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
-      List<EncryptedDataDetail> encryptionDetails =
-          sshKeySpecDTOHelper.getSSHKeyEncryptionDetails(secretSpecDTO, baseNGAccess);
-      DelegateTaskRequestBuilder delegateTaskRequestBuilder =
-          DelegateTaskRequest.builder()
-              .accountId(accountIdentifier)
-              .taskType("NG_SSH_VALIDATION")
-              .taskParameters(SSHTaskParams.builder()
-                                  .host(sshKeyValidationMetadata.getHost())
-                                  .encryptionDetails(encryptionDetails)
-                                  .sshKeySpec(secretSpecDTO)
-                                  .build())
-              .taskSetupAbstractions(buildAbstractions(accountIdentifier, orgIdentifier, projectIdentifier))
-              .executionTimeout(Duration.ofSeconds(45));
 
-      DelegateTaskRequest delegateTaskRequest = delegateTaskRequestBuilder.build();
-      DelegateResponseData delegateResponseData = this.delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
-      if (delegateResponseData instanceof RemoteMethodReturnValueData) {
-        return SecretValidationResultDTO.builder()
-            .success(false)
-            .message(((RemoteMethodReturnValueData) delegateResponseData).getException().getMessage())
-            .build();
-      } else if (delegateResponseData instanceof SSHConfigValidationTaskResponse) {
-        SSHConfigValidationTaskResponse responseData = (SSHConfigValidationTaskResponse) delegateResponseData;
-        return SecretValidationResultDTO.builder()
-            .success(responseData.isConnectionSuccessful())
-            .message(responseData.getErrorMessage())
-            .build();
-      }
+    if (!secretV2Optional.isPresent()) {
+      return buildFailedValidationResult();
     }
+
+    Secret secret = secretV2Optional.get();
+
+    switch (secret.getType()) {
+      case SSHKey:
+        return validateSecretSSHKey(accountIdentifier, orgIdentifier, projectIdentifier, metadata, secret);
+      case WinRmCredentials:
+        return validateSecretWinRmCredentials(accountIdentifier, orgIdentifier, projectIdentifier, metadata, secret);
+      default:
+        return buildFailedValidationResult();
+    }
+  }
+
+  private SecretValidationResultDTO validateSecretSSHKey(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, SecretValidationMetaData metadata, Secret secret) {
+    SSHKeyValidationMetadata sshKeyValidationMetadata = (SSHKeyValidationMetadata) metadata;
+    SSHKeySpecDTO secretSpecDTO = (SSHKeySpecDTO) secret.getSecretSpec().toDTO();
+    BaseNGAccess baseNGAccess = BaseNGAccess.builder()
+                                    .accountIdentifier(accountIdentifier)
+                                    .orgIdentifier(orgIdentifier)
+                                    .projectIdentifier(projectIdentifier)
+                                    .build();
+    List<EncryptedDataDetail> encryptionDetails =
+        sshKeySpecDTOHelper.getSSHKeyEncryptionDetails(secretSpecDTO, baseNGAccess);
+    DelegateTaskRequestBuilder delegateTaskRequestBuilder =
+        DelegateTaskRequest.builder()
+            .accountId(accountIdentifier)
+            .taskType(TaskType.NG_SSH_VALIDATION.name())
+            .taskParameters(SSHTaskParams.builder()
+                                .host(sshKeyValidationMetadata.getHost())
+                                .encryptionDetails(encryptionDetails)
+                                .sshKeySpec(secretSpecDTO)
+                                .build())
+            .taskSetupAbstractions(buildAbstractions(accountIdentifier, orgIdentifier, projectIdentifier))
+            .executionTimeout(Duration.ofSeconds(45));
+
+    DelegateTaskRequest delegateTaskRequest = delegateTaskRequestBuilder.build();
+    DelegateResponseData delegateResponseData = this.delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    if (delegateResponseData instanceof RemoteMethodReturnValueData) {
+      return buildRemoteMethodResponse((RemoteMethodReturnValueData) delegateResponseData);
+    } else if (delegateResponseData instanceof SSHConfigValidationTaskResponse) {
+      return buildBaseConfigValidationTaskResponse((SSHConfigValidationTaskResponse) delegateResponseData);
+    }
+
+    return buildFailedValidationResult();
+  }
+
+  private SecretValidationResultDTO validateSecretWinRmCredentials(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, SecretValidationMetaData metadata, Secret secret) {
+    WinRmCredentialsValidationMetadata winRmCredentialsValidationMetadata =
+        (WinRmCredentialsValidationMetadata) metadata;
+    WinRmCredentialsSpecDTO secretSpecDTO = (WinRmCredentialsSpecDTO) secret.getSecretSpec().toDTO();
+    BaseNGAccess baseNGAccess = BaseNGAccess.builder()
+                                    .accountIdentifier(accountIdentifier)
+                                    .orgIdentifier(orgIdentifier)
+                                    .projectIdentifier(projectIdentifier)
+                                    .build();
+
+    List<EncryptedDataDetail> encryptionDetails =
+        winRmCredentialsSpecDTOHelper.getWinRmEncryptionDetails(secretSpecDTO, baseNGAccess);
+
+    DelegateTaskRequestBuilder delegateTaskRequestBuilder =
+        DelegateTaskRequest.builder()
+            .accountId(accountIdentifier)
+            .taskType(TaskType.NG_WINRM_VALIDATION.name())
+            .taskParameters(WinRmTaskParams.builder()
+                                .host(winRmCredentialsValidationMetadata.getHost())
+                                .encryptionDetails(encryptionDetails)
+                                .spec(secretSpecDTO)
+                                .build())
+            .taskSetupAbstractions(buildAbstractions(accountIdentifier, orgIdentifier, projectIdentifier))
+            .executionTimeout(Duration.ofSeconds(45));
+
+    DelegateTaskRequest delegateTaskRequest = delegateTaskRequestBuilder.build();
+    DelegateResponseData delegateResponseData = this.delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+
+    if (delegateResponseData instanceof RemoteMethodReturnValueData) {
+      return buildRemoteMethodResponse((RemoteMethodReturnValueData) delegateResponseData);
+    } else if (delegateResponseData instanceof WinRmConfigValidationTaskResponse) {
+      return buildBaseConfigValidationTaskResponse((WinRmConfigValidationTaskResponse) delegateResponseData);
+    }
+
+    return buildFailedValidationResult();
+  }
+
+  private SecretValidationResultDTO buildRemoteMethodResponse(RemoteMethodReturnValueData delegateResponseData) {
+    return SecretValidationResultDTO.builder()
+        .success(false)
+        .message(delegateResponseData.getException().getMessage())
+        .build();
+  }
+
+  private SecretValidationResultDTO buildBaseConfigValidationTaskResponse(
+      BaseConfigValidationTaskResponse delegateResponseData) {
+    return SecretValidationResultDTO.builder()
+        .success(delegateResponseData.isConnectionSuccessful())
+        .message(delegateResponseData.getErrorMessage())
+        .build();
+  }
+
+  private SecretValidationResultDTO buildFailedValidationResult() {
     return SecretValidationResultDTO.builder().success(false).message("Validation failed.").build();
   }
 

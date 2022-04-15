@@ -7,7 +7,18 @@
 
 package io.harness.delegate.beans.secrets;
 
+import io.harness.delegate.beans.DelegateMetaInfo;
+import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
+import io.harness.eraro.ErrorCode;
+
+import lombok.Data;
 import lombok.experimental.SuperBuilder;
 
+@Data
 @SuperBuilder
-public class SSHConfigValidationTaskResponse extends BaseConfigValidationTaskResponse {}
+public class BaseConfigValidationTaskResponse implements DelegateTaskNotifyResponseData {
+  private boolean connectionSuccessful;
+  private String errorMessage;
+  private ErrorCode errorCode;
+  private DelegateMetaInfo delegateMetaInfo;
+}
