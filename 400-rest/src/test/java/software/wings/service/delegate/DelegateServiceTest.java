@@ -2146,13 +2146,13 @@ public class DelegateServiceTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = ALEKSANDAR)
+  @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void shouldDownloadKubernetesImmutableWithCiEnabled() throws IOException {
     Account account = anAccount().withAccountKey("ACCOUNT_KEY").withUuid(ACCOUNT_ID).withNextGenEnabled(true).build();
     featureTestHelper.enableFeatureFlag(USE_IMMUTABLE_DELEGATE);
-    when(delegateRingService.getDelegateImageTag(ACCOUNT_ID)).thenReturn(DELEGATE_IMAGE_TAG);
-    when(delegateRingService.getUpgraderImageTag(ACCOUNT_ID)).thenReturn(UPGRADER_IMAGE_TAG);
+    when(delegateVersionService.getDelegateImageTag(ACCOUNT_ID, KUBERNETES)).thenReturn(DELEGATE_IMAGE_TAG);
+    when(delegateVersionService.getUpgraderImageTag(ACCOUNT_ID, KUBERNETES)).thenReturn(UPGRADER_IMAGE_TAG);
     when(accountService.get(ACCOUNT_ID)).thenReturn(account);
     when(accountService.isNextGenEnabled(ACCOUNT_ID)).thenReturn(true);
     File gzipFile = delegateService.downloadKubernetes(
