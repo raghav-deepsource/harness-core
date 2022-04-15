@@ -80,4 +80,5 @@ enum EntityTypeProtoEnum {
   ENVIRONMENT_GROUP = 67;
   SECURITY_STAGE = 68;
   SECURITY_STEPS = 69;
+  FILES = 70;
 }
