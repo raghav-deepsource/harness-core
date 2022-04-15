@@ -19,28 +19,34 @@ import io.harness.metrics.impl.DelegateMetricsServiceImpl;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.metrics.service.impl.MetricServiceImpl;
-import io.harness.service.impl.DelegateCacheImpl;
-import io.harness.service.impl.DelegateCallbackRegistryImpl;
-import io.harness.service.impl.DelegateInsightsServiceImpl;
-import io.harness.service.impl.DelegateSetupServiceImpl;
-import io.harness.service.impl.DelegateTaskSelectorMapServiceImpl;
-import io.harness.service.impl.DelegateTaskServiceImpl;
-import io.harness.service.intfc.DelegateCache;
-import io.harness.service.intfc.DelegateCallbackRegistry;
-import io.harness.service.intfc.DelegateInsightsService;
-import io.harness.service.intfc.DelegateSetupService;
-import io.harness.service.intfc.DelegateTaskSelectorMapService;
-import io.harness.service.intfc.DelegateTaskService;
+import io.harness.service.impl.*;
+import io.harness.service.intfc.*;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.MapBinder;
+import com.google.inject.name.Named;
+import org.apache.commons.lang.StringUtils;
 
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateServiceModule extends AbstractModule {
+  @Named("delegateMtlsSubdomain") private final String mtlsSubdomain;
+
+  public DelegateServiceModule() {
+    this(null);
+  }
+  public DelegateServiceModule(String mtlsSubdomain) {
+    this.mtlsSubdomain = mtlsSubdomain;
+  }
+
   @Override
   protected void configure() {
     install(FeatureFlagModule.getInstance());
     install(FiltersModule.getInstance());
+
+    // register only if mtlSubdomain is provided - UTs and other services don't need it.
+    if (StringUtils.isNotEmpty(this.mtlsSubdomain)) {
+      bind(DelegateMtlsEndpointService.class).to(DelegateMtlsEndpointServiceImpl.class);
+    }
 
     bind(DelegateTaskService.class).to(DelegateTaskServiceImpl.class);
     bind(DelegateMetricsService.class).to(DelegateMetricsServiceImpl.class);

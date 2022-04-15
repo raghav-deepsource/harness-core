@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package software.wings.resources;
+package io.harness.delegate.resources;
 
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -33,20 +33,24 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import io.dropwizard.jersey.PATCH;
 import io.swagger.annotations.Api;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.annotations.ApiParam;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.*;
 import lombok.extern.slf4j.Slf4j;
 
-@Api("delegate-mtls")
-@Path("/")
+@Api(value = "delegate-mtls")
+@Path("/delegate-mtls")
 @Produces("application/json")
 @Consumes("application/json")
 @Scope(DELEGATE)
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateMtlsEndpointResource {
+  // names / descriptions of common api path prefix / parameters.
+  private static final String ENDPOINT_API = "endpoint";
+  private static final String ACCOUNT_ID_PARAM = "accountId";
+  private static final String ACCOUNT_ID_DESCRIPTION = "The account id.";
+
   private final HarnessUserGroupService harnessUserGroupService;
   private final DelegateMtlsEndpointService delegateMtlsEndpointService;
 
@@ -58,13 +62,14 @@ public class DelegateMtlsEndpointResource {
   }
 
   @PUT
-  @Path("accounts/{accountId}/delegate-mtls/endpoint")
+  @Path(ENDPOINT_API)
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
   public RestResponse<DelegateMtlsEndpointDetails> createEndpointForAccount(
-      @Parameter(required = true, description = "The account id.") @PathParam("accountId") @NotNull String accountId,
-      @RequestBody(required = true, description = "The details of the delegate mTLS endpoint to create.")
+      @ApiParam(required = true, value = ACCOUNT_ID_DESCRIPTION) @QueryParam(
+          ACCOUNT_ID_PARAM) @NotNull String accountId,
+      @ApiParam(required = true, value = "The details of the delegate mTLS endpoint to create.")
       @NotNull DelegateMtlsEndpointRequest endpointRequest) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       this.ensureOperationIsExecutedByHarnessSupport();
@@ -73,13 +78,14 @@ public class DelegateMtlsEndpointResource {
   }
 
   @POST
-  @Path("accounts/{accountId}/delegate-mtls/endpoint")
+  @Path(ENDPOINT_API)
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
   public RestResponse<DelegateMtlsEndpointDetails> updateEndpointForAccount(
-      @Parameter(required = true, description = "The account id.") @PathParam("accountId") @NotNull String accountId,
-      @RequestBody(required = true, description = "The updated details of the delegate mTLS endpoint.")
+      @ApiParam(required = true, value = ACCOUNT_ID_DESCRIPTION) @QueryParam(
+          ACCOUNT_ID_PARAM) @NotNull String accountId,
+      @ApiParam(required = true, value = "The updated details of the delegate mTLS endpoint.")
       @NotNull DelegateMtlsEndpointRequest endpointRequest) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       this.ensureOperationIsExecutedByHarnessSupport();
@@ -88,13 +94,14 @@ public class DelegateMtlsEndpointResource {
   }
 
   @PATCH
-  @Path("accounts/{accountId}/delegate-mtls/endpoint")
+  @Path(ENDPOINT_API)
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
   public RestResponse<DelegateMtlsEndpointDetails> patchEndpointForAccount(
-      @Parameter(required = true, description = "The account id.") @PathParam("accountId") @NotNull String accountId,
-      @RequestBody(required = true, description = "A subset of the details to update for the delegate mTLS endpoint.")
+      @ApiParam(required = true, value = ACCOUNT_ID_DESCRIPTION) @QueryParam(
+          ACCOUNT_ID_PARAM) @NotNull String accountId,
+      @ApiParam(required = true, value = "A subset of the details to update for the delegate mTLS endpoint.")
       @NotNull DelegateMtlsEndpointRequest patchRequest) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       this.ensureOperationIsExecutedByHarnessSupport();
@@ -103,12 +110,12 @@ public class DelegateMtlsEndpointResource {
   }
 
   @DELETE
-  @Path("accounts/{accountId}/delegate-mtls/endpoint")
+  @Path(ENDPOINT_API)
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
-  public RestResponse<Boolean> deleteEndpointForAccount(
-      @Parameter(required = true, description = "The account id.") @PathParam("accountId") @NotNull String accountId) {
+  public RestResponse<Boolean> deleteEndpointForAccount(@ApiParam(
+      required = true, value = ACCOUNT_ID_DESCRIPTION) @QueryParam(ACCOUNT_ID_PARAM) @NotNull String accountId) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       this.ensureOperationIsExecutedByHarnessSupport();
       return new RestResponse<>(this.delegateMtlsEndpointService.deleteEndpointForAccount(accountId));
@@ -116,12 +123,12 @@ public class DelegateMtlsEndpointResource {
   }
 
   @GET
-  @Path("accounts/{accountId}/delegate-mtls/endpoint")
+  @Path(ENDPOINT_API)
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
-  public RestResponse<DelegateMtlsEndpointDetails> getEndpointForAccount(
-      @Parameter(required = true, description = "The account id.") @PathParam("accountId") @NotNull String accountId) {
+  public RestResponse<DelegateMtlsEndpointDetails> getEndpointForAccount(@ApiParam(
+      required = true, value = ACCOUNT_ID_DESCRIPTION) @QueryParam(ACCOUNT_ID_PARAM) @NotNull String accountId) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       this.ensureOperationIsExecutedByHarnessSupport();
       return new RestResponse<>(this.delegateMtlsEndpointService.getEndpointForAccount(accountId));
@@ -129,12 +136,12 @@ public class DelegateMtlsEndpointResource {
   }
 
   @GET
-  @Path("delegate-mtls/check-availability")
+  @Path("check-availability")
   @Timed
   @ExceptionMetered
   @AuthRule(skipAuth = true)
-  public RestResponse<Boolean> isDomainPrefixAvailable(@Parameter(required = true,
-      description = "The domain prefix to check.") @QueryParam("domainPrefix") @NotNull String domainPrefix) {
+  public RestResponse<Boolean> isDomainPrefixAvailable(@ApiParam(required = true,
+      value = "The domain prefix to check.") @QueryParam("domainPrefix") @NotNull String domainPrefix) {
     return new RestResponse<>(this.delegateMtlsEndpointService.isDomainPrefixAvailable(domainPrefix));
   }
 
@@ -145,7 +152,7 @@ public class DelegateMtlsEndpointResource {
   private void ensureOperationIsExecutedByHarnessSupport() {
     String userId = UserThreadLocal.get().getUuid();
     if (!this.harnessUserGroupService.isHarnessSupportUser(userId)) {
-      throw new UnauthorizedException("User is not authorized to add subdomain URL", USER);
+      throw new UnauthorizedException("Only Harness Support Group Users can access this endpoint.", USER);
     }
   }
 }

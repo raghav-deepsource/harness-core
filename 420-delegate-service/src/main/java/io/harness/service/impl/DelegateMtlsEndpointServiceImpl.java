@@ -37,7 +37,8 @@ import org.mongodb.morphia.query.UpdateOperations;
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointService {
-  private static final String ERROR_ACCOUNT_NOT_FOUND_FORMAT = "Delegate mTLS endpoint for account '%s' was not found.";
+  private static final String ERROR_ENDPOINT_FOR_ACCOUNT_NOT_FOUND_FORMAT =
+      "Delegate mTLS endpoint for account '%s' was not found.";
 
   private static UrlValidator urlValidator = new UrlValidator(UrlValidator.ALLOW_ALL_SCHEMES);
 
@@ -101,7 +102,7 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
     DelegateMtlsEndpoint updatedEndpoint = persistence.findAndModify(query, updateOperations, options);
 
     if (updatedEndpoint == null) {
-      throw new EntityNotFoundException(String.format(ERROR_ACCOUNT_NOT_FOUND_FORMAT, accountId));
+      throw new EntityNotFoundException(String.format(ERROR_ENDPOINT_FOR_ACCOUNT_NOT_FOUND_FORMAT, accountId));
     }
 
     return this.buildEndpointDetails(updatedEndpoint);
@@ -155,7 +156,7 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
     DelegateMtlsEndpoint updatedEndpoint = persistence.findAndModify(query, updateOperations, options);
 
     if (updatedEndpoint == null) {
-      throw new EntityNotFoundException(String.format(ERROR_ACCOUNT_NOT_FOUND_FORMAT, accountId));
+      throw new EntityNotFoundException(String.format(ERROR_ENDPOINT_FOR_ACCOUNT_NOT_FOUND_FORMAT, accountId));
     }
 
     return this.buildEndpointDetails(updatedEndpoint);
@@ -169,7 +170,7 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
                                         .get();
 
     if (endpoint == null) {
-      throw new EntityNotFoundException(String.format(ERROR_ACCOUNT_NOT_FOUND_FORMAT, accountId));
+      throw new EntityNotFoundException(String.format(ERROR_ENDPOINT_FOR_ACCOUNT_NOT_FOUND_FORMAT, accountId));
     }
 
     return this.buildEndpointDetails(endpoint);

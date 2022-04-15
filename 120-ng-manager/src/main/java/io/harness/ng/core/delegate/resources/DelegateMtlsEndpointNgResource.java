@@ -7,51 +7,56 @@
 
 package io.harness.ng.core.delegate.resources;
 
-import static io.harness.delegate.utils.RbacConstants.DELEGATE_EDIT_PERMISSION;
-import static io.harness.delegate.utils.RbacConstants.DELEGATE_RESOURCE_TYPE;
+import static io.harness.account.accesscontrol.AccountAccessControlPermissions.EDIT_ACCOUNT_PERMISSION;
+import static io.harness.account.accesscontrol.AccountAccessControlPermissions.VIEW_ACCOUNT_PERMISSION;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.security.PermissionAttribute.ResourceType.DELEGATE;
 
 import io.harness.NGCommonEntityConstants;
-import io.harness.accesscontrol.acl.api.Resource;
-import io.harness.accesscontrol.acl.api.ResourceScope;
-import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.NGAccessControlCheck;
+import io.harness.account.accesscontrol.ResourceTypes;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateMtlsEndpointDetails;
+import io.harness.delegate.beans.DelegateMtlsEndpointRequest;
+import io.harness.eraro.ErrorCode;
+import io.harness.exception.AccessDeniedException;
+import io.harness.exception.WingsException;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
+import io.harness.ng.core.delegate.client.DelegateNgManagerCgManagerClient;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
+import io.harness.ng.core.user.service.NgUserService;
+import io.harness.remote.client.RestClientUtils;
 import io.harness.rest.RestResponse;
-import io.harness.service.intfc.DelegateMtlsEndpointService;
 
 import software.wings.security.annotations.Scope;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
+import io.dropwizard.jersey.PATCH;
 import io.swagger.annotations.Api;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import lombok.extern.slf4j.Slf4j;
 
-@Api("/delegate-mtls-ng")
+@Api("delegate-mtls-ng")
 @Path("/delegate-mtls-ng")
 @Produces("application/json")
 @Scope(DELEGATE)
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
-@Tag(name = "Delegate mTLS Endpoint Resource",
+@Tag(name = "Delegate mTLS Endpoint Management",
     description = "Contains APIs related to Delegate mTLS Endpoint management.")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request",
     content =
@@ -66,35 +71,162 @@ import lombok.extern.slf4j.Slf4j;
       , @Content(mediaType = "application/yaml", schema = @Schema(implementation = ErrorDTO.class))
     })
 public class DelegateMtlsEndpointNgResource {
-  private final DelegateMtlsEndpointService delegateMtlsEndpointService;
-  private final AccessControlClient accessControlClient;
+  private final DelegateNgManagerCgManagerClient delegateMtlsEndpointInternalClient;
+  private final NgUserService ngUserService;
 
   @Inject
   public DelegateMtlsEndpointNgResource(
-      DelegateMtlsEndpointService delegateMtlsEndpointService, AccessControlClient accessControlClient) {
-    this.delegateMtlsEndpointService = delegateMtlsEndpointService;
-    this.accessControlClient = accessControlClient;
+      DelegateNgManagerCgManagerClient delegateMtlsEndpointInternalClient, NgUserService ngUserService) {
+    this.delegateMtlsEndpointInternalClient = delegateMtlsEndpointInternalClient;
+    this.ngUserService = ngUserService;
   }
-  //
-  //  @POST
-  //  @Timed
-  //  @ExceptionMetered
-  //  public RestResponse<DelegateMtlsEndpointDetails> createEndpointForAccount(
-  //          @Parameter(
-  //                  required = true,
-  //                  description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE
-  //          ) @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountId,
-  //          @RequestBody(
-  //                  required = true,
-  //                  description = "The details of the delegate mTLS endpoint to create."
-  //          ) @NotNull DelegateMtlsEndpointDetails endpointDetails) {
-  //
-  //    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, null, null),
-  //            Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_EDIT_PERMISSION);
-  //
-  //    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
-  //      return new RestResponse<>(this.delegateMtlsEndpointService.createEndpointForAccount(accountId,
-  //      endpointDetails));
-  //    }
-  //  }
+
+  @PUT
+  @Path("endpoint")
+  @Timed
+  @ExceptionMetered
+  @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = EDIT_ACCOUNT_PERMISSION)
+  @Operation(operationId = "createDelegateMtlsEndpointForAccount",
+      summary = "Creates a new delegate mTLS endpoint for the account.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "The details of the newly created mTLS endpoint.")
+      })
+  public RestResponse<DelegateMtlsEndpointDetails>
+  createEndpointForAccount(
+      @Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull String accountIdentifier,
+      @RequestBody(required = true, description = "The details of the delegate mTLS endpoint to create.")
+      @NotNull DelegateMtlsEndpointRequest endpointRequest) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountIdentifier, OVERRIDE_ERROR)) {
+      this.ensureOperationIsExecutedByHarnessSupport();
+      return new RestResponse<>(RestClientUtils.getResponse(
+          this.delegateMtlsEndpointInternalClient.createEndpointForAccount(accountIdentifier, endpointRequest)));
+    }
+  }
+
+  @POST
+  @Path("endpoint")
+  @Timed
+  @ExceptionMetered
+  @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = EDIT_ACCOUNT_PERMISSION)
+  @Operation(operationId = "updateDelegateMtlsEndpointForAccount",
+      summary = "Updates the existing delegate mTLS endpoint for an account.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "The details of the updated mTLS endpoint.")
+      })
+  public RestResponse<DelegateMtlsEndpointDetails>
+  updateEndpointForAccount(
+      @Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull String accountIdentifier,
+      @RequestBody(required = true, description = "The updated details of the delegate mTLS endpoint.")
+      @NotNull DelegateMtlsEndpointRequest endpointRequest) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountIdentifier, OVERRIDE_ERROR)) {
+      this.ensureOperationIsExecutedByHarnessSupport();
+      return new RestResponse<>(RestClientUtils.getResponse(
+          this.delegateMtlsEndpointInternalClient.updateEndpointForAccount(accountIdentifier, endpointRequest)));
+    }
+  }
+
+  @PATCH
+  @Path("endpoint")
+  @Timed
+  @ExceptionMetered
+  @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = EDIT_ACCOUNT_PERMISSION)
+  @Operation(operationId = "patchDelegateMtlsEndpointForAccount",
+      summary = "Updates selected properties of the existing delegate mTLS endpoint for an account.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "The details of the updated mTLS endpoint.")
+      })
+  public RestResponse<DelegateMtlsEndpointDetails>
+  patchEndpointForAccount(
+      @Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull String accountIdentifier,
+      @RequestBody(required = true, description = "A subset of the details to update for the delegate mTLS endpoint.")
+      @NotNull DelegateMtlsEndpointRequest patchRequest) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountIdentifier, OVERRIDE_ERROR)) {
+      this.ensureOperationIsExecutedByHarnessSupport();
+      return new RestResponse<>(RestClientUtils.getResponse(
+          this.delegateMtlsEndpointInternalClient.patchEndpointForAccount(accountIdentifier, patchRequest)));
+    }
+  }
+
+  @DELETE
+  @Path("endpoint")
+  @Timed
+  @ExceptionMetered
+  @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = EDIT_ACCOUNT_PERMISSION)
+  @Operation(operationId = "deleteDelegateMtlsEndpointForAccount",
+      summary = "Removes the delegate mTLS endpoint for an account.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "True if and only if the endpoint existed and got removed.")
+      })
+  public RestResponse<Boolean>
+  deleteEndpointForAccount(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE)
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull String accountIdentifier) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountIdentifier, OVERRIDE_ERROR)) {
+      this.ensureOperationIsExecutedByHarnessSupport();
+      return new RestResponse<>(RestClientUtils.getResponse(
+          this.delegateMtlsEndpointInternalClient.deleteEndpointForAccount(accountIdentifier)));
+    }
+  }
+
+  @GET
+  @Path("endpoint")
+  @Timed
+  @ExceptionMetered
+  @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = VIEW_ACCOUNT_PERMISSION)
+  @Operation(operationId = "getDelegateMtlsEndpointForAccount",
+      summary = "Gets the delegate mTLS endpoint for an account.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "The delegate mTLS endpoint of the account, or null if it doesn't exist.")
+      })
+  public RestResponse<DelegateMtlsEndpointDetails>
+  getEndpointForAccount(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE)
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull String accountIdentifier) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountIdentifier, OVERRIDE_ERROR)) {
+      this.ensureOperationIsExecutedByHarnessSupport();
+      return new RestResponse<>(RestClientUtils.getResponse(
+          this.delegateMtlsEndpointInternalClient.getEndpointForAccount(accountIdentifier)));
+    }
+  }
+
+  @GET
+  @Path("check-availability")
+  @Timed
+  @ExceptionMetered
+  @Operation(operationId = "checkDelegateMtlsEndpointDomainPrefixAvailability",
+      summary = "Checks whether a given delegate mTLS endpoint domain prefix is available.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description =
+                "True if and only if the domain prefix is currently not in use by any existing delegate mTLS endpoint.")
+      })
+  public RestResponse<Boolean>
+  isDomainPrefixAvailable(@Parameter(required = true, description = "The domain prefix to check.") @QueryParam(
+      "domainPrefix") @NotNull String domainPrefix) {
+    return new RestResponse<>(
+        RestClientUtils.getResponse(this.delegateMtlsEndpointInternalClient.isDomainPrefixAvailable(domainPrefix)));
+  }
+
+  /**
+   * Throws if the user executing the command isn't a harness support user.
+   * This is required initially to ensure only harness support can add / remove endpoints in prod.
+   */
+  private void ensureOperationIsExecutedByHarnessSupport() {
+    if (!this.ngUserService.verifyHarnessSupportGroupUser()) {
+      throw new AccessDeniedException("Only Harness Support Group Users can access this endpoint.",
+          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
+    }
+  }
 }

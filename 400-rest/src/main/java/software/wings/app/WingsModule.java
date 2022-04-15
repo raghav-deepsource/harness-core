@@ -876,13 +876,6 @@ public class WingsModule extends AbstractModule implements ServersModule {
   }
 
   @Provides
-  @Named("delegateMtlsSubdomain")
-  @Singleton
-  String domain() {
-    return configuration.getDelegateMtlsSubdomain();
-  }
-
-  @Provides
   public BugsnagErrorReporterConfiguration bugsnagErrorReporterConfiguration() {
     return new BugsnagErrorReporterConfiguration(
         configuration.isTrialRegistrationAllowed(), configuration.getBugsnagApiKey());
@@ -1170,7 +1163,6 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(GcpBillingService.class).to(GcpBillingServiceImpl.class);
     bind(PreAggregateBillingService.class).to(PreAggregateBillingServiceImpl.class);
     bind(DelegateTokenService.class).to(DelegateTokenServiceImpl.class);
-    bind(DelegateMtlsEndpointService.class).to(DelegateMtlsEndpointServiceImpl.class);
     bind(InstanceDataService.class).to(InstanceDataServiceImpl.class);
     bind(EntityMetadataService.class).to(EntityMetadataServiceImpl.class);
 
