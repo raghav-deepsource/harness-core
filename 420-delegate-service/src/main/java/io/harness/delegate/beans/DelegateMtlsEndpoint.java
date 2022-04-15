@@ -26,7 +26,7 @@ import org.mongodb.morphia.annotations.Id;
  * Any endpoint added to this collection will be picked up by the delegate-gateway and configured automatically.
  *
  * Note:
- *    As of now, the design is to only have one endpoint per account.
+ *    As of now, the design is to only have one endpoint per account (same endpoint for cg + ng).
  *    Keep accountId as a unique index to avoid racing conditions creating multiple endpoints per one account.
  *    In case the design gets changed later, the index will have to be dropped and recreated as non-unique.
  */

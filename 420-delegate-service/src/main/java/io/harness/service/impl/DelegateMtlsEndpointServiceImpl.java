@@ -120,7 +120,7 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
         persistence.createUpdateOperations(DelegateMtlsEndpoint.class);
 
     // patch domain prefix
-    if (StringUtils.isNotEmpty(patchRequest.getDomainPrefix())) {
+    if (patchRequest.getDomainPrefix() != null) {
       this.validateDomainPrefix(patchRequest.getDomainPrefix());
 
       String fqdn = this.getFqdn(patchRequest.getDomainPrefix());
@@ -129,7 +129,7 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
     }
 
     // patch CA certificates
-    if (StringUtils.isNotEmpty(patchRequest.getCaCertificates())) {
+    if (patchRequest.getCaCertificates() != null) {
       this.validateCaCertificates(patchRequest.getCaCertificates());
 
       updateOperations =
@@ -186,6 +186,8 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
 
   @Override
   public boolean isDomainPrefixAvailable(String domainPrefix) {
+    this.validateDomainPrefix(domainPrefix);
+
     String fqdn = this.getFqdn(domainPrefix);
     DelegateMtlsEndpoint endpoint =
         persistence.createQuery(DelegateMtlsEndpoint.class).field(DelegateMtlsEndpointKeys.fqdn).equal(fqdn).get();

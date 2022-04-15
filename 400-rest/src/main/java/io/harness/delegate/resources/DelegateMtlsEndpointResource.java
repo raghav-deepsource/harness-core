@@ -17,6 +17,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateMtlsEndpointDetails;
 import io.harness.delegate.beans.DelegateMtlsEndpointRequest;
+import io.harness.delegate.utils.DelegateMtlsConstants;
 import io.harness.exception.UnauthorizedException;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
@@ -38,16 +39,20 @@ import javax.validation.constraints.NotNull;
 import javax.ws.rs.*;
 import lombok.extern.slf4j.Slf4j;
 
-@Api(value = "delegate-mtls")
-@Path("/delegate-mtls")
+/**
+ * Exposes the delegate mTLS endpoint management REST Api for CG.
+ *
+ * Note:
+ *    As of now limited access for harness support only.
+ */
+@Api(value = DelegateMtlsConstants.API_PATH)
+@Path(DelegateMtlsConstants.API_PATH)
 @Produces("application/json")
 @Consumes("application/json")
 @Scope(DELEGATE)
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateMtlsEndpointResource {
-  // names / descriptions of common api path prefix / parameters.
-  private static final String ENDPOINT_API = "endpoint";
   private static final String ACCOUNT_ID_PARAM = "accountId";
   private static final String ACCOUNT_ID_DESCRIPTION = "The account id.";
 
@@ -62,7 +67,7 @@ public class DelegateMtlsEndpointResource {
   }
 
   @PUT
-  @Path(ENDPOINT_API)
+  @Path(DelegateMtlsConstants.API_PATH_ENDPOINT)
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
@@ -78,7 +83,7 @@ public class DelegateMtlsEndpointResource {
   }
 
   @POST
-  @Path(ENDPOINT_API)
+  @Path(DelegateMtlsConstants.API_PATH_ENDPOINT)
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
@@ -94,7 +99,7 @@ public class DelegateMtlsEndpointResource {
   }
 
   @PATCH
-  @Path(ENDPOINT_API)
+  @Path(DelegateMtlsConstants.API_PATH_ENDPOINT)
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
@@ -110,7 +115,7 @@ public class DelegateMtlsEndpointResource {
   }
 
   @DELETE
-  @Path(ENDPOINT_API)
+  @Path(DelegateMtlsConstants.API_PATH_ENDPOINT)
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
@@ -123,7 +128,7 @@ public class DelegateMtlsEndpointResource {
   }
 
   @GET
-  @Path(ENDPOINT_API)
+  @Path(DelegateMtlsConstants.API_PATH_ENDPOINT)
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
@@ -136,12 +141,14 @@ public class DelegateMtlsEndpointResource {
   }
 
   @GET
-  @Path("check-availability")
+  @Path(DelegateMtlsConstants.API_PATH_ENDPOINT_CHECK_AVAILABILITY)
   @Timed
   @ExceptionMetered
   @AuthRule(skipAuth = true)
-  public RestResponse<Boolean> isDomainPrefixAvailable(@ApiParam(required = true,
-      value = "The domain prefix to check.") @QueryParam("domainPrefix") @NotNull String domainPrefix) {
+  public RestResponse<Boolean> isDomainPrefixAvailable(
+      @ApiParam(required = true, value = DelegateMtlsConstants.API_PARAM_DESCRIPTION_DOMAIN_PREFIX) @QueryParam(
+          DelegateMtlsConstants.API_PARAM_NAME_DOMAIN_PREFIX) @NotNull String domainPrefix) {
+    this.ensureOperationIsExecutedByHarnessSupport();
     return new RestResponse<>(this.delegateMtlsEndpointService.isDomainPrefixAvailable(domainPrefix));
   }
 

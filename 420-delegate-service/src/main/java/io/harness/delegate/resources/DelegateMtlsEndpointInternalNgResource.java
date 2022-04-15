@@ -17,6 +17,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateMtlsEndpointDetails;
 import io.harness.delegate.beans.DelegateMtlsEndpointRequest;
+import io.harness.delegate.utils.DelegateMtlsConstants;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.rest.RestResponse;
@@ -35,8 +36,11 @@ import javax.validation.constraints.NotNull;
 import javax.ws.rs.*;
 import lombok.extern.slf4j.Slf4j;
 
-@Api("delegate-mtls/ng")
-@Path("/delegate-mtls/ng")
+/**
+ * Exposes the internal delegate mTLS endpoint management REST Api on CG which is called by NG.
+ */
+@Api(DelegateMtlsConstants.API_PATH_NG_INTERNAL)
+@Path(DelegateMtlsConstants.API_PATH_NG_INTERNAL)
 @Produces("application/json")
 @Scope(DELEGATE)
 @Slf4j
@@ -51,7 +55,7 @@ public class DelegateMtlsEndpointInternalNgResource {
   }
 
   @PUT
-  @Path("endpoint")
+  @Path(DelegateMtlsConstants.API_PATH_ENDPOINT)
   @Timed
   @ExceptionMetered
   @InternalApi
@@ -66,7 +70,7 @@ public class DelegateMtlsEndpointInternalNgResource {
   }
 
   @POST
-  @Path("endpoint")
+  @Path(DelegateMtlsConstants.API_PATH_ENDPOINT)
   @Timed
   @ExceptionMetered
   @InternalApi
@@ -81,7 +85,7 @@ public class DelegateMtlsEndpointInternalNgResource {
   }
 
   @PATCH
-  @Path("endpoint")
+  @Path(DelegateMtlsConstants.API_PATH_ENDPOINT)
   @Timed
   @ExceptionMetered
   @InternalApi
@@ -96,7 +100,7 @@ public class DelegateMtlsEndpointInternalNgResource {
   }
 
   @DELETE
-  @Path("endpoint")
+  @Path(DelegateMtlsConstants.API_PATH_ENDPOINT)
   @Timed
   @ExceptionMetered
   @InternalApi
@@ -109,7 +113,7 @@ public class DelegateMtlsEndpointInternalNgResource {
   }
 
   @GET
-  @Path("endpoint")
+  @Path(DelegateMtlsConstants.API_PATH_ENDPOINT)
   @Timed
   @ExceptionMetered
   @InternalApi
@@ -122,12 +126,13 @@ public class DelegateMtlsEndpointInternalNgResource {
   }
 
   @GET
-  @Path("check-availability")
+  @Path(DelegateMtlsConstants.API_PATH_ENDPOINT_CHECK_AVAILABILITY)
   @Timed
   @ExceptionMetered
   @InternalApi
   @Hidden
-  public RestResponse<Boolean> isDomainPrefixAvailable(@QueryParam("domainPrefix") @NotNull String domainPrefix) {
+  public RestResponse<Boolean> isDomainPrefixAvailable(
+      @QueryParam(DelegateMtlsConstants.API_PARAM_NAME_DOMAIN_PREFIX) @NotNull String domainPrefix) {
     return new RestResponse<>(this.delegateMtlsEndpointService.isDomainPrefixAvailable(domainPrefix));
   }
 }

@@ -21,6 +21,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateMtlsEndpointDetails;
 import io.harness.delegate.beans.DelegateMtlsEndpointRequest;
+import io.harness.delegate.utils.DelegateMtlsConstants;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.AccessDeniedException;
 import io.harness.exception.WingsException;
@@ -50,8 +51,17 @@ import javax.validation.constraints.NotNull;
 import javax.ws.rs.*;
 import lombok.extern.slf4j.Slf4j;
 
-@Api("delegate-mtls-ng")
-@Path("/delegate-mtls-ng")
+/**
+ * Exposes the delegate mTLS endpoint management REST Api for NG.
+ *
+ * Note:
+ *    NG manager doesn't execute the commands itself, but instead calls the CG manager's internal NG api endpoint.
+ *    (Similar to other delegate related REST APIs)
+ *
+ *    As of now limited access for harness support only.
+ */
+@Api(DelegateMtlsConstants.API_PATH)
+@Path(DelegateMtlsConstants.API_PATH)
 @Produces("application/json")
 @Scope(DELEGATE)
 @Slf4j
@@ -82,12 +92,12 @@ public class DelegateMtlsEndpointNgResource {
   }
 
   @PUT
-  @Path("endpoint")
+  @Path(DelegateMtlsConstants.API_PATH_ENDPOINT)
   @Timed
   @ExceptionMetered
   @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = EDIT_ACCOUNT_PERMISSION)
   @Operation(operationId = "createDelegateMtlsEndpointForAccount",
-      summary = "Creates a new delegate mTLS endpoint for the account.",
+      summary = "Creates the delegate mTLS endpoint for an account.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -107,7 +117,7 @@ public class DelegateMtlsEndpointNgResource {
   }
 
   @POST
-  @Path("endpoint")
+  @Path(DelegateMtlsConstants.API_PATH_ENDPOINT)
   @Timed
   @ExceptionMetered
   @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = EDIT_ACCOUNT_PERMISSION)
@@ -132,7 +142,7 @@ public class DelegateMtlsEndpointNgResource {
   }
 
   @PATCH
-  @Path("endpoint")
+  @Path(DelegateMtlsConstants.API_PATH_ENDPOINT)
   @Timed
   @ExceptionMetered
   @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = EDIT_ACCOUNT_PERMISSION)
@@ -157,7 +167,7 @@ public class DelegateMtlsEndpointNgResource {
   }
 
   @DELETE
-  @Path("endpoint")
+  @Path(DelegateMtlsConstants.API_PATH_ENDPOINT)
   @Timed
   @ExceptionMetered
   @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = EDIT_ACCOUNT_PERMISSION)
@@ -179,7 +189,7 @@ public class DelegateMtlsEndpointNgResource {
   }
 
   @GET
-  @Path("endpoint")
+  @Path(DelegateMtlsConstants.API_PATH_ENDPOINT)
   @Timed
   @ExceptionMetered
   @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = VIEW_ACCOUNT_PERMISSION)
@@ -201,7 +211,7 @@ public class DelegateMtlsEndpointNgResource {
   }
 
   @GET
-  @Path("check-availability")
+  @Path(DelegateMtlsConstants.API_PATH_ENDPOINT_CHECK_AVAILABILITY)
   @Timed
   @ExceptionMetered
   @Operation(operationId = "checkDelegateMtlsEndpointDomainPrefixAvailability",
@@ -213,8 +223,10 @@ public class DelegateMtlsEndpointNgResource {
                 "True if and only if the domain prefix is currently not in use by any existing delegate mTLS endpoint.")
       })
   public RestResponse<Boolean>
-  isDomainPrefixAvailable(@Parameter(required = true, description = "The domain prefix to check.") @QueryParam(
-      "domainPrefix") @NotNull String domainPrefix) {
+  isDomainPrefixAvailable(
+      @Parameter(required = true, description = DelegateMtlsConstants.API_PARAM_DESCRIPTION_DOMAIN_PREFIX) @QueryParam(
+          DelegateMtlsConstants.API_PARAM_NAME_DOMAIN_PREFIX) @NotNull String domainPrefix) {
+    this.ensureOperationIsExecutedByHarnessSupport();
     return new RestResponse<>(
         RestClientUtils.getResponse(this.delegateMtlsEndpointInternalClient.isDomainPrefixAvailable(domainPrefix)));
   }
