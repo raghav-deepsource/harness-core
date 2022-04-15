@@ -911,7 +911,3 @@ fi
 if [[ "" != "$LDAP_GROUP_SYNC_DEFAULT_CRON" ]]; then
   yq write -i $CONFIG_FILE ldapSyncJobConfig.defaultCronExpression "$LDAP_GROUP_SYNC_DEFAULT_CRON"
 fi
-
-if [[ "" != "$DELEGATE_MTLS_SUBDOMAIN" ]]; then
-  yq write -i $CONFIG_FILE delegateMtlsSubdomain $DELEGATE_MTLS_SUBDOMAIN
-fi

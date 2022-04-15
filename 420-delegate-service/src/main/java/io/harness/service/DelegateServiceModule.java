@@ -33,7 +33,7 @@ public class DelegateServiceModule extends AbstractModule {
   private final String mtlsSubdomain;
 
   public DelegateServiceModule() {
-    this(null);
+    this("");
   }
   public DelegateServiceModule(String mtlsSubdomain) {
     this.mtlsSubdomain = mtlsSubdomain;
@@ -50,7 +50,7 @@ public class DelegateServiceModule extends AbstractModule {
     install(FeatureFlagModule.getInstance());
     install(FiltersModule.getInstance());
 
-    // register only if mtlSubdomain is provided - UTs and other services don't need it.
+    // register only if mtlsSubdomain is provided - UTs and other services don't need it.
     if (StringUtils.isNotEmpty(this.mtlsSubdomain)) {
       bind(DelegateMtlsEndpointService.class).to(DelegateMtlsEndpointServiceImpl.class);
     }

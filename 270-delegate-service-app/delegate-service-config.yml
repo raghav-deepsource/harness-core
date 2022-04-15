@@ -52,6 +52,7 @@ serviceScheduler:
 enableIterators: true
 clusterName: ""
 deploymentClusterName: ""
+delegateMtlsSubdomain: "delegate.local.harness.io"
 
 jobsFrequencyConfig:
   accountLicenseCheckJobFrequencyInMinutes: 60
