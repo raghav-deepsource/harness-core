@@ -11,7 +11,6 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.DelegateType.KUBERNETES;
 import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.MARKO;
-import static io.harness.rule.OwnerRule.MARKOM;
 import static io.harness.rule.OwnerRule.NICOLAS;
 import static io.harness.rule.OwnerRule.VLAD;
 import static io.harness.rule.OwnerRule.VUK;
@@ -1056,7 +1055,7 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
   }
 
   @Test
-  @Owner(developers = MARKOM)
+  @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void whenRetrieveDelegateGroupImplicitSelectorsAndNullGroupThenEmptyTags() {
     final Map<String, SelectorType> actual = delegateSetupService.retrieveDelegateGroupImplicitSelectors(null);
@@ -1064,7 +1063,7 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
   }
 
   @Test
-  @Owner(developers = MARKOM)
+  @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void whenRetrieveDelegateGroupImplicitSelectorsThenExpectedTags() {
     final String accountId = "accId";
@@ -1082,7 +1081,7 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
   }
 
   @Test
-  @Owner(developers = MARKOM)
+  @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void whenRetrieveDelegateGroupImplicitSelectorsAndNoProfileThenExpectedTags() {
     final String accountId = "accId";

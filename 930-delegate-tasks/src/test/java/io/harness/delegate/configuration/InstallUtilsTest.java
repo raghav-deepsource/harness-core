@@ -28,7 +28,7 @@ import static io.harness.delegate.configuration.InstallUtils.isCustomKustomizePa
 import static io.harness.delegate.configuration.InstallUtils.kustomizePath;
 import static io.harness.delegate.configuration.InstallUtils.setupDefaultPaths;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
-import static io.harness.rule.OwnerRule.MARKOM;
+import static io.harness.rule.OwnerRule.MARKO;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.RIHAZ;
 import static io.harness.rule.OwnerRule.SHUBHAM;
@@ -210,7 +210,7 @@ public class InstallUtilsTest {
   }
 
   @Test
-  @Owner(developers = MARKOM)
+  @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void testDefaultPathsSet() {
     final String osPath = InstallUtils.getOsPath();

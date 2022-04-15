@@ -8,7 +8,7 @@
 package io.harness.delegate.service;
 
 import static io.harness.rule.OwnerRule.GEORGE;
-import static io.harness.rule.OwnerRule.MARKOM;
+import static io.harness.rule.OwnerRule.MARKO;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -120,7 +120,7 @@ public class DelegateAgentServiceImplTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = MARKOM)
+  @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void whenClientToolsDisabledThenTrue() {
     final DelegateConfiguration delegateConfig = mock(DelegateConfiguration.class);
@@ -146,7 +146,7 @@ public class DelegateAgentServiceImplTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = MARKOM)
+  @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void whenClientToolsEnabledAndInstalledThenTrue() {
     final DelegateConfiguration delegateConfig = mock(DelegateConfiguration.class);
@@ -172,7 +172,7 @@ public class DelegateAgentServiceImplTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = MARKOM)
+  @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void whenClientToolsEnabledAndNotInstalledThenFalse() {
     final DelegateConfiguration delegateConfig = mock(DelegateConfiguration.class);
