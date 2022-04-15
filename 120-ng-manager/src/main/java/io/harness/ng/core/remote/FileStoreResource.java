@@ -240,7 +240,7 @@ public class FileStoreResource {
   }
 
   @PUT
-  @Path("{identifier}/yaml")
+  @Path("yaml/{identifier}")
   @Consumes({APPLICATION_YAML_MEDIA_TYPE})
   @ApiOperation(value = "Update file or folder via YAML", nickname = "updateViaYAML")
   @Operation(operationId = "updateViaYAML", summary = "Updates file or folder via YAML",
