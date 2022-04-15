@@ -90,7 +90,6 @@ roles:
         - gitops_agent_edit
         - gitops_agent_delete
         - gitops_application_view
-        - gitops_application_create
         - gitops_application_edit
         - gitops_application_delete
         - gitops_application_sync
@@ -381,7 +380,6 @@ roles:
         - gitops_agent_edit
         - gitops_agent_delete
         - gitops_application_view
-        - gitops_application_create
         - gitops_application_edit
         - gitops_application_delete
         - gitops_application_sync
@@ -492,7 +490,6 @@ roles:
           - gitops_agent_edit
           - gitops_agent_delete
           - gitops_application_view
-          - gitops_application_create
           - gitops_application_edit
           - gitops_application_delete
           - gitops_application_sync
