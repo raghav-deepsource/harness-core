@@ -21,7 +21,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(CDP)
 @UtilityClass
 public class FileDTOMapper {
-  public static NGFile getNGFileFromDTO(FileDTO fileDto, boolean draft) {
+  public NGFile getNGFileFromDTO(FileDTO fileDto, boolean draft) {
     if (fileDto.isFolder()) {
       return NGFile.builder()
           .accountIdentifier(fileDto.getAccountIdentifier())
