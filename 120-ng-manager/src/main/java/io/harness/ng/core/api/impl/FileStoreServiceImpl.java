@@ -20,9 +20,9 @@ import io.harness.exception.DuplicateEntityException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.file.beans.NGBaseFile;
 import io.harness.filestore.FileStoreConstants;
+import io.harness.filestore.NGFileType;
 import io.harness.ng.core.api.FileStoreService;
 import io.harness.ng.core.dto.filestore.FileDTO;
-import io.harness.ng.core.dto.filestore.NGFileType;
 import io.harness.ng.core.dto.filestore.node.FileStoreNodeDTO;
 import io.harness.ng.core.dto.filestore.node.FolderNodeDTO;
 import io.harness.ng.core.entities.NGFile;
@@ -218,7 +218,8 @@ public class FileStoreServiceImpl implements FileStoreService {
 
   private List<FileStoreNodeDTO> listFolderChildren(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderIdentifier) {
-    return listFilesByParentIdentifier(accountIdentifier, orgIdentifier, projectIdentifier, folderIdentifier)
+    return listFilesByParentIdentifierSortedByLastModifiedAt(
+        accountIdentifier, orgIdentifier, projectIdentifier, folderIdentifier)
         .stream()
         .filter(Objects::nonNull)
         .map(ngFile
@@ -227,7 +228,7 @@ public class FileStoreServiceImpl implements FileStoreService {
         .collect(Collectors.toList());
   }
 
-  private List<NGFile> listFilesByParentIdentifier(
+  private List<NGFile> listFilesByParentIdentifierSortedByLastModifiedAt(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String parentIdentifier) {
     return fileStoreRepository.findAllAndSort(
         FileStoreRepositoryCriteriaCreator.createCriteriaByScopeAndParentIdentifier(
@@ -242,17 +243,11 @@ public class FileStoreServiceImpl implements FileStoreService {
             "Folder [%s], or its subfolders, contain file(s) referenced by other entities and can not be deleted.",
             fileOrFolder.getIdentifier()));
       }
-    } else {
-      if (isFileReferencedByOtherEntities(fileOrFolder)) {
-        throw new InvalidArgumentsException(
-            format("File [%s] is referenced by other entities and can not be deleted.", fileOrFolder.getIdentifier()));
-      }
     }
   }
 
   private boolean anyFileInFolderHasReferences(NGFile folder) {
-    List<NGFile> childrenFiles = listFilesByParentIdentifier(folder.getAccountIdentifier(), folder.getOrgIdentifier(),
-        folder.getProjectIdentifier(), folder.getIdentifier());
+    List<NGFile> childrenFiles = listFilesByParent(folder);
     if (isEmpty(childrenFiles)) {
       return false;
     }
@@ -263,13 +258,8 @@ public class FileStoreServiceImpl implements FileStoreService {
     if (NGFileType.FOLDER.equals(fileOrFolder.getType())) {
       return anyFileInFolderHasReferences(fileOrFolder);
     } else {
-      return isFileReferencedByOtherEntities(fileOrFolder);
+      return false;
     }
-  }
-
-  private boolean isFileReferencedByOtherEntities(NGFile file) {
-    // TODO: implementation is missing until all details are concluded
-    return false;
   }
 
   private boolean deleteFileOrFolder(NGFile fileOrFolder) {
@@ -281,8 +271,7 @@ public class FileStoreServiceImpl implements FileStoreService {
   }
 
   private boolean deleteFolder(NGFile folder) {
-    List<NGFile> childrenFiles = listFilesByParentIdentifier(folder.getAccountIdentifier(), folder.getOrgIdentifier(),
-        folder.getProjectIdentifier(), folder.getIdentifier());
+    List<NGFile> childrenFiles = listFilesByParent(folder);
     if (!isEmpty(childrenFiles)) {
       childrenFiles.stream().filter(Objects::nonNull).forEach(this::deleteFileOrFolder);
     }
@@ -294,6 +283,12 @@ public class FileStoreServiceImpl implements FileStoreService {
       log.error("Failed to delete folder [{}].", folder.getName(), e);
       return false;
     }
+  }
+
+  private List<NGFile> listFilesByParent(NGFile parent) {
+    return fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndParentIdentifier(
+        parent.getAccountIdentifier(), parent.getOrgIdentifier(), parent.getProjectIdentifier(),
+        parent.getIdentifier());
   }
 
   private boolean deleteFile(NGFile file) {

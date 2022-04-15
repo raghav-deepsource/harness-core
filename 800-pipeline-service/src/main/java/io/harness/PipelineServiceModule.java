@@ -26,12 +26,15 @@ import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
 import io.harness.client.DelegateSelectionLogHttpClientModule;
 import io.harness.connector.ConnectorResourceClientModule;
+import io.harness.datastructures.DistributedBackend;
+import io.harness.datastructures.EphemeralServiceModule;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
 import io.harness.enforcement.client.EnforcementClientModule;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
 import io.harness.eventsframework.EventsFrameworkConstants;
+import io.harness.eventsframework.impl.redis.RedisUtils;
 import io.harness.filter.FilterType;
 import io.harness.filter.FiltersModule;
 import io.harness.filter.mapper.FilterPropertiesMapper;
@@ -181,6 +184,7 @@ import javax.cache.expiry.Duration;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.ExecuteListener;
 import org.mongodb.morphia.converters.TypeConverter;
+import org.redisson.api.RedissonClient;
 import org.springframework.core.convert.converter.Converter;
 
 @OwnedBy(PIPELINE)
@@ -256,6 +260,7 @@ public class PipelineServiceModule extends AbstractModule {
     install(NGTriggersModule.getInstance(configuration.getTriggerConfig(),
         configuration.getPipelineServiceClientConfig(), configuration.getPipelineServiceSecret()));
     install(PersistentLockModule.getInstance());
+    install(EphemeralServiceModule.getInstance());
     install(TimeModule.getInstance());
     install(FiltersModule.getInstance());
     install(YamlSdkModule.getInstance());
@@ -443,6 +448,19 @@ public class PipelineServiceModule extends AbstractModule {
 
   @Provides
   @Singleton
+  @Named("cacheRedissonClient")
+  RedissonClient cacheRedissonClient() {
+    return RedisUtils.getClient(configuration.getRedisLockConfig());
+  }
+
+  @Provides
+  @Singleton
+  DistributedBackend distributedBackend() {
+    return DistributedBackend.REDIS;
+  }
+
+  @Provides
+  @Singleton
   @Named("PSQLExecuteListener")
   ExecuteListener executeListener() {
     return HExecuteListener.getInstance();
@@ -578,6 +596,25 @@ public class PipelineServiceModule extends AbstractModule {
 
   @Provides
   @Singleton
+  @Named("JsonExpansionExecutorService")
+  public Executor jsonExpansionExecutorService() {
+    return ThreadPool.create(configuration.getJsonExpansionPoolConfig().getCorePoolSize(),
+        configuration.getJsonExpansionPoolConfig().getMaxPoolSize(),
+        configuration.getJsonExpansionPoolConfig().getIdleTime(),
+        configuration.getJsonExpansionPoolConfig().getTimeUnit(),
+        new ThreadFactoryBuilder().setNameFormat("JsonExpansionExecutorService-%d").build());
+  }
+
+  @Provides
+  @Singleton
+  @Named("TelemetrySenderExecutor")
+  public Executor telemetrySenderExecutor() {
+    return ThreadPool.create(
+        1, 2, 25, TimeUnit.SECONDS, new ThreadFactoryBuilder().setNameFormat("TelemetrySenderExecutor-%d").build());
+  }
+
+  @Provides
+  @Singleton
   @Named("pmsEventsCache")
   public Cache<String, Integer> sdkEventsCache(
       HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
@@ -628,5 +665,12 @@ public class PipelineServiceModule extends AbstractModule {
   @Named("planCreatorMergeServiceDependencyBatch")
   public Integer getPlanCreatorMergeServiceDependencyBatch() {
     return configuration.getPlanCreatorMergeServiceDependencyBatch();
+  }
+
+  @Provides
+  @Singleton
+  @Named("jsonExpansionRequestBatchSize")
+  public Integer getjsonExpansionRequestBatchSize() {
+    return configuration.getJsonExpansionBatchSize();
   }
 }

@@ -10,6 +10,7 @@ package io.harness.cvng.servicelevelobjective.services.impl;
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.BAD;
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.GOOD;
 import static io.harness.rule.OwnerRule.ABHIJITH;
+import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,6 +27,7 @@ import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceServic
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
+import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.Point;
 import io.harness.cvng.servicelevelobjective.beans.SLOTarget;
@@ -263,6 +265,29 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloDashboardWidget.getEnvironmentIdentifier()).isEqualTo(monitoredServiceDTO.getEnvironmentRef());
     assertThat(sloDashboardWidget.getServiceName()).isEqualTo("Mocked service name");
     assertThat(sloDashboardWidget.getEnvironmentName()).isEqualTo("Mocked env name");
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testGetSloDashboardDetail() {
+    String monitoredServiceIdentifier = "monitoredServiceIdentifier";
+    MonitoredServiceDTO monitoredServiceDTO =
+        builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier).build();
+    HealthSource healthSource = monitoredServiceDTO.getSources().getHealthSources().iterator().next();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    ServiceLevelObjectiveDTO serviceLevelObjective = builderFactory.getServiceLevelObjectiveDTOBuilder()
+                                                         .monitoredServiceRef(monitoredServiceIdentifier)
+                                                         .healthSourceRef(healthSource.getIdentifier())
+                                                         .build();
+
+    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), serviceLevelObjective);
+
+    SLODashboardDetail sloDashboardDetail = sloDashboardService.getSloDashboardDetail(
+        builderFactory.getProjectParams(), serviceLevelObjective.getIdentifier());
+    assertThat(sloDashboardDetail.getDescription()).isEqualTo("slo description");
+    assertThat(sloDashboardDetail.getSloDashboardWidget().getSloIdentifier())
+        .isEqualTo(serviceLevelObjective.getIdentifier());
   }
 
   private void createData(Instant startTime, List<SLIRecord.SLIState> sliStates, String sliId) {

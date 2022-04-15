@@ -9,6 +9,7 @@ package io.harness.gitsync.persistance;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.gitsync.interceptor.GitSyncBranchContext.NG_GIT_SYNC_CONTEXT;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -17,6 +18,7 @@ import io.harness.eventsframework.schemas.entity.EntityScopeInfo;
 import io.harness.gitsync.BranchDetails;
 import io.harness.gitsync.HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub;
 import io.harness.gitsync.RepoDetails;
+import io.harness.gitsync.exceptions.GitSyncException;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.interceptor.GitSyncConstants;
@@ -81,8 +83,16 @@ public class GitSyncSdkServiceImpl implements GitSyncSdkService {
     if (!isEmpty(orgIdentifier)) {
       repoDetailsBuilder.setOrgIdentifier(StringValue.of(orgIdentifier));
     }
-    final BranchDetails defaultBranch =
-        harnessToGitPushInfoServiceBlockingStub.getDefaultBranch(repoDetailsBuilder.build());
-    return defaultBranch.getDefaultBranch().equals(gitBranchInfo.getBranch());
+    try {
+      final BranchDetails defaultBranchDetails =
+          harnessToGitPushInfoServiceBlockingStub.getDefaultBranch(repoDetailsBuilder.build());
+      if (isNotEmpty(defaultBranchDetails.getError())) {
+        throw new GitSyncException(defaultBranchDetails.getError());
+      }
+      return defaultBranchDetails.getDefaultBranch().equals(gitBranchInfo.getBranch());
+    } catch (Exception ex) {
+      log.error("Error while getting default branch details", ex);
+      throw ex;
+    }
   }
 }

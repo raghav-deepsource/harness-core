@@ -116,7 +116,7 @@ public class GitFetchFilesTask extends AbstractDelegateRunnableTask {
             gitFetchFileConfig.getGitConfig(), gitFetchFileConfig.getEncryptedDataDetails(), executionLogCallback,
             taskParams.isOptimizedFilesFetch(), taskParams.isShouldInheritGitFetchFilesConfigMap());
       } catch (Exception ex) {
-        String exceptionMsg = ex.getMessage();
+        String exceptionMsg = gitFetchFilesTaskHelper.extractErrorMessage(ex);
 
         // Values.yaml in service spec is optional.
         if (AppManifestKind.VALUES == appManifestKind && K8sValuesLocation.Service.toString().equals(k8ValuesLocation)

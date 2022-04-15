@@ -32,6 +32,7 @@ go_test(
         "testdata/find_pr.json",
         "testdata/pr.json",
         "testdata/pr_files.json",
+        "testdata/repo.json",
         "testdata/repos.json",
         "testdata/user.json",
     ],

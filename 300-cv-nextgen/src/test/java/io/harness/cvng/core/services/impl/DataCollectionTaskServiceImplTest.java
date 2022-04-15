@@ -46,7 +46,7 @@ import io.harness.cvng.beans.DataCollectionTaskDTO.DataCollectionTaskResult;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.SplunkDataCollectionInfo;
 import io.harness.cvng.beans.cvnglog.CVNGLogType;
-import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
+import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
 import io.harness.cvng.beans.cvnglog.TraceableType;
 import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.beans.job.TestVerificationJobDTO;
@@ -487,8 +487,7 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
                                .get();
     assertThat(cvngLogQuery).isNotNull();
     assertThat(cvngLogQuery.getLogType()).isEqualTo(CVNGLogType.EXECUTION_LOG);
-    assertThat(((ExecutionLogRecord) cvngLogQuery.getLogRecords().get(0)).getLogLevel())
-        .isEqualTo(ExecutionLogDTO.LogLevel.INFO);
+    assertThat(((ExecutionLogRecord) cvngLogQuery.getLogRecords().get(0)).getLogLevel()).isEqualTo(LogLevel.INFO);
   }
 
   @Test

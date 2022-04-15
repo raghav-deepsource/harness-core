@@ -52,6 +52,7 @@ import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ReferencedEntityException;
 import io.harness.gitsync.clients.YamlGitConfigClient;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.ng.core.accountsetting.dto.AccountSettingType;
@@ -339,6 +340,27 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier);
     verify(entitySetupUsageClient, times(1)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
     assertThat(deleted).isTrue();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.VIKAS_M)
+  @Category(UnitTests.class)
+  public void testDeleteWithEntitiesReferenced_throwsException() {
+    createConnector(identifier, name);
+    Call<ResponseDTO<Boolean>> request = mock(Call.class);
+    try {
+      when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(true)));
+    } catch (IOException ex) {
+      log.info("Encountered exception ", ex);
+    }
+    when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(request);
+    try {
+      connectorService.delete(accountIdentifier, null, null, identifier);
+    } catch (ReferencedEntityException e) {
+      assertThat(e.getMessage())
+          .isEqualTo("Could not delete the connector identifier as it is referenced by other entities");
+    }
+    verify(entitySetupUsageClient, times(1)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
   }
 
   @Test(expected = InvalidRequestException.class)

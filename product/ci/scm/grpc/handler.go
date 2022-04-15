@@ -193,6 +193,10 @@ func (h *handler) GetUserRepos(ctx context.Context, in *pb.GetUserReposRequest) 
 	return git.GetUserRepos(ctx, in, h.log)
 }
 
+func (h *handler) GetUserRepo(ctx context.Context, in *pb.GetUserRepoRequest) (*pb.GetUserRepoResponse, error) {
+	return git.GetUserRepo(ctx, in, h.log)
+}
+
 func (h *handler) FindPR(ctx context.Context, in *pb.FindPRRequest) (*pb.FindPRResponse, error) {
 	return git.FindPR(ctx, in, h.log)
 }

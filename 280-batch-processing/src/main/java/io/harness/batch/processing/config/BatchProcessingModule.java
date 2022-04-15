@@ -44,9 +44,11 @@ import io.harness.ccm.service.intf.AWSOrganizationHelperService;
 import io.harness.ccm.views.businessMapping.service.impl.BusinessMappingServiceImpl;
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.service.CEViewService;
+import io.harness.ccm.views.service.PerspectiveAnomalyService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.ccm.views.service.ViewsBillingService;
 import io.harness.ccm.views.service.impl.CEViewServiceImpl;
+import io.harness.ccm.views.service.impl.PerspectiveAnomalyServiceImpl;
 import io.harness.ccm.views.service.impl.ViewCustomFieldServiceImpl;
 import io.harness.ccm.views.service.impl.ViewsBillingServiceImpl;
 import io.harness.connector.ConnectorResourceClientModule;
@@ -60,6 +62,7 @@ import io.harness.lock.noop.PersistentNoopLocker;
 import io.harness.metrics.modules.MetricsModule;
 import io.harness.metrics.service.api.MetricsPublisher;
 import io.harness.mongo.MongoConfig;
+import io.harness.notification.module.NotificationClientModule;
 import io.harness.persistence.HPersistence;
 import io.harness.pricing.client.CloudInfoPricingClientModule;
 import io.harness.remote.client.ClientMode;
@@ -151,6 +154,7 @@ public class BatchProcessingModule extends AbstractModule {
     bind(BudgetCostService.class).to(BudgetCostServiceImpl.class);
     bind(EntityMetadataService.class).to(EntityMetadataServiceImpl.class);
     bind(BudgetService.class).to(BudgetServiceImpl.class);
+    bind(PerspectiveAnomalyService.class).to(PerspectiveAnomalyServiceImpl.class);
 
     install(new MetricsModule());
     bind(MetricsPublisher.class).to(BatchProcessingMetricsPublisher.class).in(Scopes.SINGLETON);
@@ -161,6 +165,8 @@ public class BatchProcessingModule extends AbstractModule {
 
     bindRetryOnExceptionInterceptor();
     bind(AWSOrganizationHelperService.class).to(AWSOrganizationHelperServiceImpl.class);
+
+    install(new NotificationClientModule(batchMainConfig.getNotificationClientConfiguration()));
   }
 
   private void bindPricingServices() {

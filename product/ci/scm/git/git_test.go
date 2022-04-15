@@ -318,6 +318,36 @@ func TestGetGetUserRepos(t *testing.T) {
 	assert.Equal(t, int32(0), got.Pagination.Next, "No next page")
 }
 
+func TestGetGetUserRepo(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(200)
+		content, _ := os.ReadFile("testdata/repo.json")
+		fmt.Fprint(w, string(content))
+	}))
+	defer ts.Close()
+
+	in := &pb.GetUserRepoRequest{
+		Provider: &pb.Provider{
+			Hook: &pb.Provider_Github{
+				Github: &pb.GithubProvider{
+					Provider: &pb.GithubProvider_AccessToken{
+						AccessToken: "963408579168567c07ff8bfd2a5455e5307f74d4",
+					},
+				},
+			},
+			Endpoint: ts.URL,
+		},
+		Slug: "test_project",
+	}
+
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	got, err := GetUserRepo(context.Background(), in, log.Sugar())
+
+	assert.Nil(t, err, "no errors")
+	assert.Equal(t, got.GetRepo().GetId(), "12345", "1 repo")
+}
+
 func TestGetAuthenticatedUser(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

@@ -11,6 +11,7 @@ import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.delegate.beans.connector.appdynamicsconnector.AppDynamicsConnectorDTO;
 import io.harness.delegate.beans.cvng.appd.AppDynamicsUtils;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,13 @@ public class AppDynamicsDataCollectionInfo extends TimeSeriesDataCollectionInfo<
   private List<AppMetricInfoDTO> customMetrics;
   private String groupName;
 
+  public List<AppMetricInfoDTO> getCustomMetrics() {
+    if (customMetrics == null) {
+      return new ArrayList<>();
+    }
+    return customMetrics;
+  }
+
   @Override
   public Map<String, Object> getDslEnvVariables(AppDynamicsConnectorDTO appDynamicsConnectorDTO) {
     Map<String, Object> dslEnvVariables = AppDynamicsUtils.getCommonEnvVariables(appDynamicsConnectorDTO);
@@ -52,17 +60,17 @@ public class AppDynamicsDataCollectionInfo extends TimeSeriesDataCollectionInfo<
             .map(metricDefinition -> metricDefinition.getMetricIdentifier())
             .collect(Collectors.toList()));
 
-    if (CollectionUtils.isNotEmpty(customMetrics)
-        && metricPack.getIdentifier().equals(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)) {
+    if (metricPack.getIdentifier().equals(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)) {
       dslEnvVariables.put(
-          "metricNames", customMetrics.stream().map(AppMetricInfoDTO::getMetricName).collect(Collectors.toList()));
+          "metricNames", getCustomMetrics().stream().map(AppMetricInfoDTO::getMetricName).collect(Collectors.toList()));
       dslEnvVariables.put("metricIdentifiers",
-          customMetrics.stream().map(AppMetricInfoDTO::getMetricIdentifier).collect(Collectors.toList()));
+          getCustomMetrics().stream().map(AppMetricInfoDTO::getMetricIdentifier).collect(Collectors.toList()));
       dslEnvVariables.put("groupName", groupName);
 
       if (this.isCollectHostData()) {
         List<String> customMetricPaths =
-            customMetrics.stream()
+            getCustomMetrics()
+                .stream()
                 .map(mi -> createFullMetricPath(mi.getBaseFolder(), mi.getServiceInstanceMetricPath()))
                 .collect(Collectors.toList());
         List<Integer> getServiceInstanceIndexs =
@@ -70,7 +78,8 @@ public class AppDynamicsDataCollectionInfo extends TimeSeriesDataCollectionInfo<
         dslEnvVariables.put("metricPaths", customMetricPaths);
         dslEnvVariables.put("serviceInstanceIndexes", getServiceInstanceIndexs);
       } else {
-        List<String> customMetricPaths = customMetrics.stream()
+        List<String> customMetricPaths = getCustomMetrics()
+                                             .stream()
                                              .map(mi -> createFullMetricPath(mi.getBaseFolder(), mi.getMetricPath()))
                                              .collect(Collectors.toList());
         dslEnvVariables.put("metricPaths", customMetricPaths);

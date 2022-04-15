@@ -53,7 +53,7 @@ public class DelegateTaskExpiryCheckIterator implements MongoPersistenceIterator
     PumpExecutorOptions options = PumpExecutorOptions.builder()
                                       .interval(Duration.ofMinutes(TASK_EXPIRY_CHECK_INTERVAL_IN_MINUTES))
                                       .poolSize(threadPoolSize)
-                                      .name("DelegateCapabilitiesRecordHandler")
+                                      .name("DelegateTaskExpiryCheck")
                                       .build();
 
     persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(options, Delegate.class,

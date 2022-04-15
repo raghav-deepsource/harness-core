@@ -8,6 +8,7 @@
 package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
@@ -26,6 +27,7 @@ import io.harness.selection.log.DelegateSelectionLog.DelegateSelectionLogKeys;
 import io.harness.selection.log.DelegateSelectionLogTaskMetadata;
 import io.harness.service.intfc.DelegateCache;
 
+import software.wings.delegatetasks.delegatecapability.CapabilityHelper;
 import software.wings.service.intfc.DelegateSelectionLogsService;
 import software.wings.service.intfc.DelegateService;
 
@@ -65,7 +67,7 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
   private static final String INFO = "Info";
 
   private static final String TASK_ASSIGNED = "Delegate assigned for task execution";
-  public static final String NO_ELIGIBLE_DELEGATES = "No eligible delegate(s) in account to execute task";
+  public static final String NO_ELIGIBLE_DELEGATES = "No eligible delegate(s) in account to execute task. ";
   public static final String ELIGIBLE_DELEGATES = "Delegate(s) eligible to execute task";
   public static final String BROADCASTING_DELEGATES = "Broadcasting to delegate(s)";
   public static final String CAN_NOT_ASSIGN_TASK_GROUP = "Delegate(s) not supported for task type";
@@ -74,7 +76,7 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
   public static final String CAN_NOT_ASSIGN_DELEGATE_SCOPE_GROUP = "Delegate scope(s) mismatched";
   public static final String CAN_NOT_ASSIGN_PROFILE_SCOPE_GROUP = "Delegate profile scope(s) mismatched ";
   public static final String CAN_NOT_ASSIGN_SELECTOR_TASK_GROUP = "No matching selector(s)";
-  public static final String CAN_NOT_ASSIGN_OWNER = "Cannot match task owner with delegate owner";
+  public static final String CAN_NOT_ASSIGN_OWNER = "There are no delegates with the right ownership to execute task\"";
   public static final String TASK_VALIDATION_FAILED =
       "No eligible delegate was able to confirm that it has the capability to execute ";
 
@@ -280,6 +282,25 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
       return Optional.empty();
     }
     return Optional.ofNullable(buildSelectionLogParams(delegateSelectionLog));
+  }
+
+  @Override
+  public void logDelegateTaskInfo(DelegateTask delegateTask) {
+    if (!delegateTask.isSelectionLogsTrackingEnabled()) {
+      return;
+    }
+    String delegateSelectorReceived =
+        CapabilityHelper.generateSelectionLogForSelectors(delegateTask.getExecutionCapabilities());
+    if (isEmpty(delegateSelectorReceived)) {
+      return;
+    }
+    save(DelegateSelectionLog.builder()
+             .accountId(delegateTask.getAccountId())
+             .taskId(delegateTask.getUuid())
+             .conclusion(INFO)
+             .message(delegateSelectorReceived)
+             .eventTimestamp(System.currentTimeMillis())
+             .build());
   }
 
   private DelegateSelectionLogParams buildSelectionLogParams(DelegateSelectionLog selectionLog) {

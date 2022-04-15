@@ -36,6 +36,8 @@ import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
@@ -54,7 +56,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 
 public class LearningEngineTaskServiceImplTest extends CvNextGenTestBase {
   @Inject HPersistence hPersistence;
-
+  @Inject private Clock clock;
   @Mock HPersistence mockHPersistence;
   @Mock Query<LearningEngineTask> mockLETaskQuery;
   @Mock UpdateOperations<LearningEngineTask> mockUpdateOperations;
@@ -241,7 +243,7 @@ public class LearningEngineTaskServiceImplTest extends CvNextGenTestBase {
   public void testGetTaskStatus_timeout() throws Exception {
     FieldUtils.writeField(learningEngineTaskService, "hPersistence", mockHPersistence, true);
     LearningEngineTask taskToSave = getTaskToSave(ExecutionStatus.RUNNING);
-    taskToSave.setLastUpdatedAt(Instant.now().minus(1, ChronoUnit.HOURS).toEpochMilli());
+    taskToSave.setLastUpdatedAt(clock.instant().minus(1, ChronoUnit.HOURS).toEpochMilli());
 
     when(mockHPersistence.createQuery(LearningEngineTask.class)).thenReturn(mockLETaskQuery);
     when(mockHPersistence.createUpdateOperations(LearningEngineTask.class)).thenReturn(mockUpdateOperations);
@@ -332,6 +334,7 @@ public class LearningEngineTaskServiceImplTest extends CvNextGenTestBase {
     taskToSave.setAnalysisType(SERVICE_GUARD_LOG_ANALYSIS);
     taskToSave.setAnalysisStartTime(startTime);
     taskToSave.setAnalysisEndTime(endTime);
+    taskToSave.setPickedAt(endTime.plus(Duration.ofMinutes(3)));
     return taskToSave;
   }
 }

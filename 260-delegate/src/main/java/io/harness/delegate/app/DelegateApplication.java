@@ -140,34 +140,38 @@ public class DelegateApplication {
   private void addShutdownHook(Injector injector, MessageService messageService) {
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
       try {
-        injector.getInstance(DelegateAgentService.class).shutdown(false);
-      } catch (final InterruptedException e) {
-        log.error("Delegate shutdown interrupted", e);
-        Thread.currentThread().interrupt();
+        try {
+          injector.getInstance(DelegateAgentService.class).shutdown(false);
+        } catch (final InterruptedException e) {
+          log.error("Delegate shutdown interrupted", e);
+          Thread.currentThread().interrupt();
+        }
+
+        messageService.closeChannel(DELEGATE, processId);
+        messageService.closeData(DELEGATE_DASH + processId);
+        log.info("Message service has been closed.");
+
+        final PingPongClient pingPongClient = injector.getInstance(PingPongClient.class);
+        if (pingPongClient != null) {
+          pingPongClient.stopAsync();
+        }
+
+        injector.getInstance(ExecutorService.class).shutdown();
+        injector.getInstance(EventPublisher.class).shutdown();
+        log.info("Executor services have been shut down.");
+
+        injector.getInstance(AsyncHttpClient.class).close();
+        log.info("Async HTTP client has been closed.");
+        log.info("Delegate Shutdown completed successfully");
+        ILoggerFactory loggerFactory = LoggerFactory.getILoggerFactory();
+        if (loggerFactory instanceof LoggerContext) {
+          LoggerContext context = (LoggerContext) loggerFactory;
+          context.stop();
+        }
+        log.info("Log manager has been shutdown and logs have been flushed.");
+      } catch (Exception ex) {
+        log.error("Encountered error while executing Delegate shutdown ", ex);
       }
-
-      messageService.closeChannel(DELEGATE, processId);
-      messageService.closeData(DELEGATE_DASH + processId);
-      log.info("Message service has been closed.");
-
-      final PingPongClient pingPongClient = injector.getInstance(PingPongClient.class);
-      if (pingPongClient != null) {
-        pingPongClient.stopAsync();
-      }
-
-      injector.getInstance(ExecutorService.class).shutdown();
-      injector.getInstance(EventPublisher.class).shutdown();
-      log.info("Executor services have been shut down.");
-
-      injector.getInstance(AsyncHttpClient.class).close();
-      log.info("Async HTTP client has been closed.");
-
-      ILoggerFactory loggerFactory = LoggerFactory.getILoggerFactory();
-      if (loggerFactory instanceof LoggerContext) {
-        LoggerContext context = (LoggerContext) loggerFactory;
-        context.stop();
-      }
-      log.info("Log manager has been shutdown and logs have been flushed.");
     }));
   }
 }

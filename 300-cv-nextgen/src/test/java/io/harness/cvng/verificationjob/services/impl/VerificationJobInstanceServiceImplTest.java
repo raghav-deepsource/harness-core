@@ -212,7 +212,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
                                             .in(verTaskIds)
                                             .get();
     assertThat(orchestrator).isNotNull();
-    assertThat(orchestrator.getStatus().name()).isEqualTo(AnalysisStatus.CREATED.name());
+    assertThat(orchestrator.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
     assertThat(orchestrator.getAnalysisStateMachineQueue().size()).isEqualTo(1);
   }
 

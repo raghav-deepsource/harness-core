@@ -10,8 +10,10 @@ package io.harness.serializer.morphia;
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.AccountVersionOverride;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateGroup;
+import io.harness.delegate.beans.DelegateMtlsEndpoint;
 import io.harness.delegate.beans.DelegateRing;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
@@ -40,6 +42,8 @@ public class DelegateServiceMorphiaRegistrar implements MorphiaRegistrar {
     set.add(DelegatePerpetualTaskUsageInsights.class);
     set.add(PerpetualTaskRecord.class);
     set.add(DelegateRing.class);
+    set.add(AccountVersionOverride.class);
+    set.add(DelegateMtlsEndpoint.class);
   }
 
   @Override

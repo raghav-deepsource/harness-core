@@ -13,14 +13,17 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
+import io.harness.delegate.beans.azure.response.AzureValidateTaskResponse;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureAuthCredentialDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureCredentialType;
+import io.harness.delegate.beans.connector.azureconnector.AzureInheritFromDelegateDetailsDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthUADTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskType;
-import io.harness.delegate.beans.connector.azureconnector.AzureValidateTaskResponse;
 import io.harness.delegate.task.TaskParameters;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -29,10 +32,19 @@ public class AzureConnectorValidator extends AbstractConnectorValidator {
   public <T extends ConnectorConfigDTO> TaskParameters getTaskParameters(
       T connectorConfig, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     AzureConnectorDTO connectorDTO = (AzureConnectorDTO) connectorConfig;
-    final AzureAuthCredentialDTO azureAuthCredentialDTO =
-        connectorDTO.getCredential().getAzureCredentialType() == AzureCredentialType.MANUAL_CREDENTIALS
-        ? (((AzureManualDetailsDTO) connectorDTO.getCredential().getConfig()).getAuthDTO().getCredentials())
-        : null;
+    AzureAuthCredentialDTO tmpAzureAuthCredentialDTO = null;
+    if (connectorDTO.getCredential().getAzureCredentialType() == AzureCredentialType.MANUAL_CREDENTIALS) {
+      tmpAzureAuthCredentialDTO =
+          ((AzureManualDetailsDTO) connectorDTO.getCredential().getConfig()).getAuthDTO().getCredentials();
+    } else {
+      AzureMSIAuthDTO azureMSIAuthDTO =
+          ((AzureInheritFromDelegateDetailsDTO) connectorDTO.getCredential().getConfig()).getAuthDTO();
+      if (azureMSIAuthDTO instanceof AzureMSIAuthUADTO) {
+        tmpAzureAuthCredentialDTO = ((AzureMSIAuthUADTO) azureMSIAuthDTO).getCredentials();
+      }
+    }
+
+    final AzureAuthCredentialDTO azureAuthCredentialDTO = tmpAzureAuthCredentialDTO;
     return AzureTaskParams.builder()
         .azureTaskType(AzureTaskType.VALIDATE)
         .azureConnector(connectorDTO)

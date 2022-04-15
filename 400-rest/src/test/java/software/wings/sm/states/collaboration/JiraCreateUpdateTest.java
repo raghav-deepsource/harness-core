@@ -124,6 +124,7 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
     when(context.getAppId()).thenReturn(APP_ID);
     when(jiraHelperService.getProjects(anyString(), anyString(), anyString())).thenReturn(projects);
     when(jiraHelperService.getStatuses(anyString(), anyString(), anyString(), anyString())).thenReturn(statuses);
+    jiraCreateUpdateState.setTimeoutMillis(0);
   }
 
   @Test
@@ -744,7 +745,7 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
                         .build());
     when(activityService.save(any())).thenReturn(Activity.builder().uuid(ACTIVITY_ID).build());
     when(jiraHelperService.getCreateMetadata(
-             JIRA_CONNECTOR_ID, null, jiraCreateUpdateState.getProject(), ACCOUNT_ID, APP_ID))
+             JIRA_CONNECTOR_ID, null, jiraCreateUpdateState.getProject(), ACCOUNT_ID, APP_ID, 0))
         .thenReturn(createMetaResponse);
     when(delegateService.queueTask(any())).thenReturn(UUID);
   }

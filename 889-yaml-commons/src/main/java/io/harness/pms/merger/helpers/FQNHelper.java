@@ -35,6 +35,7 @@ public class FQNHelper {
     String expressionFqn = fqn.displayWithoutParallel();
     if (expressions.contains(expressionFqn)) {
       String fqnDisplay = fqn.display();
+      // TODO: Create some exception duplicateFQNException and use that.
       throw new InvalidRequestException(String.format(" This element is coming twice in yaml %s",
           fqn.display().substring(0, fqnDisplay.lastIndexOf('.', fqnDisplay.length() - 2))));
     }

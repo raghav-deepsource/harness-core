@@ -39,6 +39,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 public class GCSUploadNode extends CIAbstractStepNode {
   @JsonProperty("type") @NotNull GCSUploadNode.StepType type = GCSUploadNode.StepType.GCSUpload;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   UploadToGCSStepInfo uploadToGCSStepInfo;

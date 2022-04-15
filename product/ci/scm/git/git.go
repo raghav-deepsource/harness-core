@@ -462,6 +462,44 @@ func GetUserRepos(ctx context.Context, request *pb.GetUserReposRequest, log *zap
 	return out, nil
 }
 
+func GetUserRepo(ctx context.Context, request *pb.GetUserRepoRequest, log *zap.SugaredLogger) (out *pb.GetUserRepoResponse, err error) {
+	start := time.Now()
+	log.Infow("GetUserRepos starting")
+
+	client, err := gitclient.GetGitClient(*request.GetProvider(), log)
+	if err != nil {
+		log.Errorw("GetUserRepo failure", "bad provider", gitclient.GetProvider(*request.GetProvider()), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+		return nil, err
+	}
+
+	repo, response, err := client.Repositories.Find(ctx, request.GetSlug())
+	if err != nil {
+		log.Errorw("GetUserRepo failure", "provider", gitclient.GetProvider(*request.GetProvider()), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+		// this is a hard error with no response
+		if response == nil {
+			return nil, err
+		}
+
+		out = &pb.GetUserRepoResponse{
+			Status: int32(response.Status),
+			Error:  err.Error(),
+		}
+		return out, nil
+	}
+
+	repository, err := converter.ConvertRepo(repo)
+	if err != nil {
+		log.Errorw("GetUserRepo convert repo failure", "provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+		return nil, err
+	}
+	log.Infow("GetUserRepo success", "elapsed_time_ms", utils.TimeSince(start))
+	out = &pb.GetUserRepoResponse{
+		Status: int32(response.Status),
+		Repo:   repository,
+	}
+	return out, nil
+}
+
 func GetLatestCommitOnFile(ctx context.Context, request *pb.GetLatestCommitOnFileRequest, log *zap.SugaredLogger) (out *pb.GetLatestCommitOnFileResponse, err error) {
 	// For Bitbucket, we also get commits for a non-existent file if it had been created before (deleted now)
 	response, err := ListCommits(ctx, &pb.ListCommitsRequest{Provider: request.Provider, Slug: request.Slug, Type: &pb.ListCommitsRequest_Branch{Branch: request.Branch}, FilePath: request.FilePath}, log)

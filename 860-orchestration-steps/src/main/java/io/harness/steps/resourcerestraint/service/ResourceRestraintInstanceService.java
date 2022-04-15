@@ -31,6 +31,10 @@ public interface ResourceRestraintInstanceService {
   int getMaxOrder(String resourceRestraintId);
   int getAllCurrentlyAcquiredPermits(String scope, String releaseEntityId);
 
+  List<ResourceRestraintInstance> findAllActiveAndBlockedByReleaseEntityId(String releaseEntityId);
+
+  void processRestraint(ResourceRestraintInstance instance);
+
   static String getReleaseEntityId(String planExecutionId) {
     return planExecutionId;
   }

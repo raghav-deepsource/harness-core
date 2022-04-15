@@ -28,21 +28,26 @@ import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateGroup.DelegateGroupKeys;
+import io.harness.delegate.beans.DelegateGroupDTO;
 import io.harness.delegate.beans.DelegateGroupDetails;
 import io.harness.delegate.beans.DelegateGroupListing;
 import io.harness.delegate.beans.DelegateGroupStatus;
+import io.harness.delegate.beans.DelegateGroupTags;
 import io.harness.delegate.beans.DelegateInsightsDetails;
 import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.beans.DelegateProfile.DelegateProfileKeys;
+import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
 import io.harness.delegate.beans.DelegateTokenStatus;
+import io.harness.delegate.events.DelegateGroupUpsertEvent;
 import io.harness.delegate.filter.DelegateFilterPropertiesDTO;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
+import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateInsightsService;
@@ -59,6 +64,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -84,6 +90,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
   @Inject private DelegateInsightsService delegateInsightsService;
   @Inject private DelegateConnectionDao delegateConnectionDao;
   @Inject private FilterService filterService;
+  @Inject private OutboxService outboxService;
   private static final Duration HEARTBEAT_EXPIRY_TIME = ofMinutes(5);
   // grpc heartbeat thread is scheduled at 5 mins, hence we are allowing a gap of 15 mins
   private static final long MAX_GRPC_HB_TIMEOUT = TimeUnit.MINUTES.toMillis(15);
@@ -567,9 +574,11 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
   }
 
   @Override
-  public DelegateGroup updateDelegateGroupTags(
-      String accountId, String orgId, String projectId, String delegateGroupName, List<String> tags) {
+  public DelegateGroup updateDelegateGroupTags_old(
+      String accountId, String orgId, String projectId, String delegateGroupName, Set<String> tags) {
     DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgId, projectId);
+
+    log.warn("Using a deprecated api for updating delegate group tags.");
 
     Query<DelegateGroup> updateQuery = persistence.createQuery(DelegateGroup.class)
                                            .filter(DelegateGroupKeys.accountId, accountId)
@@ -584,8 +593,89 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
         persistence.findAndModify(updateQuery, updateOperations, HPersistence.returnNewOptions);
     delegateCache.invalidateDelegateGroupCacheByIdentifier(accountId, owner, delegateGroupName);
 
+    outboxService.save(DelegateGroupUpsertEvent.builder()
+                           .accountIdentifier(accountId)
+                           .orgIdentifier(orgId)
+                           .projectIdentifier(projectId)
+                           .delegateGroupId(updatedDelegateGroup.getUuid())
+                           .delegateSetupDetails(DelegateSetupDetails.builder()
+                                                     .identifier(updatedDelegateGroup.getIdentifier())
+                                                     .tags(updatedDelegateGroup.getTags())
+                                                     .build())
+                           .build());
     log.info("Updating tags for delegate group: {} tags:{}", delegateGroupName, String.valueOf(tags.toString()));
     return updatedDelegateGroup;
+  }
+
+  @Override
+  public Optional<DelegateGroupDTO> listDelegateGroupTags(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String groupIdentifier) {
+    try {
+      DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
+      DelegateGroup delegateGroup =
+          delegateCache.getDelegateGroupByAccountAndOwnerAndIdentifier(accountIdentifier, owner, groupIdentifier);
+      return Optional.of(DelegateGroupDTO.convertToDTO(delegateGroup));
+    } catch (Exception e) {
+      log.error("Error occurred during fetching list of delegate group tags", e);
+      return Optional.empty();
+    }
+  }
+
+  @Override
+  public Optional<DelegateGroupDTO> addDelegateGroupTags(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String groupIdentifier, DelegateGroupTags delegateGroupTags) {
+    try {
+      DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
+      DelegateGroup delegateGroup =
+          delegateCache.getDelegateGroupByAccountAndOwnerAndIdentifier(accountIdentifier, owner, groupIdentifier);
+      Set<String> existingTags = delegateGroup.getTags();
+      if (isNotEmpty(existingTags)) {
+        existingTags.addAll(delegateGroupTags.getTags());
+      }
+      return updateDelegateGroupTags(accountIdentifier, orgIdentifier, projectIdentifier, groupIdentifier,
+          isNotEmpty(existingTags) ? new DelegateGroupTags(existingTags)
+                                   : new DelegateGroupTags(delegateGroupTags.getTags()));
+    } catch (Exception e) {
+      log.error("Error occurred during adding delegate group tags", e);
+      return Optional.empty();
+    }
+  }
+
+  @Override
+  public Optional<DelegateGroupDTO> updateDelegateGroupTags(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String groupIdentifier, DelegateGroupTags delegateGroupTags) {
+    try {
+      DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
+
+      Query<DelegateGroup> updateQuery = persistence.createQuery(DelegateGroup.class)
+                                             .filter(DelegateGroupKeys.accountId, accountIdentifier)
+                                             .filter(DelegateGroupKeys.identifier, groupIdentifier)
+                                             .filter(DelegateGroupKeys.owner, owner)
+                                             .filter(DelegateGroupKeys.ng, true);
+
+      final UpdateOperations<DelegateGroup> updateOperations = persistence.createUpdateOperations(DelegateGroup.class);
+      setUnset(updateOperations, DelegateGroupKeys.tags, delegateGroupTags.getTags());
+
+      DelegateGroup updatedDelegateGroup =
+          persistence.findAndModify(updateQuery, updateOperations, HPersistence.returnNewOptions);
+      delegateCache.invalidateDelegateGroupCacheByIdentifier(accountIdentifier, owner, groupIdentifier);
+
+      outboxService.save(DelegateGroupUpsertEvent.builder()
+                             .accountIdentifier(accountIdentifier)
+                             .orgIdentifier(orgIdentifier)
+                             .projectIdentifier(projectIdentifier)
+                             .delegateGroupId(updatedDelegateGroup.getUuid())
+                             .delegateSetupDetails(DelegateSetupDetails.builder()
+                                                       .identifier(updatedDelegateGroup.getIdentifier())
+                                                       .tags(updatedDelegateGroup.getTags())
+                                                       .build())
+                             .build());
+      log.info("Updating tags for delegate group: {} tags: {}", groupIdentifier, delegateGroupTags.getTags());
+      return Optional.of(DelegateGroupDTO.convertToDTO(updatedDelegateGroup));
+    } catch (Exception e) {
+      log.error("Error occurred during updating delegate group tags", e);
+      return Optional.empty();
+    }
   }
 
   private Map<String, Boolean> isDelegateTokenActive(String accountId, List<String> tokensNameList) {

@@ -11,7 +11,7 @@ import io.harness.cdng.infra.yaml.InfrastructureKind;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.plan.YamlProperties;
-import io.harness.pms.sdk.core.pipeline.variables.VariableCreatorHelper;
+import io.harness.pms.sdk.core.variables.VariableCreatorHelper;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationResponse;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;

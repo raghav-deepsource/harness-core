@@ -487,6 +487,8 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
     LearningEngineTask task = hPersistence.createQuery(LearningEngineTask.class).get();
     task.setTaskStatus(FAILED);
     hPersistence.save(task);
+    stateMachine.getCurrentState().setStatus(AnalysisStatus.RETRY);
+    hPersistence.save(stateMachine);
 
     stateMachineService.executeStateMachine(verificationTaskId);
     AnalysisStateMachine savedStateMachine = hPersistence.createQuery(AnalysisStateMachine.class).get();
@@ -507,6 +509,8 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
     LearningEngineTask task = hPersistence.createQuery(LearningEngineTask.class).get();
     task.setTaskStatus(TIMEOUT);
     hPersistence.save(task);
+    stateMachine.getCurrentState().setStatus(AnalysisStatus.RETRY);
+    hPersistence.save(stateMachine);
 
     stateMachineService.executeStateMachine(deploymentVerificationTaskId);
     AnalysisStateMachine savedStateMachine = hPersistence.createQuery(AnalysisStateMachine.class).get();

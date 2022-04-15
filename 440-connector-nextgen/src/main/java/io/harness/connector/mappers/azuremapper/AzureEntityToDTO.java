@@ -10,6 +10,7 @@ package io.harness.connector.mappers.azuremapper;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.entities.embedded.azureconnector.AzureConfig;
+import io.harness.connector.entities.embedded.azureconnector.AzureManagedIdentityCredential;
 import io.harness.connector.entities.embedded.azureconnector.AzureManualCredential;
 import io.harness.connector.mappers.ConnectorEntityToDTOMapper;
 import io.harness.delegate.beans.connector.azureconnector.AzureAuthDTO;
@@ -18,8 +19,14 @@ import io.harness.delegate.beans.connector.azureconnector.AzureClientSecretKeyDT
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureCredentialDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureCredentialType;
+import io.harness.delegate.beans.connector.azureconnector.AzureInheritFromDelegateDetailsDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthSADTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthUADTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureManagedIdentityType;
 import io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureSecretType;
+import io.harness.delegate.beans.connector.azureconnector.AzureUserAssignedMSIAuthDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.InvalidRequestException;
@@ -77,12 +84,33 @@ public class AzureEntityToDTO implements ConnectorEntityToDTOMapper<AzureConnect
   }
 
   private AzureConnectorDTO buildInheritFromDelegate(AzureConfig connector) {
+    final AzureManagedIdentityCredential auth = (AzureManagedIdentityCredential) connector.getCredential();
+    final AzureManagedIdentityType azureManagedIdentityType = auth.getAzureManagedIdentityType();
+
+    AzureMSIAuthDTO azureMSIAuthDTO;
+    switch (azureManagedIdentityType) {
+      case USER_ASSIGNED_MANAGED_IDENTITY: {
+        azureMSIAuthDTO = AzureMSIAuthUADTO.builder()
+                              .azureManagedIdentityType(azureManagedIdentityType)
+                              .credentials(AzureUserAssignedMSIAuthDTO.builder().clientId(auth.getClientId()).build())
+                              .build();
+        break;
+      }
+      case SYSTEM_ASSIGNED_MANAGED_IDENTITY: {
+        azureMSIAuthDTO = AzureMSIAuthSADTO.builder().azureManagedIdentityType(azureManagedIdentityType).build();
+        break;
+      }
+      default: {
+        throw new InvalidRequestException("Invalid ManagedIdentity credentials type.");
+      }
+    }
+
     return AzureConnectorDTO.builder()
         .delegateSelectors(connector.getDelegateSelectors())
         .azureEnvironmentType(connector.getAzureEnvironmentType())
         .credential(AzureCredentialDTO.builder()
                         .azureCredentialType(AzureCredentialType.INHERIT_FROM_DELEGATE)
-                        .config(null)
+                        .config(AzureInheritFromDelegateDetailsDTO.builder().authDTO(azureMSIAuthDTO).build())
                         .build())
         .build();
   }

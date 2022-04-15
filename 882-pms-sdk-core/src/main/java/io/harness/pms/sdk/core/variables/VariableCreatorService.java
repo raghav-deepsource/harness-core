@@ -9,31 +9,40 @@ package io.harness.pms.sdk.core.variables;
 
 import static io.harness.pms.plan.creation.PlanCreatorUtils.supportsField;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.SetupMetadata;
 import io.harness.pms.contracts.plan.VariablesCreationBlobRequest;
 import io.harness.pms.contracts.plan.VariablesCreationBlobResponse;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
+import io.harness.pms.plan.creation.PlanCreationBlobResponseUtils;
 import io.harness.pms.sdk.core.pipeline.creators.BaseCreatorService;
 import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationContext;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationResponse;
 import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
-public class VariableCreatorService extends BaseCreatorService<VariableCreationResponse, SetupMetadata> {
+public class VariableCreatorService
+    extends BaseCreatorService<VariableCreationResponse, SetupMetadata, VariablesCreationBlobRequest> {
   private final PipelineServiceInfoProvider pipelineServiceInfoProvider;
   private final PmsGitSyncHelper pmsGitSyncHelper;
 
@@ -50,12 +59,13 @@ public class VariableCreatorService extends BaseCreatorService<VariableCreationR
     try (PmsGitSyncBranchContextGuard ignore = pmsGitSyncHelper.createGitSyncBranchContextGuardFromBytes(
              request.getMetadata().getGitSyncBranchContext(), true)) {
       VariableCreationResponse response = processNodesRecursively(
-          initialDependencies, SetupMetadata.newBuilder().build(), VariableCreationResponse.builder().build());
+          initialDependencies, SetupMetadata.newBuilder().build(), VariableCreationResponse.builder().build(), request);
       return response.toBlobResponse();
     }
   }
 
-  public VariableCreationResponse processNodeInternal(SetupMetadata setupMetadata, YamlField yamlField) {
+  public VariableCreationResponse processNodeInternal(
+      SetupMetadata setupMetadata, YamlField yamlField, VariablesCreationBlobRequest request) {
     Optional<VariableCreator> variableCreatorOptional =
         findVariableCreator(pipelineServiceInfoProvider.getVariableCreators(), yamlField);
 
@@ -66,15 +76,38 @@ public class VariableCreatorService extends BaseCreatorService<VariableCreationR
     VariableCreationResponse response;
     VariableCreator variableCreator = variableCreatorOptional.get();
 
-    response = variableCreator.createVariablesForField(
-        VariableCreationContext.builder().currentField(yamlField).build(), yamlField);
+    if (request.getMetadata().getMetadataMap().containsKey("newVersion")) {
+      try {
+        Class<?> cls = variableCreator.getFieldClass();
+        if (cls == null) {
+          return VariableCreationResponse.builder().build();
+        }
+        Object obj =
+            YamlField.class.isAssignableFrom(cls) ? yamlField : YamlUtils.read(yamlField.getNode().toString(), cls);
+        response = variableCreator.createVariablesForFieldV2(
+            VariableCreationContext.builder().currentField(yamlField).build(), obj);
+      } catch (IOException ex) {
+        String message = format("Invalid yaml path [%s] during execution variable creation", yamlField.getYamlPath());
+        log.error(message, ex);
+        throw new InvalidRequestException(message, ex);
+      }
+    } else {
+      response = variableCreator.createVariablesForField(
+          VariableCreationContext.builder().currentField(yamlField).build(), yamlField);
+    }
     return response;
   }
 
   @Override
-  public void mergeResponses(VariableCreationResponse finalResponse, VariableCreationResponse response) {
-    finalResponse.addYamlProperties(response.getYamlProperties());
-    finalResponse.addYamlOutputProperties(response.getYamlOutputProperties());
+  public void mergeResponses(
+      VariableCreationResponse finalResponse, VariableCreationResponse response, Dependencies.Builder dependencies) {
+    finalResponse.mergeResponses(response);
+    if (response.getYamlUpdates() != null && EmptyPredicate.isNotEmpty(response.getYamlUpdates().getFqnToYamlMap())) {
+      String updatedYaml = PlanCreationBlobResponseUtils.mergeYamlUpdates(
+          dependencies.getYaml(), finalResponse.getYamlUpdates().getFqnToYamlMap());
+      finalResponse.updateYamlInDependencies(updatedYaml);
+      dependencies.setYaml(updatedYaml);
+    }
   }
 
   private Optional<VariableCreator> findVariableCreator(List<VariableCreator> variableCreators, YamlField yamlField) {

@@ -31,6 +31,7 @@ import io.harness.engine.pms.tasks.NgDelegate2TaskExecutor;
 import io.harness.exception.HarnessJiraException;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.yaml.ParameterField;
@@ -46,7 +47,6 @@ import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
 import io.harness.waiter.WaitNotifyEngine;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -135,10 +135,11 @@ public class JiraApprovalHelperServiceImplTest extends CategoryTest {
   }
 
   private JiraApprovalInstance getJiraApprovalInstance(Ambiance ambiance) {
+    TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("sel1");
     JiraApprovalInstance instance =
         JiraApprovalInstance.builder()
             .issueKey("issueKey")
-            .delegateSelectors(ParameterField.<List<String>>builder().build())
+            .delegateSelectors(ParameterField.createValueField(Collections.singletonList(taskSelectorYaml)))
             .connectorRef("connectorRed")
             .approvalCriteria(
                 CriteriaSpecWrapperDTO.builder().criteriaSpecDTO(KeyValuesCriteriaSpecDTO.builder().build()).build())

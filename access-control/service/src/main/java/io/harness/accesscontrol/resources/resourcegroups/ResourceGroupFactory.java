@@ -20,7 +20,7 @@ import io.harness.resourcegroup.model.ResourceSelector;
 import io.harness.resourcegroup.model.ResourceSelectorByScope;
 import io.harness.resourcegroup.model.StaticResourceSelector;
 import io.harness.resourcegroup.v1.remote.dto.ResourceGroupDTO;
-import io.harness.resourcegroupclient.remote.v1.ResourceGroupResponse;
+import io.harness.resourcegroup.v1.remote.dto.ResourceGroupResponse;
 
 import java.util.Collection;
 import java.util.Collections;

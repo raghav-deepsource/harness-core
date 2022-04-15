@@ -30,6 +30,7 @@ import io.harness.rule.Owner;
 import com.google.protobuf.ByteString;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.Getter;
 import org.junit.Before;
 import org.junit.Test;
@@ -66,7 +67,7 @@ public class JsonExpansionServiceTest extends CategoryTest {
                                      .setValue(ByteString.copyFromUtf8("value1"))
                                      .build();
     ExpansionRequestProto req2 = ExpansionRequestProto.newBuilder()
-                                     .setFqn("fqn/connectorRef")
+                                     .setFqn("fqn2/connectorRef")
                                      .setKey("connectorRef")
                                      .setValue(ByteString.copyFromUtf8("value2"))
                                      .build();
@@ -108,6 +109,34 @@ public class JsonExpansionServiceTest extends CategoryTest {
     assertThat(responseProtoList2.get(0).getErrorMessage()).isEqualTo("INVALID_REQUEST");
     assertThat(responseProtoList2.get(0).getFqn()).isEqualTo("connectorRef/fqn");
     assertThat(responseProtoList2.get(1).getSuccess()).isTrue();
+  }
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testExpandForSameValueWithDifferentFQNs() {
+    ExpansionRequestProto req1 = ExpansionRequestProto.newBuilder()
+                                     .setFqn("fqn/notStage/spec")
+                                     .setKey("connectorRef")
+                                     .setValue(ByteString.copyFromUtf8("value2"))
+                                     .build();
+    ExpansionRequestProto req2 = ExpansionRequestProto.newBuilder()
+                                     .setFqn("fqn/stage/spec")
+                                     .setKey("connectorRef")
+                                     .setValue(ByteString.copyFromUtf8("value2"))
+                                     .build();
+    ExpansionRequestBatch requestBatch =
+        ExpansionRequestBatch.newBuilder().addExpansionRequestProto(req1).addExpansionRequestProto(req2).build();
+    DummyStreamObserver<ExpansionResponseBatch> responseObserver = new DummyStreamObserver<>();
+
+    jsonExpansionService.expand(requestBatch, responseObserver);
+    assertThat(responseObserver.getExpansionResponseBatch()).isNotNull();
+    List<ExpansionResponseProto> responseProtoList =
+        responseObserver.getExpansionResponseBatch().getExpansionResponseProtoList();
+    assertThat(responseProtoList).hasSize(2);
+    assertThat(responseProtoList.get(0).getSuccess()).isTrue();
+    assertThat(responseProtoList.get(1).getSuccess()).isTrue();
+    List<String> fqnList = responseProtoList.stream().map(ExpansionResponseProto::getFqn).collect(Collectors.toList());
+    assertThat(fqnList).containsExactly("fqn/notStage/spec", "fqn/stage/spec");
   }
 
   @Test

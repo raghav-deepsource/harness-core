@@ -21,6 +21,7 @@ import io.harness.cvng.CVNGTestConstants;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.beans.cvnglog.CVNGLogType;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
+import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
 import io.harness.cvng.beans.cvnglog.TraceableType;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.PageParams;
@@ -800,7 +801,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     assertThat(executionLogDTOS.getTraceableId()).isEqualTo(verificationTaskIds.get(0));
     assertThat(executionLogDTOS.getTraceableType()).isEqualTo(TraceableType.VERIFICATION_TASK);
     assertThat(executionLogDTOS.getType()).isEqualTo(CVNGLogType.EXECUTION_LOG);
-    assertThat(executionLogDTOS.getLogLevel()).isEqualTo(ExecutionLogDTO.LogLevel.INFO);
+    assertThat(executionLogDTOS.getLogLevel()).isEqualTo(LogLevel.INFO);
     assertThat(executionLogDTOS.getLog()).isEqualTo("Data Collection successfully completed.");
   }
 

@@ -203,6 +203,7 @@ import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -557,6 +558,11 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
   public void shallGetAppInstanceSummaryStatsByService() {
     try {
       List<String> appIdList = asList(APP_1_ID, APP_2_ID, APP_3_ID, APP_4_ID, APP_5_ID);
+      Map<String, String> entry = new HashMap<>();
+      entry.put("service1_id", "updatedService1Name");
+      Set<String> setOfServiceIds = new HashSet<>();
+      setOfServiceIds.add("service1_id");
+      when(serviceResourceService.getServiceNamesWithAccountId(any(), any())).thenReturn(entry);
 
       PageResponse<InstanceSummaryStatsByService> currentAppInstanceStatsByService =
           dashboardService.getAppInstanceSummaryStatsByService(
@@ -570,6 +576,17 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
       currentAppInstanceStatsByService = dashboardService.getAppInstanceSummaryStatsByService(
           ACCOUNT_1_ID, appIdList, System.currentTimeMillis(), 0, 10);
       assertThat(currentAppInstanceStatsByService.getResponse()).hasSize(7);
+
+      currentAppInstanceStatsByService = dashboardService.getAppInstanceSummaryStatsByService(
+          ACCOUNT_1_ID, appIdList, System.currentTimeMillis(), 0, 10);
+      for (InstanceSummaryStatsByService instanceSummaryStatsByService :
+          currentAppInstanceStatsByService.getResponse()) {
+        if (instanceSummaryStatsByService.getServiceSummary().getId().equals("service1_id")) {
+          assertThat(instanceSummaryStatsByService.getServiceSummary().getName().equals("updatedService1Name"));
+          break;
+        }
+      }
+
     } finally {
       UserThreadLocal.unset();
     }

@@ -180,20 +180,6 @@ aeriform("//810-ng-triggers:tests")
 
 aeriform("//815-cg-triggers:module")
 
-aeriform("//820-platform-service:module")
-
-aeriform("//820-platform-service:tests")
-
-aeriform("//830-notification-service:module")
-
-aeriform("//830-notification-service:tests")
-
-aeriform("//830-resource-group:module")
-
-aeriform("//830-resource-group:tests")
-
-aeriform("//835-notification-senders:module")
-
 aeriform("//840-template-service:module")
 
 aeriform("//840-template-service:tests")
@@ -310,17 +296,11 @@ aeriform("//940-feature-flag:module")
 
 aeriform("//940-feature-flag:tests")
 
-aeriform("//940-ng-audit-service:module")
-
-aeriform("//940-ng-audit-service:tests")
-
 aeriform("//940-notification-client:module")
 
 aeriform("//940-primary-version-manager:module")
 
 aeriform("//940-primary-version-manager:tests")
-
-aeriform("//940-resource-group-beans:module")
 
 aeriform("//940-secret-manager-client:module")
 
@@ -393,8 +373,6 @@ aeriform("//950-walktree-visitor:tests")
 aeriform("//951-cg-git-sync:module")
 
 aeriform("//951-debezium-service")
-
-aeriform("//951-ng-audit-commons:module")
 
 aeriform("//952-debezium-engine")
 
@@ -472,8 +450,6 @@ aeriform("//960-ng-license-beans:module")
 
 aeriform("//960-ng-license-usage-beans:module")
 
-aeriform("//960-notification-beans:module")
-
 aeriform("//960-persistence:module")
 
 aeriform("//960-persistence:supporter-test")
@@ -525,5 +501,3 @@ aeriform("//990-commons-test:module")
 aeriform("//990-commons-test:tests")
 
 aeriform("//999-annotations:module")
-
-aeriform("//access-control/contracts:module")

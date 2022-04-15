@@ -1020,7 +1020,10 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
       boolean areServicesTrimmed = trimNotificationDetails(serviceDetails, serviceCount);
       int artifactsCount = artifacts.toString().replace("*Artifacts:* ", "").split(", ").length;
       boolean areArtifactsTrimmed = trimArtifacts(artifacts, artifactsCount);
-      int infraCount = infraDetails.getName().split(",").length;
+      int infraCount = 0;
+      if (infraDetails != null) {
+        infraCount = infraDetails.getName().split(",").length;
+      }
       boolean areInfrasTrimmed = trimNotificationDetails(infraDetails, infraCount);
       SlackApprovalParams params =
           slackApprovalParams.toBuilder()

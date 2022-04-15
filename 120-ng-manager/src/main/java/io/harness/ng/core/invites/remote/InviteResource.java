@@ -30,7 +30,10 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SortOrder;
+import io.harness.eraro.ErrorCode;
+import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.invites.remote.InviteAcceptResponse;
 import io.harness.ng.accesscontrol.user.ACLAggregateFilter;
 import io.harness.ng.beans.PageRequest;
@@ -47,6 +50,7 @@ import io.harness.ng.core.invites.dto.InviteOperationResponse;
 import io.harness.ng.core.invites.entities.Invite;
 import io.harness.ng.core.invites.entities.Invite.InviteKeys;
 import io.harness.ng.core.invites.mapper.InviteMapper;
+import io.harness.ng.core.user.service.NgUserService;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.annotations.PublicApi;
 
@@ -113,11 +117,13 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class InviteResource {
   private final InviteService inviteService;
   private final AccessControlClient accessControlClient;
+  private final NgUserService ngUserService;
 
   @Inject
-  InviteResource(InviteService inviteService, AccessControlClient accessControlClient) {
+  InviteResource(InviteService inviteService, AccessControlClient accessControlClient, NgUserService ngUserService) {
     this.inviteService = inviteService;
     this.accessControlClient = accessControlClient;
+    this.ngUserService = ngUserService;
   }
 
   @GET
@@ -236,6 +242,22 @@ public class InviteResource {
     List<InviteOperationResponse> inviteOperationResponses =
         inviteService.createInvitations(accountIdentifier, orgIdentifier, projectIdentifier, createInviteDTO);
     return ResponseDTO.newResponse(inviteOperationResponses);
+  }
+
+  @GET
+  @Hidden
+  @Path("internal/link")
+  @ApiOperation(value = "Get invite link from invite id for Harness User Group Users",
+      nickname = "getInviteLinkInternal", hidden = true)
+  public ResponseDTO<String>
+  getInviteLink(@QueryParam("inviteId") @NotNull String inviteId,
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier) {
+    boolean isHarnessSupportGroupUser = ngUserService.verifyHarnessSupportGroupUser();
+    if (!isHarnessSupportGroupUser) {
+      throw new AccessDeniedException("Only Harness Support Group Users can access this endpoint. Not authorized",
+          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
+    }
+    return ResponseDTO.newResponse(inviteService.getInviteLinkFromInviteId(accountIdentifier, inviteId));
   }
 
   @GET

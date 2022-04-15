@@ -17,7 +17,7 @@ import io.harness.cdng.service.beans.ServiceSpecType;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.plan.YamlProperties;
-import io.harness.pms.sdk.core.pipeline.variables.VariableCreatorHelper;
+import io.harness.pms.sdk.core.variables.VariableCreatorHelper;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationResponse;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
@@ -91,6 +91,7 @@ public class ServiceVariableCreator {
           }
           break;
         case ServiceSpecType.SSH:
+        case ServiceSpecType.WINRM:
           YamlField sshSpecNode = serviceDefNode.getNode().getField(YamlTypes.SERVICE_SPEC);
           if (sshSpecNode != null) {
             addVariablesForSshServiceSpec(sshSpecNode, yamlPropertiesMap);

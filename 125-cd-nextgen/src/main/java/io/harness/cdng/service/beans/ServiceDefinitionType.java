@@ -27,7 +27,10 @@ public enum ServiceDefinitionType {
   NATIVE_HELM("NativeHelm", Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.DEFAULT),
       ServiceSpecType.NATIVE_HELM),
 
-  @JsonProperty(ServiceSpecType.SSH) SSH("Ssh", Lists.newArrayList(ExecutionStrategyType.DEFAULT), ServiceSpecType.SSH);
+  @JsonProperty(ServiceSpecType.SSH) SSH("Ssh", Lists.newArrayList(ExecutionStrategyType.DEFAULT), ServiceSpecType.SSH),
+
+  @JsonProperty(ServiceSpecType.WINRM)
+  WINRM("WinRm", Lists.newArrayList(ExecutionStrategyType.DEFAULT), ServiceSpecType.WINRM);
 
   /*
   //Unsupported for now

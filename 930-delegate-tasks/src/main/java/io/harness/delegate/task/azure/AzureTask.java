@@ -12,9 +12,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
+import io.harness.delegate.beans.azure.response.AzureValidateTaskResponse;
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskParams;
-import io.harness.delegate.beans.connector.azureconnector.AzureTaskType;
-import io.harness.delegate.beans.connector.azureconnector.AzureValidateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
@@ -44,13 +43,14 @@ public class AzureTask extends AbstractDelegateRunnableTask {
       throw new InvalidRequestException("Task Params are not of expected type: AzureTaskParameters");
     }
     AzureTaskParams azureTaskParams = (AzureTaskParams) parameters;
-    if (azureTaskParams.getAzureTaskType() == AzureTaskType.VALIDATE) {
-      return AzureValidateTaskResponse.builder()
-          .connectorValidationResult(azureNgHelper.getConnectorValidationResult(
-              azureTaskParams.getEncryptionDetails(), azureTaskParams.getAzureConnector()))
-          .build();
-    } else {
-      throw new InvalidRequestException("Task type not identified");
+    switch (azureTaskParams.getAzureTaskType()) {
+      case VALIDATE:
+        return AzureValidateTaskResponse.builder()
+            .connectorValidationResult(azureNgHelper.getConnectorValidationResult(
+                azureTaskParams.getEncryptionDetails(), azureTaskParams.getAzureConnector()))
+            .build();
+      default:
+        throw new InvalidRequestException("Task type not identified");
     }
   }
 }

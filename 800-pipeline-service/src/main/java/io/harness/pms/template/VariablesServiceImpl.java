@@ -35,7 +35,8 @@ public class VariablesServiceImpl extends VariablesServiceImplBase {
   @Override
   public void getVariables(
       VariablesServiceRequest request, StreamObserver<VariableMergeResponseProto> responseObserver) {
-    VariableMergeServiceResponse variablesResponse = pmsPipelineService.createVariablesResponse(request.getYaml());
+    VariableMergeServiceResponse variablesResponse =
+        pmsPipelineService.createVariablesResponse(request.getYaml(), false);
     VariableMergeResponseProto variableMergeResponseProto = VariablesResponseDtoMapper.toProto(variablesResponse);
     responseObserver.onNext(variableMergeResponseProto);
     responseObserver.onCompleted();

@@ -14,6 +14,7 @@ import io.harness.serializer.KryoRegistrar;
 
 import software.wings.beans.AppDynamicsConfig;
 import software.wings.beans.DynaTraceConfig;
+import software.wings.beans.EcrConfig;
 import software.wings.beans.ElkConfig;
 import software.wings.beans.NewRelicConfig;
 import software.wings.beans.SumoConfig;
@@ -22,6 +23,7 @@ import software.wings.beans.config.LogzConfig;
 import software.wings.beans.trigger.WebHookTriggerResponseData;
 import software.wings.beans.trigger.WebhookTriggerParameters;
 import software.wings.delegatetasks.DelegateStateType;
+import software.wings.delegatetasks.buildsource.BuildCollectParameters;
 import software.wings.delegatetasks.cv.DataCollectionException;
 import software.wings.delegatetasks.cv.beans.CustomLogResponseMapper;
 import software.wings.service.impl.analysis.AnalysisComparisonStrategy;
@@ -46,12 +48,14 @@ import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 import software.wings.service.impl.newrelic.NewRelicSetupTestNodeData;
 import software.wings.service.impl.sumo.SumoDataCollectionInfo;
 import software.wings.service.intfc.analysis.ClusterLevel;
+import software.wings.utils.ArtifactType;
 
 import com.esotericsoftware.kryo.Kryo;
 
 public class DelegateTasksKryoRegistrar implements KryoRegistrar {
   @Override
   public void register(Kryo kryo) {
+    kryo.register(EcrConfig.class, 5011);
     kryo.register(ElkConfig.class, 5017);
     kryo.register(ExecutionLogCallback.class, 5044);
     kryo.register(ElkDataCollectionInfo.class, 5169);
@@ -92,5 +96,7 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(ClusterLevel.class, 7348);
     kryo.register(DynaTraceApplication.class, 8074);
     kryo.register(DelegateStateType.class, 8601);
+    kryo.register(ArtifactType.class, 5117);
+    kryo.register(BuildCollectParameters.class, 8602);
   }
 }

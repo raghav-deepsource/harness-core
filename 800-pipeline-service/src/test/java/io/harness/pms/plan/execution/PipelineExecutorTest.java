@@ -29,6 +29,7 @@ import io.harness.execution.PlanExecutionMetadata;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
+import io.harness.pms.instrumentaion.PipelineTelemetryHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.plan.execution.beans.ExecArgs;
@@ -50,6 +51,7 @@ public class PipelineExecutorTest extends CategoryTest {
   @InjectMocks PipelineExecutor pipelineExecutor;
   @Mock ExecutionHelper executionHelper;
   @Mock ValidateAndMergeHelper validateAndMergeHelper;
+  @Mock PipelineTelemetryHelper pipelineTelemetryHelper;
 
   String accountId = "accountId";
   String orgId = "orgId";

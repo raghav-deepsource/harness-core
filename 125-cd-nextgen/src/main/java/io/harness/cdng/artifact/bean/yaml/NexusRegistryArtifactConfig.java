@@ -123,8 +123,17 @@ public class NexusRegistryArtifactConfig implements ArtifactConfig, Visitable, W
     if (!ParameterField.isNull(nexusRegistryArtifactConfig.getConnectorRef())) {
       resultantConfig = resultantConfig.withConnectorRef(nexusRegistryArtifactConfig.getConnectorRef());
     }
+    if (!ParameterField.isNull(nexusRegistryArtifactConfig.getRepository())) {
+      resultantConfig = resultantConfig.withArtifactPath(nexusRegistryArtifactConfig.getRepository());
+    }
     if (!ParameterField.isNull(nexusRegistryArtifactConfig.getArtifactPath())) {
       resultantConfig = resultantConfig.withArtifactPath(nexusRegistryArtifactConfig.getArtifactPath());
+    }
+    if (!ParameterField.isNull(nexusRegistryArtifactConfig.getRepositoryPort())) {
+      resultantConfig = resultantConfig.withArtifactPath(nexusRegistryArtifactConfig.getRepositoryPort());
+    }
+    if (!ParameterField.isNull(nexusRegistryArtifactConfig.getRepositoryUrl())) {
+      resultantConfig = resultantConfig.withArtifactPath(nexusRegistryArtifactConfig.getRepositoryUrl());
     }
     if (!ParameterField.isNull(nexusRegistryArtifactConfig.getTag())) {
       resultantConfig = resultantConfig.withTag(nexusRegistryArtifactConfig.getTag());

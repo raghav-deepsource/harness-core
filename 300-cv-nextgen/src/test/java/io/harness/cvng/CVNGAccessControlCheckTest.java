@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -72,6 +73,12 @@ public class CVNGAccessControlCheckTest extends CategoryTest {
                 .forEach(paramAnnotations
                     -> Arrays.asList(paramAnnotations)
                            .forEach(paramAnnotation -> methodAnnotationMap.put(paramAnnotation.toString(), 1)));
+
+            Arrays.stream(method.getParameters())
+                .filter(parameter -> parameter.isAnnotationPresent(BeanParam.class))
+                .flatMap(parameter -> Arrays.stream(parameter.getType().getDeclaredFields()))
+                .flatMap(field -> Arrays.stream(field.getAnnotations()))
+                .forEach(fieldAnnotation -> methodAnnotationMap.put(fieldAnnotation.toString(), 1));
 
             necessaryAccessControlAnnotations.forEach(accessControlAnnotation
                 -> assertThat(methodAnnotationMap.containsKey(accessControlAnnotation))

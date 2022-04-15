@@ -19,6 +19,7 @@ import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.graphql.core.budget.BudgetCostService;
 import io.harness.ccm.graphql.core.budget.BudgetService;
+import io.harness.ccm.service.intf.CCMNotificationService;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ViewType;
@@ -85,11 +86,12 @@ public class PerspectiveResource {
   private final BigQueryHelper bigQueryHelper;
   private final BudgetCostService budgetCostService;
   private final BudgetService budgetService;
+  private final CCMNotificationService notificationService;
 
   @Inject
   public PerspectiveResource(CEViewService ceViewService, CEReportScheduleService ceReportScheduleService,
       ViewCustomFieldService viewCustomFieldService, BigQueryService bigQueryService, BigQueryHelper bigQueryHelper,
-      BudgetCostService budgetCostService, BudgetService budgetService) {
+      BudgetCostService budgetCostService, BudgetService budgetService, CCMNotificationService notificationService) {
     this.ceViewService = ceViewService;
     this.ceReportScheduleService = ceReportScheduleService;
     this.viewCustomFieldService = viewCustomFieldService;
@@ -97,6 +99,7 @@ public class PerspectiveResource {
     this.bigQueryHelper = bigQueryHelper;
     this.budgetCostService = budgetCostService;
     this.budgetService = budgetService;
+    this.notificationService = notificationService;
   }
 
   @GET
@@ -126,7 +129,6 @@ public class PerspectiveResource {
   @GET
   @Path("lastPeriodCost")
   @Timed
-  @Hidden
   @LogAccountIdentifier
   @ExceptionMetered
   @ApiOperation(value = "Get last period cost for perspective", nickname = "getLastPeriodCost")
@@ -144,7 +146,7 @@ public class PerspectiveResource {
       @NotNull @Valid @QueryParam("perspectiveId") @Parameter(
           required = true, description = "The Perspective identifier for which we want the cost") String perspectiveId,
       @NotNull @Valid @QueryParam("startTime") @Parameter(
-          required = true, description = "The Start time (timestamp in millis) for the period") long startTime,
+          required = true, description = "The Start time (timestamp in millis) for the current period") long startTime,
       @NotNull @Valid @QueryParam("period") @Parameter(required = true,
           description = "The period (DAILY, WEEKLY, MONTHLY, QUARTERLY, YEARLY) for which we want the cost")
       BudgetPeriod period) {
@@ -336,6 +338,7 @@ public class PerspectiveResource {
     ceReportScheduleService.deleteAllByView(perspectiveId, accountId);
     viewCustomFieldService.deleteByViewId(perspectiveId, accountId);
     budgetService.deleteBudgetsForPerspective(accountId, perspectiveId);
+    notificationService.delete(perspectiveId, accountId);
 
     return ResponseDTO.newResponse("Successfully deleted the view");
   }

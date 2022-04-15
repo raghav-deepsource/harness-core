@@ -12,7 +12,6 @@ import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.REJECTED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.GARVIT;
-import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 
@@ -37,7 +36,6 @@ import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyMap;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -51,7 +49,6 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
 import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.beans.SweepingOutputInstance;
-import io.harness.beans.WorkflowType;
 import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
 import io.harness.eraro.ErrorCode;
@@ -71,7 +68,6 @@ import software.wings.api.artifact.ServiceArtifactElement;
 import software.wings.api.artifact.ServiceArtifactElements;
 import software.wings.api.artifact.ServiceArtifactVariableElement;
 import software.wings.api.artifact.ServiceArtifactVariableElements;
-import software.wings.beans.Application;
 import software.wings.beans.ArtifactVariable;
 import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.ExecutionArgs;
@@ -80,7 +76,6 @@ import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.artifact.Artifact;
 import software.wings.common.NotificationMessageResolver;
-import software.wings.service.impl.WorkflowExecutionUpdate;
 import software.wings.service.impl.deployment.checks.DeploymentFreezeUtils;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamServiceBindingService;
@@ -93,7 +88,6 @@ import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.WorkflowStandardParams;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.inject.Injector;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -119,8 +113,6 @@ public class EnvStateTest extends WingsBaseTest {
   @Mock private FeatureFlagService featureFlagService;
   @Mock private NotificationMessageResolver notificationMessageResolver;
   @Mock private DeploymentFreezeUtils deploymentFreezeUtils;
-  @Mock private WorkflowExecutionUpdate workflowExecutionUpdate;
-  @Mock private Injector injector;
 
   private static final WorkflowElement workflowElement =
       WorkflowElement.builder()
@@ -335,35 +327,6 @@ public class EnvStateTest extends WingsBaseTest {
     envState.handleAsyncResponse(
         context, ImmutableMap.of("", new EnvState.EnvExecutionResponseData(WORKFLOW_EXECUTION_ID, SUCCESS)));
     verify(sweepingOutputService, never()).save(any());
-  }
-
-  @Test
-  @Owner(developers = HINGER)
-  @Category(UnitTests.class)
-  public void shouldCallResolveTagsAfterPipelineStageFinishes() {
-    when(context.getStateExecutionData())
-        .thenReturn(anEnvStateExecutionData()
-                        .withOrchestrationWorkflowType(OrchestrationWorkflowType.BUILD)
-                        .withWorkflowExecutionId(WORKFLOW_EXECUTION_ID)
-                        .build());
-
-    when(context.getWorkflowType()).thenReturn(WorkflowType.PIPELINE);
-    when(context.getApp()).thenReturn(Application.Builder.anApplication().accountId(ACCOUNT_ID).build());
-
-    when(context.getAppId()).thenReturn(APP_ID);
-    when(context.getWorkflowExecutionId()).thenReturn(WORKFLOW_EXECUTION_ID);
-
-    when(workflowExecutionService.getStateExecutionInstances(APP_ID, WORKFLOW_EXECUTION_ID))
-        .thenReturn(Collections.emptyList());
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(true);
-    when(featureFlagService.isEnabled(FeatureName.RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION, ACCOUNT_ID))
-        .thenReturn(true);
-
-    envState.handleAsyncResponse(
-        context, ImmutableMap.of("", new EnvState.EnvExecutionResponseData(WORKFLOW_EXECUTION_ID, SUCCESS)));
-
-    verify(workflowExecutionUpdate, atLeastOnce()).resolveDeploymentTags(any(), any());
-    verify(workflowExecutionUpdate, atLeastOnce()).addTagsToWorkflowExecution(any());
   }
 
   @Test

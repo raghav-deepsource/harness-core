@@ -9,6 +9,7 @@ package io.harness.pms.variables;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.contracts.plan.YamlExtraProperties;
 import io.harness.pms.contracts.plan.YamlOutputProperties;
 import io.harness.pms.contracts.plan.YamlProperties;
 
@@ -34,7 +35,10 @@ public class VariableMergeServiceResponse {
   @Builder
   public static class VariableResponseMapValue {
     YamlProperties yamlProperties;
+    // Deprecated
     YamlOutputProperties yamlOutputProperties;
+    // these properties when shown in variables screen, are not editable
+    YamlExtraProperties yamlExtraProperties;
   }
 
   @Data

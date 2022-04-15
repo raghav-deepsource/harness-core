@@ -9,10 +9,11 @@ package io.harness.ci.creator.variables;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.steps.nodes.RunStepNode;
 import io.harness.pms.contracts.plan.YamlOutputProperties;
 import io.harness.pms.contracts.plan.YamlProperties;
 import io.harness.pms.sdk.core.pipeline.variables.GenericStepVariableCreator;
-import io.harness.pms.sdk.core.pipeline.variables.VariableCreatorHelper;
+import io.harness.pms.sdk.core.variables.VariableCreatorHelper;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -26,7 +27,7 @@ import java.util.Objects;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CI)
-public class RunStepVariableCreator extends GenericStepVariableCreator {
+public class RunStepVariableCreator extends GenericStepVariableCreator<RunStepNode> {
   @Override
   public Set<String> getSupportedStepTypes() {
     return Sets.newHashSet("Run");

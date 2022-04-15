@@ -40,7 +40,8 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 @Singleton
-public class FilterCreatorService extends BaseCreatorService<FilterCreationResponse, SetupMetadata> {
+public class FilterCreatorService
+    extends BaseCreatorService<FilterCreationResponse, SetupMetadata, FilterCreationBlobRequest> {
   private final PipelineServiceInfoProvider pipelineServiceInfoProvider;
   private final FilterCreationResponseMerger filterCreationResponseMerger;
   private final PmsGitSyncHelper pmsGitSyncHelper;
@@ -59,8 +60,8 @@ public class FilterCreatorService extends BaseCreatorService<FilterCreationRespo
     SetupMetadata setupMetadata = request.getSetupMetadata();
     try (PmsGitSyncBranchContextGuard ignore =
              pmsGitSyncHelper.createGitSyncBranchContextGuardFromBytes(setupMetadata.getGitSyncBranchContext(), true)) {
-      FilterCreationResponse finalResponse =
-          processNodesRecursively(initialDependencies, setupMetadata, FilterCreationResponse.builder().build());
+      FilterCreationResponse finalResponse = processNodesRecursively(
+          initialDependencies, setupMetadata, FilterCreationResponse.builder().build(), request);
       return finalResponse.toBlobResponse();
     }
   }
@@ -76,7 +77,8 @@ public class FilterCreatorService extends BaseCreatorService<FilterCreationRespo
   }
 
   @Override
-  public FilterCreationResponse processNodeInternal(SetupMetadata setupMetadata, YamlField yamlField) {
+  public FilterCreationResponse processNodeInternal(
+      SetupMetadata setupMetadata, YamlField yamlField, FilterCreationBlobRequest request) {
     Optional<FilterJsonCreator> filterCreatorOptional =
         findFilterCreator(pipelineServiceInfoProvider.getFilterJsonCreators(), yamlField);
 
@@ -105,7 +107,8 @@ public class FilterCreatorService extends BaseCreatorService<FilterCreationRespo
   }
 
   @Override
-  public void mergeResponses(FilterCreationResponse finalResponse, FilterCreationResponse response) {
+  public void mergeResponses(
+      FilterCreationResponse finalResponse, FilterCreationResponse response, Dependencies.Builder dependencies) {
     finalResponse.setStageCount(finalResponse.getStageCount() + response.getStageCount());
     finalResponse.addReferredEntities(response.getReferredEntities());
     finalResponse.addStageNames(response.getStageNames());

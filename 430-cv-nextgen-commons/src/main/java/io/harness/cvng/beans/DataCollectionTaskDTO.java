@@ -7,7 +7,12 @@
 
 package io.harness.cvng.beans;
 
+import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
+
 import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import lombok.Builder;
 import lombok.Value;
 
@@ -28,5 +33,17 @@ public class DataCollectionTaskDTO {
     DataCollectionExecutionStatus status;
     String exception;
     String stacktrace;
+    List<ExecutionLog> executionLogs;
+
+    public List<ExecutionLog> getExecutionLogs() {
+      return Optional.ofNullable(executionLogs).orElse(Collections.emptyList());
+    }
+
+    @Value
+    @Builder
+    public static class ExecutionLog {
+      String log;
+      LogLevel logLevel;
+    }
   }
 }

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
 
@@ -34,5 +35,5 @@ public class ServiceNowUpdateSpecParameters implements SpecParameters {
   @NotNull ParameterField<String> ticketType;
   @NotNull ParameterField<String> ticketNumber;
   Map<String, ParameterField<String>> fields;
-  ParameterField<List<String>> delegateSelectors;
+  ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 }

@@ -75,7 +75,8 @@ public class PhysicalDataCenterConnectorValidationParamsProviderTest extends Cat
     assertThat(executionCapabilityList)
         .contains(SocketConnectivityCapabilityGenerator.buildSocketConnectivityCapability(
             HOST_WITH_PORT, PhysicalDataCenterUtils.getPortOrSSHDefault(HOST_WITH_PORT)));
-    assertThat(executionCapabilityList).contains(SelectorCapability.builder().selectors(DELEGATE_SELECTORS).build());
+    assertThat(executionCapabilityList)
+        .contains(SelectorCapability.builder().selectors(DELEGATE_SELECTORS).selectorOrigin("connector").build());
   }
 
   private PhysicalDataCenterConnectorDTO getPhysicalDataCenterConnectorDTO() {

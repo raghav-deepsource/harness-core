@@ -144,11 +144,12 @@ public class EnvironmentGroupMapperTest extends CategoryTest {
   public void testToEnvironmentEntity() throws IOException {
     String yaml = getYamlFieldFromGivenFileName("cdng/envGroup/mappers/validEnvGroup.yml");
     YamlField yamlField = YamlUtils.readTree(yaml);
-    String projectIdentifier = yamlField.getNode().getStringValue("projectIdentifier");
-    String orgIdentifier = yamlField.getNode().getStringValue("orgIdentifier");
-    String name = yamlField.getNode().getStringValue("name");
-    String identifier = yamlField.getNode().getStringValue("identifier");
-    List<YamlNode> envIdentifiers = yamlField.getNode().getField("envIdentifiers").getNode().asArray();
+    YamlField environmentGroupYamlField = yamlField.getNode().getField("environmentGroup");
+    String projectIdentifier = environmentGroupYamlField.getNode().getStringValue("projectIdentifier");
+    String orgIdentifier = environmentGroupYamlField.getNode().getStringValue("orgIdentifier");
+    String name = environmentGroupYamlField.getNode().getStringValue("name");
+    String identifier = environmentGroupYamlField.getNode().getStringValue("identifier");
+    List<YamlNode> envIdentifiers = environmentGroupYamlField.getNode().getField("envIdentifiers").getNode().asArray();
     EnvironmentGroupEntity environmentGroupEntity =
         EnvironmentGroupMapper.toEnvironmentEntity(ACC_ID, orgIdentifier, projectIdentifier, yaml);
 
@@ -169,8 +170,9 @@ public class EnvironmentGroupMapperTest extends CategoryTest {
     // To test org and project id passed in query param to be same as passed in yaml
     String yaml = getYamlFieldFromGivenFileName("cdng/envGroup/mappers/validEnvGroup.yml");
     YamlField yamlField = YamlUtils.readTree(yaml);
-    String projectIdentifier = yamlField.getNode().getStringValue("projectIdentifier");
-    String orgIdentifier = yamlField.getNode().getStringValue("orgIdentifier");
+    String projectIdentifier =
+        yamlField.getNode().getField("environmentGroup").getNode().getStringValue("projectIdentifier");
+    String orgIdentifier = yamlField.getNode().getField("environmentGroup").getNode().getStringValue("orgIdentifier");
 
     // Incorrect Org And ProjectId
     assertThatThrownBy(() -> EnvironmentGroupMapper.toEnvironmentEntity(ACC_ID, ORG_ID, PRO_ID, yaml))

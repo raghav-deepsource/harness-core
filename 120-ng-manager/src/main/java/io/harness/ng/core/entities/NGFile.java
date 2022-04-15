@@ -12,6 +12,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.delegate.beans.ChecksumType;
+import io.harness.filestore.FileUsage;
+import io.harness.filestore.NGFileType;
 import io.harness.mongo.CollationLocale;
 import io.harness.mongo.CollationStrength;
 import io.harness.mongo.index.Collation;
@@ -21,8 +23,6 @@ import io.harness.ng.core.NGAccountAccess;
 import io.harness.ng.core.NGOrgAccess;
 import io.harness.ng.core.NGProjectAccess;
 import io.harness.ng.core.common.beans.NGTag;
-import io.harness.ng.core.dto.filestore.FileUsage;
-import io.harness.ng.core.dto.filestore.NGFileType;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
 
@@ -58,6 +58,29 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CDP)
 public class NGFile implements PersistentEntity, UuidAware, NGAccountAccess, NGOrgAccess, NGProjectAccess {
+  @org.springframework.data.annotation.Id @Id String uuid;
+  @CreatedDate Long createdAt;
+  @LastModifiedDate Long lastModifiedAt;
+
+  @NotEmpty String accountIdentifier;
+  @EntityIdentifier(allowBlank = true) String orgIdentifier;
+  @EntityIdentifier(allowBlank = true) String projectIdentifier;
+
+  @EntityIdentifier String identifier;
+  @Size(max = 1024) String description;
+  @Size(max = 128) List<NGTag> tags;
+  @NotEmpty String parentId;
+  @NotNull FileUsage fileUsage;
+  @NotNull NGFileType type;
+  @NotEmpty String parentIdentifier;
+  @NotEmpty String fileUuid;
+  @NotEmpty String name;
+  ChecksumType checksumType;
+  String checksum;
+  String mimeType;
+  Long size;
+  Boolean draft;
+
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -76,36 +99,10 @@ public class NGFile implements PersistentEntity, UuidAware, NGAccountAccess, NGO
                 .field(NGFiles.accountIdentifier)
                 .field(NGFiles.orgIdentifier)
                 .field(NGFiles.projectIdentifier)
-                .field(NGFiles.identifier)
                 .field(NGFiles.parentIdentifier)
                 .build())
         .build();
   }
-
-  @org.springframework.data.annotation.Id @Id String uuid;
-  @CreatedDate Long createdAt;
-  @LastModifiedDate Long lastModifiedAt;
-
-  @NotEmpty String accountIdentifier;
-  @EntityIdentifier(allowBlank = true) String orgIdentifier;
-  @EntityIdentifier(allowBlank = true) String projectIdentifier;
-
-  @EntityIdentifier String identifier;
-  @Size(max = 1024) String description;
-  @Size(max = 128) List<NGTag> tags;
-  @NotEmpty String parentId;
-  @NotNull FileUsage fileUsage;
-  @NotNull NGFileType type;
-  @NotEmpty String parentIdentifier;
-  @NotNull EntityType entityType;
-  @NotEmpty String entityId;
-  @NotEmpty String fileUuid;
-  @NotEmpty String name;
-  ChecksumType checksumType;
-  String checksum;
-  String mimeType;
-  Long size;
-  Boolean draft;
 
   @JsonIgnore
   public boolean isFolder() {

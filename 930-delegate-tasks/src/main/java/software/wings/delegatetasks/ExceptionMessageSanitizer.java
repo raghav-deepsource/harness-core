@@ -17,12 +17,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.WingsException;
 import io.harness.secret.SecretSanitizerThreadLocal;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -49,6 +51,10 @@ public class ExceptionMessageSanitizer {
 
   @SneakyThrows
   protected static void sanitizeExceptionInternal(Exception exception, Set<String> secrets) {
+    if (exception instanceof WingsException) {
+      updateWingsExceptionMessage((WingsException) exception, secrets);
+    }
+
     String message = exception.getMessage();
     String updatedMessage = sanitizeMessage(message, secrets);
     updateExceptionMessage(exception, updatedMessage);
@@ -57,6 +63,9 @@ public class ExceptionMessageSanitizer {
   protected static String sanitizeMessage(String message, Set<String> secrets) {
     ArrayList<String> secretMasks = new ArrayList<>();
     ArrayList<String> secretValues = new ArrayList<>();
+    if (isEmpty(secrets)) {
+      return message;
+    }
     for (String secret : secrets) {
       secretMasks.add(SECRET_MASK);
       secretValues.add(secret);
@@ -74,6 +83,28 @@ public class ExceptionMessageSanitizer {
       detailMessageField.set(exception, message);
     } finally {
       detailMessageField.setAccessible(false);
+    }
+  }
+
+  public static String sanitizeMessage(String errorMessage) {
+    Set<String> secrets = SecretSanitizerThreadLocal.get();
+    if (isEmpty(errorMessage)) {
+      return errorMessage;
+    }
+    return sanitizeMessage(errorMessage, secrets);
+  }
+
+  public static void updateWingsExceptionMessage(WingsException exception, Set<String> secrets) {
+    if (isEmpty(exception.getParams())) {
+      return;
+    }
+    Map<String, Object> params = exception.getParams();
+    for (Map.Entry<String, Object> entry : params.entrySet()) {
+      Object errorMessage = entry.getValue();
+      if (errorMessage instanceof String) {
+        String updatedErrorMessage = sanitizeMessage((String) errorMessage, secrets);
+        ((WingsException) exception).getParams().put(entry.getKey(), updatedErrorMessage);
+      }
     }
   }
 

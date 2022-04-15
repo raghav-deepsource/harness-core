@@ -341,6 +341,7 @@ public abstract class AbstractLogAnalysisState extends AbstractAnalysisState {
         (VerificationDataAnalysisResponse) response.values().iterator().next();
 
     if (ExecutionStatus.isBrokeStatus(executionResponse.getExecutionStatus())) {
+      updateSweepingOutputWithCVResult(executionContext, executionResponse.getExecutionStatus().name());
       return getErrorExecutionResponse(executionContext, executionResponse);
     } else {
       AnalysisContext context =
@@ -356,11 +357,14 @@ public abstract class AbstractLogAnalysisState extends AbstractAnalysisState {
           getLogger().info("No analysis summary. This can happen if there is no data with the given queries");
           continuousVerificationService.setMetaDataExecutionStatus(
               executionContext.getStateExecutionInstanceId(), ExecutionStatus.SUCCESS, true, false);
-          return isQAVerificationPath(context.getAccountId(), context.getAppId())
-              ? generateAnalysisResponse(
-                  context, ExecutionStatus.FAILED, true, "No Analysis result found. This is not a failure.")
-              : generateAnalysisResponse(
-                  context, ExecutionStatus.SUCCESS, true, "No data found with given queries. Skipped Analysis");
+          ExecutionStatus executionStatus = isQAVerificationPath(context.getAccountId(), context.getAppId())
+              ? ExecutionStatus.FAILED
+              : ExecutionStatus.SUCCESS;
+          String msg = isQAVerificationPath(context.getAccountId(), context.getAppId())
+              ? "No Analysis result found. This is not a failure."
+              : "No data found with given queries. Skipped Analysis";
+          updateSweepingOutputWithCVResult(executionContext, executionStatus.name());
+          return generateAnalysisResponse(context, executionStatus, true, msg);
         }
 
         if (analysisSummary.getAnalysisMinute() < analysisMinute) {
@@ -390,9 +394,11 @@ public abstract class AbstractLogAnalysisState extends AbstractAnalysisState {
         continuousVerificationService.setMetaDataExecutionStatus(
             executionContext.getStateExecutionInstanceId(), executionStatus, false, false);
         updateExecutionStatus(context.getStateExecutionId(), true, executionStatus, "Analysis completed");
+        executionStatus = isQAVerificationPath(context.getAccountId(), context.getAppId()) ? ExecutionStatus.SUCCESS
+                                                                                           : executionStatus;
+        updateSweepingOutputWithCVResult(executionContext, executionStatus.name());
         return ExecutionResponse.builder()
-            .executionStatus(isQAVerificationPath(context.getAccountId(), context.getAppId()) ? ExecutionStatus.SUCCESS
-                                                                                              : executionStatus)
+            .executionStatus(executionStatus)
             .stateExecutionData(executionResponse.getStateExecutionData())
             .build();
       }
@@ -400,6 +406,7 @@ public abstract class AbstractLogAnalysisState extends AbstractAnalysisState {
       executionResponse.getStateExecutionData().setErrorMsg(
           "Analysis for minute " + analysisMinute + " failed to save in DB");
       updateExecutionStatus(context.getStateExecutionId(), false, ExecutionStatus.ERROR, "Error");
+      updateSweepingOutputWithCVResult(executionContext, ExecutionStatus.ERROR.name());
       return ExecutionResponse.builder()
           .executionStatus(ExecutionStatus.ERROR)
           .stateExecutionData(executionResponse.getStateExecutionData())

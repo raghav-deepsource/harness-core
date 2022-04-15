@@ -36,6 +36,7 @@ import io.harness.pms.exception.PmsExceptionUtils;
 import io.harness.pms.plan.creation.validator.PlanCreationValidator;
 import io.harness.pms.sdk.PmsSdkHelper;
 import io.harness.pms.utils.CompletableFutures;
+import io.harness.pms.utils.PmsGrpcClientUtils;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.waiter.WaitNotifyEngine;
@@ -187,8 +188,8 @@ public class PlanCreatorMergeService {
         PlanCreationBlobResponseUtils.mergeContext(finalResponseBuilder, currIterationResponse.getContextMap());
         PlanCreationBlobResponseUtils.addDependenciesV2(finalResponseBuilder, currIterationResponse);
       }
-    } catch (Exception e) {
-      throw new UnexpectedException("Error merging plan responses from services", e);
+    } catch (IOException e) {
+      throw new UnexpectedException(e.getMessage(), e);
     }
 
     return finalResponseBuilder.build();
@@ -297,19 +298,23 @@ public class PlanCreatorMergeService {
   private void executeDependenciesAsync(CompletableFutures<PlanCreationResponse> completableFutures,
       Map.Entry<String, PlanCreatorServiceInfo> serviceInfo, Dependencies batchDependency,
       Map<String, PlanCreationContextValue> contextMap) {
+    PlanCreationContextValue metadata = contextMap.get("metadata");
     completableFutures.supplyAsync(() -> {
-      try {
-        return serviceInfo.getValue().getPlanCreationClient().createPlan(
-            PlanCreationBlobRequest.newBuilder().setDeps(batchDependency).putAllContext(contextMap).build());
-      } catch (StatusRuntimeException ex) {
-        log.error(
-            String.format("Error connecting with service: [%s]. Is this service Running?", serviceInfo.getKey()), ex);
-        return PlanCreationResponse.newBuilder()
-            .setErrorResponse(
-                ErrorResponse.newBuilder()
-                    .addMessages(String.format("Error connecting with service: [%s]", serviceInfo.getKey()))
-                    .build())
-            .build();
+      try (AutoLogContext ignore = PlanCreatorUtils.autoLogContext(metadata.getMetadata(),
+               metadata.getAccountIdentifier(), metadata.getOrgIdentifier(), metadata.getProjectIdentifier())) {
+        try {
+          return PmsGrpcClientUtils.retryAndProcessException(serviceInfo.getValue().getPlanCreationClient()::createPlan,
+              PlanCreationBlobRequest.newBuilder().setDeps(batchDependency).putAllContext(contextMap).build());
+        } catch (StatusRuntimeException ex) {
+          log.error(
+              String.format("Error connecting with service: [%s]. Is this service Running?", serviceInfo.getKey()), ex);
+          return PlanCreationResponse.newBuilder()
+              .setErrorResponse(
+                  ErrorResponse.newBuilder()
+                      .addMessages(String.format("Error connecting with service: [%s]", serviceInfo.getKey()))
+                      .build())
+              .build();
+        }
       }
     });
   }

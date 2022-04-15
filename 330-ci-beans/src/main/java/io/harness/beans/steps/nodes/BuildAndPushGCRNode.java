@@ -39,6 +39,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 public class BuildAndPushGCRNode extends CIAbstractStepNode {
   @JsonProperty("type") @NotNull BuildAndPushGCRNode.StepType type = StepType.BuildAndPushGCR;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   GCRStepInfo gcrStepInfo;

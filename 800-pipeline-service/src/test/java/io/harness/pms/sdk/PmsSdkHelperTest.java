@@ -20,6 +20,7 @@ import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.datastructures.HSet;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.PlanCreationServiceGrpc;
 import io.harness.pms.plan.creation.PlanCreatorServiceInfo;
@@ -46,6 +47,7 @@ import org.mockito.MockitoAnnotations;
 public class PmsSdkHelperTest {
   @Mock private Map<ModuleType, PlanCreationServiceGrpc.PlanCreationServiceBlockingStub> planCreatorServices;
   @Mock private PmsSdkInstanceService pmsSdkInstanceService;
+  @Mock private HSet<String> stepsVisibleInUI;
   @InjectMocks PmsSdkHelper pmsSdkHelper;
 
   @Before

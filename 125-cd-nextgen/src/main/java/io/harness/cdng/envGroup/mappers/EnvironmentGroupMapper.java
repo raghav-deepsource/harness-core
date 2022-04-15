@@ -18,6 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupConfig;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
+import io.harness.cdng.envGroup.beans.EnvironmentGroupWrapperConfig;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.encryption.ScopeHelper;
 import io.harness.exception.InvalidRequestException;
@@ -76,13 +77,14 @@ public class EnvironmentGroupMapper {
   }
 
   public EnvironmentGroupEntity toEnvironmentEntity(String accId, String orgId, String projectId, String yaml) {
-    EnvironmentGroupConfig environmentGroupConfig;
+    EnvironmentGroupWrapperConfig environmentGroupWrapperConfig;
     try {
-      environmentGroupConfig = YamlUtils.read(yaml, EnvironmentGroupConfig.class);
+      environmentGroupWrapperConfig = YamlUtils.read(yaml, EnvironmentGroupWrapperConfig.class);
     } catch (IOException e) {
       throw new InvalidRequestException(String.format(" Environment Group could not be created - %s", e.getMessage()));
     }
-    // Validates nonEmpty checks for environmentGroupConfig variables
+    // Validates nonEmpty checks for environmentGroupWrapperConfig variables
+    EnvironmentGroupConfig environmentGroupConfig = environmentGroupWrapperConfig.getEnvironmentGroupConfig();
     validate(environmentGroupConfig);
 
     validateOrgAndProjIdForEnvironmentGroup(accId, orgId, projectId, environmentGroupConfig);

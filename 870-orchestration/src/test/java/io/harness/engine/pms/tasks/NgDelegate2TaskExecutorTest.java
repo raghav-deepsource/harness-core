@@ -197,14 +197,14 @@ public class NgDelegate2TaskExecutorTest extends OrchestrationTestBase {
                         .setTotalExpiry(Timestamp.newBuilder().setSeconds(30).build())
                         .setTaskId(TaskId.newBuilder().setId(taskId).build())
                         .build());
-    when(delegateSyncService.waitForTask(anyString(), anyString(), any())).thenReturn(new ResponseData() {});
+    when(delegateSyncService.waitForTask(anyString(), anyString(), any(), any())).thenReturn(new ResponseData() {});
     when(tokenSupplier.get()).thenReturn(DelegateCallbackToken.newBuilder().setToken(generateUuid()).build());
 
     ResponseData responseData = ngDelegate2TaskExecutor.executeTask(new HashMap<>(), taskRequest);
     assertThat(responseData).isNotNull();
 
     verify(delegateServiceBlockingStub).submitTask(any());
-    verify(delegateSyncService).waitForTask(anyString(), anyString(), any());
+    verify(delegateSyncService).waitForTask(anyString(), anyString(), any(), any());
     verify(tokenSupplier).get();
     verifyNoMoreInteractions(delegateAsyncService);
   }

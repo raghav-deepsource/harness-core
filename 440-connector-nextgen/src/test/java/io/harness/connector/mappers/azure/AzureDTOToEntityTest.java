@@ -8,8 +8,10 @@
 package io.harness.connector.mappers.azure;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.beans.connector.azureconnector.AzureCredentialType.INHERIT_FROM_DELEGATE;
 import static io.harness.delegate.beans.connector.azureconnector.AzureCredentialType.MANUAL_CREDENTIALS;
 import static io.harness.rule.OwnerRule.BUHA;
+import static io.harness.rule.OwnerRule.MLUKIC;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -18,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.AzureEnvironmentType;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.entities.embedded.azureconnector.AzureConfig;
+import io.harness.connector.entities.embedded.azureconnector.AzureManagedIdentityCredential;
 import io.harness.connector.entities.embedded.azureconnector.AzureManualCredential;
 import io.harness.connector.mappers.azuremapper.AzureDTOToEntity;
 import io.harness.delegate.beans.connector.azureconnector.AzureAuthDTO;
@@ -26,8 +29,14 @@ import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureCredentialDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureCredentialSpecDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureCredentialType;
+import io.harness.delegate.beans.connector.azureconnector.AzureInheritFromDelegateDetailsDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthSADTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthUADTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureManagedIdentityType;
 import io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureSecretType;
+import io.harness.delegate.beans.connector.azureconnector.AzureUserAssignedMSIAuthDTO;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.rule.Owner;
@@ -50,7 +59,7 @@ public class AzureDTOToEntityTest extends CategoryTest {
   @Test
   @Owner(developers = BUHA)
   @Category(UnitTests.class)
-  public void testToConnectorEntity() {
+  public void testManualCredentialsConnectorToConnectorEntity() {
     String clientId = "clientId";
     String tenantId = "tenantId";
     SecretRefData keySecretRef = SecretRefData.builder().identifier("secretRef").scope(Scope.ACCOUNT).build();
@@ -80,5 +89,77 @@ public class AzureDTOToEntityTest extends CategoryTest {
     assertThat(azureManualCredential.getClientId()).isEqualTo(clientId);
     assertThat(azureManualCredential.getTenantId()).isEqualTo(tenantId);
     assertThat(azureManualCredential.getSecretKeyRef()).isEqualTo(keySecretRef.toSecretRefStringValue());
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testInheritFromDelegateSystemMSIConnectorToConnectorEntity() {
+    AzureMSIAuthDTO azureMSIAuthDTO =
+        AzureMSIAuthSADTO.builder()
+            .azureManagedIdentityType(AzureManagedIdentityType.SYSTEM_ASSIGNED_MANAGED_IDENTITY)
+            .build();
+
+    AzureCredentialSpecDTO azureCredentialSpecDTO =
+        AzureInheritFromDelegateDetailsDTO.builder().authDTO(azureMSIAuthDTO).build();
+
+    AzureCredentialDTO azureCredentialDTO =
+        AzureCredentialDTO.builder().azureCredentialType(INHERIT_FROM_DELEGATE).config(azureCredentialSpecDTO).build();
+
+    AzureConnectorDTO azureConnectorDTO = AzureConnectorDTO.builder()
+                                              .azureEnvironmentType(AzureEnvironmentType.AZURE)
+                                              .credential(azureCredentialDTO)
+                                              .build();
+
+    final AzureConfig azureConfig = azureDTOToEntity.toConnectorEntity(azureConnectorDTO);
+
+    assertThat(azureConfig).isNotNull();
+    assertThat(azureConfig.getCredentialType()).isEqualTo(INHERIT_FROM_DELEGATE);
+    assertThat(azureConfig.getAzureEnvironmentType()).isEqualTo(AzureEnvironmentType.AZURE);
+    assertThat(azureConfig.getCredential()).isNotNull();
+
+    AzureManagedIdentityCredential azureManagedIdentityCredential =
+        (AzureManagedIdentityCredential) azureConfig.getCredential();
+    assertThat(azureManagedIdentityCredential.getAzureManagedIdentityType())
+        .isEqualTo(AzureManagedIdentityType.SYSTEM_ASSIGNED_MANAGED_IDENTITY);
+    assertThat(azureManagedIdentityCredential.getClientId()).isNull();
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testInheritFromDelegateUserMSIConnectorToConnectorEntity() {
+    AzureUserAssignedMSIAuthDTO azureAuthCredentialDTO =
+        AzureUserAssignedMSIAuthDTO.builder().clientId("testClientId").build();
+
+    AzureMSIAuthDTO azureMSIAuthDTO =
+        AzureMSIAuthUADTO.builder()
+            .azureManagedIdentityType(AzureManagedIdentityType.USER_ASSIGNED_MANAGED_IDENTITY)
+            .credentials(azureAuthCredentialDTO)
+            .build();
+
+    AzureCredentialSpecDTO azureCredentialSpecDTO =
+        AzureInheritFromDelegateDetailsDTO.builder().authDTO(azureMSIAuthDTO).build();
+
+    AzureCredentialDTO azureCredentialDTO =
+        AzureCredentialDTO.builder().azureCredentialType(INHERIT_FROM_DELEGATE).config(azureCredentialSpecDTO).build();
+
+    AzureConnectorDTO azureConnectorDTO = AzureConnectorDTO.builder()
+                                              .azureEnvironmentType(AzureEnvironmentType.AZURE)
+                                              .credential(azureCredentialDTO)
+                                              .build();
+
+    final AzureConfig azureConfig = azureDTOToEntity.toConnectorEntity(azureConnectorDTO);
+
+    assertThat(azureConfig).isNotNull();
+    assertThat(azureConfig.getCredentialType()).isEqualTo(INHERIT_FROM_DELEGATE);
+    assertThat(azureConfig.getAzureEnvironmentType()).isEqualTo(AzureEnvironmentType.AZURE);
+    assertThat(azureConfig.getCredential()).isNotNull();
+
+    AzureManagedIdentityCredential azureManagedIdentityCredential =
+        (AzureManagedIdentityCredential) azureConfig.getCredential();
+    assertThat(azureManagedIdentityCredential.getAzureManagedIdentityType())
+        .isEqualTo(AzureManagedIdentityType.USER_ASSIGNED_MANAGED_IDENTITY);
+    assertThat(azureManagedIdentityCredential.getClientId()).isEqualTo("testClientId");
   }
 }

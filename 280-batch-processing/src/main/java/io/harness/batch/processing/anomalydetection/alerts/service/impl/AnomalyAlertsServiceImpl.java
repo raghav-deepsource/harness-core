@@ -15,8 +15,14 @@ import io.harness.batch.processing.anomalydetection.alerts.service.itfc.AnomalyA
 import io.harness.batch.processing.shard.AccountShardService;
 import io.harness.ccm.anomaly.entities.AnomalyEntity;
 import io.harness.ccm.anomaly.service.itfc.AnomalyService;
+import io.harness.ccm.commons.dao.notifications.CCMNotificationsDao;
+import io.harness.ccm.commons.entities.notifications.CCMNotificationSetting;
+import io.harness.ccm.commons.entities.notifications.CCMPerspectiveNotificationChannelsDTO;
 import io.harness.ccm.communication.CESlackWebhookService;
 import io.harness.ccm.communication.entities.CESlackWebhook;
+import io.harness.ccm.views.service.CEViewService;
+import io.harness.ccm.views.service.PerspectiveAnomalyService;
+import io.harness.notification.notificationclient.NotificationClient;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -26,7 +32,10 @@ import com.slack.api.model.block.LayoutBlock;
 import com.slack.api.webhook.WebhookResponse;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -36,10 +45,14 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
   @Autowired @Inject private AnomalyService anomalyService;
+  @Autowired @Inject private PerspectiveAnomalyService perspectiveAnomalyService;
+  @Autowired @Inject private CCMNotificationsDao notificationSettingsDao;
   @Autowired @Inject private CESlackWebhookService ceSlackWebhookService;
   @Autowired @Inject private AccountShardService accountShardService;
   @Autowired @Inject private SlackMessageGenerator slackMessageGenerator;
   @Autowired @Inject private Slack slack;
+  @Autowired @Inject private NotificationClient notificationClient;
+  @Autowired private CEViewService viewService;
 
   int MAX_RETRY = 3;
 
@@ -95,5 +108,46 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
         }
       }
     }
+  }
+
+  // Anomaly alerts Next Gen
+
+  public void sendNgAnomalyAlerts(String accountId, Instant date) {
+    if (slack == null) {
+      slack = Slack.getInstance();
+    }
+    try {
+      checkAndSendAnomalyAlerts(accountId, date);
+    } catch (Exception e) {
+      log.error("Can't send anomaly alerts for account : {}, Exception: ", accountId, e);
+    }
+  }
+
+  private void checkAndSendAnomalyAlerts(String accountId, Instant date) {
+    checkNotNull(accountId);
+    List<CCMPerspectiveNotificationChannelsDTO> notificationSettings =
+        listNotificationChannelsPerPerspective(accountId);
+    notificationSettings.forEach(
+        notificationSetting -> checkAndSendAnomalyAlertsForPerspective(notificationSetting, accountId));
+  }
+
+  private void checkAndSendAnomalyAlertsForPerspective(
+      CCMPerspectiveNotificationChannelsDTO perspectiveNotificationSetting, String accountId) {}
+
+  public List<CCMPerspectiveNotificationChannelsDTO> listNotificationChannelsPerPerspective(String accountId) {
+    List<CCMNotificationSetting> notificationSettings = notificationSettingsDao.list(accountId);
+    List<String> perspectiveIds =
+        notificationSettings.stream().map(CCMNotificationSetting::getPerspectiveId).collect(Collectors.toList());
+    Map<String, String> perspectiveIdToNameMapping =
+        viewService.getPerspectiveIdToNameMapping(accountId, perspectiveIds);
+    List<CCMPerspectiveNotificationChannelsDTO> perspectiveNotificationChannels = new ArrayList<>();
+    notificationSettings.forEach(notificationSetting
+        -> perspectiveNotificationChannels.add(
+            CCMPerspectiveNotificationChannelsDTO.builder()
+                .perspectiveId(notificationSetting.getPerspectiveId())
+                .perspectiveName(perspectiveIdToNameMapping.get(notificationSetting.getPerspectiveId()))
+                .channels(notificationSetting.getChannels())
+                .build()));
+    return perspectiveNotificationChannels;
   }
 }

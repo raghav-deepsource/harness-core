@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.ChecksumType;
 import io.harness.delegate.beans.FileBucket;
@@ -34,11 +35,12 @@ import io.harness.exception.DuplicateEntityException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.file.beans.NGBaseFile;
 import io.harness.filestore.FileStoreConstants;
+import io.harness.filestore.NGFileType;
 import io.harness.ng.core.dto.filestore.FileDTO;
-import io.harness.ng.core.dto.filestore.NGFileType;
 import io.harness.ng.core.dto.filestore.node.FileNodeDTO;
 import io.harness.ng.core.dto.filestore.node.FolderNodeDTO;
 import io.harness.ng.core.entities.NGFile;
+import io.harness.repositories.filestore.FileStoreRepositoryCriteriaCreator;
 import io.harness.repositories.filestore.spring.FileStoreRepository;
 import io.harness.rule.Owner;
 
@@ -63,10 +65,10 @@ import org.springframework.dao.DuplicateKeyException;
 @OwnedBy(HarnessTeam.CDP)
 @RunWith(MockitoJUnitRunner.class)
 public class FileStoreServiceImplTest extends CategoryTest {
-  private static final String FILE_ID = "fileId";
   public static final String ACCOUNT_IDENTIFIER = "accountIdentifier";
   private static final String ORG_IDENTIFIER = "orgIdentifier";
   public static final String PROJECT_IDENTIFIER = "projectIdentifier";
+  public static final String PARENT_IDENTIFIER = "parentIdentifier";
   public static final String IDENTIFIER = "identifier";
   public static final String FILE_IDENTIFIER = "fileIdentifier";
   public static final String FILE_NAME = "fileName";
@@ -485,8 +487,10 @@ public class FileStoreServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testListFolderNodes() {
     FolderNodeDTO folderNodeDTO = FolderNodeDTO.builder().identifier(FILE_IDENTIFIER).name(FILE_NAME).build();
-    when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndParentIdentifier(
-             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, FILE_IDENTIFIER))
+    when(fileStoreRepository.findAllAndSort(
+             FileStoreRepositoryCriteriaCreator.createCriteriaByScopeAndParentIdentifier(
+                 Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER), FILE_IDENTIFIER),
+             FileStoreRepositoryCriteriaCreator.createSortByLastModifiedAtDesc()))
         .thenReturn(Arrays.asList(NGFile.builder()
                                       .type(NGFileType.FOLDER)
                                       .name("folderName1")
@@ -558,7 +562,6 @@ public class FileStoreServiceImplTest extends CategoryTest {
   private FileDTO createFileDto() {
     return FileDTO.builder()
         .type(NGFileType.FILE)
-        .entityId(FILE_ID)
         .identifier("identifier1")
         .name("updatedName")
         .description("updatedDescription")
@@ -567,7 +570,6 @@ public class FileStoreServiceImplTest extends CategoryTest {
   private NGFile createNgFile() {
     return NGFile.builder()
         .type(NGFileType.FILE)
-        .entityId(FILE_ID)
         .name("oldName")
         .description("oldDescription")
         .identifier("identifier1")

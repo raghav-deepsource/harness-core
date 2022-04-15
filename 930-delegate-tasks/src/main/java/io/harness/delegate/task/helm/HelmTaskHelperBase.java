@@ -514,7 +514,7 @@ public class HelmTaskHelperBase {
           manifest.getChartName(), manifest.getChartVersion(), destinationDirectory, manifest.getHelmVersion(),
           manifest.getHelmCommandFlag(), timeoutInMillis, manifest.isCheckIncorrectChartVersion(), cacheDir);
     } finally {
-      if (manifest.isDeleteRepoCacheDir()) {
+      if (manifest.isUseRepoFlags() && manifest.isDeleteRepoCacheDir()) {
         try {
           FileUtils.forceDelete(new File(cacheDir));
         } catch (IOException ie) {

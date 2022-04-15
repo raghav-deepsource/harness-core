@@ -22,34 +22,49 @@ import io.harness.pms.utils.PmsGrpcClientUtils;
 import io.harness.pms.yaml.YamlUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
-import java.util.HashMap;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @OwnedBy(PIPELINE)
 public class JsonExpander {
   @Inject Map<ModuleType, JsonExpansionServiceBlockingStub> jsonExpansionServiceBlockingStubMap;
-  Executor executor = Executors.newFixedThreadPool(5);
+  @Inject @Named("jsonExpansionRequestBatchSize") Integer jsonExpansionRequestBatchSize;
+  @Inject @Named("JsonExpansionExecutorService") Executor executor;
+
+  @Inject
+  JsonExpander(Map<ModuleType, JsonExpansionServiceBlockingStub> jsonExpansionServiceBlockingStubMap,
+      @Named("jsonExpansionRequestBatchSize") Integer jsonExpansionRequestBatchSize,
+      @Named("JsonExpansionExecutorService") Executor executor) {
+    this.jsonExpansionServiceBlockingStubMap = jsonExpansionServiceBlockingStubMap;
+    this.jsonExpansionRequestBatchSize = jsonExpansionRequestBatchSize;
+    this.executor = executor;
+  }
 
   public Set<ExpansionResponseBatch> fetchExpansionResponses(
       Set<ExpansionRequest> expansionRequests, ExpansionRequestMetadata expansionRequestMetadata) {
-    Map<ModuleType, ExpansionRequestBatch> expansionRequestBatches =
+    Multimap<ModuleType, ExpansionRequestBatch> expansionRequestBatches =
         batchExpansionRequests(expansionRequests, expansionRequestMetadata);
     CompletableFutures<ExpansionResponseBatch> completableFutures = new CompletableFutures<>(executor);
 
     for (ModuleType module : expansionRequestBatches.keySet()) {
-      completableFutures.supplyAsync(() -> {
-        JsonExpansionServiceBlockingStub blockingStub = jsonExpansionServiceBlockingStubMap.get(module);
-        return PmsGrpcClientUtils.retryAndProcessException(blockingStub::expand, expansionRequestBatches.get(module));
-      });
+      for (ExpansionRequestBatch expansionRequestBatch : expansionRequestBatches.get(module)) {
+        completableFutures.supplyAsync(() -> {
+          JsonExpansionServiceBlockingStub blockingStub = jsonExpansionServiceBlockingStubMap.get(module);
+          return PmsGrpcClientUtils.retryAndProcessException(blockingStub::expand, expansionRequestBatch);
+        });
+      }
     }
 
     try {
@@ -59,29 +74,32 @@ public class JsonExpander {
     }
   }
 
-  Map<ModuleType, ExpansionRequestBatch> batchExpansionRequests(
+  Multimap<ModuleType, ExpansionRequestBatch> batchExpansionRequests(
       Set<ExpansionRequest> expansionRequests, ExpansionRequestMetadata expansionRequestMetadata) {
     Set<ModuleType> requiredModules =
         expansionRequests.stream().map(ExpansionRequest::getModule).collect(Collectors.toSet());
-    Map<ModuleType, ExpansionRequestBatch> expansionRequestBatches = new HashMap<>();
+    Multimap<ModuleType, ExpansionRequestBatch> expansionRequestBatches = HashMultimap.create();
     for (ModuleType module : requiredModules) {
-      Set<ExpansionRequest> currModuleRequests =
+      List<ExpansionRequestProto> protoRequests =
           expansionRequests.stream()
               .filter(expansionRequest -> expansionRequest.getModule().equals(module))
-              .collect(Collectors.toSet());
-      List<ExpansionRequestProto> protoRequests = currModuleRequests.stream()
-                                                      .map(request
-                                                          -> ExpansionRequestProto.newBuilder()
-                                                                 .setFqn(request.getFqn())
-                                                                 .setKey(request.getKey())
-                                                                 .setValue(convertToByteString(request.getFieldValue()))
-                                                                 .build())
-                                                      .collect(Collectors.toList());
-      ExpansionRequestBatch batch = ExpansionRequestBatch.newBuilder()
-                                        .addAllExpansionRequestProto(protoRequests)
-                                        .setRequestMetadata(expansionRequestMetadata)
-                                        .build();
-      expansionRequestBatches.put(module, batch);
+              .map(request
+                  -> ExpansionRequestProto.newBuilder()
+                         .setFqn(request.getFqn())
+                         .setKey(request.getKey())
+                         .setValue(convertToByteString(request.getFieldValue()))
+                         .build())
+              .sorted(Comparator.comparing(ExpansionRequestProto::getKey))
+              .collect(Collectors.toList());
+      List<List<ExpansionRequestProto>> protoRequestsBatched =
+          Lists.partition(protoRequests, jsonExpansionRequestBatchSize);
+      for (List<ExpansionRequestProto> protoRequest : protoRequestsBatched) {
+        expansionRequestBatches.put(module,
+            ExpansionRequestBatch.newBuilder()
+                .addAllExpansionRequestProto(protoRequest)
+                .setRequestMetadata(expansionRequestMetadata)
+                .build());
+      }
     }
     return expansionRequestBatches;
   }

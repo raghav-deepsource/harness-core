@@ -7,6 +7,7 @@
 
 package io.harness.ccm.commons.dao.anomaly;
 
+import static io.harness.ccm.commons.utils.TimeUtils.toOffsetDateTime;
 import static io.harness.timescaledb.Tables.ANOMALIES;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
@@ -22,6 +23,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.sun.istack.internal.Nullable;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +52,20 @@ public class AnomalyDao {
             .orderBy(orderFields)
             .offset(offset)
             .limit(limit);
+    log.info("Anomaly Query: {}", finalStep.getQuery().toString());
+    return finalStep.fetchInto(Anomalies.class);
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public List<Anomalies> fetchAnomaliesForDate(@NonNull String accountId, @Nullable Condition condition,
+      @NonNull List<OrderField<?>> orderFields, @NonNull Integer offset, @NonNull Integer limit, Instant date) {
+    SelectFinalStep<AnomaliesRecord> finalStep = dslContext.selectFrom(ANOMALIES)
+                                                     .where(ANOMALIES.ACCOUNTID.eq(accountId)
+                                                                .and(ANOMALIES.ANOMALYTIME.eq(toOffsetDateTime(date)))
+                                                                .and(firstNonNull(condition, DSL.noCondition())))
+                                                     .orderBy(orderFields)
+                                                     .offset(offset)
+                                                     .limit(limit);
     log.info("Anomaly Query: {}", finalStep.getQuery().toString());
     return finalStep.fetchInto(Anomalies.class);
   }

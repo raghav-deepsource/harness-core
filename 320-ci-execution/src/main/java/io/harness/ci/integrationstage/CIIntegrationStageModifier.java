@@ -12,10 +12,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
-import io.harness.ci.beans.entities.BuildNumberDetails;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.stages.stage.StageElementConfig;
-import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
@@ -43,14 +41,8 @@ public class CIIntegrationStageModifier implements StageExecutionModifier {
         stageElementConfig.getIdentifier());
 
     PlanCreationContextValue planCreationContextValue = context.getGlobalContext().get("metadata");
-    ExecutionMetadata executionMetadata = planCreationContextValue.getMetadata();
 
-    CIExecutionArgs ciExecutionArgs =
-        CIExecutionArgs.builder()
-            .executionSource(executionSource)
-            .buildNumberDetails(
-                BuildNumberDetails.builder().buildNumber((long) executionMetadata.getRunSequence()).build())
-            .build();
+    CIExecutionArgs ciExecutionArgs = CIExecutionArgs.builder().executionSource(executionSource).build();
 
     log.info("Build execution args for integration stage  {}", stageElementConfig.getIdentifier());
     return ExecutionElementConfig.builder()

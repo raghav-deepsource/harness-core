@@ -7,13 +7,13 @@
 
 package io.harness.cdng.usage.impl;
 
-import static io.harness.cdng.usage.beans.CDLicenseUsageConstants.LICENSE_INSTANCE_LIMIT;
-import static io.harness.cdng.usage.beans.CDLicenseUsageConstants.PERCENTILE;
-import static io.harness.cdng.usage.beans.CDLicenseUsageConstants.TIME_PERIOD_IN_DAYS;
+import static io.harness.cd.CDLicenseType.SERVICES;
+import static io.harness.cd.CDLicenseType.SERVICE_INSTANCES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.licensing.beans.modules.types.CDLicenseType.SERVICES;
-import static io.harness.licensing.beans.modules.types.CDLicenseType.SERVICE_INSTANCES;
+import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.LICENSE_INSTANCE_LIMIT;
+import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.PERCENTILE;
+import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.TIME_PERIOD_IN_DAYS;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -21,15 +21,15 @@ import static java.util.Collections.emptyList;
 import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.usage.beans.CDLicenseUsageConstants;
-import io.harness.cdng.usage.beans.CDLicenseUsageDTO;
-import io.harness.cdng.usage.beans.ServiceInstanceUsageDTO;
-import io.harness.cdng.usage.beans.ServiceUsageDTO;
 import io.harness.dtos.InstanceDTO;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.WingsException;
 import io.harness.licensing.usage.beans.ReferenceDTO;
 import io.harness.licensing.usage.beans.UsageDataDTO;
+import io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants;
+import io.harness.licensing.usage.beans.cd.CDLicenseUsageDTO;
+import io.harness.licensing.usage.beans.cd.ServiceInstanceUsageDTO;
+import io.harness.licensing.usage.beans.cd.ServiceUsageDTO;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
 import io.harness.licensing.usage.params.CDUsageRequestParams;
 import io.harness.ng.core.service.services.ServiceEntityService;

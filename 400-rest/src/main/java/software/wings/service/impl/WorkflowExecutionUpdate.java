@@ -26,7 +26,6 @@ import io.harness.beans.EnvironmentType;
 import io.harness.beans.EventPayload;
 import io.harness.beans.EventType;
 import io.harness.beans.ExecutionStatus;
-import io.harness.beans.FeatureName;
 import io.harness.beans.WorkflowType;
 import io.harness.beans.event.cg.CgPipelineCompletePayload;
 import io.harness.beans.event.cg.CgPipelinePausePayload;
@@ -337,7 +336,7 @@ public class WorkflowExecutionUpdate implements StateMachineExecutionCallback {
       return;
     }
     String accountId = application.getAccountId();
-    if (execution == null || !featureFlagService.isEnabled(FeatureName.APP_TELEMETRY, accountId)) {
+    if (execution == null) {
       return;
     }
     PipelineSummary summary = execution.getPipelineSummary();
@@ -393,17 +392,11 @@ public class WorkflowExecutionUpdate implements StateMachineExecutionCallback {
 
   private void deliverEvent(WorkflowExecution execution, ExecutionStatus status, Long endTs) {
     Application application = appService.get(appId);
-    if (application == null) {
+    if (application == null || execution == null || execution.getPipelineSummary() == null) {
       return;
     }
     String accountId = application.getAccountId();
-    if (execution == null || !featureFlagService.isEnabled(FeatureName.APP_TELEMETRY, accountId)) {
-      return;
-    }
     PipelineSummary summary = execution.getPipelineSummary();
-    if (summary == null) {
-      return;
-    }
     eventService.deliverEvent(accountId, appId,
         EventPayload.builder()
             .eventType(EventType.PIPELINE_END.getEventValue())
@@ -460,9 +453,6 @@ public class WorkflowExecutionUpdate implements StateMachineExecutionCallback {
       return;
     }
     String accountId = execution.getAccountId();
-    if (!featureFlagService.isEnabled(FeatureName.APP_TELEMETRY, accountId)) {
-      return;
-    }
     Application application = appService.get(execution.getAppId());
     if (application == null) {
       return;

@@ -27,6 +27,7 @@ import software.wings.service.intfc.ownership.OwnedByArtifactStream;
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -83,6 +84,8 @@ public interface ArtifactService extends OwnedByArtifactStream {
    * @return the artifact
    */
   Artifact update(@Valid Artifact artifact);
+
+  void updateMetadataAndRevision(String artifactId, String accountId, Map<String, String> newMetadata, String revision);
 
   /**
    * Update status.

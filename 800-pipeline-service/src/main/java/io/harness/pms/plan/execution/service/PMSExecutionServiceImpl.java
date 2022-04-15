@@ -20,6 +20,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.dto.OrchestrationGraphDTO;
 import io.harness.engine.OrchestrationService;
 import io.harness.engine.interrupts.InterruptPackage;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.StagesExecutionMetadata;
 import io.harness.filter.FilterType;
@@ -246,8 +247,8 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     if (pipelineExecutionSummaryEntityOptional.isPresent()) {
       return pipelineExecutionSummaryEntityOptional.get();
     }
-    throw new InvalidRequestException(
-        "Plan Execution Summary does not exist or has been deleted for given planExecutionId");
+    throw new EntityNotFoundException(
+        "Plan Execution Summary does not exist or has been deleted for planExecutionId: " + planExecutionId);
   }
 
   @Override
@@ -259,8 +260,8 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     if (pipelineExecutionSummaryEntityOptional.isPresent()) {
       return pipelineExecutionSummaryEntityOptional.get();
     }
-    throw new InvalidRequestException(
-        "Plan Execution Summary does not exist or has been deleted for given planExecutionId");
+    throw new EntityNotFoundException(
+        "Plan Execution Summary does not exist or has been deleted for planExecutionId: " + planExecutionId);
   }
 
   @Override

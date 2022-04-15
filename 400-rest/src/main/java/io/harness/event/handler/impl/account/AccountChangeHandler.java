@@ -169,17 +169,7 @@ public class AccountChangeHandler implements EventHandler {
     }
 
     List<User> users = userService.getUsersOfAccount(accountId);
-    long count = 0;
-    if (isNotEmpty(users)) {
-      count = users.stream()
-                  .filter(userObj -> {
-                    if (userObj.getEmail() != null) {
-                      return !userObj.getEmail().endsWith(Keys.HARNESS_EMAIL);
-                    }
-                    return !userObj.getDisabled();
-                  })
-                  .count();
-    }
+    long count = getUserCount(users);
 
     boolean isPresentInSalesforce = false;
     try {
@@ -221,5 +211,23 @@ public class AccountChangeHandler implements EventHandler {
 
     segmentHelper.enqueue(groupMessageBuilder.enableIntegration(SegmentHandler.Keys.SALESFORCE, isPresentInSalesforce));
     log.info("Group call sent to Salesforce is={} for accountId={}", isPresentInSalesforce, account.getUuid());
+  }
+
+  private static long getUserCount(List<User> users) {
+    if (isEmpty(users)) {
+      return 0;
+    }
+
+    return users.stream()
+        .filter(userObj -> {
+          if (userObj.getDisabled()) {
+            return false;
+          }
+          if (userObj.getEmail() != null) {
+            return !userObj.getEmail().endsWith(Keys.HARNESS_EMAIL);
+          }
+          return true;
+        })
+        .count();
   }
 }

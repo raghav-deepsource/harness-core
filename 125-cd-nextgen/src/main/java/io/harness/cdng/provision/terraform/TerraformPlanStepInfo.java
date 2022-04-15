@@ -14,6 +14,7 @@ import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.filters.WithConnectorRef;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -46,7 +47,7 @@ public class TerraformPlanStepInfo extends TerraformPlanBaseStepInfo implements 
 
   @Builder(builderMethodName = "infoBuilder")
   public TerraformPlanStepInfo(ParameterField<String> provisionerIdentifier,
-      ParameterField<List<String>> delegateSelectors, TerraformPlanExecutionData terraformPlanExecutionData) {
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, TerraformPlanExecutionData terraformPlanExecutionData) {
     super(provisionerIdentifier, delegateSelectors);
     this.terraformPlanExecutionData = terraformPlanExecutionData;
   }

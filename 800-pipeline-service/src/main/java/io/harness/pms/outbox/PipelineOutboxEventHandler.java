@@ -62,7 +62,7 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
     PipelineCreateEvent event = objectMapper.readValue(outboxEvent.getEventData(), PipelineCreateEvent.class);
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.CREATE)
-                                .module(ModuleType.CORE)
+                                .module(ModuleType.PMS)
                                 .newYaml(event.getPipeline().getYaml())
                                 .timestamp(outboxEvent.getCreatedAt())
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
@@ -87,7 +87,7 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
     PipelineUpdateEvent event = objectMapper.readValue(outboxEvent.getEventData(), PipelineUpdateEvent.class);
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.UPDATE)
-                                .module(ModuleType.CORE)
+                                .module(ModuleType.PMS)
                                 .newYaml(event.getNewPipeline().getYaml())
                                 .oldYaml(event.getOldPipeline().getYaml())
                                 .timestamp(outboxEvent.getCreatedAt())
@@ -124,7 +124,7 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
     }
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.DELETE)
-                                .module(ModuleType.CORE)
+                                .module(ModuleType.PMS)
                                 .oldYaml(event.getPipeline().getYaml())
                                 .timestamp(outboxEvent.getCreatedAt())
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))

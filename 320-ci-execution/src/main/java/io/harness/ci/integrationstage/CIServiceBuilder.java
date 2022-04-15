@@ -38,7 +38,7 @@ import io.harness.util.PortFinder;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -125,7 +125,7 @@ public class CIServiceBuilder {
                                    .build())
         .containerResourceParams(
             getServiceContainerResource(service.getResources(), ciExecutionServiceConfig, service.getIdentifier()))
-        .ports(Collections.singletonList(port))
+        .ports(Arrays.asList(port))
         .containerType(CIContainerType.SERVICE)
         .stepIdentifier(service.getIdentifier())
         .stepName(service.getName())

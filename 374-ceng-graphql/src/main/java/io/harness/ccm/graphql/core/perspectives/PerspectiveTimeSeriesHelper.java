@@ -34,8 +34,13 @@ import io.harness.ccm.graphql.dto.common.DataPoint.DataPointBuilder;
 import io.harness.ccm.graphql.dto.common.Reference;
 import io.harness.ccm.graphql.dto.common.TimeSeriesDataPoints;
 import io.harness.ccm.graphql.dto.perspectives.PerspectiveTimeSeriesData;
+import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessMapping.entities.UnallocatedCostStrategy;
+import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.graphql.QLCEViewGroupBy;
 import io.harness.ccm.views.graphql.QLCEViewTimeTruncGroupBy;
+import io.harness.ccm.views.utils.ViewFieldUtils;
+import io.harness.exception.InvalidRequestException;
 
 import com.google.cloud.Timestamp;
 import com.google.cloud.bigquery.Field;
@@ -60,17 +65,22 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PerspectiveTimeSeriesHelper {
   @Inject EntityMetadataService entityMetadataService;
+  @Inject BusinessMappingService businessMappingService;
   public static final String nullStringValueConstant = "Others";
   public static final String OTHERS = "Others";
   private static final long ONE_DAY_SEC = 86400;
   private static final long ONE_HOUR_SEC = 3600;
 
   public PerspectiveTimeSeriesData fetch(TableResult result, long timePeriod) {
-    return fetch(result, timePeriod, null, null);
+    return fetch(result, timePeriod, null, null, null);
   }
 
   public PerspectiveTimeSeriesData fetch(
-      TableResult result, long timePeriod, String conversionField, String accountId) {
+      TableResult result, long timePeriod, String conversionField, String businessMappingId, String accountId) {
+    BusinessMapping businessMapping = businessMappingService.get(businessMappingId);
+    UnallocatedCostStrategy strategy =
+        businessMapping != null ? businessMapping.getUnallocatedCost().getStrategy() : null;
+
     Schema schema = result.getSchema();
     FieldList fields = schema.getFields();
     Set<String> entityNames = new HashSet<>();
@@ -166,20 +176,40 @@ public class PerspectiveTimeSeriesHelper {
         }
       }
 
-      addDataPointToMap(id, stringValue, type, value, costDataPointsMap, startTimeTruncatedTimestamp);
-      addDataPointToMap(id, "LIMIT", "UTILIZATION", cpuLimit, cpuLimitDataPointsMap, startTimeTruncatedTimestamp);
-      addDataPointToMap(id, "REQUEST", "UTILIZATION", cpuRequest, cpuRequestDataPointsMap, startTimeTruncatedTimestamp);
-      addDataPointToMap(
-          id, "AVG", "UTILIZATION", cpuUtilizationValue, cpuUtilizationValueDataPointsMap, startTimeTruncatedTimestamp);
-      addDataPointToMap(id, "MAX", "UTILIZATION", maxCpuUtilizationValue, cpuUtilizationValueDataPointsMap,
-          startTimeTruncatedTimestamp);
-      addDataPointToMap(id, "LIMIT", "UTILIZATION", memoryLimit, memoryLimitDataPointsMap, startTimeTruncatedTimestamp);
-      addDataPointToMap(
-          id, "REQUEST", "UTILIZATION", memoryRequest, memoryRequestDataPointsMap, startTimeTruncatedTimestamp);
-      addDataPointToMap(id, "AVG", "UTILIZATION", memoryUtilizationValue, memoryUtilizationValueDataPointsMap,
-          startTimeTruncatedTimestamp);
-      addDataPointToMap(id, "MAX", "UTILIZATION", maxMemoryUtilizationValue, memoryUtilizationValueDataPointsMap,
-          startTimeTruncatedTimestamp);
+      boolean addDataPoint = true;
+      if (strategy != null && stringValue.equals(ViewFieldUtils.getBusinessMappingUnallocatedCostDefaultName())) {
+        switch (strategy) {
+          case HIDE:
+            addDataPoint = false;
+            break;
+          case DISPLAY_NAME:
+            stringValue = businessMapping.getUnallocatedCost().getLabel();
+            break;
+          case SHARE:
+          default:
+            throw new InvalidRequestException(
+                "Invalid Unallocated Cost Strategy / Unallocated Cost Strategy not supported");
+        }
+      }
+
+      if (addDataPoint) {
+        addDataPointToMap(id, stringValue, type, value, costDataPointsMap, startTimeTruncatedTimestamp);
+        addDataPointToMap(id, "LIMIT", "UTILIZATION", cpuLimit, cpuLimitDataPointsMap, startTimeTruncatedTimestamp);
+        addDataPointToMap(
+            id, "REQUEST", "UTILIZATION", cpuRequest, cpuRequestDataPointsMap, startTimeTruncatedTimestamp);
+        addDataPointToMap(id, "AVG", "UTILIZATION", cpuUtilizationValue, cpuUtilizationValueDataPointsMap,
+            startTimeTruncatedTimestamp);
+        addDataPointToMap(id, "MAX", "UTILIZATION", maxCpuUtilizationValue, cpuUtilizationValueDataPointsMap,
+            startTimeTruncatedTimestamp);
+        addDataPointToMap(
+            id, "LIMIT", "UTILIZATION", memoryLimit, memoryLimitDataPointsMap, startTimeTruncatedTimestamp);
+        addDataPointToMap(
+            id, "REQUEST", "UTILIZATION", memoryRequest, memoryRequestDataPointsMap, startTimeTruncatedTimestamp);
+        addDataPointToMap(id, "AVG", "UTILIZATION", memoryUtilizationValue, memoryUtilizationValueDataPointsMap,
+            startTimeTruncatedTimestamp);
+        addDataPointToMap(id, "MAX", "UTILIZATION", maxMemoryUtilizationValue, memoryUtilizationValueDataPointsMap,
+            startTimeTruncatedTimestamp);
+      }
     }
 
     if (conversionField != null) {

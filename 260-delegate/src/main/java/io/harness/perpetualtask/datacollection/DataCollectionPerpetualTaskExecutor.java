@@ -9,6 +9,7 @@ package io.harness.perpetualtask.datacollection;
 
 import static io.harness.cvng.beans.DataCollectionExecutionStatus.FAILED;
 import static io.harness.cvng.beans.DataCollectionExecutionStatus.SUCCESS;
+import static io.harness.cvng.core.services.CVNextGenConstants.LOG_RECORD_THRESHOLD;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -21,7 +22,9 @@ import io.harness.cvng.beans.CVDataCollectionInfo;
 import io.harness.cvng.beans.DataCollectionInfo;
 import io.harness.cvng.beans.DataCollectionTaskDTO;
 import io.harness.cvng.beans.DataCollectionTaskDTO.DataCollectionTaskResult;
+import io.harness.cvng.beans.DataCollectionTaskDTO.DataCollectionTaskResult.ExecutionLog;
 import io.harness.cvng.beans.LogDataCollectionInfo;
+import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
 import io.harness.cvng.utils.CVNGParallelExecutor;
 import io.harness.datacollection.DataCollectionDSLService;
 import io.harness.datacollection.entity.LogDataRecord;
@@ -48,8 +51,10 @@ import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -138,6 +143,7 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
     try {
       DataCollectionInfo dataCollectionInfo = dataCollectionTask.getDataCollectionInfo();
       log.info("collecting data for {}", dataCollectionTask.getVerificationTaskId());
+      List<ExecutionLog> executionLogs = new ArrayList<>();
       final RuntimeParameters runtimeParameters =
           RuntimeParameters.builder()
               .baseUrl(dataCollectionTask.getDataCollectionInfo().getBaseUrl(connectorConfigDTO))
@@ -163,6 +169,16 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
               dataCollectionInfo.getDataCollectionDsl(), runtimeParameters,
               new ThirdPartyCallHandler(dataCollectionTask.getAccountId(), dataCollectionTask.getVerificationTaskId(),
                   delegateLogService, dataCollectionTask.getStartTime(), dataCollectionTask.getEndTime()));
+          if (logDataRecords.size() > LOG_RECORD_THRESHOLD) {
+            logDataRecords = pickNRandomElements(logDataRecords);
+            ExecutionLog delegateLogs =
+                ExecutionLog.builder()
+                    .logLevel(LogLevel.WARN)
+                    .log(String.format("Log query is not optimized. Logs collected %s are capped at %s",
+                        logDataRecords.size(), LOG_RECORD_THRESHOLD))
+                    .build();
+            executionLogs.add(delegateLogs);
+          }
           List<LogDataRecord> validRecords =
               logDataRecords.stream()
                   .filter(log -> isNotEmpty(log.getLog()) && isNotEmpty(log.getHostname()))
@@ -171,6 +187,13 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
             log.info(
                 "Log query is not optimized. Some records with invalid messageIdentifier and serviceInstanceIdentifier are present for verification task id: {}",
                 dataCollectionTask.getVerificationTaskId());
+            ExecutionLog delegateLog =
+                ExecutionLog.builder()
+                    .logLevel(LogLevel.WARN)
+                    .log(String.format(
+                        "Log query is not optimized. Some records with invalid messageIdentifier and serviceInstanceIdentifier are present."))
+                    .build();
+            executionLogs.add(delegateLog);
           }
           logRecordDataStoreService.save(
               dataCollectionTask.getAccountId(), dataCollectionTask.getVerificationTaskId(), validRecords);
@@ -195,14 +218,26 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
           throw new IllegalArgumentException("Invalid type " + dataCollectionInfo.getVerificationType());
       }
       log.info("data collection success for {}.", dataCollectionTask.getVerificationTaskId());
-      DataCollectionTaskResult result =
-          DataCollectionTaskResult.builder().dataCollectionTaskId(dataCollectionTask.getUuid()).status(SUCCESS).build();
+      DataCollectionTaskResult result = DataCollectionTaskResult.builder()
+                                            .dataCollectionTaskId(dataCollectionTask.getUuid())
+                                            .status(SUCCESS)
+                                            .executionLogs(executionLogs)
+                                            .build();
       cvngRequestExecutor.execute(cvNextGenServiceClient.updateTaskStatus(taskParams.getAccountId(), result));
       log.info("Updated task status to success for {}.", dataCollectionTask.getVerificationTaskId());
 
     } catch (Throwable e) {
       updateStatusWithException(taskParams, dataCollectionTask, e);
     }
+  }
+
+  private <E> List<E> pickNRandomElements(List<E> logDataRecords) {
+    int length = logDataRecords.size();
+    Random random = new Random();
+    for (int i = length - 1; i >= length - LOG_RECORD_THRESHOLD; --i) {
+      Collections.swap(logDataRecords, i, random.nextInt(i + 1));
+    }
+    return new ArrayList<>(logDataRecords.subList(length - LOG_RECORD_THRESHOLD, length));
   }
 
   private void updateStatusWithException(

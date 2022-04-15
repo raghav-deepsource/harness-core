@@ -24,6 +24,7 @@ import static org.mockito.Matchers.anyMap;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -34,10 +35,12 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
+import io.harness.beans.FeatureName;
 import io.harness.beans.WorkflowType;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
@@ -103,6 +106,7 @@ public class TriggerControllerTest extends CategoryTest {
   @Mock AuthService authService;
   @Mock HPersistence persistence;
   @Mock SettingsService settingsService;
+  @Mock FeatureFlagService featureFlagService;
 
   @InjectMocks TriggerController triggerController = spy(new TriggerController());
 
@@ -405,6 +409,9 @@ public class TriggerControllerTest extends CategoryTest {
     when(pipelineExecutionController.resolveEnvId(any(Pipeline.class), anyList())).thenReturn("envId");
     doNothing().when(deploymentAuthHandler).authorizePipelineExecution(anyString(), anyString());
     doNothing().when(authService).checkIfUserAllowedToDeployPipelineToEnv(anyString(), anyString());
+    doReturn(false)
+        .when(featureFlagService)
+        .isEnabled(eq(FeatureName.PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION), anyString());
 
     when(triggerActionController.validateAndResolvePipelineVariables(anyList(), any(Pipeline.class), anyString()))
         .thenReturn(workflowVariables);
@@ -520,6 +527,9 @@ public class TriggerControllerTest extends CategoryTest {
         .thenReturn(artifactSelectionList);
     when(triggerConditionController.resolveTriggerCondition(any(QLCreateOrUpdateTriggerInput.class)))
         .thenReturn(triggerCondition);
+    doReturn(false)
+        .when(featureFlagService)
+        .isEnabled(eq(FeatureName.PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION), anyString());
 
     doNothing().when(triggerController).validateTrigger(any(QLCreateOrUpdateTriggerInput.class), anyString());
 

@@ -18,7 +18,6 @@ import static com.amazonaws.services.codedeploy.model.DeploymentStatus.Stopped;
 import static com.amazonaws.services.codedeploy.model.DeploymentStatus.Succeeded;
 import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
-import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -43,7 +42,6 @@ import com.amazonaws.services.codedeploy.model.DeploymentInfo;
 import com.amazonaws.services.codedeploy.model.ErrorInformation;
 import com.amazonaws.services.codedeploy.model.GetDeploymentGroupRequest;
 import com.amazonaws.services.codedeploy.model.GetDeploymentRequest;
-import com.amazonaws.services.codedeploy.model.InstanceStatus;
 import com.amazonaws.services.codedeploy.model.ListApplicationsRequest;
 import com.amazonaws.services.codedeploy.model.ListApplicationsResult;
 import com.amazonaws.services.codedeploy.model.ListDeploymentConfigsRequest;
@@ -62,7 +60,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -180,28 +177,6 @@ public class AwsCodeDeployServiceImpl implements AwsCodeDeployService {
           wex.getCause() != null ? wex.getCause().getMessage() : (String) wex.getParams().get("message"),
           LogLevel.ERROR);
       throw wex;
-    }
-  }
-
-  @Override
-  public List<Instance> listDeploymentInstances(String region, SettingAttribute cloudProviderSetting,
-      List<EncryptedDataDetail> encryptedDataDetails, String deploymentId) {
-    AwsConfig awsConfig = awsHelperService.validateAndGetAwsConfig(cloudProviderSetting, encryptedDataDetails, false);
-
-    List<String> instanceIds = fetchAllDeploymentInstances(
-        awsConfig, encryptedDataDetails, region, deploymentId, asList(InstanceStatus.Succeeded.name()));
-
-    if (isNotEmpty(instanceIds)) {
-      DescribeInstancesRequest describeInstancesRequest =
-          awsHelperService.getDescribeInstancesRequestWithRunningFilter().withInstanceIds(instanceIds);
-
-      return awsHelperService.describeEc2Instances(awsConfig, encryptedDataDetails, region, describeInstancesRequest)
-          .getReservations()
-          .stream()
-          .flatMap(reservation -> reservation.getInstances().stream())
-          .collect(toList());
-    } else {
-      return Collections.EMPTY_LIST;
     }
   }
 

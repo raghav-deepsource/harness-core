@@ -12,8 +12,8 @@ import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(HarnessTeam.CDP)
 public final class FileStoreConstants {
-  private FileStoreConstants(){};
-
   public static final String ROOT_FOLDER_NAME = "Root";
   public static final String ROOT_FOLDER_IDENTIFIER = "Root";
+
+  private FileStoreConstants(){};
 }

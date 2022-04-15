@@ -20,6 +20,7 @@ import io.harness.engine.observers.NodeStatusUpdateHandler;
 import io.harness.engine.observers.NodeUpdateInfo;
 import io.harness.engine.observers.PlanStatusUpdateObserver;
 import io.harness.engine.utils.OrchestrationUtils;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
@@ -125,7 +126,7 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   @Override
   public PlanExecution get(String planExecutionId) {
     return planExecutionRepository.findById(planExecutionId)
-        .orElseThrow(() -> new InvalidRequestException("Plan Execution is null for id: " + planExecutionId));
+        .orElseThrow(() -> new EntityNotFoundException("Plan Execution not found for id: " + planExecutionId));
   }
 
   @Override

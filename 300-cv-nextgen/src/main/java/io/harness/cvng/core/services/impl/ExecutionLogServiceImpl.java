@@ -8,6 +8,7 @@
 package io.harness.cvng.core.services.impl;
 
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
+import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
 import io.harness.cvng.beans.cvnglog.TraceableType;
 import io.harness.cvng.core.entities.VerificationTaskExecutionInstance;
 import io.harness.cvng.core.services.api.CVNGLogService;
@@ -16,7 +17,7 @@ import io.harness.cvng.core.services.api.ExecutionLogger;
 
 import com.google.inject.Inject;
 import java.time.Instant;
-import java.util.Arrays;
+import java.util.Collections;
 import lombok.Builder;
 import lombok.Value;
 
@@ -44,7 +45,7 @@ public class ExecutionLogServiceImpl implements ExecutionLogService {
     Instant endTime;
 
     @Override
-    public void log(ExecutionLogDTO.LogLevel logLevel, String message) {
+    public void log(LogLevel logLevel, String message) {
       ExecutionLogDTO executionLogDTO = ExecutionLogDTO.builder()
                                             .accountId(accountId)
                                             .traceableId(verificationTaskId)
@@ -54,7 +55,7 @@ public class ExecutionLogServiceImpl implements ExecutionLogService {
                                             .log(message)
                                             .logLevel(logLevel)
                                             .build();
-      cvngLogService.save(Arrays.asList(executionLogDTO));
+      cvngLogService.save(Collections.singletonList(executionLogDTO));
     }
   }
 }

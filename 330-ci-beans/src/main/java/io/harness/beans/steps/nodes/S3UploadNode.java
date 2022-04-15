@@ -39,6 +39,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 public class S3UploadNode extends CIAbstractStepNode {
   @JsonProperty("type") @NotNull S3UploadNode.StepType type = S3UploadNode.StepType.S3Upload;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   UploadToS3StepInfo uploadToS3StepInfo;

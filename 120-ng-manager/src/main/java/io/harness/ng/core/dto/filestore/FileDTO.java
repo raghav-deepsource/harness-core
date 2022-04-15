@@ -13,6 +13,8 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.Condition;
 import io.harness.data.validator.EntityIdentifier;
+import io.harness.filestore.FileUsage;
+import io.harness.filestore.NGFileType;
 import io.harness.ng.core.common.beans.NGTag;
 
 import software.wings.beans.EntityType;
@@ -35,7 +37,7 @@ import org.hibernate.validator.constraints.NotBlank;
 
 @OwnedBy(CDP)
 @Data
-@NoArgsConstructor
+@Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(name = "File", description = "This is details of the file entity defined in Harness.")
@@ -72,30 +74,8 @@ public class FileDTO {
   private String parentIdentifier;
   @Schema(description = "Description of the File") @FormDataParam("description") private String description;
   @Schema(description = "Tags") @Valid private List<NGTag> tags;
-  @Schema(description = "Content of the File") @FormDataParam("entityType") private EntityType entityType;
-  @Schema(description = "Content of the File") @FormDataParam("entityId") private String entityId;
   @Schema(description = "Mime type of the File") @FormDataParam("mimeType") private String mimeType;
   @Schema(description = "Whether File is draft or not") @JsonProperty(access = Access.READ_ONLY) private Boolean draft;
-
-  @Builder
-  public FileDTO(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier,
-      String name, FileUsage fileUsage, NGFileType type, String parentIdentifier, String description, List<NGTag> tags,
-      EntityType entityType, String entityId, String mimeType, Boolean draft) {
-    this.accountIdentifier = accountIdentifier;
-    this.orgIdentifier = orgIdentifier;
-    this.projectIdentifier = projectIdentifier;
-    this.identifier = identifier;
-    this.name = name;
-    this.fileUsage = fileUsage;
-    this.type = type;
-    this.parentIdentifier = parentIdentifier;
-    this.description = description;
-    this.tags = tags;
-    this.entityType = entityType;
-    this.entityId = entityId;
-    this.mimeType = mimeType;
-    this.draft = draft;
-  }
 
   @JsonIgnore
   public boolean isFile() {

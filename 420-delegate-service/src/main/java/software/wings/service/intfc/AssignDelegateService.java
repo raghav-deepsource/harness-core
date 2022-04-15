@@ -17,7 +17,6 @@ import io.harness.delegate.task.TaskFailureReason;
 import software.wings.delegatetasks.validation.DelegateConnectionResult;
 
 import java.util.List;
-import java.util.Map;
 
 @OwnedBy(DEL)
 public interface AssignDelegateService {
@@ -46,7 +45,7 @@ public interface AssignDelegateService {
 
   List<String> getConnectedDelegateList(List<String> delegates, DelegateTask delegateTask);
 
-  boolean canAssignTask(String delegateId, DelegateTask task, Map<String, List<String>> nonAssignableDelegates);
+  boolean canAssignTask(String delegateId, DelegateTask task);
 
   List<Delegate> fetchActiveDelegates(String accountId);
 }

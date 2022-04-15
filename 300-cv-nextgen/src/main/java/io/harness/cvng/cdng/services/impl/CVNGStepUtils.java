@@ -10,6 +10,8 @@ package io.harness.cvng.cdng.services.impl;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 
+import com.google.common.base.Preconditions;
+
 public class CVNGStepUtils {
   public static final String INFRASTRUCTURE_KEY = "infrastructure";
   public static final String SERVICE_CONFIG_KEY = "serviceConfig";
@@ -20,6 +22,7 @@ public class CVNGStepUtils {
   public static final String STAGES_KEY = "stages";
   public static final String EXECUTION_KEY = "execution";
   public static final String USE_FROM_STAGE_KEY = "useFromStage";
+  public static final String PIPELINE = "pipeline";
 
   public static YamlNode getServiceRefNode(YamlNode stageYaml) {
     return stageYaml.getField(SPEC_KEY)
@@ -46,5 +49,19 @@ public class CVNGStepUtils {
 
   public static YamlField getExecutionNodeField(YamlNode stageYaml) {
     return stageYaml.getField(SPEC_KEY).getNode().getField(EXECUTION_KEY);
+  }
+
+  public static YamlNode findStageByIdentifier(YamlNode yamlNode, String identifier) {
+    Preconditions.checkNotNull(yamlNode, "Invalid yaml. Can't find stage spec.");
+    if (yamlNode.getField(CVNGStepUtils.STAGES_KEY) != null) {
+      for (YamlNode stageNode : yamlNode.getField(CVNGStepUtils.STAGES_KEY).getNode().asArray()) {
+        if (identifier.equals(stageNode.getField(CVNGStepUtils.STAGE_KEY).getNode().getIdentifier())) {
+          return stageNode.getField(CVNGStepUtils.STAGE_KEY).getNode();
+        }
+      }
+      throw new IllegalStateException("Could not find stage with identifier: " + identifier);
+    } else {
+      return findStageByIdentifier(yamlNode.getParentNode(), identifier);
+    }
   }
 }

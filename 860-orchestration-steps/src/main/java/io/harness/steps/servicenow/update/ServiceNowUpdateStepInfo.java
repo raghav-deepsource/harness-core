@@ -14,7 +14,9 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.filters.WithConnectorRef;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
+import io.harness.plancreator.steps.common.WithDelegateSelector;
 import io.harness.plancreator.steps.internal.PMSStepInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -45,7 +47,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.SERVICENOW_UPDATE)
 @TypeAlias("serviceNowUpdateStepInfo")
 @RecasterAlias("io.harness.steps.servicenow.update.ServiceNowUpdateStepInfo")
-public class ServiceNowUpdateStepInfo implements PMSStepInfo, WithConnectorRef {
+public class ServiceNowUpdateStepInfo implements PMSStepInfo, WithConnectorRef, WithDelegateSelector {
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> connectorRef;
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> ticketType;
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> ticketNumber;
@@ -57,7 +59,7 @@ public class ServiceNowUpdateStepInfo implements PMSStepInfo, WithConnectorRef {
 
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @YamlSchemaTypes(value = {runtime})
-  ParameterField<List<String>> delegateSelectors;
+  ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @Override
   public StepType getStepType() {

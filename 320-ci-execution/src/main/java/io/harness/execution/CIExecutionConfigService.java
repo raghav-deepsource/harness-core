@@ -102,7 +102,7 @@ public class CIExecutionConfigService {
     CIStepConfig config = ciExecutionServiceConfig.getStepConfig();
     return CIExecutionImages.builder()
         .buildAndPushDockerRegistryTag(config.getBuildAndPushDockerRegistryConfig().getImage())
-        .addonTag(ciExecutionServiceConfig.getAddonImageTag())
+        .addonTag(ciExecutionServiceConfig.getAddonImage())
         .liteEngineTag(ciExecutionServiceConfig.getLiteEngineImage())
         .gitCloneTag(config.getGitCloneConfig().getImage())
         .buildAndPushECRTag(config.getBuildAndPushECRConfig().getImage())
@@ -298,5 +298,11 @@ public class CIExecutionConfigService {
         throw new IllegalStateException("Unexpected value: " + stepInfoType);
     }
     return StepImageConfig.builder().entrypoint(entrypoint).image(image).build();
+  }
+
+  public Boolean deleteCIExecutionConfig(String accountIdentifier) {
+    Optional<CIExecutionConfig> executionConfig = configRepository.findFirstByAccountIdentifier(accountIdentifier);
+    executionConfig.ifPresent(ciExecutionConfig -> configRepository.deleteById(ciExecutionConfig.getUuid()));
+    return true;
   }
 }

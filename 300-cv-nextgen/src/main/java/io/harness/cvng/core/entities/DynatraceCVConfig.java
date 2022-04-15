@@ -27,6 +27,7 @@ import io.harness.cvng.core.utils.analysisinfo.SLIMetricTransformer;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -139,6 +140,11 @@ public class DynatraceCVConfig extends MetricCVConfig<DynatraceMetricInfo> {
     return AnalysisInfoUtility.anyDeploymentVerificationEnabled(metricInfos);
   }
 
+  @Override
+  public Optional<String> maybeGetGroupName() {
+    return Optional.ofNullable(groupName);
+  }
+
   public static class DynatraceCVConfigUpdatableEntity
       extends MetricCVConfigUpdatableEntity<DynatraceCVConfig, DynatraceCVConfig> {
     @Override
@@ -147,6 +153,9 @@ public class DynatraceCVConfig extends MetricCVConfig<DynatraceMetricInfo> {
       setCommonOperations(updateOperations, dynatraceCVConfig);
       updateOperations.set(DynatraceCVConfigKeys.dynatraceServiceName, dynatraceCVConfig.getDynatraceServiceName())
           .set(DynatraceCVConfigKeys.dynatraceServiceId, dynatraceCVConfig.getDynatraceServiceId());
+      if (dynatraceCVConfig.getMetricInfos() != null) {
+        updateOperations.set(DynatraceCVConfigKeys.metricInfos, dynatraceCVConfig.getMetricInfos());
+      }
     }
   }
 

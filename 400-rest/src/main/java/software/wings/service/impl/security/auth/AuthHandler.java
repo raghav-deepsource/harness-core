@@ -751,9 +751,11 @@ public class AuthHandler {
             envDeploymentPermissionMap = new HashMap<>();
           }
           buildPipelineEnvMap(permissionTypeAppIdEntityMap.get(PIPELINE).get(appId),
-              permissionTypeAppIdEntityMap.get(ENV).get(appId), (EnvFilter) entityFilter, envDeploymentPermissionMap);
+              permissionTypeAppIdEntityMap.get(ENV).get(appId), (EnvFilter) entityFilter, envDeploymentPermissionMap,
+              entityActions);
           buildWorkflowEnvMap(permissionTypeAppIdEntityMap.get(WORKFLOW).get(appId),
-              permissionTypeAppIdEntityMap.get(ENV).get(appId), (EnvFilter) entityFilter, envDeploymentPermissionMap);
+              permissionTypeAppIdEntityMap.get(ENV).get(appId), (EnvFilter) entityFilter, envDeploymentPermissionMap,
+              entityActions);
           finalAppPermissionSummary.setEnvExecutableElementDeployPermissions(envDeploymentPermissionMap);
           break;
 
@@ -764,8 +766,8 @@ public class AuthHandler {
   }
 
   private void buildPipelineEnvMap(List<Base> pipelines, List<Base> environments, EnvFilter filter,
-      Map<AppPermissionSummary.ExecutableElementInfo, Set<String>> permission) {
-    if (isEmpty(pipelines)) {
+      Map<AppPermissionSummary.ExecutableElementInfo, Set<String>> permission, Set<Action> entityActions) {
+    if (isEmpty(pipelines) || isEmpty(entityActions) || !entityActions.contains(Action.EXECUTE_PIPELINE)) {
       return;
     }
 
@@ -806,10 +808,11 @@ public class AuthHandler {
   }
 
   private void buildWorkflowEnvMap(List<Base> workflows, List<Base> environments, EnvFilter filter,
-      Map<AppPermissionSummary.ExecutableElementInfo, Set<String>> permission) {
-    if (isEmpty(workflows)) {
+      Map<AppPermissionSummary.ExecutableElementInfo, Set<String>> permission, Set<Action> entityActions) {
+    if (isEmpty(workflows) || isEmpty(entityActions) || !entityActions.contains(Action.EXECUTE_WORKFLOW)) {
       return;
     }
+
     ExecutableElementsFilter executableElementsFilter;
     if (filter == null) {
       executableElementsFilter = new ExecutableElementsFilter();

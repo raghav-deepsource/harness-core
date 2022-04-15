@@ -71,7 +71,7 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   public void testRegister_insert() {
     changeSourceService.create(builderFactory.getContext().getMonitoredServiceParams(),
         new HashSet<>(Arrays.asList(builderFactory.getHarnessCDChangeSourceDTOBuilder().build())));
-    ChangeEventDTO changeEventDTO = builderFactory.getHarnessCDChangeEventDTOBuilder().build();
+    ChangeEventDTO changeEventDTO = builderFactory.harnessCDChangeEventDTOBuilder().build();
 
     changeEventService.register(changeEventDTO);
 
@@ -86,7 +86,7 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     changeSourceService.create(builderFactory.getContext().getMonitoredServiceParams(),
         new HashSet<>(Arrays.asList(builderFactory.getHarnessCDChangeSourceDTOBuilder().build())));
     ChangeEventDTO changeEventDTO =
-        builderFactory.getHarnessCDChangeEventDTOBuilder().monitoredServiceIdentifier(null).build();
+        builderFactory.harnessCDChangeEventDTOBuilder().monitoredServiceIdentifier(null).build();
 
     boolean saved = changeEventService.register(changeEventDTO);
     assertThat(saved).isTrue();
@@ -103,10 +103,10 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     changeSourceService.create(builderFactory.getContext().getMonitoredServiceParams(),
         new HashSet<>(Arrays.asList(builderFactory.getHarnessCDChangeSourceDTOBuilder().build())));
 
-    ChangeEventDTO changeEventDTO = builderFactory.getHarnessCDChangeEventDTOBuilder().build();
+    ChangeEventDTO changeEventDTO = builderFactory.harnessCDChangeEventDTOBuilder().build();
     changeEventService.register(changeEventDTO);
     Long eventTime = 123L;
-    ChangeEventDTO changeEventDTO2 = builderFactory.getHarnessCDChangeEventDTOBuilder().eventTime(eventTime).build();
+    ChangeEventDTO changeEventDTO2 = builderFactory.harnessCDChangeEventDTOBuilder().eventTime(eventTime).build();
     changeEventService.register(changeEventDTO2);
 
     Assertions.assertThat(hPersistence.createQuery(Activity.class).count()).isEqualTo(1);
@@ -120,7 +120,7 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   public void testRegister_noChangeSource() {
     changeSourceService.create(builderFactory.getContext().getMonitoredServiceParams(),
         new HashSet<>(Arrays.asList(builderFactory.getHarnessCDChangeSourceDTOBuilder().build())));
-    ChangeEventDTO changeEventDTO = builderFactory.getHarnessCDChangeEventDTOBuilder().build();
+    ChangeEventDTO changeEventDTO = builderFactory.harnessCDChangeEventDTOBuilder().build();
 
     changeEventService.register(changeEventDTO);
 

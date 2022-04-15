@@ -6,11 +6,11 @@
  */
 
 package software.wings.sm.states;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.REJECTED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
-import static io.harness.beans.FeatureName.RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
@@ -59,7 +59,6 @@ import software.wings.beans.DeploymentExecutionContext;
 import software.wings.beans.EntityType;
 import software.wings.beans.ExecutionArgs;
 import software.wings.beans.ManifestVariable;
-import software.wings.beans.NameValuePair;
 import software.wings.beans.VariableType;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
@@ -69,7 +68,6 @@ import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.artifact.Artifact;
 import software.wings.common.NotificationMessageResolver;
 import software.wings.service.impl.EnvironmentServiceImpl;
-import software.wings.service.impl.WorkflowExecutionUpdate;
 import software.wings.service.impl.deployment.checks.DeploymentFreezeUtils;
 import software.wings.service.impl.workflow.WorkflowServiceHelper;
 import software.wings.service.intfc.ApplicationManifestService;
@@ -92,7 +90,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.github.reinert.jjschema.Attributes;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.inject.Inject;
-import com.google.inject.Injector;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -143,10 +140,8 @@ public class EnvState extends State implements WorkflowState {
   @Setter @SchemaIgnore List<String> userGroupIds;
   @Setter @SchemaIgnore RepairActionCode timeoutAction;
 
-  @Inject private Injector injector;
   @Transient @Inject private WorkflowService workflowService;
   @Transient @Inject private WorkflowExecutionService executionService;
-  @Transient @Inject private WorkflowExecutionUpdate executionUpdate;
   @Transient @Inject private ArtifactService artifactService;
   @Transient @Inject private ArtifactStreamServiceBindingService artifactStreamServiceBindingService;
   @Transient @Inject private ApplicationManifestService applicationManifestService;
@@ -428,15 +423,6 @@ public class EnvState extends State implements WorkflowState {
       }
     }
 
-    if (context.getWorkflowType() == WorkflowType.PIPELINE
-        && featureFlagService.isEnabled(RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION, context.getApp().getAccountId())) {
-      executionUpdate.setAppId(context.getAppId());
-      executionUpdate.setWorkflowExecutionId(context.getWorkflowExecutionId());
-      final String workflowId = context.getWorkflowId(); // this will be pipelineId in case of pipeline
-      injector.injectMembers(executionUpdate);
-      List<NameValuePair> resolvedTags = executionUpdate.resolveDeploymentTags(context, workflowId);
-      executionUpdate.addTagsToWorkflowExecution(resolvedTags);
-    }
     return executionResponseBuilder.build();
   }
 

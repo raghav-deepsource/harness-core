@@ -189,7 +189,7 @@ public abstract class PMSStepPlanCreatorV2<T extends PmsAbstractStepNode> extend
       stepElement.setTimeout(TimeoutUtils.getTimeout(stepElement.getTimeout()));
       return ((PMSStepInfo) stepElement.getStepSpecType())
           .getStepParameters(stepElement,
-              getRollbackParameters(ctx.getCurrentField(), Collections.emptySet(), RollbackStrategy.UNKNOWN));
+              getRollbackParameters(ctx.getCurrentField(), Collections.emptySet(), RollbackStrategy.UNKNOWN), ctx);
     }
 
     return stepElement.getStepSpecType().getStepParameters();

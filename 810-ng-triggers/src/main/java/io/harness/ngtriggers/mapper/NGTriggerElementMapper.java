@@ -522,9 +522,11 @@ public class NGTriggerElementMapper {
 
   public Optional<TriggerEventHistory> fetchLatestExecutionForTrigger(NGTriggerEntity ngTriggerEntity) {
     List<TriggerEventHistory> triggerEventHistoryList =
-        triggerEventHistoryRepository.findFirst1ByAccountIdAndOrgIdentifierAndProjectIdentifierAndTriggerIdentifier(
-            ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(),
-            ngTriggerEntity.getIdentifier(), Sort.by(TriggerEventHistoryKeys.createdAt).descending());
+        triggerEventHistoryRepository
+            .findFirst1ByAccountIdAndOrgIdentifierAndProjectIdentifierAndTargetIdentifierAndTriggerIdentifier(
+                ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
+                ngTriggerEntity.getProjectIdentifier(), ngTriggerEntity.getTargetIdentifier(),
+                ngTriggerEntity.getIdentifier(), Sort.by(TriggerEventHistoryKeys.createdAt).descending());
     if (!isEmpty(triggerEventHistoryList)) {
       return Optional.of(triggerEventHistoryList.get(0));
     }

@@ -18,6 +18,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.datastructures.EphemeralCacheService;
 import io.harness.lock.PersistentLocker;
 import io.harness.pms.contracts.plan.InitializeSdkRequest;
 import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
@@ -43,13 +44,14 @@ public class PmsSdkInstanceTest extends CategoryTest {
   @Mock SchemaFetcher schemaFetcher;
   @Mock Cache<String, PmsSdkInstance> sdkInstanceCache;
   @Mock TransactionHelper transactionHelper;
+  @Mock EphemeralCacheService ephemeralCacheService;
   PmsSdkInstanceService pmsSdkInstanceService;
 
   @Before
   public void SetUp() {
     MockitoAnnotations.initMocks(this);
     pmsSdkInstanceService = new PmsSdkInstanceService(pmsSdkInstanceRepository, mongoTemplate, persistentLocker,
-        schemaFetcher, sdkInstanceCache, true, transactionHelper);
+        schemaFetcher, sdkInstanceCache, true, transactionHelper, ephemeralCacheService);
     when(sdkInstanceCache.iterator()).thenReturn(Iterator.empty());
   }
 

@@ -10,7 +10,7 @@ package io.harness.ng.core.dto.filestore.node;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ng.core.dto.filestore.NGFileType;
+import io.harness.filestore.NGFileType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;

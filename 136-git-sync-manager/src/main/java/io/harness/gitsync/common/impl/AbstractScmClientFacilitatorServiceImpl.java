@@ -91,6 +91,13 @@ public abstract class AbstractScmClientFacilitatorServiceImpl implements ScmClie
     return (ScmConnector) connectorResponseDTO.getConnector().getConnectorConfig();
   }
 
+  ScmConnector getSCMConnectorUsedInGitSyncConfig(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String connectorIdentifierRef, String repoWhereConnectorIsStored,
+      String connectorBranch) {
+    return gitSyncConnectorHelper.getScmConnector(accountIdentifier, orgIdentifier, projectIdentifier,
+        connectorIdentifierRef, repoWhereConnectorIsStored, connectorBranch);
+  }
+
   YamlGitConfigDTO getYamlGitConfigDTO(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String yamlGitConfigIdentifier) {
     return yamlGitConfigService.get(projectIdentifier, orgIdentifier, accountIdentifier, yamlGitConfigIdentifier);

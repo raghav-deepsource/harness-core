@@ -12,6 +12,7 @@ public interface ViewFieldConstants {
   String AWS_ACCOUNT_FIELD = "Account";
 
   String CLUSTER_NAME_FIELD_ID = "clusterName";
+  String CLUSTER_TYPE_FIELD_ID = "clusterType";
   String NAMESPACE_FIELD_ID = "namespace";
   String WORKLOAD_NAME_FIELD_ID = "workloadName";
   String INSTANCE_NAME_FIELD_ID = "instanceName";

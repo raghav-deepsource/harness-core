@@ -8,8 +8,8 @@
 package io.harness.cdng.creator.variables;
 
 import io.harness.cdng.visitor.YamlTypes;
-import io.harness.pms.sdk.core.pipeline.variables.VariableCreatorHelper;
 import io.harness.pms.sdk.core.variables.AbstractStageVariableCreator;
+import io.harness.pms.sdk.core.variables.VariableCreatorHelper;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationContext;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationResponse;
 import io.harness.pms.yaml.DependenciesUtils;

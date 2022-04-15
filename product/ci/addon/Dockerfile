@@ -7,13 +7,19 @@
 # > docker build -t harness/ci-addon:<tag> -f product/ci/addon/Dockerfile $(bazel info bazel-bin)/product/ci/addon/
 
 
-FROM alpine:3.12
+FROM redhat/ubi8-minimal
+RUN microdnf update \
+    && microdnf install shadow-utils \
+    curl \
+    && rm -rf /var/cache/yum \
+    && microdnf clean all
+
 # Copy ci-addon binary
 COPY ci-addon_/ci-addon /usr/local/bin/ci-addon-linux-amd64
 RUN chmod +x /usr/local/bin/ci-addon-linux-amd64
 COPY java-agent.jar /usr/local/bin/
 
-RUN adduser -g harness -s /bin/sh -D -u 1000 harness
+RUN groupadd harness && adduser -g harness -s /bin/sh -u 1000 harness
 USER harness:harness
 
 CMD ["/usr/local/bin/ci-addon-linux-amd64"]

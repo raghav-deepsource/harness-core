@@ -48,7 +48,7 @@ public class BusinessMappingResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "Create Business Mapping", nickname = "createBusinessMapping")
-  public RestResponse<Boolean> save(
+  public RestResponse<BusinessMapping> save(
       @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, BusinessMapping businessMapping) {
     return new RestResponse<>(businessMappingService.save(businessMapping));
   }

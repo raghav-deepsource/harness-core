@@ -62,6 +62,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -103,7 +104,11 @@ public class CEViewServiceImpl implements CEViewService {
   @Override
   public CEView save(CEView ceView) {
     validateView(ceView);
-    ceView.setViewState(ViewState.DRAFT);
+    if (ceView.getViewState() != null && ceView.getViewState() == ViewState.COMPLETED) {
+      ceView.setViewState(ViewState.COMPLETED);
+    } else {
+      ceView.setViewState(ViewState.DRAFT);
+    }
     ceView.setUuid(null);
     ceViewDao.save(ceView);
     return ceView;
@@ -432,6 +437,12 @@ public class CEViewServiceImpl implements CEViewService {
     } catch (Exception e) {
       log.error("Error while updating ViewVisualization of default cluster perspective {}", e);
     }
+  }
+
+  @Override
+  public Map<String, String> getPerspectiveIdToNameMapping(String accountId, List<String> perspectiveIds) {
+    List<CEView> perspectives = ceViewDao.list(accountId, perspectiveIds);
+    return perspectives.stream().collect(Collectors.toMap(CEView::getUuid, CEView::getName));
   }
 
   private String getViewId(List<CEView> views, ViewFieldIdentifier viewFieldIdentifier) {

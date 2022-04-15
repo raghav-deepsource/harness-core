@@ -10,6 +10,7 @@ package io.harness.steps.shellscript;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
 
@@ -36,8 +37,8 @@ public class ShellScriptStepParameters extends ShellScriptBaseStepInfo implement
   @Builder(builderMethodName = "infoBuilder")
   public ShellScriptStepParameters(ShellType shellType, ShellScriptSourceWrapper source,
       ExecutionTarget executionTarget, ParameterField<Boolean> onDelegate, Map<String, Object> outputVariables,
-      Map<String, Object> environmentVariables, ParameterField<List<String>> delegateSelectors) {
-    super(shellType, source, executionTarget, onDelegate, delegateSelectors);
+      Map<String, Object> environmentVariables, ParameterField<List<TaskSelectorYaml>> delegateSelectors, String uuid) {
+    super(uuid, shellType, source, executionTarget, onDelegate, delegateSelectors);
     this.outputVariables = outputVariables;
     this.environmentVariables = environmentVariables;
   }

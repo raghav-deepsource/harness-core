@@ -10,11 +10,13 @@ package software.wings.service.impl;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.ERROR;
 import static io.harness.beans.ExecutionStatus.FAILED;
+import static io.harness.beans.ExecutionStatus.REJECTED;
 import static io.harness.beans.OrchestrationWorkflowType.BUILD;
 import static io.harness.beans.WorkflowType.ORCHESTRATION;
 import static io.harness.beans.WorkflowType.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.expression.ExpressionEvaluator.matchesVariablePattern;
 import static io.harness.validation.Validator.notNullCheck;
@@ -547,6 +549,10 @@ public class WorkflowExecutionServiceHelper {
         executionDetails.put(stateExecutionInstance.getUuid(),
             new StringJoiner("").add(
                 String.format("%s failed: [%s]", phaseStepExecution.getDisplayName(), failureDetails)));
+      } else if (isNotEmpty(failureDetails)) {
+        // Error Handling for Rejected Pipeline
+        executionDetails.put(
+            generateUuid(), new StringJoiner("").add(String.format("WorkflowExecutionFailed : [%s]", failureDetails)));
       }
     }
   }
@@ -567,7 +573,7 @@ public class WorkflowExecutionServiceHelper {
                                               .filter(StateExecutionInstanceKeys.appId, appId)
                                               .filter(StateExecutionInstanceKeys.executionUuid, workflowExecutionId)
                                               .field(StateExecutionInstanceKeys.status)
-                                              .in(EnumSet.of(FAILED, ERROR))
+                                              .in(EnumSet.of(FAILED, ERROR, REJECTED))
                                               .order(Sort.ascending(StateExecutionInstanceKeys.endTs));
 
     return query.project(StateExecutionInstanceKeys.uuid, true)

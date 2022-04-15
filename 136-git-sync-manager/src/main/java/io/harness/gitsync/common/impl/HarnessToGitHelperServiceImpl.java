@@ -22,6 +22,7 @@ import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityScopeInfo;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.gitsync.BranchDetails;
@@ -43,6 +44,7 @@ import io.harness.gitsync.common.service.GitEntityService;
 import io.harness.gitsync.common.service.HarnessToGitHelperService;
 import io.harness.gitsync.common.service.ScmOrchestratorService;
 import io.harness.gitsync.common.service.YamlGitConfigService;
+import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
 import io.harness.gitsync.core.beans.GitCommit.GitCommitProcessingStatus;
 import io.harness.gitsync.core.dtos.GitCommitDTO;
 import io.harness.gitsync.core.fullsync.entity.GitFullSyncJob;
@@ -180,7 +182,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   }
 
   private void resolveGitToHarnessErrors(PushInfo pushInfo, YamlGitConfigDTO yamlGitConfigDTO) {
-    String completeFilePath = ScmGitUtils.createFilePath(pushInfo.getFolderPath(), pushInfo.getFilePath());
+    String completeFilePath = GitSyncFilePathUtils.createFilePath(pushInfo.getFolderPath(), pushInfo.getFilePath());
     gitSyncErrorService.resolveGitToHarnessErrors(pushInfo.getAccountId(), yamlGitConfigDTO.getRepo(),
         pushInfo.getBranchName(), new HashSet<>(Collections.singleton(completeFilePath)), pushInfo.getCommitId());
   }
@@ -231,12 +233,15 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
 
   @Override
   public BranchDetails getBranchDetails(RepoDetails repoDetails) {
-    final YamlGitConfigDTO yamlGitConfigDTO = yamlGitConfigService.get(repoDetails.getProjectIdentifier().getValue(),
-        repoDetails.getOrgIdentifier().getValue(), repoDetails.getAccountId(), repoDetails.getYamlGitConfigId());
-    if (yamlGitConfigDTO == null) {
-      return BranchDetails.newBuilder().build();
+    try {
+      final YamlGitConfigDTO yamlGitConfigDTO = yamlGitConfigService.get(repoDetails.getProjectIdentifier().getValue(),
+          repoDetails.getOrgIdentifier().getValue(), repoDetails.getAccountId(), repoDetails.getYamlGitConfigId());
+      return BranchDetails.newBuilder().setDefaultBranch(yamlGitConfigDTO.getBranch()).build();
+    } catch (InvalidRequestException ex) {
+      log.error("Error while getting yamlGitConfig", ex);
+      String errorMessage = ExceptionUtils.getMessage(ex);
+      return BranchDetails.newBuilder().setError(errorMessage).build();
     }
-    return BranchDetails.newBuilder().setDefaultBranch(yamlGitConfigDTO.getBranch()).build();
   }
 
   @Override

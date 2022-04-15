@@ -11,14 +11,17 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SwaggerConstants;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
-import io.harness.data.validator.Trimmed;
-import io.harness.gitsync.beans.YamlDTO;
+import io.harness.validator.NGRegexValidatorConstants;
 
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import lombok.Builder;
 import lombok.Data;
 
@@ -26,14 +29,15 @@ import lombok.Data;
 @Data
 @Builder
 @RecasterAlias("io.harness.cdng.envGroup.beans.EnvironmentGroupConfig")
-public class EnvironmentGroupConfig implements YamlDTO {
-  @EntityName String name;
-  @EntityIdentifier String identifier;
+@JsonTypeName("environmentGroup")
+public class EnvironmentGroupConfig {
+  @NotNull @EntityName @Pattern(regexp = NGRegexValidatorConstants.NAME_PATTERN) String name;
+  @NotNull @EntityIdentifier @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN) String identifier;
 
-  @NotNull @Trimmed String orgIdentifier;
-  @NotNull @Trimmed String projectIdentifier;
+  String orgIdentifier;
+  String projectIdentifier;
 
-  String description;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) String description;
   String color;
   Map<String, String> tags;
 

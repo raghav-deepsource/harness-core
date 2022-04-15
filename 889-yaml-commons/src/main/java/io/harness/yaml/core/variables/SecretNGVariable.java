@@ -8,6 +8,7 @@
 package io.harness.yaml.core.variables;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.yaml.core.VariableExpression.IteratePolicy.REGULAR_WITH_CUSTOM_FIELD;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
@@ -18,6 +19,7 @@ import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.validator.NGVariableName;
 import io.harness.visitor.helpers.variables.SecretVariableVisitorHelper;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
+import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -40,13 +42,24 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("io.harness.yaml.core.variables.SecretNGVariable")
 @OwnedBy(CDC)
 public class SecretNGVariable implements NGVariable {
-  @NGVariableName @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN) String name;
-  @ApiModelProperty(allowableValues = NGVariableConstants.SECRET_TYPE) NGVariableType type = NGVariableType.SECRET;
-  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<SecretRefData> value;
+  @NGVariableName
+  @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN)
+  @VariableExpression(skipVariableExpression = true)
+  String name;
+  @ApiModelProperty(allowableValues = NGVariableConstants.SECRET_TYPE)
+  @VariableExpression(skipVariableExpression = true)
+  NGVariableType type = NGVariableType.SECRET;
+  @NotNull
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @VariableExpression(policy = REGULAR_WITH_CUSTOM_FIELD)
+  ParameterField<SecretRefData> value;
 
-  String description;
-  boolean required;
-  @JsonProperty("default") @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) SecretRefData defaultValue;
+  @VariableExpression(skipVariableExpression = true) String description;
+  @VariableExpression(skipVariableExpression = true) boolean required;
+  @JsonProperty("default")
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @VariableExpression(skipVariableExpression = true)
+  SecretRefData defaultValue;
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Override

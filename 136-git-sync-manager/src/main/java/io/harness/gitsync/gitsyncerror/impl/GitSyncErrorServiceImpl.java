@@ -28,6 +28,7 @@ import static org.springframework.data.mongodb.core.query.Update.update;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
+import io.harness.gitsync.common.dtos.RepoProviders;
 import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.gitsync.gitsyncerror.GitSyncErrorStatus;
 import io.harness.gitsync.gitsyncerror.beans.GitSyncError;
@@ -414,7 +415,8 @@ public class GitSyncErrorServiceImpl implements GitSyncErrorService {
   }
 
   @Override
-  public void recordConnectivityError(String accountIdentifier, String repoUrl, String errorMessage) {
+  public void saveConnectivityError(
+      String accountIdentifier, String repoUrl, String errorMessage, RepoProviders repoProvider) {
     List<Scope> scopes = getScopes(accountIdentifier, repoUrl);
     Optional<GitSyncErrorDTO> gitSyncError = getConnectivityError(accountIdentifier, repoUrl);
     if (!gitSyncError.isPresent()) {
@@ -426,6 +428,7 @@ public class GitSyncErrorServiceImpl implements GitSyncErrorService {
                                .status(GitSyncErrorStatus.ACTIVE)
                                .scopes(scopes)
                                .createdAt(System.currentTimeMillis())
+                               .repoProvider(repoProvider)
                                .build();
       save(error);
     } else {

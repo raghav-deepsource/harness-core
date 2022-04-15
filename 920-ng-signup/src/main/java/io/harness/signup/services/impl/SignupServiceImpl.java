@@ -551,6 +551,7 @@ public class SignupServiceImpl implements SignupService {
     properties.put("id", userInfo.getUuid());
     properties.put("startTime", String.valueOf(Instant.now().toEpochMilli()));
     properties.put("accountId", accountId);
+    properties.put("accountName", accountName);
     properties.put("source", source);
 
     addUtmInfoToProperties(utmInfo, properties);
@@ -567,9 +568,13 @@ public class SignupServiceImpl implements SignupService {
     telemetryReporter.sendGroupEvent(
         accountId, email, groupProperties, ImmutableMap.<Destination, Boolean>builder().build());
 
+    HashMap<String, Object> analyticsUserProperties = new HashMap<>();
+    analyticsUserProperties.put("accountId", accountId);
+    analyticsUserProperties.put("accountName", accountName);
+
     // identify event to register a dummy user account to represent account for analytics purposes
-    telemetryReporter.sendIdentifyEvent(TelemetryConstants.SEGMENT_DUMMY_ACCOUNT_PREFIX + accountId, groupProperties,
-        ImmutableMap.<Destination, Boolean>builder().put(Destination.AMPLITUDE, true).build());
+    telemetryReporter.sendIdentifyEvent(TelemetryConstants.SEGMENT_DUMMY_ACCOUNT_PREFIX + accountId,
+        analyticsUserProperties, ImmutableMap.<Destination, Boolean>builder().put(Destination.AMPLITUDE, true).build());
 
     // group event to register dummy user account with new account
     telemetryReporter.sendGroupEvent(accountId, TelemetryConstants.SEGMENT_DUMMY_ACCOUNT_PREFIX + accountId,

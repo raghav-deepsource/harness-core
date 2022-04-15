@@ -41,7 +41,7 @@ public class HarnessCDCurrentGenChangeEventTransformerTest extends CvNextGenTest
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
   public void testGetEntity() {
-    ChangeEventDTO changeEventDTO = builderFactory.getHarnessCDCurrentGenChangeEventDTOBuilder()
+    ChangeEventDTO changeEventDTO = builderFactory.harnessCDCurrentGenChangeEventDTOBuilder()
                                         .serviceIdentifier(null)
                                         .envIdentifier(null)
                                         .monitoredServiceIdentifier("monitoredServiceIdentifier")

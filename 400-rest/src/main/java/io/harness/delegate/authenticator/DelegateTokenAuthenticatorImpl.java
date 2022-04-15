@@ -85,7 +85,8 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
       throw new InvalidTokenException("Invalid delegate token format", USER_ADMIN);
     }
     DelegateToken delegateTokenFromCache = delegateTokenCacheHelper.getDelegateToken(delegateId);
-    boolean decryptedWithTokenFromCache = decryptWithTokenFromCache(encryptedJWT, delegateTokenFromCache);
+    boolean decryptedWithTokenFromCache =
+        decryptWithTokenFromCache(encryptedJWT, delegateTokenFromCache, shouldSetTokenNameInGlobalContext);
 
     boolean decryptedWithActiveTokenFromDB = false;
     boolean decryptedWithRevokedTokenFromDB = false;
@@ -93,11 +94,11 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
     if (!decryptedWithTokenFromCache) {
       log.debug("Not able to decrypt with token from cache. Fetching it from db.");
       delegateTokenCacheHelper.removeDelegateToken(delegateId);
-      decryptedWithActiveTokenFromDB =
-          decryptJWTDelegateToken(accountId, DelegateTokenStatus.ACTIVE, encryptedJWT, delegateId);
+      decryptedWithActiveTokenFromDB = decryptJWTDelegateToken(
+          accountId, DelegateTokenStatus.ACTIVE, encryptedJWT, delegateId, shouldSetTokenNameInGlobalContext);
       if (!decryptedWithActiveTokenFromDB) {
-        decryptedWithRevokedTokenFromDB =
-            decryptJWTDelegateToken(accountId, DelegateTokenStatus.REVOKED, encryptedJWT, delegateId);
+        decryptedWithRevokedTokenFromDB = decryptJWTDelegateToken(
+            accountId, DelegateTokenStatus.REVOKED, encryptedJWT, delegateId, shouldSetTokenNameInGlobalContext);
       }
     }
 
@@ -126,10 +127,6 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
     } catch (Exception ex) {
       throw new InvalidRequestException("Unauthorized", ex, EXPIRED_TOKEN, null);
     }
-
-    if (shouldSetTokenNameInGlobalContext) {
-      setTokenNameInGlobalContext(delegateId);
-    }
   }
 
   private void decryptWithAccountKey(String accountId, EncryptedJWT encryptedJWT) {
@@ -147,8 +144,8 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
     decryptDelegateToken(encryptedJWT, accountKey);
   }
 
-  private boolean decryptJWTDelegateToken(
-      String accountId, DelegateTokenStatus status, EncryptedJWT encryptedJWT, String delegateId) {
+  private boolean decryptJWTDelegateToken(String accountId, DelegateTokenStatus status, EncryptedJWT encryptedJWT,
+      String delegateId, boolean shouldSetTokenNameInGlobalContext) {
     long time_start = System.currentTimeMillis();
     Query<DelegateToken> query = persistence.createQuery(DelegateToken.class)
                                      .field(DelegateTokenKeys.accountId)
@@ -156,15 +153,16 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
                                      .field(DelegateTokenKeys.status)
                                      .equal(status);
 
-    boolean result = decryptDelegateTokenByQuery(query, accountId, status, encryptedJWT, delegateId);
+    boolean result = decryptDelegateTokenByQuery(
+        query, accountId, status, encryptedJWT, delegateId, shouldSetTokenNameInGlobalContext);
     long time_end = System.currentTimeMillis() - time_start;
     log.debug("Delegate Token verification for accountId {} and status {} has taken {} milliseconds.", accountId,
         status.name(), time_end);
     return result;
   }
 
-  private boolean decryptDelegateTokenByQuery(
-      Query query, String accountId, DelegateTokenStatus status, EncryptedJWT encryptedJWT, String delegateId) {
+  private boolean decryptDelegateTokenByQuery(Query query, String accountId, DelegateTokenStatus status,
+      EncryptedJWT encryptedJWT, String delegateId, boolean shouldSetTokenNameInGlobalContext) {
     try (HIterator<DelegateToken> iterator = new HIterator<>(query.fetch())) {
       while (iterator.hasNext()) {
         DelegateToken delegateToken = iterator.next();
@@ -174,6 +172,7 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
           } else {
             decryptDelegateToken(encryptedJWT, delegateToken.getValue());
           }
+          setTokenNameInGlobalContext(shouldSetTokenNameInGlobalContext, delegateToken);
           delegateTokenCacheHelper.setDelegateToken(delegateId, delegateToken);
           return true;
         } catch (Exception e) {
@@ -188,7 +187,8 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
     }
   }
 
-  private boolean decryptWithTokenFromCache(EncryptedJWT encryptedJWT, DelegateToken delegateToken) {
+  private boolean decryptWithTokenFromCache(
+      EncryptedJWT encryptedJWT, DelegateToken delegateToken, boolean shouldSetTokenNameInGlobalContext) {
     if (delegateToken == null) {
       return false;
     }
@@ -198,6 +198,7 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
       } else {
         decryptDelegateToken(encryptedJWT, delegateToken.getValue());
       }
+      setTokenNameInGlobalContext(shouldSetTokenNameInGlobalContext, delegateToken);
     } catch (Exception e) {
       log.debug("Fail to decrypt Delegate JWT using delegate token {} for the account {}", delegateToken.getName(),
           delegateToken.getAccountId());
@@ -228,9 +229,8 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
     }
   }
 
-  private void setTokenNameInGlobalContext(String delegateId) {
-    DelegateToken delegateToken = delegateTokenCacheHelper.getDelegateToken(delegateId);
-    if (delegateToken != null && DelegateTokenStatus.ACTIVE.equals(delegateToken.getStatus())) {
+  private void setTokenNameInGlobalContext(boolean shouldSetTokenNameInGlobalContext, DelegateToken delegateToken) {
+    if (shouldSetTokenNameInGlobalContext && DelegateTokenStatus.ACTIVE.equals(delegateToken.getStatus())) {
       if (!GlobalContextManager.isAvailable()) {
         initGlobalContextGuard(new GlobalContext());
       }

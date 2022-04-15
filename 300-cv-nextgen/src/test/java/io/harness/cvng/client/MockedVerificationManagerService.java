@@ -62,7 +62,7 @@ public class MockedVerificationManagerService implements VerificationManagerServ
   public List<HarnessCDCurrentGenEventMetadata> getCurrentGenEvents(String accountId, String harnessApplicationId,
       String harnessEnvironmentId, String harnessServiceId, Instant startTime, Instant endTime) {
     return Collections.singletonList((HarnessCDCurrentGenEventMetadata) BuilderFactory.getDefault()
-                                         .getHarnessCDChangeEventDTOBuilder()
+                                         .harnessCDChangeEventDTOBuilder()
                                          .build()
                                          .getMetadata());
   }

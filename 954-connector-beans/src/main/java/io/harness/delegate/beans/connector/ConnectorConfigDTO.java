@@ -39,6 +39,7 @@ import io.harness.delegate.beans.connector.pagerduty.PagerDutyConnectorDTO;
 import io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorDTO;
 import io.harness.delegate.beans.connector.prometheusconnector.PrometheusConnectorDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnectorDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
@@ -91,6 +92,7 @@ import java.util.List;
       @JsonSubTypes.Type(value = CustomHealthConnectorDTO.class, name = "CustomHealth"),
       @JsonSubTypes.Type(value = ServiceNowConnectorDTO.class, name = "ServiceNow"),
       @JsonSubTypes.Type(value = ErrorTrackingConnectorDTO.class, name = "ErrorTracking"),
+      @JsonSubTypes.Type(value = AzureRepoConnectorDTO.class, name = "AzureRepo"),
       @JsonSubTypes.Type(value = PhysicalDataCenterConnectorDTO.class, name = "Pdc")
 })
 @OwnedBy(DX)

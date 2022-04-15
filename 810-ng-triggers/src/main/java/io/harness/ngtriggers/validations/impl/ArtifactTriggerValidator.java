@@ -53,7 +53,7 @@ public class ArtifactTriggerValidator implements TriggerValidator {
     ValidationResultBuilder builder = ValidationResult.builder().success(true);
     try {
       Optional<String> pipelineYmlOptional =
-          validationHelper.fetchPipelineForTrigger(triggerDetails.getNgTriggerEntity());
+          validationHelper.fetchResolvedTemplatesPipelineForTrigger(triggerDetails.getNgTriggerEntity());
 
       if (!pipelineYmlOptional.isPresent()) {
         return builder.success(false).message("Pipeline doesn't exists").build();

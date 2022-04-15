@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.approval.step.beans.CriteriaSpecWrapper;
@@ -34,5 +35,5 @@ public class JiraApprovalSpecParameters implements SpecParameters {
   @NotNull ParameterField<String> issueKey;
   @NotNull CriteriaSpecWrapper approvalCriteria;
   CriteriaSpecWrapper rejectionCriteria;
-  ParameterField<List<String>> delegateSelectors;
+  ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 }

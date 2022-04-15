@@ -386,6 +386,7 @@ public abstract class AbstractMetricAnalysisState extends AbstractAnalysisState 
         (VerificationDataAnalysisResponse) response.values().iterator().next();
 
     if (ExecutionStatus.isBrokeStatus(executionResponse.getExecutionStatus())) {
+      updateSweepingOutputWithCVResult(executionContext, executionResponse.getExecutionStatus().name());
       return getErrorExecutionResponse(executionContext, executionResponse);
     }
 
@@ -402,6 +403,7 @@ public abstract class AbstractMetricAnalysisState extends AbstractAnalysisState 
       NewRelicMetricAnalysisRecord manualActionRecord =
           metricAnalysisService.getLatestLocalAnalysisRecord(context.getStateExecutionId());
       Preconditions.checkNotNull(manualActionRecord);
+      updateSweepingOutputWithCVResult(executionContext, cvMetaData.getExecutionStatus().name());
       return createExecutionResponse(context, cvMetaData.getExecutionStatus(), manualActionRecord.getMessage(), false);
     }
 
@@ -413,6 +415,7 @@ public abstract class AbstractMetricAnalysisState extends AbstractAnalysisState 
                                                                                          : ExecutionStatus.SUCCESS;
       continuousVerificationService.setMetaDataExecutionStatus(
           context.getStateExecutionId(), executionStatus, true, false);
+      updateSweepingOutputWithCVResult(executionContext, executionStatus.name());
       return generateAnalysisResponse(
           context, executionStatus, false, "No Analysis result found. This is not a failure.");
     }
@@ -440,6 +443,8 @@ public abstract class AbstractMetricAnalysisState extends AbstractAnalysisState 
         context.getStateExecutionId(), executionStatus, false, false);
 
     updateExecutionStatus(context.getStateExecutionId(), true, executionStatus, "Analysis completed");
+    updateSweepingOutputWithCVResult(executionContext, executionStatus.name());
+
     return ExecutionResponse.builder()
         .executionStatus(executionStatus)
         .stateExecutionData(executionResponse.getStateExecutionData())

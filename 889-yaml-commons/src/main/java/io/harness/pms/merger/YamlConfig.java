@@ -43,7 +43,15 @@ public class YamlConfig {
 
   public YamlConfig(Map<FQN, Object> fqnToValueMap, JsonNode originalYaml) {
     this.fqnToValueMap = fqnToValueMap;
-    yamlMap = YamlMapGenerator.generateYamlMap(fqnToValueMap, originalYaml);
+    yamlMap = YamlMapGenerator.generateYamlMap(fqnToValueMap, originalYaml, false);
+    if (yamlMap.size() != 0) {
+      yaml = YamlUtils.write(yamlMap).replace("---\n", "");
+    }
+  }
+
+  public YamlConfig(Map<FQN, Object> fqnToValueMap, JsonNode originalYaml, boolean isSanitiseFlow) {
+    this.fqnToValueMap = fqnToValueMap;
+    yamlMap = YamlMapGenerator.generateYamlMap(fqnToValueMap, originalYaml, isSanitiseFlow);
     if (yamlMap.size() != 0) {
       yaml = YamlUtils.write(yamlMap).replace("---\n", "");
     }

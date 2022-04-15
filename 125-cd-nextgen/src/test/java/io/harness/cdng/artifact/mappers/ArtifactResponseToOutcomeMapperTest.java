@@ -7,6 +7,7 @@
 
 package io.harness.cdng.artifact.mappers;
 
+import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.SAHIL;
 
@@ -16,10 +17,12 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
+import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
@@ -93,5 +96,24 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     assertThat(artifactOutcome).isNotNull();
     assertThat(artifactOutcome).isInstanceOf(ArtifactoryArtifactOutcome.class);
     assertThat(artifactOutcome.getArtifactType()).isEqualTo(ArtifactSourceType.ARTIFACTORY_REGISTRY.getDisplayName());
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testToCustomArtifactOutcomeFixedBuild() {
+    ArtifactConfig artifactConfig = CustomArtifactConfig.builder()
+                                        .identifier("test")
+                                        .primaryArtifact(true)
+                                        .version(ParameterField.createValueField("build-x"))
+                                        .build();
+
+    ArtifactOutcome artifactOutcome = ArtifactResponseToOutcomeMapper.toArtifactOutcome(artifactConfig, null, false);
+    assertThat(artifactOutcome).isNotNull();
+    assertThat(artifactOutcome).isInstanceOf(CustomArtifactOutcome.class);
+    assertThat(artifactOutcome.getArtifactType()).isEqualTo(ArtifactSourceType.CUSTOM_ARTIFACT.getDisplayName());
+    assertThat(artifactOutcome.getIdentifier()).isEqualTo("test");
+    assertThat(artifactOutcome.isPrimaryArtifact()).isTrue();
+    assertThat(((CustomArtifactOutcome) artifactOutcome).getVersion()).isEqualTo("build-x");
   }
 }

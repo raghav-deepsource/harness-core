@@ -7,25 +7,28 @@
 
 package io.harness.cvng.client;
 
+import io.harness.exception.WingsException;
+
 import lombok.AccessLevel;
-import lombok.Data;
+import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 
-@Data
+@Getter
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ServiceCallException extends RuntimeException {
-  private int code;
+public class ServiceCallException extends WingsException {
+  private int responseCode;
   private String errorMessage;
   private String errorBody;
-  public ServiceCallException(int code, String message, Throwable cause) {
-    super("Response code: " + code + ", Message: " + message, cause);
-    this.code = code;
+
+  public ServiceCallException(int responseCode, String message, Throwable cause) {
+    super("Response code: " + responseCode + ", Message: " + message, cause);
+    this.responseCode = responseCode;
     this.errorMessage = message;
   }
 
-  public ServiceCallException(int code, String message, String errorBody) {
-    super("Response code: " + code + ", Message: " + message + ", Error: " + errorBody);
-    this.code = code;
+  public ServiceCallException(int responseCode, String message, String errorBody) {
+    super("Response code: " + responseCode + ", Message: " + message + ", Error: " + errorBody);
+    this.responseCode = responseCode;
     this.errorMessage = message;
     this.errorBody = errorBody;
   }

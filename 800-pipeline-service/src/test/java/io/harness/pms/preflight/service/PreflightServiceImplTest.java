@@ -29,6 +29,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.EntityDetail;
 import io.harness.pms.inputset.InputSetErrorDTOPMS;
 import io.harness.pms.inputset.InputSetErrorResponseDTOPMS;
+import io.harness.pms.instrumentaion.PipelineTelemetryHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineSetupUsageHelper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
@@ -72,6 +73,7 @@ public class PreflightServiceImplTest extends CategoryTest {
   @Mock PMSPipelineService pmsPipelineService;
   @Mock PipelineSetupUsageHelper pipelineSetupUsageHelper;
   @Mock PipelineRbacService pipelineRbacServiceImpl;
+  @Mock PipelineTelemetryHelper pipelineTelemetryHelper;
 
   private static final String accountId = "accountId";
   private static final String orgId = "orgId";

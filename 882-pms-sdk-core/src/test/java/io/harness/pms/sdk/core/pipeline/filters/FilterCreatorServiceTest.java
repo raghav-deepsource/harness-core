@@ -19,6 +19,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.plan.Dependencies;
+import io.harness.pms.contracts.plan.FilterCreationBlobRequest;
 import io.harness.pms.contracts.plan.SetupMetadata;
 import io.harness.pms.contracts.plan.YamlFieldBlob;
 import io.harness.pms.filter.creation.FilterCreationResponse;
@@ -83,7 +84,7 @@ public class FilterCreatorServiceTest extends PmsSdkCoreTestBase {
     FilterCreationResponse filterCreationResponse =
         FilterCreationResponse.builder().stageCount(10).stageNames(Lists.newArrayList("stage2")).build();
 
-    filterCreatorService.mergeResponses(finalCreationResponse, filterCreationResponse);
+    filterCreatorService.mergeResponses(finalCreationResponse, filterCreationResponse, Dependencies.newBuilder());
 
     assertThat(finalCreationResponse.getStageCount()).isEqualTo(20);
     assertThat(finalCreationResponse.getStageNames()).isEqualTo(Arrays.asList("stage1", "stage2"));
@@ -94,7 +95,8 @@ public class FilterCreatorServiceTest extends PmsSdkCoreTestBase {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testProcessNodeInternal() {
-    assertThat(filterCreatorService.processNodeInternal(SetupMetadata.newBuilder().build(), pipelineField))
+    FilterCreationBlobRequest request = FilterCreationBlobRequest.newBuilder().build();
+    assertThat(filterCreatorService.processNodeInternal(SetupMetadata.newBuilder().build(), pipelineField, request))
         .isEqualTo(FilterCreationResponse.builder().build());
     verify(pipelineServiceInfoProvider).getFilterJsonCreators();
   }
@@ -103,14 +105,13 @@ public class FilterCreatorServiceTest extends PmsSdkCoreTestBase {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testProcessNodesRecursively() throws IOException {
-    Map<String, YamlField> dependencies = new HashMap<>();
-    dependencies.put(NODE_UUID, pipelineField);
     Dependencies initialDependencies = Dependencies.newBuilder()
                                            .setYaml(YamlUtils.injectUuid(yamlContent))
                                            .putDependencies(NODE_UUID, pipelineField.getYamlPath())
                                            .build();
+    FilterCreationBlobRequest request = FilterCreationBlobRequest.newBuilder().build();
     FilterCreationResponse filterCreationResponse = filterCreatorService.processNodesRecursively(
-        initialDependencies, SetupMetadata.newBuilder().build(), FilterCreationResponse.builder().build());
+        initialDependencies, SetupMetadata.newBuilder().build(), FilterCreationResponse.builder().build(), request);
     assertThat(filterCreationResponse).isNotNull();
     assertThat(filterCreationResponse.getStageNames()).isEmpty();
   }

@@ -64,6 +64,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.StringUtils;
 
+// Todo: Streamline this
 @OwnedBy(PIPELINE)
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -123,6 +124,8 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty("allowedParallelStages") private int allowedParallelStages;
   @JsonProperty("orchestrationLogConfiguration") private OrchestrationLogConfiguration orchestrationLogConfiguration;
   @JsonProperty("planCreatorMergeServiceDependencyBatch") private Integer planCreatorMergeServiceDependencyBatch;
+  @JsonProperty("jsonExpansionPoolConfig") private ThreadPoolConfig jsonExpansionPoolConfig;
+  @JsonProperty("jsonExpansionRequestBatchSize") private Integer jsonExpansionBatchSize;
 
   private String managerServiceSecret;
   private String managerTarget;

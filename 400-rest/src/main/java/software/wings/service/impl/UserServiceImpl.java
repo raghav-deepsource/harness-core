@@ -2797,6 +2797,17 @@ public class UserServiceImpl implements UserService {
         }
       }
 
+      if (updateUsergroup) {
+        PageResponse<UserGroup> pageResponse = userGroupService.list(accountId,
+            aPageRequest()
+                .withLimit(Long.toString(userGroupService.getCountOfUserGroups(accountId)))
+                .addFilter(UserGroupKeys.memberIds, HAS, user.getUuid())
+                .build(),
+            true);
+        List<UserGroup> userGroupList = pageResponse.getResponse();
+        removeUserFromUserGroups(user, userGroupList, false);
+      }
+
       if (updatedActiveAccounts.isEmpty() && updatedPendingAccounts.isEmpty()) {
         deleteUser(user);
         return;
@@ -2813,17 +2824,6 @@ public class UserServiceImpl implements UserService {
         for (Role role : accountRoles) {
           updatedRolesForUser.remove(role);
         }
-      }
-
-      if (updateUsergroup) {
-        PageResponse<UserGroup> pageResponse = userGroupService.list(accountId,
-            aPageRequest()
-                .withLimit(Long.toString(userGroupService.getCountOfUserGroups(accountId)))
-                .addFilter(UserGroupKeys.memberIds, HAS, user.getUuid())
-                .build(),
-            true);
-        List<UserGroup> userGroupList = pageResponse.getResponse();
-        removeUserFromUserGroups(user, userGroupList, false);
       }
 
       UpdateOperations<User> updateOp = wingsPersistence.createUpdateOperations(User.class)

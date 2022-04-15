@@ -25,6 +25,7 @@ import io.harness.exception.InvalidRequestException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -69,6 +70,11 @@ public class CustomHealthMetricCVConfig extends MetricCVConfig<CustomHealthCVCon
       return false;
     }
     return AnalysisInfoUtility.anyDeploymentVerificationEnabled(metricDefinitions);
+  }
+
+  @Override
+  public Optional<String> maybeGetGroupName() {
+    return Optional.of(groupName);
   }
 
   @Override

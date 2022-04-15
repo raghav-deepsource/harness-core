@@ -491,25 +491,24 @@ public class JiraTask extends AbstractDelegateRunnableTask {
    * @return
    */
   private String extractResponseMessage(Exception e) {
-    if (e.getCause() != null) {
-      String messageJson = "{" + e.getCause().getMessage() + "}";
-      org.json.JSONObject jsonObject = null;
+    if (e.getCause() != null && e.getCause() instanceof RestException) {
+      org.json.JSONObject jsonObject;
+
       try {
-        jsonObject = new org.json.JSONObject(messageJson);
-        Object[] keyArray = jsonObject.keySet().toArray();
-        org.json.JSONObject innerJsonObject = jsonObject.getJSONObject((String) keyArray[0]);
-        org.json.JSONArray jsonArray = (org.json.JSONArray) innerJsonObject.get("errorMessages");
+        jsonObject = new org.json.JSONObject(((RestException) e.getCause()).getHttpResult());
+        org.json.JSONArray jsonArray = (org.json.JSONArray) jsonObject.get("errorMessages");
         if (jsonArray.length() > 0) {
           return (String) jsonArray.get(0);
         }
 
-        org.json.JSONObject errors = (org.json.JSONObject) innerJsonObject.get("errors");
+        org.json.JSONObject errors = (org.json.JSONObject) jsonObject.get("errors");
         Object[] errorsKeys = errors.keySet().toArray();
 
         String errorsKey = (String) errorsKeys[0];
         return errorsKey + " : " + (String) errors.get((String) errorsKey);
       } catch (Exception ex) {
         log.error("Failed to parse json response from Jira", ex);
+        return "Failed to parse json response from Jira: " + ExceptionUtils.getMessage(e.getCause());
       }
     }
 

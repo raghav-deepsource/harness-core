@@ -32,6 +32,7 @@ import lombok.NoArgsConstructor;
 @OwnedBy(HarnessTeam.CV)
 public class CVVerifyStepNode extends AbstractStepNode {
   @JsonProperty("type") @NotNull StepType type = StepType.Verify;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   CVNGStepInfo verifyStepInfo;

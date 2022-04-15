@@ -617,15 +617,15 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
   @Override
   public void validateAzureConnection(
       String clientId, String tenantId, String secret, AzureEnvironmentType azureEnvironmentType) {
-    authenticateWithCredentials(
-        new ApplicationTokenCredentials(clientId, tenantId, secret, getAzureEnvironment(azureEnvironmentType)));
+    authenticateWithCredentials(new ApplicationTokenCredentials(
+        clientId, tenantId, secret, AzureUtils.getAzureEnvironment(azureEnvironmentType)));
   }
 
   @Override
   public void validateAzureConnectionWithCert(
       String clientId, String tenantId, byte[] cert, AzureEnvironmentType azureEnvironmentType) {
-    authenticateWithCredentials(
-        new ApplicationTokenCredentials(clientId, tenantId, cert, null, getAzureEnvironment(azureEnvironmentType)));
+    authenticateWithCredentials(new ApplicationTokenCredentials(
+        clientId, tenantId, cert, null, AzureUtils.getAzureEnvironment(azureEnvironmentType)));
   }
 
   private void authenticateWithCredentials(ApplicationTokenCredentials applicationTokenCredentials) {
@@ -634,7 +634,12 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
       log.debug("Azure connection validated for clientId {} ", applicationTokenCredentials.clientId());
     } catch (Exception e) {
       handleAzureAuthenticationException(e);
-      handleInvalidCertException(e);
     }
+  }
+
+  @Override
+  public void validateAzureConnection(
+      boolean isUserAssignedManagedIdentity, String clientId, AzureEnvironmentType azureEnvironmentType) {
+    getAzureClientWithManagedIdentity(isUserAssignedManagedIdentity, clientId, azureEnvironmentType);
   }
 }

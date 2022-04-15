@@ -36,6 +36,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.plancreator.steps.http.HttpStepNode")
 public class HttpStepNode extends PmsAbstractStepNode {
   @JsonProperty("type") @NotNull StepType type = StepType.Http;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   HttpStepInfo httpStepInfo;

@@ -28,6 +28,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -62,6 +63,11 @@ public class PrometheusCVConfig extends MetricCVConfig<MetricInfo> {
   @Override
   public boolean isDeploymentVerificationEnabled() {
     return AnalysisInfoUtility.anyDeploymentVerificationEnabled(metricInfoList);
+  }
+
+  @Override
+  public Optional<String> maybeGetGroupName() {
+    return Optional.of(groupName);
   }
 
   @Override

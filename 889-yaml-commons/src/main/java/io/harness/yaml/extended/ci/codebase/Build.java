@@ -9,10 +9,13 @@ package io.harness.yaml.extended.ci.codebase;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.util.LinkedList;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 @Data
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -27,5 +30,14 @@ public class Build {
   public Build(BuildType type, BuildSpec spec) {
     this.type = type;
     this.spec = spec;
+  }
+
+  public static List<String> getExpressionsAvailable() {
+    List<String> list = new LinkedList<>();
+    list.add("build.type");
+    list.add("build.spec.branch");
+    list.add("build.spec.tag");
+    list.add("build.spec.number");
+    return list;
   }
 }

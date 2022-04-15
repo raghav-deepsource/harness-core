@@ -51,4 +51,6 @@ public interface InviteService {
   boolean isUserPasswordSet(String accountIdentifier, String email);
 
   URI getRedirectUrl(InviteAcceptResponse inviteAcceptResponse, String email, String decodedEmail, String jwtToken);
+
+  String getInviteLinkFromInviteId(String accountIdentifier, String inviteId);
 }

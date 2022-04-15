@@ -75,7 +75,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
@@ -125,8 +124,7 @@ public class OrganizationServiceImpl implements OrganizationService {
       Organization savedOrganization = saveOrganization(organization);
       setupOrganization(Scope.of(accountIdentifier, organizationDTO.getIdentifier(), null));
       log.info(String.format("Organization with identifier %s was successfully created", organization.getIdentifier()));
-      CompletableFuture.runAsync(
-          () -> instrumentationHelper.sendOrganizationCreateEvent(organization, accountIdentifier));
+      instrumentationHelper.sendOrganizationCreateEvent(organization, accountIdentifier);
       return savedOrganization;
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(
@@ -354,8 +352,7 @@ public class OrganizationServiceImpl implements OrganizationService {
       if (delete) {
         log.info(String.format("Organization with identifier %s was successfully deleted", organizationIdentifier));
         outboxService.save(new OrganizationDeleteEvent(accountIdentifier, OrganizationMapper.writeDto(organization)));
-        CompletableFuture.runAsync(
-            () -> instrumentationHelper.sendOrganizationDeleteEvent(organization, accountIdentifier));
+        instrumentationHelper.sendOrganizationDeleteEvent(organization, accountIdentifier);
       } else {
         log.error(String.format("Organization with identifier %s could not be deleted", organizationIdentifier));
       }

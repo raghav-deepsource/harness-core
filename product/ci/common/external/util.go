@@ -100,6 +100,7 @@ func GetNudges() []logs.Nudge {
 			"If you are using self signed certs, Harness allows setting them "+
 				"at a global level on the delegate agent. Visit documentation for more details!",
 			errors.New("Certificate issue")),
+		logs.NewNudge("storage: bucket doesn't exist", "Ensure the bucket is created", errors.New("Bucket does not exist")),
 	}
 }
 

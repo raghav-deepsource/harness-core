@@ -12,7 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.plan.YamlOutputProperties;
 import io.harness.pms.contracts.plan.YamlProperties;
 import io.harness.pms.sdk.core.pipeline.variables.GenericStepVariableCreator;
-import io.harness.pms.sdk.core.pipeline.variables.VariableCreatorHelper;
+import io.harness.pms.sdk.core.variables.VariableCreatorHelper;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
-public class ServiceNowApprovalStepVariableCreator extends GenericStepVariableCreator {
+public class ServiceNowApprovalStepVariableCreator extends GenericStepVariableCreator<ServiceNowApprovalStepNode> {
   @Override
   public Set<String> getSupportedStepTypes() {
     Set<String> strings = new HashSet<>();

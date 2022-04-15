@@ -31,6 +31,7 @@ import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
+import io.harness.logging.AutoLogContext;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.utils.PmsConstants;
@@ -41,9 +42,11 @@ import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance.Resour
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -182,6 +185,34 @@ public class ResourceRestraintInstanceServiceImpl implements ResourceRestraintIn
         restraintInstanceRepository.findFirstByResourceRestraintIdOrderByOrderDesc(resourceRestraintId);
 
     return instance.map(ResourceRestraintInstance::getOrder).orElse(0);
+  }
+
+  @Override
+  public void processRestraint(ResourceRestraintInstance instance) {
+    String constraintId = instance.getResourceRestraintId();
+    boolean toUnblock = false;
+    try (AutoLogContext ignore = instance.autoLogContext()) {
+      if (BLOCKED == instance.getState()) {
+        // If the restraint is blocked then we try to unblock
+        toUnblock = true;
+      } else if (ACTIVE == instance.getState()) {
+        // If the restraint is active then we try to move this to finished
+        if (updateActiveConstraintsForInstance(instance)) {
+          // If this is finished successfully then we try to unblock the next restraint based in constraint id
+          log.info("The following resource constraint needs to be unblocked: {}", constraintId);
+          toUnblock = true;
+        }
+      }
+      if (toUnblock) {
+        // unblock the constraints
+        updateBlockedConstraints(ImmutableSet.of(constraintId));
+      }
+    }
+  }
+
+  @Override
+  public List<ResourceRestraintInstance> findAllActiveAndBlockedByReleaseEntityId(String releaseEntityId) {
+    return restraintInstanceRepository.findAllByReleaseEntityIdAndStateIn(releaseEntityId, EnumSet.of(ACTIVE, BLOCKED));
   }
 
   @Override

@@ -185,6 +185,9 @@ public class WatcherServiceImpl implements WatcherService {
   private long delegateRestartedToUpgradeJreAt;
   private boolean watcherRestartedToUpgradeJre;
 
+  private static final String DELEGATE_NAME =
+      isNotBlank(System.getenv().get("DELEGATE_NAME")) ? System.getenv().get("DELEGATE_NAME") : "";
+
   private final boolean delegateNg = isNotBlank(System.getenv().get("DELEGATE_SESSION_IDENTIFIER"))
       || (isNotBlank(System.getenv().get("NEXT_GEN")) && Boolean.parseBoolean(System.getenv().get("NEXT_GEN")));
   private final SecureRandom random = new SecureRandom();
@@ -482,6 +485,7 @@ public class WatcherServiceImpl implements WatcherService {
 
   private void heartbeat() {
     if (isDiskFull()) {
+      log.error("Skipping local heartbeat because disk is full");
       return;
     }
     try {
@@ -491,6 +495,7 @@ public class WatcherServiceImpl implements WatcherService {
       heartbeatData.put(WATCHER_VERSION, getVersion());
       messageService.putAllData(WATCHER_DATA, heartbeatData);
     } catch (VersionInfoException e) {
+      log.error("Exception while sending local heartbeat ", e);
       return;
     } catch (Exception e) {
       if (e.getMessage().contains(NO_SPACE_LEFT_ON_DEVICE_ERROR)) {
@@ -634,7 +639,15 @@ public class WatcherServiceImpl implements WatcherService {
                   Optional.ofNullable((Boolean) delegateData.get(DELEGATE_UPGRADE_PENDING)).orElse(false);
               boolean shutdownPending =
                   Optional.ofNullable((Boolean) delegateData.get(DELEGATE_SHUTDOWN_PENDING)).orElse(false);
-              long shutdownStarted = Optional.ofNullable((Long) delegateData.get(DELEGATE_SHUTDOWN_STARTED)).orElse(0L);
+
+              long shutdownStarted = 0L;
+              try {
+                shutdownStarted = (Long) delegateData.get(DELEGATE_SHUTDOWN_STARTED);
+              } catch (Exception e) {
+                log.error("Caught exception while reading {} for Delegate process {} ", DELEGATE_SHUTDOWN_STARTED,
+                    delegateProcess, e);
+              }
+
               boolean shutdownTimedOut = now - shutdownStarted > DELEGATE_SHUTDOWN_TIMEOUT;
               long upgradeStarted =
                   Optional.ofNullable((Long) delegateData.get(DELEGATE_UPGRADE_STARTED)).orElse(Long.MAX_VALUE);
@@ -1020,8 +1033,8 @@ public class WatcherServiceImpl implements WatcherService {
       log.info(format("Calling getDelegateScripts with version %s and patch %s", updatedVersion, patchVersion));
       restResponse = callInterruptible21(timeLimiter, ofMinutes(1),
           ()
-              -> SafeHttpCall.execute(
-                  managerClient.getDelegateScripts(watcherConfiguration.getAccountId(), updatedVersion, patchVersion)));
+              -> SafeHttpCall.execute(managerClient.getDelegateScripts(
+                  watcherConfiguration.getAccountId(), updatedVersion, patchVersion, DELEGATE_NAME)));
     } else {
       log.info(format("Calling getDelegateScriptsNg with version %s and patch %s", updatedVersion, patchVersion));
       restResponse = callInterruptible21(timeLimiter, ofMinutes(1),

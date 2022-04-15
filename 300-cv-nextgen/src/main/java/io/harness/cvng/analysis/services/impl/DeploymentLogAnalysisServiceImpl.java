@@ -60,8 +60,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
@@ -504,27 +504,29 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
     Preconditions.checkArgument(totalSize != 0, "Radar CHart List size cannot be 0 for the angle calculation");
     double angleDifference = (double) 360 / totalSize;
     double angle = 0;
-    for (LogAnalysisRadarChartListDTO logAnalysisRadarChartListDTO : logAnalysisRadarChartListDTOS) {
+    Random random = new Random(123456789);
+    for (int i = 0; i < logAnalysisRadarChartListDTOS.size(); i++) {
+      LogAnalysisRadarChartListDTO logAnalysisRadarChartListDTO = logAnalysisRadarChartListDTOS.get(i);
       logAnalysisRadarChartListDTO.setAngle(angle);
       logAnalysisRadarChartListDTO.setRadius(
-          getRandomRadiusInExpectedRange(logAnalysisRadarChartListDTO.getClusterType()));
+          getRandomRadiusInExpectedRange(logAnalysisRadarChartListDTO.getClusterType(), random));
       if (logAnalysisRadarChartListDTO.hasControlData()) {
         logAnalysisRadarChartListDTO.getBaseline().setAngle(angle);
         logAnalysisRadarChartListDTO.getBaseline().setRadius(
-            getRandomRadiusInExpectedRange(logAnalysisRadarChartListDTO.getBaseline().getClusterType()));
+            getRandomRadiusInExpectedRange(logAnalysisRadarChartListDTO.getBaseline().getClusterType(), random));
       }
       angle += angleDifference;
       angle = Math.min(angle, 360);
     }
   }
 
-  private double getRandomRadiusInExpectedRange(ClusterType clusterType) {
+  private double getRandomRadiusInExpectedRange(ClusterType clusterType, Random random) {
     if (clusterType.equals(ClusterType.BASELINE)) {
-      return ThreadLocalRandom.current().nextDouble(0, 1);
+      return random.nextDouble() * 0.5 + 0.5;
     } else if (clusterType.equals(ClusterType.KNOWN_EVENT) || clusterType.equals(ClusterType.UNEXPECTED_FREQUENCY)) {
-      return ThreadLocalRandom.current().nextDouble(1, 2);
+      return random.nextDouble() + 1;
     } else {
-      return ThreadLocalRandom.current().nextDouble(2, 3);
+      return random.nextDouble() + 2;
     }
   }
 

@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PipelineInstrumentationConstants {
+  public static String PIPELINE_ID = "pipelineIdentifier";
   public static String PROJECT_IDENTIFIER = "projectId";
   public static String ORG_IDENTIFIER = "orgIdentifier";
   public static String MODULE_NAME = "moduleName";

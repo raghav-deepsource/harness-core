@@ -64,7 +64,7 @@ public class NodeExecutionToExecutioNodeMapper {
         .stepType(AmbianceUtils.getCurrentStepType(nodeExecution.getAmbiance()).getType())
         .status(ExecutionStatus.getExecutionStatus(nodeExecution.getStatus()))
         .failureInfo(FailureInfoDTOConverter.toFailureInfoDTO(nodeExecution.getFailureInfo()))
-        .interruptHistories(nodeExecution.getInterruptHistories())
+        .interruptHistories(InterruptConfigDTOMapper.toInterruptEffectDTOList(nodeExecution.getInterruptHistories()))
         .skipInfo(nodeExecution.getSkipInfo())
         .nodeRunInfo(nodeExecution.getNodeRunInfo())
         .executableResponses(nodeExecution.getExecutableResponses())

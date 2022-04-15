@@ -77,6 +77,7 @@ import io.harness.exception.ConnectorNotFoundException;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.exception.ngexception.ConnectorValidationException;
@@ -381,9 +382,8 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
         connectorInfo.getOrgIdentifier(), connectorInfo.getProjectIdentifier(), connectorInfo.getIdentifier());
     if (!isIdentifierUnique) {
       throw new InvalidRequestException(
-          String.format("The connector with identifier %s already exists in the account %s, org %s, project %s",
-              connectorInfo.getIdentifier(), accountIdentifier, connectorInfo.getOrgIdentifier(),
-              connectorInfo.getProjectIdentifier()));
+          String.format("Connector: %s has been given an identifier: %s that already exists. Please enter a unique ID.",
+              connectorInfo.getName(), connectorInfo.getIdentifier()));
     }
     if (HARNESS_SECRET_MANAGER_IDENTIFIER.equalsIgnoreCase(connectorRequestDTO.getConnectorInfo().getIdentifier())) {
       log.info("[AccountSetup]:Creating default SecretManager");
@@ -643,7 +643,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
               new ConnectorDeleteEvent(accountIdentifier, connectorMapper.writeDTO(existingConnector).getConnector()));
     }
 
-    connectorRepository.save(existingConnector, null, changeType, supplier);
+    connectorRepository.delete(existingConnector, null, changeType, supplier);
 
     return true;
   }
@@ -673,7 +673,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
       throw new UnexpectedException("Error while deleting the connector");
     }
     if (isEntityReferenced) {
-      throw new InvalidRequestException(String.format(
+      throw new ReferencedEntityException(String.format(
           "Could not delete the connector %s as it is referenced by other entities", connector.getIdentifier()));
     }
   }
@@ -974,7 +974,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
               }
             }
             item.setDeleted(true);
-            connectorRepository.save(item, ChangeType.DELETE);
+            connectorRepository.delete(item, ChangeType.DELETE);
             Connector existingConnector = connectorOptional.get();
             ConnectorResponseDTO connectorDTO = connectorMapper.writeDTO(existingConnector);
             connectorEntityReferenceHelper.deleteConnectorEntityReferenceWhenConnectorGetsDeleted(

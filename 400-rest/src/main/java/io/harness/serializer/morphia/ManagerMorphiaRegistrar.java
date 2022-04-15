@@ -22,7 +22,6 @@ import io.harness.ccm.config.GcpBillingAccount;
 import io.harness.ccm.config.GcpOrganization;
 import io.harness.ccm.config.GcpServiceAccount;
 import io.harness.dashboard.DashboardSettings;
-import io.harness.delegate.task.ListNotifyResponseData;
 import io.harness.event.reconciliation.deployment.DeploymentReconRecord;
 import io.harness.execution.export.request.ExportExecutionsRequest;
 import io.harness.governance.pipeline.service.model.PipelineGovernanceConfig;
@@ -198,7 +197,6 @@ import software.wings.beans.DeploymentPreference;
 import software.wings.beans.DeploymentSpecification;
 import software.wings.beans.DirectKubernetesInfrastructureMapping;
 import software.wings.beans.DockerConfig;
-import software.wings.beans.EcrConfig;
 import software.wings.beans.EcsBlueGreenOrchestrationWorkflow;
 import software.wings.beans.EcsInfrastructureMapping;
 import software.wings.beans.ElasticLoadBalancerConfig;
@@ -1046,8 +1044,6 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     h.put("marketplace.gcp.events.ProcurementPubsubMessage", ProcurementPubsubMessage.class);
 
     // Redesign Classes
-    h.put("waiter.ListNotifyResponseData", ListNotifyResponseData.class);
-
     w.put("api.AmiServiceDeployElement", AmiServiceDeployElement.class);
     w.put("api.AmiServiceSetupElement", AmiServiceSetupElement.class);
     w.put("api.AmiServiceTrafficShiftAlbSetupElement", AmiServiceTrafficShiftAlbSetupElement.class);
@@ -1239,7 +1235,6 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     w.put("beans.CustomArtifactServerConfig", CustomArtifactServerConfig.class);
     w.put("beans.DatadogConfig", DatadogConfig.class);
     w.put("beans.DockerConfig", DockerConfig.class);
-    w.put("beans.EcrConfig", EcrConfig.class);
     w.put("beans.EcsBlueGreenOrchestrationWorkflow", EcsBlueGreenOrchestrationWorkflow.class);
     w.put("beans.ElasticLoadBalancerConfig", ElasticLoadBalancerConfig.class);
     w.put("beans.EntityVersion", EntityVersion.class);

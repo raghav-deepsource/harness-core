@@ -213,6 +213,7 @@ import software.wings.stencils.StencilCategory;
 import software.wings.stencils.StencilPostProcessor;
 import software.wings.utils.ApplicationManifestUtils;
 import software.wings.utils.ArtifactType;
+import software.wings.utils.artifacts.ArtifactCommandHelper;
 import software.wings.verification.CVConfiguration;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -850,7 +851,7 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
     if (appContainer != null && appContainer.getFamily() != null) {
       isInternal = appContainer.getFamily().isInternal();
     } else if (artifactType != null) {
-      isInternal = artifactType.isInternal();
+      isInternal = ArtifactCommandHelper.getArtifactCommands(artifactType).isInternal();
     }
     return isInternal;
   }
@@ -888,7 +889,7 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
           }
           break;
         default:
-          commands = artifactType.getDefaultCommands();
+          commands = ArtifactCommandHelper.getArtifactCommands(artifactType).getDefaultCommands();
       }
     }
 
@@ -1124,6 +1125,27 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
     List<Service> serviceList = wingsPersistence.createQuery(Service.class)
                                     .field(ServiceKeys.appId)
                                     .equal(appId)
+                                    .field(ServiceKeys.uuid)
+                                    .in(serviceIds)
+                                    .project(ServiceKeys.name, true)
+                                    .project(ServiceKeys.uuid, true)
+                                    .asList();
+
+    Map<String, String> mapServiceIdToServiceName = new HashMap<>();
+    for (Service service : serviceList) {
+      mapServiceIdToServiceName.put(service.getUuid(), service.getName());
+    }
+    return mapServiceIdToServiceName;
+  }
+
+  @Override
+  public Map<String, String> getServiceNamesWithAccountId(String accountId, @Nonnull Set<String> serviceIds) {
+    if (isEmpty(serviceIds)) {
+      return Collections.emptyMap();
+    }
+    List<Service> serviceList = wingsPersistence.createQuery(Service.class)
+                                    .field(ServiceKeys.accountId)
+                                    .equal(accountId)
                                     .field(ServiceKeys.uuid)
                                     .in(serviceIds)
                                     .project(ServiceKeys.name, true)

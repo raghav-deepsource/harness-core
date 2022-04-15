@@ -37,6 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.beans.steps.nodes.RunTestsStepNode")
 public class RunTestStepNode extends CIAbstractStepNode {
   @JsonProperty("type") @NotNull StepType type = StepType.RunTests;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   RunTestsStepInfo runTestsStepInfo;

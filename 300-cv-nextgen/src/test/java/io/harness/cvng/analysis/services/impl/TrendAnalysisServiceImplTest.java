@@ -192,7 +192,7 @@ public class TrendAnalysisServiceImplTest extends CvNextGenTestBase {
   public void testSaveAnalysis() {
     Instant start = Instant.now().minus(10, ChronoUnit.MINUTES).truncatedTo(ChronoUnit.MINUTES);
     Instant end = start.plus(5, ChronoUnit.MINUTES);
-    List<LogAnalysisCluster> logAnalysisClusters = createLogAnalysisClusters(start, end);
+    List<LogAnalysisCluster> logAnalysisClusters = createLogAnalysisClusters(start, end.plus(Duration.ofMinutes(5)));
     List<LogAnalysisResult> logAnalysisResults = createLogAnalysisResults(start, end);
     hPersistence.save(logAnalysisClusters);
     hPersistence.save(logAnalysisResults);
@@ -220,7 +220,9 @@ public class TrendAnalysisServiceImplTest extends CvNextGenTestBase {
     int index = 0;
     for (LogAnalysisCluster cluster : savedClusters) {
       for (Frequency frequency : cluster.getFrequencyTrend()) {
-        assertThat(frequency.getRiskScore()).isEqualTo((double) index);
+        if (frequency.getTimestamp() >= start.toEpochMilli() && frequency.getTimestamp() < end.toEpochMilli()) {
+          assertThat(frequency.getRiskScore()).isEqualTo((double) index);
+        }
       }
       index++;
     }
@@ -350,6 +352,7 @@ public class TrendAnalysisServiceImplTest extends CvNextGenTestBase {
     timeSeriesLearningEngineTask.setVerificationTaskId(verificationTaskId);
     timeSeriesLearningEngineTask.setAnalysisStartTime(start);
     timeSeriesLearningEngineTask.setAnalysisEndTime(end);
+    timeSeriesLearningEngineTask.setPickedAt(end.plus(Duration.ofMinutes(2)));
     return learningEngineTaskService.createLearningEngineTask(timeSeriesLearningEngineTask);
   }
 
@@ -457,16 +460,10 @@ public class TrendAnalysisServiceImplTest extends CvNextGenTestBase {
                                      .build();
     Instant timestamp = startTime;
     while (timestamp.isBefore(endTime)) {
-      Frequency frequency1 = Frequency.builder()
-                                 .timestamp(TimeUnit.SECONDS.toMinutes(timestamp.getEpochSecond()))
-                                 .count(4)
-                                 .riskScore(0.5)
-                                 .build();
-      Frequency frequency2 = Frequency.builder()
-                                 .timestamp(TimeUnit.SECONDS.toMinutes(timestamp.getEpochSecond()))
-                                 .count(10)
-                                 .riskScore(0.1)
-                                 .build();
+      Frequency frequency1 =
+          Frequency.builder().timestamp(TimeUnit.SECONDS.toMinutes(timestamp.getEpochSecond())).count(4).build();
+      Frequency frequency2 =
+          Frequency.builder().timestamp(TimeUnit.SECONDS.toMinutes(timestamp.getEpochSecond())).count(10).build();
       record1.getFrequencyTrend().add(frequency1);
       record2.getFrequencyTrend().add(frequency2);
       timestamp = timestamp.plus(1, ChronoUnit.MINUTES);

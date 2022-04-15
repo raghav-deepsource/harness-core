@@ -35,7 +35,6 @@ public abstract class MetricDataCollectionInfoMapper<R extends TimeSeriesDataCol
     List<AnalysisInfo> analysisInfos = new ArrayList<>();
     cvConfigs.stream()
         .flatMap(cvConfig -> CollectionUtils.emptyIfNull(cvConfig.getMetricInfos()).stream())
-        .filter(analysisInfo -> ((AnalysisInfo) analysisInfo).getSli().isEnabled())
         .filter(analysisInfo
             -> serviceLevelIndicator.getMetricNames().contains(((AnalysisInfo) analysisInfo).getIdentifier()))
         .forEach(analysisInfo -> analysisInfos.add((AnalysisInfo) analysisInfo));

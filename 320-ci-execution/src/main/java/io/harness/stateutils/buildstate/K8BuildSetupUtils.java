@@ -142,6 +142,7 @@ public class K8BuildSetupUtils {
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 3;
+  private static String RUNTIME_CLASS_NAME = "gvisor";
 
   public CIK8InitializeTaskParams getCIk8BuildTaskParams(InitializeStepInfo initializeStepInfo, Ambiance ambiance,
       Map<String, String> taskIds, String logPrefix, Map<String, String> stepLogKeys) {
@@ -224,8 +225,8 @@ public class K8BuildSetupUtils {
     Integer stageRunAsUser = null;
     String resolveStringParameter = null;
     String serviceAccountName = null;
-    String runtime = "gvisor";
-    String namespace = "default";
+    String namespace = "default"; // The name here will actually be taken from the db. The namesapce is going to be
+                                  // "accountid-namespace". Each account is going to have its own namespace.
 
     if (resolveStringParameter != null && !resolveStringParameter.equals(UNRESOLVED_PARAMETER)) {
       serviceAccountName = resolveStringParameter;
@@ -238,7 +239,7 @@ public class K8BuildSetupUtils {
 
     CIK8PodParams<CIK8ContainerParams> podParams = getPodParams(ngAccess, k8PodDetails, initializeStepInfo, false,
         logPrefix, ambiance, annotations, labels, stageRunAsUser, serviceAccountName, nodeSelector, podTolerations,
-        podSetupInfo.getVolumes(), runtime, namespace, null, null, null);
+        podSetupInfo.getVolumes(), RUNTIME_CLASS_NAME, namespace, null, null, null);
 
     log.info("Created pod params for pod name [{}]", podSetupInfo.getName());
 

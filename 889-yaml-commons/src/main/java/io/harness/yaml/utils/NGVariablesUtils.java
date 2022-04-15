@@ -14,7 +14,6 @@ import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.utils.YamlPipelineUtils;
 import io.harness.yaml.core.properties.CIProperties;
 import io.harness.yaml.core.properties.NGProperties;
 import io.harness.yaml.core.variables.NGVariable;
@@ -57,7 +56,7 @@ public class NGVariablesUtils {
     Map<String, Object> mapOfVariables = new HashMap<>();
     if (ngProperties != null) {
       try {
-        CIProperties ciProperties = YamlPipelineUtils.read(ngProperties.getCi().toString(), CIProperties.class);
+        CIProperties ciProperties = ngProperties.getCi();
         mapOfVariables.put(YAMLFieldNameConstants.CI, ciProperties);
       } catch (Exception e) {
         log.warn("invalid ci properties");

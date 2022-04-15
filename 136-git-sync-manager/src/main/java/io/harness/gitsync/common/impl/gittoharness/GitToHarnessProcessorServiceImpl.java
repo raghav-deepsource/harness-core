@@ -15,6 +15,7 @@ import static io.harness.gitsync.common.beans.GitToHarnessProcessingStepStatus.D
 import static io.harness.gitsync.common.beans.GitToHarnessProcessingStepStatus.ERROR;
 import static io.harness.gitsync.common.beans.GitToHarnessProcessingStepStatus.IN_PROGRESS;
 import static io.harness.gitsync.common.beans.GitToHarnessProcessingStepType.PROCESS_FILES_IN_MSVS;
+import static io.harness.gitsync.common.helper.RepoProviderHelper.getRepoProviderType;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -25,7 +26,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.UnexpectedException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitsync.ChangeSet;
 import io.harness.gitsync.ChangeSets;
@@ -54,7 +54,6 @@ import io.harness.gitsync.common.dtos.RepoProviders;
 import io.harness.gitsync.common.helper.GitChangeSetMapper;
 import io.harness.gitsync.common.helper.GitConnectivityExceptionHelper;
 import io.harness.gitsync.common.helper.GitSyncGrpcClientUtils;
-import io.harness.gitsync.common.helper.RepoProviderHelper;
 import io.harness.gitsync.common.service.GitEntityService;
 import io.harness.gitsync.common.service.GitToHarnessProgressService;
 import io.harness.gitsync.common.service.YamlGitConfigService;
@@ -292,8 +291,9 @@ public class GitToHarnessProcessorServiceImpl implements GitToHarnessProcessorSe
       } catch (Exception ex) {
         // This exception happens in the case when we are not able to connect to the microservice
         log.error("Exception in file processing for the microservice {}", microservice, ex);
-        gitSyncErrorService.recordConnectivityError(gitToHarnessProcessingInfo.getAccountId(),
-            gitToHarnessProcessingInfo.getRepoUrl(), GitConnectivityExceptionHelper.ERROR_MSG_MSVC_DOWN);
+        gitSyncErrorService.saveConnectivityError(gitToHarnessProcessingInfo.getAccountId(),
+            gitToHarnessProcessingInfo.getRepoUrl(), GitConnectivityExceptionHelper.ERROR_MSG_MSVC_DOWN,
+            getRepoProviderType(gitToHarnessProcessingInfo.getYamlGitConfigs()));
         gitToHarnessProcessingResponseDTO = GitToHarnessProcessingResponseDTO.builder()
                                                 .msvcProcessingFailureStage(MsvcProcessingFailureStage.RECEIVE_STAGE)
                                                 .build();
@@ -548,14 +548,6 @@ public class GitToHarnessProcessorServiceImpl implements GitToHarnessProcessorSe
                                     .commitMessage(gitToHarnessProcessingInfo.getCommitMessage())
                                     .build())
         .build();
-  }
-
-  private RepoProviders getRepoProviderType(List<YamlGitConfigDTO> yamlGitConfigs) {
-    if (isEmpty(yamlGitConfigs)) {
-      throw new UnexpectedException("The git sync configs cannot be null when figuring out the repo provider");
-    }
-    final YamlGitConfigDTO yamlGitConfigDTO = yamlGitConfigs.get(0);
-    return RepoProviderHelper.getRepoProviderFromConnectorType(yamlGitConfigDTO.getGitConnectorType());
   }
 
   private Map<FileProcessingResponseDTO, ChangeSet> getFileProcessingResponseToChangeSetMap(

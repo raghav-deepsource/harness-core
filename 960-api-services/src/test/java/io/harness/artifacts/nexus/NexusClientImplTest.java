@@ -28,7 +28,6 @@ import io.harness.exception.HintException;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
-import io.harness.exception.NexusRegistryException;
 import io.harness.nexus.NexusClientImpl;
 import io.harness.nexus.NexusRequest;
 import io.harness.nexus.NexusThreeClientImpl;
@@ -297,45 +296,6 @@ public class NexusClientImplTest {
         nexusClient.getBuildDetails(nexusConfig2, "test1", null, "superApp", RepositoryFormat.docker.name(), "1.0");
     assertThat(response).isNotNull();
     assertThat(response).size().isEqualTo(3);
-  }
-
-  @Test
-  @Owner(developers = MLUKIC)
-  @Category(UnitTests.class)
-  public void testVerifyArtifactManifestUrl() {
-    NexusRequest nexusConfig1 = NexusRequest.builder()
-                                    .nexusUrl(url)
-                                    .username("username")
-                                    .password("password".toCharArray())
-                                    .hasCredentials(true)
-                                    .artifactRepositoryUrl(url)
-                                    .version("2.x")
-                                    .build();
-
-    assertThatThrownBy(()
-                           -> nexusClient.getBuildDetails(
-                               nexusConfig1, "test1", null, "superApp", RepositoryFormat.docker.name(), "tag1"))
-        .isInstanceOf(HintException.class)
-        .getCause()
-        .isInstanceOf(ExplanationException.class)
-        .getCause()
-        .isInstanceOf(NexusRegistryException.class);
-
-    NexusRequest nexusConfig2 = NexusRequest.builder()
-                                    .nexusUrl(url)
-                                    .username("username")
-                                    .password("password".toCharArray())
-                                    .hasCredentials(true)
-                                    .artifactRepositoryUrl(url)
-                                    .version("3.x")
-                                    .build();
-
-    String mockManifestUrl = url + "/repository/testrepo/v2/testimage/manifests/latest";
-    doReturn(true).when(nexusThreeService).verifyArtifactManifestUrl(nexusConfig2, mockManifestUrl);
-
-    boolean response = nexusClient.verifyArtifactManifestUrl(nexusConfig2, mockManifestUrl);
-    assertThat(response).isNotNull();
-    assertThat(response).isEqualTo(true);
   }
 
   private BuildDetailsInternal createBuildDetails(String repoUrl, String port, String imageName, String tag) {

@@ -241,24 +241,19 @@ public class K8sRollingBaseHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
-  public void testAddLabelsInDeploymentSelectorAddSelector() {
-    KubernetesResource resource = mock(KubernetesResource.class);
-    prepareMockedKubernetesResource(resource);
-    List<KubernetesResource> resources = Collections.singletonList(resource);
-    k8sRollingBaseHandler.addLabelsInDeploymentSelectorForCanary(true, resources);
-    verify(resource, times(1)).addLabelsInDeploymentSelector(anyMap());
-  }
-
-  @Test
-  @Owner(developers = TATHAGAT)
-  @Category(UnitTests.class)
-  public void testAddLabelsInDeploymentSelectorNonCanary() {
+  public void testAddLabelsInDeploymentSelector() {
     KubernetesResource resource = mock(KubernetesResource.class);
     prepareMockedKubernetesResource(resource);
     List<KubernetesResource> resources = Collections.singletonList(resource);
 
-    k8sRollingBaseHandler.addLabelsInDeploymentSelectorForCanary(false, resources);
+    k8sRollingBaseHandler.addLabelsInDeploymentSelectorForCanary(false, resources, false);
     verify(resource, never()).addLabelsInDeploymentSelector(anyMap());
+
+    k8sRollingBaseHandler.addLabelsInDeploymentSelectorForCanary(false, resources, true);
+    verify(resource, times(1)).addLabelsInDeploymentSelector(anyMap());
+
+    k8sRollingBaseHandler.addLabelsInDeploymentSelectorForCanary(true, resources, false);
+    verify(resource, times(2)).addLabelsInDeploymentSelector(anyMap());
   }
 
   @Test
@@ -275,6 +270,21 @@ public class K8sRollingBaseHandlerTest extends CategoryTest {
         true, true, asList(resource1, resource2), KubernetesConfig.builder().build());
     verify(resource1, times(1)).addLabelsInDeploymentSelector(anyMap());
     verify(resource2, never()).addLabelsInDeploymentSelector(anyMap());
+
+    k8sRollingBaseHandler.addLabelsInDeploymentSelectorForCanary(
+        true, false, asList(resource1, resource2), KubernetesConfig.builder().build());
+    verify(resource1, times(2)).addLabelsInDeploymentSelector(anyMap());
+    verify(resource2, times(1)).addLabelsInDeploymentSelector(anyMap());
+
+    k8sRollingBaseHandler.addLabelsInDeploymentSelectorForCanary(
+        false, true, asList(resource1, resource2), KubernetesConfig.builder().build());
+    verify(resource1, times(3)).addLabelsInDeploymentSelector(anyMap());
+    verify(resource2, times(1)).addLabelsInDeploymentSelector(anyMap());
+
+    k8sRollingBaseHandler.addLabelsInDeploymentSelectorForCanary(
+        false, false, asList(resource1, resource2), KubernetesConfig.builder().build());
+    verify(resource1, times(3)).addLabelsInDeploymentSelector(anyMap());
+    verify(resource2, times(1)).addLabelsInDeploymentSelector(anyMap());
   }
 
   @Test

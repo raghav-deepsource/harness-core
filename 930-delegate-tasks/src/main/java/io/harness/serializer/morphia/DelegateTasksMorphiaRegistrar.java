@@ -12,6 +12,7 @@ import io.harness.morphia.MorphiaRegistrarHelperPut;
 
 import software.wings.beans.AppDynamicsConfig;
 import software.wings.beans.DynaTraceConfig;
+import software.wings.beans.EcrConfig;
 import software.wings.beans.ElkConfig;
 import software.wings.beans.NewRelicConfig;
 import software.wings.beans.SumoConfig;
@@ -48,5 +49,6 @@ public class DelegateTasksMorphiaRegistrar implements MorphiaRegistrar {
     w.put("beans.ElkConfig", ElkConfig.class);
     w.put("service.impl.elk.ElkDataCollectionInfo", ElkDataCollectionInfo.class);
     w.put("service.impl.logz.LogzDataCollectionInfo", LogzDataCollectionInfo.class);
+    w.put("beans.EcrConfig", EcrConfig.class);
   }
 }

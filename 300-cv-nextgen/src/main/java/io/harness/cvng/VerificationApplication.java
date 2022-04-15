@@ -83,7 +83,7 @@ import io.harness.cvng.migration.beans.CVNGSchema.CVNGSchemaKeys;
 import io.harness.cvng.migration.service.CVNGMigrationService;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorKeys;
-import io.harness.cvng.statemachine.beans.AnalysisStatus;
+import io.harness.cvng.statemachine.beans.AnalysisOrchestratorStatus;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator.AnalysisOrchestratorKeys;
 import io.harness.cvng.statemachine.jobs.AnalysisOrchestrationJob;
@@ -586,7 +586,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .schedulingType(REGULAR)
             .filterExpander(query
                 -> query.field(AnalysisOrchestratorKeys.status)
-                       .in(Lists.newArrayList(AnalysisStatus.CREATED, AnalysisStatus.RUNNING)))
+                       .in(Lists.newArrayList(AnalysisOrchestratorStatus.CREATED, AnalysisOrchestratorStatus.RUNNING)))
             .redistribute(true)
             .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
             .build();
@@ -781,9 +781,9 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .clazz(DataCollectionTask.class)
             .fieldName(DataCollectionTaskKeys.workerStatusIteration)
             .targetInterval(ofMinutes(1))
-            .acceptableNoAlertDelay(ofMinutes(1))
+            .acceptableNoAlertDelay(ofMinutes(5))
             .executorService(dataCollectionTasksPerpetualTaskStatusUpdateExecutor)
-            .semaphore(new Semaphore(3))
+            .semaphore(new Semaphore(2))
             .handler(dataCollectionTasksPerpetualTaskStatusUpdateHandler)
             .schedulingType(REGULAR)
             .filterExpander(query
@@ -804,7 +804,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
 
     injector.injectMembers(dataCollectionTasksPerpetualTaskStatusUpdateIterator);
     dataCollectionTasksPerpetualTaskStatusUpdateExecutor.scheduleWithFixedDelay(
-        () -> dataCollectionTasksPerpetualTaskStatusUpdateIterator.process(), 0, 3, TimeUnit.MINUTES);
+        () -> dataCollectionTasksPerpetualTaskStatusUpdateIterator.process(), 0, 2, TimeUnit.MINUTES);
   }
 
   private void registerVerificationJobInstanceDataCollectionTaskIterator(Injector injector) {

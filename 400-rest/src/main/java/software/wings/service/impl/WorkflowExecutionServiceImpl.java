@@ -21,6 +21,7 @@ import static io.harness.beans.ExecutionStatus.PAUSED;
 import static io.harness.beans.ExecutionStatus.PAUSING;
 import static io.harness.beans.ExecutionStatus.PREPARING;
 import static io.harness.beans.ExecutionStatus.QUEUED;
+import static io.harness.beans.ExecutionStatus.REJECTED;
 import static io.harness.beans.ExecutionStatus.RUNNING;
 import static io.harness.beans.ExecutionStatus.STARTING;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
@@ -1861,9 +1862,6 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
   }
 
   private void sendEvent(Application app, ExecutionArgs executionArgs, WorkflowExecution execution) {
-    if (!featureFlagService.isEnabled(FeatureName.APP_TELEMETRY, app.getAccountId())) {
-      return;
-    }
     if (PIPELINE.equals(executionArgs.getWorkflowType())) {
       PipelineSummary summary = execution.getPipelineSummary();
       if (summary != null) {
@@ -3635,10 +3633,6 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     addParameterizedArtifactVariableToContext(executionArgs.getArtifactVariables(), workflowStandardParams);
 
     LinkedList<ContextElement> contextElements = stateExecutionInstance.getContextElements();
-    Map<String, Object> wfVariableObj = Collections.<String, Object>unmodifiableMap(wfVariables);
-    if (workflowStandardParams.getWorkflowElement() != null) {
-      workflowStandardParams.getWorkflowElement().setVariables(wfVariableObj);
-    }
     contextElements.push(workflowStandardParams);
 
     UpdateOperations<StateExecutionInstance> ops =
@@ -5996,7 +5990,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
         pipelineExecution.getPipelineStageExecutions()
             .stream()
             .flatMap(pipelineStageExecution -> pipelineStageExecution.getWorkflowExecutions().stream())
-            .filter(execution -> execution.getStatus() == FAILED)
+            .filter(execution -> execution.getStatus() == FAILED || execution.getStatus() == REJECTED)
             .forEach(execution
                 -> execution.setFailureDetails(fetchFailureDetails(execution.getAppId(), execution.getUuid())));
       }

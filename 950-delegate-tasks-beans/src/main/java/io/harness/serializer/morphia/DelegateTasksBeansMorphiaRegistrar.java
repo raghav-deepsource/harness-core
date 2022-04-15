@@ -35,6 +35,7 @@ import io.harness.delegate.beans.executioncapability.SocketConnectivityExecution
 import io.harness.delegate.beans.executioncapability.SystemEnvCheckerCapability;
 import io.harness.delegate.command.CommandExecutionResult;
 import io.harness.delegate.task.HDelegateTask;
+import io.harness.delegate.task.ListNotifyResponseData;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
@@ -132,5 +133,6 @@ public class DelegateTasksBeansMorphiaRegistrar implements MorphiaRegistrar {
     w.put("beans.yaml.GitDiffResult", GitDiffResult.class);
     w.put("beans.JenkinsConfig", JenkinsConfig.class);
     w.put("sm.states.JenkinsExecutionResponse", JenkinsExecutionResponse.class);
+    h.put("waiter.ListNotifyResponseData", ListNotifyResponseData.class);
   }
 }

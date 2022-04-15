@@ -104,8 +104,8 @@ public class HttpStep extends TaskExecutableWithRollback<HttpStepResponse> {
             .parameters(new Object[] {httpTaskParametersNgBuilder.build()})
             .build();
 
-    return StepUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData, kryoSerializer,
-        TaskSelectorYaml.toTaskSelector(httpStepParameters.delegateSelectors.getValue()));
+    return StepUtils.prepareTaskRequestWithTaskSelector(
+        ambiance, taskData, kryoSerializer, TaskSelectorYaml.toTaskSelector(httpStepParameters.delegateSelectors));
   }
 
   @Override

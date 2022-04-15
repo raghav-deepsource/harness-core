@@ -227,9 +227,9 @@ iteratorsConfig:
     enabled: true
     targetIntervalInSeconds: 60
   resourceRestraint:
-    threadPoolCount: 5
+    threadPoolCount: 2
     enabled: true
-    targetIntervalInSeconds: 60
+    targetIntervalInSeconds: 300
   interruptMonitor:
     threadPoolCount: 2
     enabled: true
@@ -401,3 +401,15 @@ orchestrationLogConfiguration:
   orchestrationLogBatchSize: ${ORCHESTRATION_LOG_BATCH_SIZE:-5}
 
 planCreatorMergeServiceDependencyBatch: ${PLAN_CREATOR_DEPENDENCY_BATCH:-50}
+
+############ Json Expansion Config variables #################
+
+jsonExpansionPoolConfig:
+  corePoolSize: ${JSON_EXPANSION_EXECUTOR_POOL_CORE_SIZE:-5}
+  maxPoolSize: ${JSON_EXPANSION_EXECUTOR_POOL_MAX_SIZE:-10}
+  idleTime: ${JSON_EXPANSION_EXECUTOR_POOL_IDLE_TIME:-30}
+  timeUnit: ${JSON_EXPANSION_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
+jsonExpansionRequestBatchSize: ${JSON_EXPANSION_BATCH_SIZE:-50}
+
+#############################################################

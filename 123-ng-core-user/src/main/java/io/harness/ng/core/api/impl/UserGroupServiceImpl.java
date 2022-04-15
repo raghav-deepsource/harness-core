@@ -598,4 +598,22 @@ public class UserGroupServiceImpl implements UserGroupService {
 
     return updateInternal(existingUserGroup, oldUserGroup);
   }
+
+  @Override
+  public void sanitize(Scope scope, String identifier) {
+    Optional<UserGroup> userGroupOptional =
+        get(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), identifier);
+    if (userGroupOptional.isPresent()) {
+      UserGroup userGroup = userGroupOptional.get();
+      List<String> currentUserIds = userGroup.getUsers();
+      Set<String> uniqueUserIds = new HashSet<>(currentUserIds);
+
+      List<String> userIds = ngUserService.listUserIds(scope);
+      Set<String> invalidUserIds = new HashSet<>(Sets.difference(uniqueUserIds, new HashSet<>(userIds)));
+      uniqueUserIds.removeAll(invalidUserIds);
+      userGroup.setUsers(new ArrayList<>(uniqueUserIds));
+
+      userGroupRepository.save(userGroup);
+    }
+  }
 }

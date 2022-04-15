@@ -14,6 +14,7 @@ import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.filters.WithConnectorRef;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -50,7 +51,7 @@ public class TerraformDestroyStepInfo
 
   @Builder(builderMethodName = "infoBuilder")
   public TerraformDestroyStepInfo(ParameterField<String> provisionerIdentifier,
-      ParameterField<List<String>> delegateSelectors, TerraformStepConfiguration terraformStepConfiguration) {
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, TerraformStepConfiguration terraformStepConfiguration) {
     super(provisionerIdentifier, delegateSelectors);
     this.terraformStepConfiguration = terraformStepConfiguration;
   }

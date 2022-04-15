@@ -15,6 +15,7 @@ import static io.harness.beans.SearchFilter.Operator.OR;
 import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ANIL;
+import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.BOJANA;
 import static io.harness.rule.OwnerRule.DINESH;
 import static io.harness.rule.OwnerRule.GEORGE;
@@ -47,6 +48,7 @@ import static software.wings.utils.WingsTestConstants.COMPUTE_PROVIDER_ID;
 import static software.wings.utils.WingsTestConstants.ENV_ID;
 import static software.wings.utils.WingsTestConstants.HOST_NAME;
 import static software.wings.utils.WingsTestConstants.INFRA_MAPPING_ID;
+import static software.wings.utils.WingsTestConstants.INFRA_NAME;
 import static software.wings.utils.WingsTestConstants.PROVISIONER_ID;
 import static software.wings.utils.WingsTestConstants.SERVICE_ID;
 import static software.wings.utils.WingsTestConstants.SETTING_ID;
@@ -98,6 +100,7 @@ import software.wings.beans.NameValuePair;
 import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SettingAttribute.SettingCategory;
+import software.wings.beans.TerraformInfrastructureProvisioner;
 import software.wings.beans.Variable;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.customdeployment.CustomDeploymentTypeDTO;
@@ -324,6 +327,31 @@ public class InfrastructureDefinitionServiceImplTest extends CategoryTest {
 
     assertThat(((GoogleKubernetesEngine) infrastructureDefinition.getInfrastructure()).getReleaseName())
         .isEqualTo(releaseName);
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void testFailedRenderExpression() {
+    InfrastructureDefinition infrastructureDefinition =
+        InfrastructureDefinition.builder()
+            .uuid(INFRA_DEFINITION_ID)
+            .name(INFRA_NAME)
+            .appId(APP_ID)
+            .deploymentType(DeploymentType.AMI)
+            .cloudProviderType(CloudProviderType.AWS)
+            .infrastructure(AwsAmiInfrastructure.builder().cloudProviderId("CLOUD_PROVIDER_ID").build())
+            .provisionerId(PROVISIONER_ID)
+            .build();
+
+    Map<String, Object> expressionMap = new HashMap<>();
+    TerraformInfrastructureProvisioner infrastructureProvisioner = TerraformInfrastructureProvisioner.builder().build();
+    doReturn(infrastructureProvisioner).when(infrastructureProvisionerService).get(APP_ID, PROVISIONER_ID);
+    doReturn(expressionMap).when(infrastructureProvisionerService).resolveExpressions(any(), any(), any());
+    doReturn(false)
+        .when(infrastructureProvisionerService)
+        .areExpressionsValid(infrastructureProvisioner, expressionMap);
+    assertThat(infrastructureDefinitionService.renderExpression(infrastructureDefinition, executionContext)).isFalse();
   }
 
   @Test(expected = InvalidRequestException.class)

@@ -83,6 +83,19 @@ public interface BuildService<T> {
     throw new UnsupportedOperationException();
   }
 
+  default BuildDetails getBuild(String appId, ArtifactStreamAttributes artifactStreamAttributes, T config,
+      List<EncryptedDataDetail> encryptionDetails, String buildNo, boolean isRegex) {
+    if (isRegex) {
+      return getBuildWithRegex(appId, artifactStreamAttributes, config, encryptionDetails, buildNo);
+    }
+    return getBuild(appId, artifactStreamAttributes, config, encryptionDetails, buildNo);
+  }
+
+  default BuildDetails getBuildWithRegex(String appId, ArtifactStreamAttributes artifactStreamAttributes, T config,
+      List<EncryptedDataDetail> encryptionDetails, String buildNo) {
+    throw new UnsupportedOperationException();
+  }
+
   default boolean validateArtifactSource(ArtifactStreamAttributes artifactStreamAttributes) {
     throw new UnsupportedOperationException("Supported only for Custom Artifact Source");
   }

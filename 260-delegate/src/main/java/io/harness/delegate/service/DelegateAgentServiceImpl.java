@@ -1150,8 +1150,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void unregisterDelegate() {
-    final DelegateUnregisterRequest request =
-        new DelegateUnregisterRequest(delegateId, HOST_NAME, delegateNg, DELEGATE_TYPE, getLocalHostAddress());
+    final DelegateUnregisterRequest request = new DelegateUnregisterRequest(delegateId, HOST_NAME, delegateNg,
+        DELEGATE_TYPE, getLocalHostAddress(), delegateOrgIdentifier, delegateProjectIdentifier);
     try {
       log.info("Unregistering delegate {}", delegateId);
       executeRestCall(delegateAgentManagerClient.unregisterDelegate(accountId, request));
@@ -1346,6 +1346,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     if (perpetualTaskWorker != null) {
       log.info("Stopping perpetual task workers");
       perpetualTaskWorker.stop();
+      log.info("Stopped perpetual task workers");
     }
 
     if (restartableServiceManager != null) {
@@ -1353,7 +1354,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     }
 
     if (chronicleEventTailer != null) {
+      log.info("Stopping chronicle event trailer");
       chronicleEventTailer.stopAsync().awaitTerminated();
+      log.info("Stopped chronicle event trailer");
     }
   }
 
@@ -1401,11 +1404,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         log.info("[Old] Upgrade is pending...");
       } else {
         log.info("Checking for upgrade");
-        String delegateName = System.getenv().get("DELEGATE_NAME");
         try {
           RestResponse<DelegateScripts> restResponse = HTimeLimiter.callInterruptible21(delegateHealthTimeLimiter,
               Duration.ofMinutes(1),
-              () -> executeRestCall(delegateAgentManagerClient.getDelegateScripts(accountId, version, delegateName)));
+              () -> executeRestCall(delegateAgentManagerClient.getDelegateScripts(accountId, version, DELEGATE_NAME)));
           DelegateScripts delegateScripts = restResponse.getResource();
           if (delegateScripts.isDoUpgrade()) {
             upgradePending.set(true);
@@ -1586,6 +1588,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         statusData.put(DELEGATE_UPGRADE_STARTED, upgradeStartedAt);
       }
       if (!acquireTasks.get()) {
+        if (stoppedAcquiringAt == 0) {
+          stoppedAcquiringAt = clock.millis();
+        }
         statusData.put(DELEGATE_SHUTDOWN_STARTED, stoppedAcquiringAt);
       }
       if (isNotBlank(migrateTo)) {

@@ -14,7 +14,7 @@ import io.harness.pms.yaml.YamlField;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public abstract class ChildrenVariableCreator implements VariableCreator {
+public abstract class ChildrenVariableCreator<T> implements VariableCreator<T> {
   public abstract LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodes(
       VariableCreationContext ctx, YamlField config);
 
@@ -27,15 +27,42 @@ public abstract class ChildrenVariableCreator implements VariableCreator {
     LinkedHashMap<String, VariableCreationResponse> variablesForChildrenNodes =
         createVariablesForChildrenNodes(ctx, field);
     for (Map.Entry<String, VariableCreationResponse> entry : variablesForChildrenNodes.entrySet()) {
-      finalResponse.addYamlProperties(entry.getValue().getYamlProperties());
-      finalResponse.addResolvedDependencies(entry.getValue().getResolvedDependencies());
-      finalResponse.addDependencies(entry.getValue().getDependencies());
+      mergeResponses(finalResponse, entry.getValue());
     }
     VariableCreationResponse variablesForParentNode = createVariablesForParentNode(ctx, field);
-    finalResponse.addYamlProperties(variablesForParentNode.getYamlProperties());
-    finalResponse.addYamlOutputProperties(variablesForParentNode.getYamlOutputProperties());
-    finalResponse.addResolvedDependencies(variablesForParentNode.getResolvedDependencies());
-    finalResponse.addDependencies(variablesForParentNode.getDependencies());
+    mergeResponses(finalResponse, variablesForParentNode);
     return finalResponse;
+  }
+
+  @Override
+  public VariableCreationResponse createVariablesForFieldV2(VariableCreationContext ctx, T field) {
+    VariableCreationResponse finalResponse = VariableCreationResponse.builder().build();
+
+    VariableCreationResponse variablesForParentNode = createVariablesForParentNodeV2(ctx, field);
+    LinkedHashMap<String, VariableCreationResponse> variablesForChildrenNodes =
+        createVariablesForChildrenNodesV2(ctx, field);
+    for (Map.Entry<String, VariableCreationResponse> entry : variablesForChildrenNodes.entrySet()) {
+      mergeResponses(finalResponse, entry.getValue());
+    }
+    mergeResponses(finalResponse, variablesForParentNode);
+    return finalResponse;
+  }
+
+  public LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodesV2(
+      VariableCreationContext ctx, T config) {
+    return new LinkedHashMap<>();
+  }
+
+  public VariableCreationResponse createVariablesForParentNodeV2(VariableCreationContext ctx, T config) {
+    return VariableCreationResponse.builder().build();
+  }
+
+  private void mergeResponses(VariableCreationResponse finalResponse, VariableCreationResponse givenResponse) {
+    finalResponse.addYamlProperties(givenResponse.getYamlProperties());
+    finalResponse.addYamlOutputProperties(givenResponse.getYamlOutputProperties());
+    finalResponse.addYamlExtraProperties(givenResponse.getYamlExtraProperties());
+    finalResponse.addResolvedDependencies(givenResponse.getResolvedDependencies());
+    finalResponse.addDependencies(givenResponse.getDependencies());
+    finalResponse.addYamlUpdates(givenResponse.getYamlUpdates());
   }
 }

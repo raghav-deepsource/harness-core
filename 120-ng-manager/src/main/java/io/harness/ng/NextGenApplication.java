@@ -39,8 +39,8 @@ import io.harness.cache.CacheModule;
 import io.harness.cdng.creator.CDNGModuleInfoProvider;
 import io.harness.cdng.creator.CDNGPlanCreatorProvider;
 import io.harness.cdng.creator.filters.CDNGFilterCreationResponseMerger;
-import io.harness.cdng.envGroup.beans.EnvironmentGroupConfig;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
+import io.harness.cdng.envGroup.beans.EnvironmentGroupWrapperConfig;
 import io.harness.cdng.gitSync.EnvironmentGroupEntityGitSyncHelper;
 import io.harness.cdng.licenserestriction.ServiceRestrictionsUsageImpl;
 import io.harness.cdng.orchestration.NgStepRegistrar;
@@ -105,6 +105,7 @@ import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
 import io.harness.ng.core.handler.NGVaultSecretManagerRenewalHandler;
 import io.harness.ng.core.migration.NGBeanMigrationProvider;
 import io.harness.ng.core.migration.ProjectMigrationProvider;
+import io.harness.ng.core.migration.UserGroupMigrationProvider;
 import io.harness.ng.core.remote.licenserestriction.CloudCostK8sConnectorRestrictionsUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.OrgRestrictionsUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.ProjectRestrictionsUsageImpl;
@@ -172,6 +173,7 @@ import io.harness.telemetry.NGTelemetryRecordsJob;
 import io.harness.telemetry.TelemetryReporter;
 import io.harness.telemetry.filter.APIAuthTelemetryFilter;
 import io.harness.telemetry.filter.APIAuthTelemetryResponseFilter;
+import io.harness.telemetry.filter.APIErrorsTelemetrySenderFilter;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 import io.harness.token.remote.TokenClient;
@@ -470,6 +472,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
           { add(SourceCodeManagerMigrationProvider.class); }
           { add(GitSyncMigrationProvider.class); }
           { add(DelegateMigrationProvider.class); }
+          { add(UserGroupMigrationProvider.class); }
         })
         .build();
   }
@@ -482,7 +485,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
   }
 
   private GitSyncSdkConfiguration getGitSyncConfiguration(NextGenConfiguration config) {
-    final Supplier<List<EntityType>> sortOrder = () -> Collections.singletonList(EntityType.CONNECTORS);
+    final Supplier<List<EntityType>> sortOrder = () -> CoreGitEntityOrderComparator.sortOrder;
     ObjectMapper ngObjectMapper = new ObjectMapper(new YAMLFactory());
     configureObjectMapper(ngObjectMapper);
     Set<GitSyncEntitiesConfiguration> gitSyncEntitiesConfigurations = new HashSet<>();
@@ -495,7 +498,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
     gitSyncEntitiesConfigurations.add(GitSyncEntitiesConfiguration.builder()
                                           .entityType(EntityType.ENVIRONMENT_GROUP)
-                                          .yamlClass(EnvironmentGroupConfig.class)
+                                          .yamlClass(EnvironmentGroupWrapperConfig.class)
                                           .entityClass(EnvironmentGroupEntity.class)
                                           .entityHelperClass(EnvironmentGroupEntityGitSyncHelper.class)
                                           .build());
@@ -511,6 +514,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         .eventsRedisConfig(config.getEventsFrameworkConfiguration().getRedisConfig())
         .serviceHeader(NG_MANAGER)
         .gitSyncEntitiesConfiguration(gitSyncEntitiesConfigurations)
+        .gitSyncEntitySortComparator(CoreGitEntityOrderComparator.class)
         .objectMapper(ngObjectMapper)
         .build();
   }
@@ -813,6 +817,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     if (configuration.getSegmentConfiguration() != null && configuration.getSegmentConfiguration().isEnabled()) {
       registerAPIAuthTelemetryFilter(environment, injector);
       registerAPIAuthTelemetryResponseFilter(environment, injector);
+      registerAPIErrorsTelemetrySenderFilter(environment, injector);
     }
   }
 
@@ -849,6 +854,11 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
   private void registerAPIAuthTelemetryResponseFilter(Environment environment, Injector injector) {
     TelemetryReporter telemetryReporter = injector.getInstance(TelemetryReporter.class);
     environment.jersey().register(new APIAuthTelemetryResponseFilter(telemetryReporter));
+  }
+
+  private void registerAPIErrorsTelemetrySenderFilter(Environment environment, Injector injector) {
+    TelemetryReporter telemetryReporter = injector.getInstance(TelemetryReporter.class);
+    environment.jersey().register(new APIErrorsTelemetrySenderFilter(telemetryReporter, NG_MANAGER.getServiceId()));
   }
 
   private void registerInternalApiAuthFilter(NextGenConfiguration configuration, Environment environment) {

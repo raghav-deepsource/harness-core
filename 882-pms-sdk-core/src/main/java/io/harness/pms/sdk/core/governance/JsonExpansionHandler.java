@@ -16,5 +16,5 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 @OwnedBy(PIPELINE)
 public interface JsonExpansionHandler {
-  ExpansionResponse expand(JsonNode fieldValue, ExpansionRequestMetadata metadata);
+  ExpansionResponse expand(JsonNode fieldValue, ExpansionRequestMetadata metadata, String fqn);
 }

@@ -26,6 +26,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -88,6 +89,11 @@ public class AppDynamicsCVConfig extends MetricCVConfig<MetricInfo> {
       return true;
     }
     return AnalysisInfoUtility.anyDeploymentVerificationEnabled(metricInfos);
+  }
+
+  @Override
+  public Optional<String> maybeGetGroupName() {
+    return Optional.ofNullable(groupName);
   }
 
   @Override

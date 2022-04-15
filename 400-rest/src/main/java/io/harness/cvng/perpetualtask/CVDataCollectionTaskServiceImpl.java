@@ -222,10 +222,12 @@ public class CVDataCollectionTaskServiceImpl implements CVDataCollectionTaskServ
 
   private List<EncryptedDataDetail> getEncryptedDataDetails(
       NGAccess basicNgAccessObject, DecryptableEntity decryptableEntity) {
-    return NGRestUtils.getResponse(secretNGManagerClient.getEncryptionDetails(NGAccessWithEncryptionConsumer.builder()
-                                                                                  .ngAccess(basicNgAccessObject)
-                                                                                  .decryptableEntity(decryptableEntity)
-                                                                                  .build()));
+    return NGRestUtils.getResponse(
+        secretNGManagerClient.getEncryptionDetails(basicNgAccessObject.getAccountIdentifier(),
+            NGAccessWithEncryptionConsumer.builder()
+                .ngAccess(basicNgAccessObject)
+                .decryptableEntity(decryptableEntity)
+                .build()));
   }
 
   @Override

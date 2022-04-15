@@ -31,6 +31,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -110,6 +111,11 @@ public class NewRelicCVConfig extends MetricCVConfig<NewRelicMetricInfo> {
     return AnalysisInfoUtility.anyDeploymentVerificationEnabled(metricInfos);
   }
 
+  @Override
+  public Optional<String> maybeGetGroupName() {
+    return Optional.ofNullable(groupName);
+  }
+
   public static class NewRelicCVConfigUpdatableEntity
       extends MetricCVConfigUpdatableEntity<NewRelicCVConfig, NewRelicCVConfig> {
     @Override
@@ -118,6 +124,9 @@ public class NewRelicCVConfig extends MetricCVConfig<NewRelicMetricInfo> {
       setCommonOperations(updateOperations, newRelicCVConfig);
       updateOperations.set(NewRelicCVConfigKeys.applicationName, newRelicCVConfig.getApplicationName())
           .set(NewRelicCVConfigKeys.applicationId, newRelicCVConfig.getApplicationId());
+      if (newRelicCVConfig.getMetricInfos() != null) {
+        updateOperations.set(NewRelicCVConfigKeys.metricInfos, newRelicCVConfig.getMetricInfos());
+      }
     }
   }
 
