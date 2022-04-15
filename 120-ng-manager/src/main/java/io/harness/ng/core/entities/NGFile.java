@@ -109,12 +109,12 @@ public class NGFile implements PersistentEntity, UuidAware, NGAccountAccess, NGO
 
   @JsonIgnore
   public boolean isFolder() {
-    return type == NGFileType.Folder;
+    return type == NGFileType.FOLDER;
   }
 
   @JsonIgnore
   public boolean isFile() {
-    return type == NGFileType.File;
+    return type == NGFileType.FILE;
   }
 
   @JsonIgnore

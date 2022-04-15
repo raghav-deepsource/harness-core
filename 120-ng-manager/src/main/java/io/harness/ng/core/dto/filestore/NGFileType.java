@@ -10,4 +10,4 @@ package io.harness.ng.core.dto.filestore;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-@OwnedBy(HarnessTeam.CDP) public enum NGFileType { File, Folder }
+@OwnedBy(HarnessTeam.CDP) public enum NGFileType { FILE, FOLDER }

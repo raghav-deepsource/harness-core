@@ -100,7 +100,8 @@ public class FileStoreServiceImpl implements FileStoreService {
         fileStoreRepository
             .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
                 fileDto.getAccountIdentifier(), fileDto.getOrgIdentifier(), fileDto.getProjectIdentifier(), identifier)
-            .orElseThrow(() -> new IllegalArgumentException(format("File with identifier: %s not found.", identifier)));
+            .orElseThrow(
+                () -> new InvalidArgumentsException(format("File with identifier: %s not found.", identifier)));
 
     FileDTOMapper.updateNGFile(fileDto, existingFile);
     if (content != null && fileDto.isFile()) {
@@ -201,6 +202,7 @@ public class FileStoreServiceImpl implements FileStoreService {
     ngFile.setFileUuid(ngBaseFile.getFileUuid());
     ngFile.setChecksumType(ngBaseFile.getChecksumType());
     ngFile.setChecksum(ngBaseFile.getChecksum());
+    ngFile.setDraft(false);
   }
 
   // in the case when we need to return the whole folder structure, create recursion on this method
@@ -234,7 +236,7 @@ public class FileStoreServiceImpl implements FileStoreService {
   }
 
   private void validateIsReferencedBy(NGFile fileOrFolder) {
-    if (NGFileType.Folder.equals(fileOrFolder.getType())) {
+    if (NGFileType.FOLDER.equals(fileOrFolder.getType())) {
       if (anyFileInFolderHasReferences(fileOrFolder)) {
         throw new InvalidArgumentsException(format(
             "Folder [%s], or its subfolders, contain file(s) referenced by other entities and can not be deleted.",
@@ -258,7 +260,7 @@ public class FileStoreServiceImpl implements FileStoreService {
   }
 
   private boolean isReferencedByOtherEntities(NGFile fileOrFolder) {
-    if (NGFileType.Folder.equals(fileOrFolder.getType())) {
+    if (NGFileType.FOLDER.equals(fileOrFolder.getType())) {
       return anyFileInFolderHasReferences(fileOrFolder);
     } else {
       return isFileReferencedByOtherEntities(fileOrFolder);
@@ -271,7 +273,7 @@ public class FileStoreServiceImpl implements FileStoreService {
   }
 
   private boolean deleteFileOrFolder(NGFile fileOrFolder) {
-    if (NGFileType.Folder.equals(fileOrFolder.getType())) {
+    if (NGFileType.FOLDER.equals(fileOrFolder.getType())) {
       return deleteFolder(fileOrFolder);
     } else {
       return deleteFile(fileOrFolder);

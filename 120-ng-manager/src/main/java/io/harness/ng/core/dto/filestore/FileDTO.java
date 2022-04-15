@@ -99,11 +99,11 @@ public class FileDTO {
 
   @JsonIgnore
   public boolean isFile() {
-    return type == NGFileType.File;
+    return type == NGFileType.FILE;
   }
 
   @JsonIgnore
   public boolean isFolder() {
-    return type == NGFileType.Folder;
+    return type == NGFileType.FOLDER;
   }
 }

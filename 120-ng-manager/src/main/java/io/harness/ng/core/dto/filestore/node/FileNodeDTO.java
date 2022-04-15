@@ -28,6 +28,6 @@ import lombok.NoArgsConstructor;
 public final class FileNodeDTO extends FileStoreNodeDTO {
   @Builder
   public FileNodeDTO(String identifier, String name) {
-    super(NGFileType.File, identifier, name);
+    super(NGFileType.FILE, identifier, name);
   }
 }

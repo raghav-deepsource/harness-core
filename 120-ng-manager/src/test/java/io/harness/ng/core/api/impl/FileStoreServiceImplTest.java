@@ -143,7 +143,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDownloadFileWithFolder() {
     NGFile ngFile = createNgFile();
-    ngFile.setType(NGFileType.Folder);
+    ngFile.setType(NGFileType.FOLDER);
     when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
              ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, FILE_IDENTIFIER))
         .thenReturn(Optional.of(ngFile));
@@ -363,7 +363,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
     NGFile parentFolder = NGFile.builder()
                               .name(folder1)
                               .identifier(folder1)
-                              .type(NGFileType.Folder)
+                              .type(NGFileType.FOLDER)
                               .accountIdentifier(ACCOUNT_IDENTIFIER)
                               .orgIdentifier(ORG_IDENTIFIER)
                               .projectIdentifier(PROJECT_IDENTIFIER)
@@ -394,7 +394,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
     NGFile parentFolder = NGFile.builder()
                               .name(folder1)
                               .identifier(folder1)
-                              .type(NGFileType.Folder)
+                              .type(NGFileType.FOLDER)
                               .accountIdentifier(ACCOUNT_IDENTIFIER)
                               .orgIdentifier(ORG_IDENTIFIER)
                               .projectIdentifier(PROJECT_IDENTIFIER)
@@ -403,7 +403,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
     NGFile childFolder = NGFile.builder()
                              .name(folder2)
                              .identifier(folder2)
-                             .type(NGFileType.Folder)
+                             .type(NGFileType.FOLDER)
                              .accountIdentifier(ACCOUNT_IDENTIFIER)
                              .orgIdentifier(ORG_IDENTIFIER)
                              .projectIdentifier(PROJECT_IDENTIFIER)
@@ -449,7 +449,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
     NGFile parentFolder = NGFile.builder()
                               .name(folder1)
                               .identifier(folder1)
-                              .type(NGFileType.Folder)
+                              .type(NGFileType.FOLDER)
                               .accountIdentifier(ACCOUNT_IDENTIFIER)
                               .build();
     when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
@@ -488,19 +488,19 @@ public class FileStoreServiceImplTest extends CategoryTest {
     when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndParentIdentifier(
              ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, FILE_IDENTIFIER))
         .thenReturn(Arrays.asList(NGFile.builder()
-                                      .type(NGFileType.Folder)
+                                      .type(NGFileType.FOLDER)
                                       .name("folderName1")
                                       .identifier("folderIdentifier1")
                                       .parentId(FILE_IDENTIFIER)
                                       .build(),
             NGFile.builder()
-                .type(NGFileType.Folder)
+                .type(NGFileType.FOLDER)
                 .name("folderName2")
                 .identifier("folderIdentifier2")
                 .parentId(FILE_IDENTIFIER)
                 .build(),
             NGFile.builder()
-                .type(NGFileType.File)
+                .type(NGFileType.FILE)
                 .name("fileName")
                 .identifier("fileIdentifier")
                 .parentId(FILE_IDENTIFIER)
@@ -525,7 +525,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
         .accountIdentifier("account-ident")
         .description("some description")
         .name("file-name")
-        .type(NGFileType.File)
+        .type(NGFileType.FILE)
         .build();
   }
 
@@ -535,7 +535,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
         .accountIdentifier("account-ident")
         .description("some description")
         .name("folder-name")
-        .type(NGFileType.Folder)
+        .type(NGFileType.FOLDER)
         .build();
   }
 
@@ -557,7 +557,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
 
   private FileDTO createFileDto() {
     return FileDTO.builder()
-        .type(NGFileType.File)
+        .type(NGFileType.FILE)
         .entityId(FILE_ID)
         .identifier("identifier1")
         .name("updatedName")
@@ -566,7 +566,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
   }
   private NGFile createNgFile() {
     return NGFile.builder()
-        .type(NGFileType.File)
+        .type(NGFileType.FILE)
         .entityId(FILE_ID)
         .name("oldName")
         .description("oldDescription")
