@@ -23,19 +23,26 @@ import io.harness.service.impl.*;
 import io.harness.service.intfc.*;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import org.apache.commons.lang.StringUtils;
 
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateServiceModule extends AbstractModule {
-  @Named("delegateMtlsSubdomain") private final String mtlsSubdomain;
+  private final String mtlsSubdomain;
 
   public DelegateServiceModule() {
     this(null);
   }
   public DelegateServiceModule(String mtlsSubdomain) {
     this.mtlsSubdomain = mtlsSubdomain;
+  }
+
+  @Provides
+  @Named("delegateMtlsSubdomain")
+  public String delegateMtlsSubdomain() {
+    return this.mtlsSubdomain;
   }
 
   @Override
