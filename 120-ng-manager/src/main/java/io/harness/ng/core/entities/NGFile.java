@@ -26,8 +26,6 @@ import io.harness.ng.core.common.beans.NGTag;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
 
-import software.wings.beans.EntityType;
-
 import com.google.common.collect.ImmutableList;
 import java.util.List;
 import javax.validation.constraints.NotNull;
