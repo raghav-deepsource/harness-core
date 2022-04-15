@@ -112,7 +112,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
         .thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> fileStoreService.update(createFileDto(), null, "identifier1"))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(InvalidArgumentsException.class)
         .hasMessage("File with identifier: identifier1 not found.");
   }
 
@@ -240,7 +240,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
     final FileDTO fileDto = aFileDto();
 
     // When
-    fileStoreService.create(fileDto, null, true);
+    fileStoreService.create(fileDto, getStreamWithDummyContent(), true);
 
     // Then
     verifyZeroInteractions(fileService);
