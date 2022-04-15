@@ -1170,6 +1170,5 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(KerberosWinRmConfigDTO.class, 600004);
     kryo.register(WinRmAuthDTO.class, 600005);
     kryo.register(WinRmConfigValidationTaskResponse.class, 600010);
-
   }
 }

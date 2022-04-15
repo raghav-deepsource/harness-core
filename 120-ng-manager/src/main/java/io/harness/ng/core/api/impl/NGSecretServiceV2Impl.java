@@ -47,7 +47,6 @@ import io.harness.ng.core.remote.SecretValidationResultDTO;
 import io.harness.ng.core.remote.WinRmCredentialsValidationMetadata;
 import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.ng.core.spring.SecretRepository;
-import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.services.SshKeySpecDTOHelper;
 import io.harness.secretmanagerclient.services.WinRmCredentialsSpecDTOHelper;
 import io.harness.security.encryption.EncryptedDataDetail;

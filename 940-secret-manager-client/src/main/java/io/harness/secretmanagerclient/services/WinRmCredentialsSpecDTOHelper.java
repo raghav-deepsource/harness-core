@@ -11,15 +11,7 @@ import static java.util.Collections.emptyList;
 
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dto.secrets.KerberosBaseConfigDTO;
-import io.harness.ng.core.dto.secrets.KerberosConfigDTO;
 import io.harness.ng.core.dto.secrets.NTLMConfigDTO;
-import io.harness.ng.core.dto.secrets.SSHConfigDTO;
-import io.harness.ng.core.dto.secrets.SSHKeyPathCredentialDTO;
-import io.harness.ng.core.dto.secrets.SSHKeyReferenceCredentialDTO;
-import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
-import io.harness.ng.core.dto.secrets.SSHPasswordCredentialDTO;
-import io.harness.ng.core.dto.secrets.TGTKeyTabFilePathSpecDTO;
-import io.harness.ng.core.dto.secrets.TGTPasswordSpecDTO;
 import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
