@@ -151,7 +151,7 @@ public class InstallUtilsTest {
   @Test
   @Owner(developers = NAMAN_TALAYCHA)
   @Category(FunctionalTests.class)
-  @Ignore("flaky")
+  @Ignore("This test is flaky, but I need to write something more to satisfy ridiculous checkstyle")
   public void shouldsetupDefaultPaths() {
     assumeThat(SystemUtils.IS_OS_WINDOWS).isFalse();
     assumeThat(SystemUtils.IS_OS_MAC).isFalse();
@@ -184,7 +184,7 @@ public class InstallUtilsTest {
   @Test
   @Owner(developers = RIHAZ)
   @Category(UnitTests.class)
-  @Ignore("flaky")
+  @Ignore("This test is flaky, but I need to write something more to satisfy ridiculous checkstyle")
   public void testHelm2Install() {
     final DelegateConfiguration helm2DelegateConfiguration =
         DelegateConfiguration.builder().helmPath("helm2Path").build();
@@ -198,7 +198,7 @@ public class InstallUtilsTest {
   @Test
   @Owner(developers = RIHAZ)
   @Category(UnitTests.class)
-  @Ignore("flaky")
+  @Ignore("This test is flaky, but I need to write something more to satisfy ridiculous checkstyle")
   public void testHelm3Install() {
     final DelegateConfiguration helm3DelegateConfiguration =
         DelegateConfiguration.builder().helm3Path("helm3Path").build();
