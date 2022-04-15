@@ -401,6 +401,8 @@ scopeAccessCheckEnabled: true
 
 hostname: ${HOSTNAME:-localhost}
 
+signupTargetEnv: "CI Target"
+
 basePathPrefix: ${BASE_PATH_PREFIX:-""}
 
 enforcementClientConfiguration:

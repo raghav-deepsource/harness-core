@@ -45,6 +45,7 @@ import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceServi
 import io.harness.cvng.verificationjob.services.api.VerificationJobService;
 import io.harness.rule.Owner;
 
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
@@ -53,6 +54,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -860,12 +862,10 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
     String verificationTaskId = verificationTaskService.createDeploymentVerificationTask(
         accountId, cvConfig.getUuid(), verificationJobInstanceId, cvConfig.getType());
     deploymentTimeSeriesAnalysisService.save(createDeploymentTimeSeriesAnalysis(verificationTaskId));
-    List<String> nodeNameList = deploymentTimeSeriesAnalysisService.getNodeNames(accountId, verificationJobInstanceId);
+    Set<String> nodeNameSet = deploymentTimeSeriesAnalysisService.getNodeNames(accountId, verificationJobInstanceId);
 
-    assertThat(nodeNameList.size()).isEqualTo(3);
-    assertThat(nodeNameList.get(0)).isEqualTo("node2");
-    assertThat(nodeNameList.get(1)).isEqualTo("node3");
-    assertThat(nodeNameList.get(2)).isEqualTo("node1");
+    assertThat(nodeNameSet.size()).isEqualTo(3);
+    assertThat(nodeNameSet).isEqualTo(Sets.newHashSet("node1", "node2", "node3"));
   }
 
   @Test

@@ -61,7 +61,7 @@ public class SideCarPlanCreatorTest extends CDNGTestBase {
   public void testGetSupportedTypes() {
     Map<String, Set<String>> supportedTypes = sidecarPlanCreator.getSupportedTypes();
     assertThat(supportedTypes.containsKey(YamlTypes.SIDECAR_ARTIFACT_CONFIG)).isEqualTo(true);
-    assertThat(supportedTypes.get(YamlTypes.SIDECAR_ARTIFACT_CONFIG).size()).isEqualTo(6);
+    assertThat(supportedTypes.get(YamlTypes.SIDECAR_ARTIFACT_CONFIG).size()).isEqualTo(7);
     assertThat(
         supportedTypes.get(YamlTypes.SIDECAR_ARTIFACT_CONFIG).contains(ArtifactSourceConstants.DOCKER_REGISTRY_NAME))
         .isEqualTo(true);
@@ -74,6 +74,8 @@ public class SideCarPlanCreatorTest extends CDNGTestBase {
         .isEqualTo(true);
     assertThat(supportedTypes.get(YamlTypes.SIDECAR_ARTIFACT_CONFIG)
                    .contains(ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME))
+        .isEqualTo(true);
+    assertThat(supportedTypes.get(YamlTypes.SIDECAR_ARTIFACT_CONFIG).contains(ArtifactSourceConstants.ACR_NAME))
         .isEqualTo(true);
     assertThat(
         supportedTypes.get(YamlTypes.SIDECAR_ARTIFACT_CONFIG).contains(ArtifactSourceConstants.CUSTOM_ARTIFACT_NAME));

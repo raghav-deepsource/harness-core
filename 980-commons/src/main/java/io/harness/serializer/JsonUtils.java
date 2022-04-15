@@ -10,6 +10,7 @@ package io.harness.serializer;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -46,9 +47,11 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
@@ -287,8 +290,12 @@ public class JsonUtils {
    * @return deserialized list.
    */
   @JsonDeserialize
-  public static <T> T asList(String jsonString, TypeReference<T> valueTypeRef) {
+  public static <T> List<T> asList(String jsonString, TypeReference<List<T>> valueTypeRef) {
     try {
+      if (EmptyPredicate.isEmpty(jsonString)) {
+        return Collections.emptyList();
+      }
+
       return mapper.readValue(jsonString, valueTypeRef);
     } catch (Exception exception) {
       throw new RuntimeException(exception);

@@ -73,6 +73,7 @@ public class NextGenAuthenticationFilterTest extends ApiKeyFilterTestBase {
   private TokenClient tokenClient;
   private ContainerRequestContext containerRequestContext;
   private String apiKey;
+  private String newApiKey;
   private ResourceInfo resourceInfo = null;
   private NextGenAuthenticationFilter authenticationFilter;
 
@@ -184,6 +185,23 @@ public class NextGenAuthenticationFilterTest extends ApiKeyFilterTestBase {
     assertThat(context).isNotNull();
     assertThat(context.getType()).isEqualByComparingTo(PrincipalType.SERVICE_ACCOUNT);
     assertThat(context.getName()).isEqualTo(tokenDTO.getParentIdentifier());
+
+    newApiKey = "sat" + delimiter + accountIdentifier + delimiter + uuid + delimiter + rawPassword;
+    when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(newApiKey);
+    PowerMockito.mockStatic(NGRestUtils.class);
+    TokenDTO tokenDTO1 = TokenDTO.builder()
+                             .apiKeyType(ApiKeyType.SERVICE_ACCOUNT)
+                             .encodedPassword(encodedPassword)
+                             .accountIdentifier(accountIdentifier)
+                             .valid(true)
+                             .parentIdentifier(generateUuid())
+                             .build();
+    when(NGRestUtils.getResponse(any())).thenReturn(tokenDTO1);
+    authenticationFilter.filter(containerRequestContext);
+    Principal context1 = SourcePrincipalContextBuilder.getSourcePrincipal();
+    assertThat(context1).isNotNull();
+    assertThat(context1.getType()).isEqualByComparingTo(PrincipalType.SERVICE_ACCOUNT);
+    assertThat(context1.getName()).isEqualTo(tokenDTO1.getParentIdentifier());
   }
 
   @Test
@@ -217,15 +235,34 @@ public class NextGenAuthenticationFilterTest extends ApiKeyFilterTestBase {
     assertThatThrownBy(() -> authenticationFilter.filter(containerRequestContext))
         .isInstanceOf(InvalidRequestException.class);
 
+    // new API key prefix not matching
+    newApiKey = "pat" + delimiter + accountIdentifier + delimiter + uuid + delimiter + rawPassword;
+    when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(newApiKey);
+    assertThatThrownBy(() -> authenticationFilter.filter(containerRequestContext))
+        .isInstanceOf(InvalidRequestException.class);
+
     // Token not matching
     apiKey = "sat" + delimiter + uuid + delimiter + rawPassword + "1";
     when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(apiKey);
     assertThatThrownBy(() -> authenticationFilter.filter(containerRequestContext))
         .isInstanceOf(InvalidRequestException.class);
 
+    // new API token not matching
+    newApiKey = "pat" + delimiter + accountIdentifier + delimiter + uuid + delimiter + rawPassword + "2";
+    when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(newApiKey);
+    assertThatThrownBy(() -> authenticationFilter.filter(containerRequestContext))
+        .isInstanceOf(InvalidRequestException.class);
+
     // Invalid token
     apiKey = "sat" + delimiter + uuid + delimiter + rawPassword;
     when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(apiKey);
+    tokenDTO.setValid(false);
+    assertThatThrownBy(() -> authenticationFilter.filter(containerRequestContext))
+        .isInstanceOf(InvalidRequestException.class);
+
+    // Invalid new API token
+    newApiKey = "pat" + delimiter + accountIdentifier + delimiter + uuid + delimiter + rawPassword;
+    when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(newApiKey);
     tokenDTO.setValid(false);
     assertThatThrownBy(() -> authenticationFilter.filter(containerRequestContext))
         .isInstanceOf(InvalidRequestException.class);
@@ -258,6 +295,25 @@ public class NextGenAuthenticationFilterTest extends ApiKeyFilterTestBase {
     assertThat(context).isNotNull();
     assertThat(context.getType()).isEqualByComparingTo(PrincipalType.USER);
     assertThat(context.getName()).isEqualTo(tokenDTO.getParentIdentifier());
+
+    newApiKey = "pat" + delimiter + accountIdentifier + delimiter + uuid + delimiter + rawPassword;
+    when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(newApiKey);
+    PowerMockito.mockStatic(NGRestUtils.class);
+    TokenDTO tokenDTO1 = TokenDTO.builder()
+                             .apiKeyType(ApiKeyType.USER)
+                             .encodedPassword(encodedPassword)
+                             .valid(true)
+                             .accountIdentifier(accountIdentifier)
+                             .parentIdentifier(generateUuid())
+                             .email("user@harness.io")
+                             .username("user")
+                             .build();
+    when(NGRestUtils.getResponse(any())).thenReturn(tokenDTO1);
+    authenticationFilter.filter(containerRequestContext);
+    Principal context1 = SourcePrincipalContextBuilder.getSourcePrincipal();
+    assertThat(context1).isNotNull();
+    assertThat(context1.getType()).isEqualByComparingTo(PrincipalType.USER);
+    assertThat(context1.getName()).isEqualTo(tokenDTO1.getParentIdentifier());
   }
 
   @Test
@@ -295,9 +351,23 @@ public class NextGenAuthenticationFilterTest extends ApiKeyFilterTestBase {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining(uuid);
 
+    // Invalid prefix for new API token
+    newApiKey = "sat" + delimiter + accountIdentifier + delimiter + uuid + delimiter + rawPassword;
+    when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(newApiKey);
+    assertThatThrownBy(() -> authenticationFilter.filter(containerRequestContext))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining(uuid);
+
     // Raw password not matching for API token
     apiKey = "pat" + delimiter + uuid + delimiter + rawPassword + "1";
     when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(apiKey);
+    assertThatThrownBy(() -> authenticationFilter.filter(containerRequestContext))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining(uuid);
+
+    // Raw password not matching for new API token
+    newApiKey = "pat" + delimiter + accountIdentifier + delimiter + uuid + delimiter + rawPassword + "2";
+    when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(newApiKey);
     assertThatThrownBy(() -> authenticationFilter.filter(containerRequestContext))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining(uuid);
@@ -310,9 +380,26 @@ public class NextGenAuthenticationFilterTest extends ApiKeyFilterTestBase {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining(uuid);
 
+    // Invalid new API token
+    newApiKey = "pat" + delimiter + accountIdentifier + delimiter + uuid + delimiter + rawPassword;
+    when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(newApiKey);
+    tokenDTO.setValid(false);
+    assertThatThrownBy(() -> authenticationFilter.filter(containerRequestContext))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining(uuid);
+
     // Token not found in DB
     apiKey = "pat" + delimiter + uuid + delimiter + rawPassword;
     when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(apiKey);
+    when(NGRestUtils.getResponse(any())).thenReturn(null);
+    assertThatThrownBy(() -> authenticationFilter.filter(containerRequestContext))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Token not found")
+        .hasMessageContaining(uuid);
+
+    // new API token not found in DB
+    newApiKey = "pat" + delimiter + accountIdentifier + delimiter + uuid + delimiter + rawPassword;
+    when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(newApiKey);
     when(NGRestUtils.getResponse(any())).thenReturn(null);
     assertThatThrownBy(() -> authenticationFilter.filter(containerRequestContext))
         .isInstanceOf(InvalidRequestException.class)

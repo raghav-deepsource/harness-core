@@ -382,9 +382,8 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
         connectorInfo.getOrgIdentifier(), connectorInfo.getProjectIdentifier(), connectorInfo.getIdentifier());
     if (!isIdentifierUnique) {
       throw new InvalidRequestException(
-          String.format("The connector with identifier %s already exists in the account %s, org %s, project %s",
-              connectorInfo.getIdentifier(), accountIdentifier, connectorInfo.getOrgIdentifier(),
-              connectorInfo.getProjectIdentifier()));
+          String.format("Connector: %s has been given an identifier: %s that already exists. Please enter a unique ID.",
+              connectorInfo.getName(), connectorInfo.getIdentifier()));
     }
     if (HARNESS_SECRET_MANAGER_IDENTIFIER.equalsIgnoreCase(connectorRequestDTO.getConnectorInfo().getIdentifier())) {
       log.info("[AccountSetup]:Creating default SecretManager");

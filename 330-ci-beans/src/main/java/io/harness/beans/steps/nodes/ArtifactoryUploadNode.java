@@ -38,6 +38,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.beans.steps.nodes.ArtifactoryUploadNode")
 public class ArtifactoryUploadNode extends CIAbstractStepNode {
   @JsonProperty("type") @NotNull ArtifactoryUploadNode.StepType type = StepType.ArtifactoryUpload;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   UploadToArtifactoryStepInfo uploadToArtifactoryStepInfo;

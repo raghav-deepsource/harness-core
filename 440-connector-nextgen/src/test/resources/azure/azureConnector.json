@@ -16,7 +16,7 @@
       "credential": {
         "type": "ManualConfig",
         "spec": {
-          "clientId": "clientId",
+          "applicationId": "clientId",
           "tenantId": "tenantId",
           "auth": {
             "type": "Secret",

@@ -14,6 +14,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.CYBERARK_OPERATION_ERROR;
 import static io.harness.eraro.ErrorCode.VAULT_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.helpers.NGVaultTaskHelper.getVaultK8sAuthLoginResult;
 import static io.harness.threading.Morpheus.sleep;
 
 import static java.time.Duration.ofMillis;
@@ -36,6 +37,7 @@ import io.harness.helpers.ext.vault.SysMountsResponse;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginRequest;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResponse;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
+import io.harness.helpers.ext.vault.VaultK8sLoginResult;
 import io.harness.helpers.ext.vault.VaultRestClientFactory;
 import io.harness.helpers.ext.vault.VaultSecretMetadata;
 import io.harness.helpers.ext.vault.VaultSecretMetadata.VersionMetadata;
@@ -350,13 +352,16 @@ public class SecretManagementDelegateServiceImpl implements SecretManagementDele
     if (vaultConfig.isUseVaultAgent()) {
       try {
         byte[] content = Files.readAllBytes(Paths.get(URI.create("file://" + vaultConfig.getSinkPath())));
-        return new String(content);
+        String token = new String(content);
+        vaultConfig.setAuthToken(token);
       } catch (IOException e) {
         throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR,
             "Using Vault Agent Cannot read Token From Sink Path:" + vaultConfig.getSinkPath(), e, USER);
       }
-    } else {
-      return vaultConfig.getAuthToken();
+    } else if (vaultConfig.isUseK8sAuth()) {
+      VaultK8sLoginResult vaultK8sLoginResult = getVaultK8sAuthLoginResult(vaultConfig);
+      vaultConfig.setAuthToken(vaultK8sLoginResult.getClientToken());
     }
+    return vaultConfig.getAuthToken();
   }
 }

@@ -8,6 +8,7 @@
 package io.harness.cdng.envGroup.services;
 
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
+import io.harness.cdng.envGroup.beans.EnvironmentGroupFilterPropertiesDTO;
 
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -30,6 +31,6 @@ public interface EnvironmentGroupService {
 
   void deleteAllEnvGroupInProject(String accountId, String orgIdentifier, String projectIdentifier);
 
-  Criteria formCriteria(
-      String accountId, String orgIdentifier, String projectIdentifier, boolean deleted, String searchTerm);
+  Criteria formCriteria(String accountId, String orgIdentifier, String projectIdentifier, boolean deleted,
+      String searchTerm, String filterIdentifier, EnvironmentGroupFilterPropertiesDTO filterProperties);
 }

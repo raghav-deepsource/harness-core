@@ -133,6 +133,12 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.INTEGRATION_STEPS)
   INTEGRATION_STEPS(
       ModuleType.CI, EntityTypeConstants.INTEGRATION_STEPS, IdentifierRef.class, EntityYamlRootNames.INTEGRATION_STEP),
+  @JsonProperty(EntityTypeConstants.SECURITY_STAGE)
+  SECURITY_STAGE(
+      ModuleType.STO, EntityTypeConstants.SECURITY_STAGE, IdentifierRef.class, EntityYamlRootNames.SECURITY_STAGE),
+  @JsonProperty(EntityTypeConstants.SECURITY_STEPS)
+  SECURITY_STEPS(
+      ModuleType.STO, EntityTypeConstants.SECURITY_STEPS, IdentifierRef.class, EntityYamlRootNames.SECURITY_STEP),
   @JsonProperty(EntityTypeConstants.CV_KUBERNETES_ACTIVITY_SOURCE)
   CV_KUBERNETES_ACTIVITY_SOURCE(ModuleType.CV, EntityTypeConstants.CV_KUBERNETES_ACTIVITY_SOURCE, IdentifierRef.class,
       EntityYamlRootNames.CV_KUBERNETES_ACTIVITY_SOURCE),

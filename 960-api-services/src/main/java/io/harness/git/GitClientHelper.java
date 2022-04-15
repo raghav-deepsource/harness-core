@@ -135,14 +135,18 @@ public class GitClientHelper {
   }
 
   public static boolean isGithubSAAS(String url) {
-    return getGitSCM(url).equals("github.com");
+    String host = getGitSCM(url);
+    return host.equals("github.com") || host.equals("www.github.com");
   }
+
   public static boolean isGitlabSAAS(String url) {
-    return getGitSCM(url).contains("gitlab.com");
+    String host = getGitSCM(url);
+    return host.equals("gitlab.com") || host.equals("www.gitlab.com");
   }
 
   public static boolean isBitBucketSAAS(String url) {
-    return getGitSCM(url).contains("bitbucket.org");
+    String host = getGitSCM(url);
+    return host.equals("bitbucket.org") || host.equals("www.bitbucket.org");
   }
 
   public static String getGithubApiURL(String url) {

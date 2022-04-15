@@ -94,13 +94,13 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
 
   private void validateApiKey(String accountIdentifier, String apiKey) {
     String[] splitToken = apiKey.split(delimiter);
-    if (splitToken.length != 3) {
+    if (!(splitToken.length == 3 || splitToken.length == 4)) {
       String message = "Token length not matching for API token";
       log.warn(message);
       throw new InvalidRequestException(String.format("Invalid API Token: %s", message));
     }
     if (EmptyPredicate.isNotEmpty(splitToken)) {
-      String tokenId = splitToken[1];
+      String tokenId = splitToken.length == 3 ? splitToken[1] : splitToken[2];
       TokenDTO tokenDTO = NGRestUtils.getResponse(tokenClient.getToken(tokenId));
 
       if (tokenDTO != null) {
@@ -112,11 +112,7 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
           log.warn(message);
           throw new InvalidRequestException(String.format("Invalid API token %s: %s", tokenId, message));
         }
-        if (!new BCryptPasswordEncoder($2A, 10).matches(splitToken[2], tokenDTO.getEncodedPassword())) {
-          String message = "Raw password not matching for API token";
-          log.warn(message);
-          throw new InvalidRequestException(String.format("Invalid API token %s: %s", tokenId, message));
-        }
+        checkIFRawPasswordMatches(splitToken, tokenId, tokenDTO);
         if (!tokenDTO.isValid()) {
           throw new InvalidRequestException(
               "Incoming API token " + tokenDTO.getName() + String.format(" has expired %s", tokenId));
@@ -166,5 +162,18 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
           containerRequestContext.getUriInfo().getPathParameters().getFirst(NGCommonEntityConstants.ACCOUNT_KEY);
     }
     return StringUtils.isEmpty(accountIdentifier) ? Optional.empty() : Optional.of(accountIdentifier);
+  }
+
+  private void checkIFRawPasswordMatches(String[] splitToken, String tokenId, TokenDTO tokenDTO) {
+    BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder($2A, 10);
+    if (splitToken.length == 3 && !bCryptPasswordEncoder.matches(splitToken[2], tokenDTO.getEncodedPassword())) {
+      String message = "Raw password not matching for API token";
+      log.warn(message);
+      throw new InvalidRequestException(String.format("Invalid API token %s: %s", tokenId, message));
+    } else if (splitToken.length == 4 && !bCryptPasswordEncoder.matches(splitToken[3], tokenDTO.getEncodedPassword())) {
+      String message = "Raw password not matching for new API token format";
+      log.warn(message);
+      throw new InvalidRequestException(String.format("Invalid API token %s: %s", tokenId, message));
+    }
   }
 }

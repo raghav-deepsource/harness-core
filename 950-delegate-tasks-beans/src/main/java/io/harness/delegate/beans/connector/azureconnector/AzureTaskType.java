@@ -10,4 +10,12 @@ package io.harness.delegate.beans.connector.azureconnector;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-@OwnedBy(HarnessTeam.CDP) public enum AzureTaskType { VALIDATE }
+@OwnedBy(HarnessTeam.CDP)
+public enum AzureTaskType {
+  VALIDATE,
+  LIST_SUBSCRIPTIONS,
+  LIST_REPOSITORIES,
+  LIST_CONTAINER_REGISTRIES,
+  LIST_RESOURCE_GROUPS,
+  LIST_CLUSTERS
+}

@@ -9,16 +9,13 @@ package io.harness.delegate.beans.connector.azureconnector;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.connector.ConnectorValidationResult;
-import io.harness.delegate.beans.DelegateMetaInfo;
 
-import lombok.Builder;
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @OwnedBy(HarnessTeam.CDP)
-@Data
-@Builder
-public class AzureValidateTaskResponse implements AzureDelegateTaskResponse {
-  private ConnectorValidationResult connectorValidationResult;
-  private DelegateMetaInfo delegateMetaInfo;
-}
+@JsonIgnoreProperties(ignoreUnknown = true)
+@ApiModel("AzureMSIAuth")
+@Schema(name = "AzureMSIAuth", description = "This contains azure MSI auth details")
+public interface AzureMSIAuthDTO {}

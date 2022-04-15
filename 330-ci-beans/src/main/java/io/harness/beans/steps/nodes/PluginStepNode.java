@@ -37,6 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.beans.steps.nodes.PluginStepNode")
 public class PluginStepNode extends CIAbstractStepNode {
   @JsonProperty("type") @NotNull PluginStepNode.StepType type = PluginStepNode.StepType.Plugin;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   PluginStepInfo pluginStepInfo;

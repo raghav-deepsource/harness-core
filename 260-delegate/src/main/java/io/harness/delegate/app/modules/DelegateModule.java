@@ -37,6 +37,7 @@ import io.harness.azure.client.AzureKubernetesClient;
 import io.harness.azure.client.AzureManagementClient;
 import io.harness.azure.client.AzureMonitorClient;
 import io.harness.azure.client.AzureNetworkClient;
+import io.harness.azure.client.AzureNgClient;
 import io.harness.azure.client.AzureWebClient;
 import io.harness.azure.impl.AzureAuthorizationClientImpl;
 import io.harness.azure.impl.AzureAutoScaleSettingsClientImpl;
@@ -47,6 +48,7 @@ import io.harness.azure.impl.AzureKubernetesClientImpl;
 import io.harness.azure.impl.AzureManagementClientImpl;
 import io.harness.azure.impl.AzureMonitorClientImpl;
 import io.harness.azure.impl.AzureNetworkClientImpl;
+import io.harness.azure.impl.AzureNgClientImpl;
 import io.harness.azure.impl.AzureWebClientImpl;
 import io.harness.cdng.notification.task.MailSenderDelegateTask;
 import io.harness.cdng.secrets.tasks.SSHConfigValidationDelegateTask;
@@ -1085,6 +1087,7 @@ public class DelegateModule extends AbstractModule {
     bind(AzureKubernetesClient.class).to(AzureKubernetesClientImpl.class);
     bind(ArtifactoryNgService.class).to(ArtifactoryNgServiceImpl.class);
     bind(AWSCloudformationClient.class).to(AWSCloudformationClientImpl.class);
+    bind(AzureNgClient.class).to(AzureNgClientImpl.class);
 
     // NG Delegate
     MapBinder<String, K8sRequestHandler> k8sTaskTypeToRequestHandler =

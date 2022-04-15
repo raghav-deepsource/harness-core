@@ -136,13 +136,15 @@ fi
 
 if [ ! -e config-delegate.yml ]; then
   echo "accountId: $ACCOUNT_ID" > config-delegate.yml
+fi
+test "$(tail -c 1 config-delegate.yml)" && `echo "" >> config-delegate.yml`
+if ! `grep delegateToken config-delegate.yml > /dev/null`; then
   if [ ! -e $DELEGATE_TOKEN ]; then
     echo "delegateToken: $DELEGATE_TOKEN" >> config-delegate.yml
   else
     echo "delegateToken: $ACCOUNT_SECRET" >> config-delegate.yml
   fi
 fi
-test "$(tail -c 1 config-delegate.yml)" && `echo "" >> config-delegate.yml`
 if ! `grep managerUrl config-delegate.yml > /dev/null`; then
   echo "managerUrl: $MANAGER_HOST_AND_PORT/api/" >> config-delegate.yml
 fi

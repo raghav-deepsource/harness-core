@@ -84,7 +84,7 @@ public class PMSPipelineDtoMapper {
         .lastUpdatedAt(pipelineEntity.getLastUpdatedAt())
         .createdAt(pipelineEntity.getCreatedAt())
         .modules(pipelineEntity.getFilters().keySet())
-        .filters(pipelineEntity.getFilters())
+        .filters(ModuleInfoMapper.getModuleInfo(pipelineEntity.getFilters()))
         .stageNames(pipelineEntity.getStageNames())
         .gitDetails(EntityGitDetailsMapper.mapEntityGitDetails(pipelineEntity))
         .entityValidityDetails(pipelineEntity.isEntityInvalid()

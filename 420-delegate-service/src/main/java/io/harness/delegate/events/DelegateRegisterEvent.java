@@ -36,7 +36,7 @@ public class DelegateRegisterEvent extends AbstractDelegateConfigurationEvent {
     Map<String, String> labels = new HashMap<>();
     labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, delegateSetupDetails.getName());
     return Resource.builder()
-        .identifier(delegateSetupDetails.getName())
+        .identifier(delegateSetupDetails.getHostName())
         .labels(labels)
         .type(ResourceTypeConstants.DELEGATE)
         .build();

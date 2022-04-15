@@ -31,7 +31,7 @@ import org.mongodb.morphia.annotations.Id;
 @HarnessEntity(exportable = false)
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateRing implements PersistentEntity {
-  public DelegateRing(String ringName, String delegateImageTag, String upgraderImageTag) {
+  public DelegateRing(final String ringName, final String delegateImageTag, final String upgraderImageTag) {
     this.ringName = ringName;
     this.delegateImageTag = delegateImageTag;
     this.upgraderImageTag = upgraderImageTag;

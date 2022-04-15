@@ -255,6 +255,7 @@ io.harness.cdng.artifact.outcome.NexusArtifactOutcome
 io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome
 io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig
 io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig
+io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig
 io.harness.cdng.artifact.ArtifactoryArtifactSummary
 io.harness.steps.policy.PolicyStepInfo
 io.harness.steps.policy.PolicyStepNode
