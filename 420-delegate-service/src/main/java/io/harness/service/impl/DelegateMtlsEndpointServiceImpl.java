@@ -9,8 +9,6 @@ package io.harness.service.impl;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
-import static java.lang.String.format;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateMtlsEndpoint;
@@ -77,7 +75,7 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
     } catch (DuplicateKeyException e) {
       // We assume it's not the uuid that collides (very unlikely)
       throw new InvalidRequestException(
-          format("Delegate mTLS endpoint with domain prefix '%s' or accountId '%s' already exists.",
+          String.format("Delegate mTLS endpoint with domain prefix '%s' or accountId '%s' already exists.",
               endpointRequest.getDomainPrefix(), accountId));
     }
 

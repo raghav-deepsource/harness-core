@@ -19,6 +19,7 @@ import io.harness.DelegateServiceTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.DelegateMtlsEndpoint;
+import io.harness.delegate.beans.DelegateMtlsEndpoint.DelegateMtlsEndpointKeys;
 import io.harness.delegate.beans.DelegateMtlsEndpointDetails;
 import io.harness.delegate.beans.DelegateMtlsEndpointRequest;
 import io.harness.delegate.beans.DelegateMtlsMode;
@@ -322,7 +323,7 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
     this.service.createEndpointForAccount(accountId, createRequest);
 
     DelegateMtlsEndpoint endpoint = persistence.createQuery(DelegateMtlsEndpoint.class)
-                                        .field(DelegateMtlsEndpoint.DelegateMtlsEndpointKeys.accountId)
+                                        .field(DelegateMtlsEndpointKeys.accountId)
                                         .equal(accountId)
                                         .get();
 
@@ -332,7 +333,7 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
     assertTrue("Endpoint should've been deleted.", deleted);
 
     endpoint = persistence.createQuery(DelegateMtlsEndpoint.class)
-                   .field(DelegateMtlsEndpoint.DelegateMtlsEndpointKeys.accountId)
+                   .field(DelegateMtlsEndpointKeys.accountId)
                    .equal(accountId)
                    .get();
 
