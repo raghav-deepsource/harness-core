@@ -489,5 +489,5 @@ if [[ "" != "$CLUSTER_NAME" ]]; then
 fi
 
 if [[ "" != "$DELEGATE_MTLS_SUBDOMAIN" ]]; then
-  yq write -i $CONFIG_FILE delegateMtlsSubdomain $DELEGATE_MTLS_SUBDOMAIN
+  yq write -i $CONFIG_FILE delegateMtlsSubdomain "$DELEGATE_MTLS_SUBDOMAIN"
 fi

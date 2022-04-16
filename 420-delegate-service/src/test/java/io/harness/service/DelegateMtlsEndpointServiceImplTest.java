@@ -9,7 +9,11 @@ package io.harness.service;
 
 import static io.harness.rule.OwnerRule.JOHANNES;
 
-import static junit.framework.TestCase.*;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertNull;
+import static junit.framework.TestCase.assertTrue;
 
 import io.harness.DelegateServiceTestBase;
 import io.harness.category.element.UnitTests;
@@ -26,7 +30,7 @@ import io.harness.service.impl.DelegateMtlsEndpointServiceImpl;
 
 import com.google.inject.Inject;
 import java.util.Random;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -35,7 +39,9 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
   // Common values used for uts
   private static final String SUBDOMAIN = "delegate.ut.harness.io";
   private static final String CA_CERTIFICATES = "--Cert-in-PEM-format--";
+  private static final String CA_CERTIFICATES_2 = "--Cert2-in-PEM-format--";
   private static final String DOMAIN_PREFIX = "customer1";
+  private static final String DOMAIN_PREFIX_2 = "customer2";
 
   private final Random random = new Random();
   private DelegateMtlsEndpointServiceImpl service;
@@ -94,8 +100,8 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
 
     // update entry
     DelegateMtlsEndpointRequest updateRequest = DelegateMtlsEndpointRequest.builder()
-                                                    .domainPrefix("someOtherPrefix")
-                                                    .caCertificates("--some-other-cert--")
+                                                    .domainPrefix(DOMAIN_PREFIX_2)
+                                                    .caCertificates(CA_CERTIFICATES_2)
                                                     .mode(DelegateMtlsMode.LOOSE)
                                                     .build();
 
@@ -152,8 +158,8 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
 
     // update entry
     DelegateMtlsEndpointRequest updateRequest = DelegateMtlsEndpointRequest.builder()
-                                                    .domainPrefix("someOtherPrefix")
-                                                    .caCertificates("--some-other-cert--")
+                                                    .domainPrefix(DOMAIN_PREFIX_2)
+                                                    .caCertificates(CA_CERTIFICATES_2)
                                                     .mode(DelegateMtlsMode.LOOSE)
                                                     .build();
 
@@ -193,12 +199,11 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
 
     // patch only domain prefix
     DelegateMtlsEndpointRequest patchRequest =
-        DelegateMtlsEndpointRequest.builder().domainPrefix("someOtherPrefix").build();
+        DelegateMtlsEndpointRequest.builder().domainPrefix(DOMAIN_PREFIX_2).build();
 
     DelegateMtlsEndpointDetails patchDetails = this.service.patchEndpointForAccount(accountId, patchRequest);
 
     // ensure stored entry is correct
-    DelegateMtlsEndpointDetails storedDetails = this.service.getEndpointForAccount(accountId);
     assertEquals(createDetails.getUuid(), patchDetails.getUuid());
     assertEquals(patchRequest.getDomainPrefix() + "." + SUBDOMAIN, patchDetails.getFqdn());
     assertEquals(createDetails.getAccountId(), patchDetails.getAccountId());
@@ -228,7 +233,6 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
     DelegateMtlsEndpointDetails patchDetails = this.service.patchEndpointForAccount(accountId, patchRequest);
 
     // ensure stored entry is correct
-    DelegateMtlsEndpointDetails storedDetails = this.service.getEndpointForAccount(accountId);
     assertEquals(createDetails.getUuid(), patchDetails.getUuid());
     assertEquals(createDetails.getFqdn(), patchDetails.getFqdn());
     assertEquals(createDetails.getAccountId(), patchDetails.getAccountId());
@@ -253,12 +257,11 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
 
     // patch only caCertificates
     DelegateMtlsEndpointRequest patchRequest =
-        DelegateMtlsEndpointRequest.builder().caCertificates("--some-other-cert--").build();
+        DelegateMtlsEndpointRequest.builder().caCertificates(CA_CERTIFICATES_2).build();
 
     DelegateMtlsEndpointDetails patchDetails = this.service.patchEndpointForAccount(accountId, patchRequest);
 
     // ensure stored entry is correct
-    DelegateMtlsEndpointDetails storedDetails = this.service.getEndpointForAccount(accountId);
     assertEquals(createDetails.getUuid(), patchDetails.getUuid());
     assertEquals(createDetails.getFqdn(), patchDetails.getFqdn());
     assertEquals(createDetails.getAccountId(), patchDetails.getAccountId());
@@ -376,8 +379,8 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
   public void testIsDomainPrefixAvailable() {
     // Use unique accountId to avoid overlap with other tests.
     String accountId = UUIDGenerator.generateUuid();
-    String domainPrefix1 = this.GetRandomDomainPrefix();
-    String domainPrefix2 = this.GetRandomDomainPrefix();
+    String domainPrefix1 = this.getRandomDomainPrefix();
+    String domainPrefix2 = this.getRandomDomainPrefix();
 
     // should be available before creation
     assertTrue(this.service.isDomainPrefixAvailable(domainPrefix1));
@@ -390,7 +393,7 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
                                                     .mode(DelegateMtlsMode.STRICT)
                                                     .build();
     this.service.createEndpointForAccount(accountId, createRequest);
-    DelegateMtlsEndpointDetails endpoint = this.service.getEndpointForAccount(accountId);
+    this.service.getEndpointForAccount(accountId);
 
     // created one shouldn't be available anymore
     assertFalse(this.service.isDomainPrefixAvailable(domainPrefix1));
@@ -477,7 +480,7 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
     this.service.createEndpointForAccount(accountId, createRequest);
   }
 
-  private String GetRandomDomainPrefix() {
+  private String getRandomDomainPrefix() {
     return String.format("customer-%d", this.random.nextLong());
   }
 }

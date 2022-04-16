@@ -7,28 +7,29 @@
 
 package io.harness.ng.core.delegate.client;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
-
-import static software.wings.security.PermissionAttribute.PermissionType.ACCOUNT_MANAGEMENT;
-
 import io.harness.NGCommonEntityConstants;
-import io.harness.delegate.beans.*;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.delegate.beans.DelegateGroup;
+import io.harness.delegate.beans.DelegateGroupDTO;
+import io.harness.delegate.beans.DelegateGroupListing;
+import io.harness.delegate.beans.DelegateGroupTags;
+import io.harness.delegate.beans.DelegateMtlsEndpointDetails;
+import io.harness.delegate.beans.DelegateMtlsEndpointRequest;
+import io.harness.delegate.beans.DelegateSetupDetails;
+import io.harness.delegate.beans.DelegateTokenDetails;
+import io.harness.delegate.beans.DelegateTokenStatus;
 import io.harness.rest.RestResponse;
 
-import software.wings.security.annotations.AuthRule;
-
-import com.codahale.metrics.annotation.ExceptionMetered;
-import com.codahale.metrics.annotation.Timed;
-import io.swagger.annotations.ApiParam;
 import java.util.List;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.Path;
-import javax.ws.rs.QueryParam;
 import retrofit2.Call;
-import retrofit2.http.*;
+import retrofit2.http.Body;
+import retrofit2.http.DELETE;
+import retrofit2.http.GET;
+import retrofit2.http.PATCH;
+import retrofit2.http.POST;
+import retrofit2.http.PUT;
+import retrofit2.http.Query;
 
 // this client is used to communicate between ng manager and cg manager for all delegate related stuff
 public interface DelegateNgManagerCgManagerClient {
