@@ -41,6 +41,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import io.dropwizard.jersey.PATCH;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -102,6 +103,8 @@ public class DelegateMtlsEndpointNgResource {
   @Timed
   @ExceptionMetered
   @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = EDIT_ACCOUNT_PERMISSION)
+  @ApiOperation(
+      nickname = "createDelegateMtlsEndpointForAccount", value = "Creates the delegate mTLS endpoint for an account.")
   @Operation(operationId = "createDelegateMtlsEndpointForAccount",
       summary = "Creates the delegate mTLS endpoint for an account.",
       responses =
@@ -127,6 +130,8 @@ public class DelegateMtlsEndpointNgResource {
   @Timed
   @ExceptionMetered
   @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = EDIT_ACCOUNT_PERMISSION)
+  @ApiOperation(nickname = "updateDelegateMtlsEndpointForAccount",
+      value = "Updates the existing delegate mTLS endpoint for an account.")
   @Operation(operationId = "updateDelegateMtlsEndpointForAccount",
       summary = "Updates the existing delegate mTLS endpoint for an account.",
       responses =
@@ -152,6 +157,8 @@ public class DelegateMtlsEndpointNgResource {
   @Timed
   @ExceptionMetered
   @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = EDIT_ACCOUNT_PERMISSION)
+  @ApiOperation(nickname = "patchDelegateMtlsEndpointForAccount",
+      value = "Updates selected properties of the existing delegate mTLS endpoint for an account.")
   @Operation(operationId = "patchDelegateMtlsEndpointForAccount",
       summary = "Updates selected properties of the existing delegate mTLS endpoint for an account.",
       responses =
@@ -177,6 +184,8 @@ public class DelegateMtlsEndpointNgResource {
   @Timed
   @ExceptionMetered
   @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = EDIT_ACCOUNT_PERMISSION)
+  @ApiOperation(
+      nickname = "deleteDelegateMtlsEndpointForAccount", value = "Removes the delegate mTLS endpoint for an account.")
   @Operation(operationId = "deleteDelegateMtlsEndpointForAccount",
       summary = "Removes the delegate mTLS endpoint for an account.",
       responses =
@@ -199,6 +208,8 @@ public class DelegateMtlsEndpointNgResource {
   @Timed
   @ExceptionMetered
   @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = VIEW_ACCOUNT_PERMISSION)
+  @ApiOperation(
+      nickname = "getDelegateMtlsEndpointForAccount", value = "Gets the delegate mTLS endpoint for an account.")
   @Operation(operationId = "getDelegateMtlsEndpointForAccount",
       summary = "Gets the delegate mTLS endpoint for an account.",
       responses =
@@ -220,6 +231,8 @@ public class DelegateMtlsEndpointNgResource {
   @Path(DelegateMtlsConstants.API_PATH_ENDPOINT_CHECK_AVAILABILITY)
   @Timed
   @ExceptionMetered
+  @ApiOperation(nickname = "checkDelegateMtlsEndpointDomainPrefixAvailability",
+      value = "Checks whether a given delegate mTLS endpoint domain prefix is available.")
   @Operation(operationId = "checkDelegateMtlsEndpointDomainPrefixAvailability",
       summary = "Checks whether a given delegate mTLS endpoint domain prefix is available.",
       responses =

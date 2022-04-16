@@ -18,6 +18,7 @@ endpoint-exclusion: io.harness.gitsync.common.remote.ScmFacilitatorResource.crea
 endpoint-exclusion: io.harness.ng.core.remote.TokenResource.createToken
 endpoint-exclusion: io.harness.ng.core.remote.TokenResource.updateToken
 endpoint-exclusion: io.harness.ng.core.remote.FileStoreResource.update
+endpoint-exclusion: io.harness.ng.core.delegate.resources.DelegateMtlsEndpointNgResource.isDomainPrefixAvailable
 dto-exclusion: io.harness.ng.core.invites.dto.InviteDTO
 dto-exclusion: io.harness.ng.core.service.dto.ServiceRequestDTO
 dto-exclusion: io.harness.accesscontrol.scopes.ScopeDTO
