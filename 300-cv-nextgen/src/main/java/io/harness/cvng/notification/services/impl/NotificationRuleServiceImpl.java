@@ -10,10 +10,11 @@ package io.harness.cvng.notification.services.impl;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.notification.beans.NotificationRuleDTO;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
+import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.entities.NotificationRule;
 import io.harness.cvng.notification.entities.NotificationRule.NotificationRuleKeys;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
-import io.harness.cvng.notification.transformer.NotificationRuleEntityAndDTOTransformer;
+import io.harness.cvng.notification.transformer.NotificationRuleSpecTransformer;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
@@ -23,6 +24,7 @@ import io.harness.utils.PageUtils;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
@@ -30,13 +32,16 @@ import org.mongodb.morphia.query.UpdateOperations;
 
 public class NotificationRuleServiceImpl implements NotificationRuleService {
   @Inject private HPersistence hPersistence;
-  @Inject private NotificationRuleEntityAndDTOTransformer notificationRuleEntityAndDTOTransformer;
+  @Inject
+  private Map<NotificationRuleType, NotificationRuleSpecTransformer>
+      notificationRuleTypeNotificationRuleSpecTransformerMap;
 
   @Override
   public NotificationRuleResponse create(ProjectParams projectParams, NotificationRuleDTO notificationRuleDTO) {
     validateCreate(projectParams, notificationRuleDTO);
     NotificationRule notificationRule =
-        notificationRuleEntityAndDTOTransformer.getEntity(projectParams, notificationRuleDTO);
+        notificationRuleTypeNotificationRuleSpecTransformerMap.get(notificationRuleDTO.getType())
+            .getEntity(projectParams, notificationRuleDTO);
     hPersistence.save(notificationRule);
     return getNotificationRuleResponse(projectParams, notificationRuleDTO.getIdentifier());
   }
@@ -69,6 +74,7 @@ public class NotificationRuleServiceImpl implements NotificationRuleService {
     updateOperations.set(NotificationRuleKeys.name, notificationRuleDTO.getName());
     updateOperations.set(NotificationRuleKeys.enabled, notificationRuleDTO.isEnabled());
     updateOperations.set(NotificationRuleKeys.type, notificationRuleDTO.getType());
+    updateOperations.set(NotificationRuleKeys.notificationMethod, notificationRuleDTO.getNotificationMethod());
     // TODO: figure out a way to upsert NotificationRuleSpec
     hPersistence.update(notificationRule, updateOperations);
     return getNotificationRuleResponse(projectParams, notificationRuleDTO.getIdentifier());
@@ -136,7 +142,10 @@ public class NotificationRuleServiceImpl implements NotificationRuleService {
             .identifier(notificationRule.getIdentifier())
             .name(notificationRule.getName())
             .type(notificationRule.getType())
-            .spec(notificationRuleEntityAndDTOTransformer.getDto(notificationRule).getSpec())
+            .notificationMethod(notificationRule.getNotificationMethod())
+            .spec(notificationRuleTypeNotificationRuleSpecTransformerMap.get(notificationRule.getType())
+                      .getDto(notificationRule)
+                      .getSpec())
             .build();
     return NotificationRuleResponse.builder()
         .notificationRule(notificationRuleDTO)

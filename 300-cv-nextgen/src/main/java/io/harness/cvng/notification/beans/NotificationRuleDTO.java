@@ -10,6 +10,7 @@ package io.harness.cvng.notification.beans;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.NGEntityName;
 import io.harness.gitsync.beans.YamlDTO;
+import io.harness.notification.channelDetails.PmsNotificationChannel;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModelProperty;
@@ -33,4 +34,5 @@ public class NotificationRuleDTO implements YamlDTO {
   boolean enabled;
   @NotNull NotificationRuleType type;
   @Valid @NotNull NotificationRuleSpec spec;
+  @Valid @NotNull PmsNotificationChannel notificationMethod;
 }

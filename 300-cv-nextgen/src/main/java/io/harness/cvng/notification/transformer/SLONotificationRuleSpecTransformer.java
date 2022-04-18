@@ -26,6 +26,7 @@ public class SLONotificationRuleSpecTransformer
         .name(notificationRuleDTO.getName())
         .enabled(notificationRuleDTO.isEnabled())
         .type(NotificationRuleType.SLO)
+        .notificationMethod(notificationRuleDTO.getNotificationMethod())
         .errorBudgetRemainingPercentageThreshold(sloNotificationRuleSpec.getErrorBudgetRemainingPercentageThreshold())
         .build();
   }

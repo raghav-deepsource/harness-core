@@ -22,6 +22,7 @@ public abstract class NotificationRuleSpecTransformer<E extends NotificationRule
         .identifier(notificationRule.getIdentifier())
         .name(notificationRule.getName())
         .type(notificationRule.getType())
+        .notificationMethod(notificationRule.getNotificationMethod())
         .spec(getSpec(notificationRule))
         .enabled(notificationRule.isEnabled())
         .build();

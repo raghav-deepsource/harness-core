@@ -15,6 +15,7 @@ import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
+import io.harness.notification.channelDetails.PmsNotificationChannel;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
@@ -74,4 +75,5 @@ public abstract class NotificationRule
   private long createdAt;
 
   NotificationRuleType type;
+  PmsNotificationChannel notificationMethod;
 }
