@@ -15,7 +15,6 @@ import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.yaml.YamlSchemaTypes;
-import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.extended.ci.validator.ResourceValidatorConstants;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -38,7 +37,7 @@ public class ContainerResource {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   String uuid;
-  @NotNull @VariableExpression Limits limits;
+  @NotNull Limits limits;
 
   @Builder
   @JsonCreator
@@ -55,12 +54,10 @@ public class ContainerResource {
     String uuid;
     @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
     @Pattern(regexp = ResourceValidatorConstants.STORAGE_PATTERN)
-    @VariableExpression
     private ParameterField<String> memory;
     @YamlSchemaTypes(value = {number})
     @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
     @Min(0)
-    @VariableExpression
     private ParameterField<String> cpu;
 
     @Builder

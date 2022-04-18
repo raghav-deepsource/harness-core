@@ -45,4 +45,8 @@ public @interface VariableExpression {
 
   // skipVariableExpression inclusion for all fields inside it if object or leaf value
   boolean skipVariableExpression() default false;
+
+  // if true it considers the given field as leaf value and only adds variable upto that field only. Handles even
+  // ParameterField as well.
+  boolean skipInnerObjectTraversal() default false;
 }

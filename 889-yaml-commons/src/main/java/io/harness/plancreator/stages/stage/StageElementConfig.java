@@ -66,9 +66,7 @@ public class StageElementConfig {
   @VariableExpression
   String identifier;
   @NotNull @EntityName @Pattern(regexp = NGRegexValidatorConstants.NAME_PATTERN) @VariableExpression String name;
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @VariableExpression
-  ParameterField<String> description;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> description;
 
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -76,7 +74,7 @@ public class StageElementConfig {
 
   @VariableExpression StageWhenCondition when;
 
-  List<FailureStrategyConfig> failureStrategies;
+  @VariableExpression(skipVariableExpression = true) List<FailureStrategyConfig> failureStrategies;
   @VariableExpression List<NGVariable> variables;
   @VariableExpression Map<String, String> tags;
   @VariableExpression String type;
@@ -84,7 +82,7 @@ public class StageElementConfig {
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   @VariableExpression
   StageInfoConfig stageType;
-  TemplateLinkConfig template;
+  @VariableExpression(skipVariableExpression = true) TemplateLinkConfig template;
 
   @Builder
   public StageElementConfig(String uuid, String identifier, String name, ParameterField<String> description,

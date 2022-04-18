@@ -90,8 +90,9 @@ public class PipelineVariableCreatorTest extends CategoryTest {
                                               .map(YamlProperties::getFqn)
                                               .collect(Collectors.toList());
     assertThat(fqnExtraPropertiesList)
-        .containsAll(Arrays.asList("pipeline.variables", "pipeline.identifier", "pipeline.sequenceId",
-            "pipeline.executionId", "pipeline.startTs", "pipeline.endTs", "pipeline.tags"));
+        .containsOnly("pipeline.variables", "pipeline.identifier", "pipeline.sequenceId", "pipeline.executionId",
+            "pipeline.startTs", "pipeline.endTs", "pipeline.tags", "pipeline.properties", "pipeline.triggerType",
+            "pipeline.triggeredBy.name", "pipeline.triggeredBy.email");
   }
 
   @Test

@@ -21,6 +21,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.when.beans.StepWhenCondition;
 import io.harness.yaml.core.StepSpecType;
+import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.timeout.Timeout;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -54,6 +55,7 @@ public abstract class AbstractStepNode {
   String description;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @Pattern(regexp = NGRegexValidatorConstants.TIMEOUT_PATTERN)
+  @VariableExpression(skipInnerObjectTraversal = true)
   ParameterField<Timeout> timeout;
 
   StepWhenCondition when;

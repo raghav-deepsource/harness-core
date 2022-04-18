@@ -69,9 +69,7 @@ public class PipelineInfoConfig {
 
   @VariableExpression(skipVariableExpression = true) FlowControlConfig flowControl;
 
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @VariableExpression
-  ParameterField<String> description;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> description;
   @VariableExpression Map<String, String> tags;
 
   @VariableExpression List<NGVariable> variables;

@@ -33,5 +33,5 @@ public class StageWhenCondition {
   @ApiModelProperty(hidden = true)
   String uuid;
   @NotNull @VariableExpression WhenConditionStatus pipelineStatus;
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @VariableExpression ParameterField<String> condition;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> condition;
 }

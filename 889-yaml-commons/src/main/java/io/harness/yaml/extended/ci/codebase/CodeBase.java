@@ -35,11 +35,8 @@ public class CodeBase {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   String uuid;
-  @NotNull
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @VariableExpression
-  ParameterField<String> connectorRef;
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @VariableExpression ParameterField<String> repoName;
+  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> connectorRef;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> repoName;
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = "io.harness.yaml.extended.ci.codebase.Build")
   @NotNull
@@ -47,15 +44,12 @@ public class CodeBase {
   ParameterField<Build> build;
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.INTEGER_CLASSPATH)
-  @VariableExpression
   ParameterField<Integer> depth;
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
-  @VariableExpression
   ParameterField<Boolean> sslVerify;
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = "io.harness.yaml.extended.ci.codebase.PRCloneStrategy")
-  @VariableExpression
   ParameterField<PRCloneStrategy> prCloneStrategy;
-  @VariableExpression ContainerResource resources;
+  ContainerResource resources;
 }

@@ -3,6 +3,9 @@ pipeline:
   identifier: ApprovalStageWithHttStep
   projectIdentifier: ArchitProject
   orgIdentifier: default
+  delegateSelectors:
+    - abc
+    - def
   tags: {}
   stages:
     - stage:

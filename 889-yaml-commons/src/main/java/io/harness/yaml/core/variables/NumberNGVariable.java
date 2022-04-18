@@ -53,7 +53,7 @@ public class NumberNGVariable implements NGVariable {
   @NotNull
   @YamlSchemaTypes({string})
   @ApiModelProperty(dataType = SwaggerConstants.DOUBLE_CLASSPATH)
-  @VariableExpression(policy = REGULAR_WITH_CUSTOM_FIELD)
+  @VariableExpression(policy = REGULAR_WITH_CUSTOM_FIELD, skipInnerObjectTraversal = true)
   ParameterField<Double> value;
   @VariableExpression(skipVariableExpression = true) String description;
   @VariableExpression(skipVariableExpression = true) boolean required;

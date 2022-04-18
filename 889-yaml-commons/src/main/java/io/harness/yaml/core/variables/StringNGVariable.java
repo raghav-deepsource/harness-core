@@ -51,7 +51,7 @@ public class StringNGVariable implements NGVariable {
   NGVariableType type = NGVariableType.STRING;
   @NotNull
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @VariableExpression(policy = REGULAR_WITH_CUSTOM_FIELD)
+  @VariableExpression(policy = REGULAR_WITH_CUSTOM_FIELD, skipInnerObjectTraversal = true)
   ParameterField<String> value;
   @VariableExpression(skipVariableExpression = true) String description;
   @VariableExpression(skipVariableExpression = true) boolean required;

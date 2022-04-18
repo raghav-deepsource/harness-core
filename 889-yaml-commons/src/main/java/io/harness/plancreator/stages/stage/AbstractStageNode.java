@@ -59,9 +59,7 @@ public abstract class AbstractStageNode {
   @VariableExpression
   String identifier;
   @NotNull @EntityName @Pattern(regexp = NGRegexValidatorConstants.NAME_PATTERN) @VariableExpression String name;
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @VariableExpression
-  ParameterField<String> description;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> description;
 
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -70,7 +68,7 @@ public abstract class AbstractStageNode {
   @VariableExpression StageWhenCondition when;
 
   @VariableExpression List<NGVariable> variables;
-  @VariableExpression Map<String, String> tags;
+  Map<String, String> tags;
 
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @YamlSchemaTypes(value = {runtime})
