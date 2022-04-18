@@ -108,7 +108,11 @@ func DeleteFile(ctx context.Context, fileRequest *pb.DeleteFileRequest, log *zap
 	case *pb.Provider_Github:
 		inputParams.BlobID = fileRequest.GetBlobId()
 	default:
-		inputParams.Sha = fileRequest.GetCommitId()
+		inputParams.Sha, err = getCommitIdIfEmptyInRequest(ctx, fileRequest.GetCommitId(), fileRequest.GetSlug(), fileRequest.GetBranch(),
+			fileRequest.GetProvider(), log)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	inputParams.Signature = scm.Signature{
@@ -162,7 +166,11 @@ func UpdateFile(ctx context.Context, fileRequest *pb.FileModifyRequest, log *zap
 	case *pb.Provider_Github:
 		inputParams.BlobID = fileRequest.GetBlobId()
 	default:
-		inputParams.Sha = fileRequest.GetCommitId()
+		inputParams.Sha, err = getCommitIdIfEmptyInRequest(ctx, fileRequest.GetCommitId(), fileRequest.GetSlug(), fileRequest.GetBranch(),
+			fileRequest.GetProvider(), log)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	inputParams.Signature = scm.Signature{
@@ -277,9 +285,12 @@ func CreateFile(ctx context.Context, fileRequest *pb.FileModifyRequest, log *zap
 		Email: fileRequest.GetSignature().GetEmail(),
 	}
 	// include the commitid if set, this is for azure
-	if fileRequest.GetCommitId() != "" {
-		inputParams.Ref = fileRequest.GetCommitId()
+	inputParams.Ref, err = getCommitIdIfEmptyInRequest(ctx, fileRequest.GetCommitId(), fileRequest.GetSlug(), fileRequest.GetBranch(),
+		fileRequest.GetProvider(), log)
+	if err != nil {
+		return nil, err
 	}
+
 	response, err := client.Contents.Create(ctx, fileRequest.GetSlug(), fileRequest.GetPath(), inputParams)
 	if err != nil {
 		log.Errorw("CreateFile failure", "slug", fileRequest.GetSlug(), "path", fileRequest.GetPath(), "branch", inputParams.Branch, "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
@@ -473,4 +484,29 @@ type requestContext struct {
 	Slug     string
 	Branch   string
 	FilePath string
+}
+
+// getCommitIdIfEmptyInRequest returns the latest commit id of branch
+// if commit id is already set in request then it will return the same commit-id
+func getCommitIdIfEmptyInRequest(ctx context.Context, commitIdInRequest, slug, branch string, provider *pb.Provider, log *zap.SugaredLogger) (string, error) {
+	if commitIdInRequest != "" {
+		return commitIdInRequest, nil
+	}
+	// we only need to fetch the only commit-id for azure
+	switch provider.GetHook().(type) {
+	case *pb.Provider_Azure:
+		resp, err := git.GetLatestCommit(ctx, &pb.GetLatestCommitRequest{
+			Slug: slug,
+			Type: &pb.GetLatestCommitRequest_Branch{
+				Branch: branch,
+			},
+			Provider: provider,
+		}, log)
+		if err != nil {
+			return "", err
+		}
+		return resp.GetCommitId(), nil
+	default:
+		return commitIdInRequest, nil
+	}
 }

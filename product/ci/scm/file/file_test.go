@@ -532,3 +532,25 @@ func TestBatchFindFile(t *testing.T) {
 	assert.Contains(t, got.FileContents[0].Content, "test repo for source control operations")
 	assert.Equal(t, "", got.FileContents[1].Content, "missing file has no content")
 }
+
+func TestGetCommitIdByProvider(t *testing.T) {
+	if azureToken == "" {
+		t.Skip("Skipping, Acceptance test")
+	}
+	provider := &pb.Provider{
+		Hook: &pb.Provider_Azure{
+			Azure: &pb.AzureProvider{
+				PersonalAccessToken: azureToken,
+				Organization:        organization,
+				Project:             project,
+			},
+		},
+		Debug: true,
+	}
+
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	got, err := getCommitIdIfEmptyInRequest(context.Background(), "", repoID, "main", provider, log.Sugar())
+
+	assert.Nil(t, err, "no errors")
+	assert.NotNil(t, got, "There is a commit id")
+}
