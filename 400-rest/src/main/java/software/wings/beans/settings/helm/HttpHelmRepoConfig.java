@@ -14,7 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.HelmInstallationCapability;
-import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
+import io.harness.delegate.beans.executioncapability.SocketConnectivityExecutionCapability;
 import io.harness.encryption.Encrypted;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.k8s.model.HelmVersion;
@@ -29,6 +29,8 @@ import software.wings.yaml.setting.HelmRepoYaml;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.github.reinert.jjschema.SchemaIgnore;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -37,6 +39,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(CDC)
@@ -45,6 +48,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Builder
 @ToString(exclude = {"password"})
 @EqualsAndHashCode(callSuper = false)
+@Slf4j
 @TargetModule(HarnessModule._957_CG_BEANS)
 public class HttpHelmRepoConfig extends SettingValue implements HelmRepoConfig {
   @SchemaIgnore @NotEmpty private String accountId;
@@ -85,8 +89,30 @@ public class HttpHelmRepoConfig extends SettingValue implements HelmRepoConfig {
                                     .version(HelmVersion.V3)
                                     .criteria("HTTP_HELM_REPO: " + getChartRepoUrl())
                                     .build());
-    executionCapabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-        chartRepoUrl, maskingEvaluator));
+    /*
+      We are henceforth using SocketConnectivityExecutionCapability instead of HttpConnectionExecutionCapability
+      this is to ensure that we don't fail Helm Repo Connector Validation in case the url returns 400
+      ref: https://harness.atlassian.net/browse/CDS-36189
+     */
+    try {
+      URI url = new URI(chartRepoUrl);
+      int port = url.getPort();
+      if (port <= -1) {
+        if (url.getScheme() != null) {
+          port = url.getScheme().equals("https") ? 443 : 80;
+        } else {
+          port = 443;
+        }
+      }
+      executionCapabilityList.add(SocketConnectivityExecutionCapability.builder()
+                                      .url(chartRepoUrl)
+                                      .scheme(url.getScheme())
+                                      .hostName(url.getHost())
+                                      .port(String.valueOf(port))
+                                      .build());
+    } catch (URISyntaxException e) {
+      log.error("Unable to process URL: " + e.getMessage());
+    }
     return executionCapabilityList;
   }
 

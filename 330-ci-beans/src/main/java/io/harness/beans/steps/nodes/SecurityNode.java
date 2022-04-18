@@ -38,6 +38,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.beans.steps.nodes.SecurityNode")
 public class SecurityNode extends CIAbstractStepNode {
   @JsonProperty("type") @NotNull SecurityNode.StepType type = SecurityNode.StepType.Security;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   SecurityStepInfo securityStepInfo;

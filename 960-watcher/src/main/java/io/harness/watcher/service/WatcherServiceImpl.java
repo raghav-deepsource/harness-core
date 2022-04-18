@@ -193,7 +193,6 @@ public class WatcherServiceImpl implements WatcherService {
   private final SecureRandom random = new SecureRandom();
 
   private static final boolean multiVersion;
-  private static boolean accountVersion;
 
   private final Map<String, Process> delegateProcessMap = new ConcurrentHashMap<>();
 
@@ -982,9 +981,6 @@ public class WatcherServiceImpl implements WatcherService {
         if (config != null && config.getAction() == SELF_DESTRUCT) {
           selfDestruct();
         }
-        if (config != null && config.isAccountVersion()) {
-          accountVersion = true;
-        }
 
         return config != null ? config.getDelegateVersions() : null;
       } else {
@@ -1025,9 +1021,8 @@ public class WatcherServiceImpl implements WatcherService {
     }
 
     // Get patched version
-    final String patchVersion = !accountVersion ? substringAfter(version, "-") : "";
-    final String updatedVersion =
-        !accountVersion ? (version.contains("-") ? substringBefore(version, "-") : version) : "";
+    final String patchVersion = substringAfter(version, "-");
+    final String updatedVersion = version.contains("-") ? substringBefore(version, "-") : version;
     RestResponse<DelegateScripts> restResponse = null;
     if (!delegateNg) {
       log.info(format("Calling getDelegateScripts with version %s and patch %s", updatedVersion, patchVersion));

@@ -5,12 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.beans.connector.azureconnector.response;
+package io.harness.delegate.beans.azure.response;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.azure.AzureResourceGroupsDTO;
 
-import java.util.List;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -19,6 +19,6 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @OwnedBy(HarnessTeam.CDP)
-public class AzureRegistriesResponse extends AzureDelegateTaskResponse {
-  private List<String> containerRegistries;
+public class AzureResourceGroupsResponse extends AzureDelegateTaskResponse {
+  private AzureResourceGroupsDTO resourceGroups;
 }

@@ -56,6 +56,7 @@ public class NGCommonEntityConstants {
   public static final String PERPETUAL_TASK_ID = "perpetualTaskId";
   public static final String RETRY_STAGES = "retryStages";
   public static final String RUN_ALL_STAGES = "runAllStages";
+  public static final String FILE_IDENTIFIER_KEY = "fileIdentifier";
   public static final Integer MAX_PAGE_SIZE = 10000;
 
   // TODO(UTSAV): Move to 340-ce-nextgen
@@ -76,6 +77,7 @@ public class NGCommonEntityConstants {
   public static final String COLOR_PARAM_MESSAGE = "Color Code for the Entity";
   public static final String DELETED_PARAM_MESSAGE = "Deletion status for Entity";
   public static final String VERSION_PARAM_MESSAGE = "Version of Entity";
+  public static final String FILE_PARAM_MESSAGE = "The file identifier";
 
   public static final String GCP_CONNECTOR_IDENTIFIER = "GCP Connector Identifier";
 

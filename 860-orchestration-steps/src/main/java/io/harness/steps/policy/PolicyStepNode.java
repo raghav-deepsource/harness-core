@@ -37,6 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.steps.policy.PolicyStepNode")
 public class PolicyStepNode extends PmsAbstractStepNode {
   @JsonProperty("type") @NotNull StepType type = StepType.Policy;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   PolicyStepInfo policyStepInfo;

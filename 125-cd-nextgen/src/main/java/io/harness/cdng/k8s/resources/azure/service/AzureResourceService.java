@@ -10,17 +10,17 @@ package io.harness.cdng.k8s.resources.azure.service;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
-
-import java.util.List;
-import java.util.Map;
+import io.harness.delegate.beans.azure.AzureClustersDTO;
+import io.harness.delegate.beans.azure.AzureResourceGroupsDTO;
+import io.harness.delegate.beans.azure.AzureSubscriptionsDTO;
 
 @OwnedBy(HarnessTeam.CDP)
 public interface AzureResourceService {
-  Map<String, String> getSubscriptions(IdentifierRef connectorRef, String orgIdentifier, String projectIdentifier);
+  AzureSubscriptionsDTO getSubscriptions(IdentifierRef connectorRef, String orgIdentifier, String projectIdentifier);
 
-  List<String> getResourceGroups(
+  AzureResourceGroupsDTO getResourceGroups(
       IdentifierRef connectorRef, String orgIdentifier, String projectIdentifier, String subscriptionId);
 
-  List<String> getClusters(IdentifierRef connectorRef, String orgIdentifier, String projectIdentifier,
+  AzureClustersDTO getClusters(IdentifierRef connectorRef, String orgIdentifier, String projectIdentifier,
       String subscriptionId, String resourceGroup);
 }

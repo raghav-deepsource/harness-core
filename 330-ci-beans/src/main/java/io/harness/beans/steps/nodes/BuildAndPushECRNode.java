@@ -39,6 +39,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 public class BuildAndPushECRNode extends CIAbstractStepNode {
   @JsonProperty("type") @NotNull BuildAndPushECRNode.StepType type = BuildAndPushECRNode.StepType.BuildAndPushECR;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   ECRStepInfo ecrStepInfo;

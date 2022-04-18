@@ -10,15 +10,17 @@ package io.harness.cdng.artifact.resources.acr.service;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
-import io.harness.cdng.artifact.resources.acr.dtos.AcrResponseDTO;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.azure.AcrRegistriesDTO;
+import io.harness.delegate.beans.azure.AcrRepositoriesDTO;
+import io.harness.delegate.beans.azure.AcrResponseDTO;
+import io.harness.delegate.beans.azure.response.AzureRegistriesResponse;
+import io.harness.delegate.beans.azure.response.AzureRepositoriesResponse;
 import io.harness.delegate.beans.connector.azureconnector.AzureAdditionalParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskType;
-import io.harness.delegate.beans.connector.azureconnector.response.AzureRegistriesResponse;
-import io.harness.delegate.beans.connector.azureconnector.response.AzureRepositoriesResponse;
 import io.harness.delegate.task.artifacts.ArtifactDelegateRequestUtils;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
@@ -43,7 +45,7 @@ public class AcrResourceServiceImpl implements AcrResourceService {
   @Inject AzureHelperService azureHelperService;
 
   @Override
-  public List<String> getRegistries(
+  public AcrRegistriesDTO getRegistries(
       IdentifierRef connectorRef, String orgIdentifier, String projectIdentifier, String subscriptionId) {
     AzureConnectorDTO connector = azureHelperService.getConnector(connectorRef);
     BaseNGAccess baseNGAccess =
@@ -67,7 +69,7 @@ public class AcrResourceServiceImpl implements AcrResourceService {
   }
 
   @Override
-  public List<String> getRepositories(IdentifierRef connectorRef, String orgIdentifier, String projectIdentifier,
+  public AcrRepositoriesDTO getRepositories(IdentifierRef connectorRef, String orgIdentifier, String projectIdentifier,
       String subscriptionId, String registry) {
     AzureConnectorDTO connector = azureHelperService.getConnector(connectorRef);
     BaseNGAccess baseNGAccess =

@@ -8,6 +8,7 @@
 package io.harness.plancreator.stages.stage;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
@@ -17,12 +18,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.template.yaml.TemplateLinkConfig;
 import io.harness.validation.OneOfSet;
 import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.when.beans.StageWhenCondition;
+import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 import io.harness.yaml.core.variables.NGVariable;
@@ -49,7 +52,8 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("stageElementConfig")
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@OneOfSet(fields = {"skipCondition, when, failureStrategies, type, stageType, variables, tags", "template"},
+@OneOfSet(fields = {"skipCondition, when, failureStrategies, type, stageType, variables, tags, delegateSelectors",
+              "template"},
     requiredFieldNames = {"type", "template"})
 @RecasterAlias("io.harness.plancreator.stages.stage.StageElementConfig")
 // @deprecated: Use the AbstractStageNode instead.
@@ -77,6 +81,11 @@ public class StageElementConfig {
   @VariableExpression StageWhenCondition when;
 
   List<FailureStrategyConfig> failureStrategies;
+
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  @YamlSchemaTypes(value = {runtime})
+  ParameterField<List<TaskSelectorYaml>> delegateSelectors;
+
   @VariableExpression List<NGVariable> variables;
   @VariableExpression Map<String, String> tags;
   @VariableExpression String type;
@@ -89,7 +98,8 @@ public class StageElementConfig {
   @Builder
   public StageElementConfig(String uuid, String identifier, String name, ParameterField<String> description,
       List<FailureStrategyConfig> failureStrategies, List<NGVariable> variables, String type, StageInfoConfig stageType,
-      ParameterField<String> skipCondition, StageWhenCondition when) {
+      ParameterField<String> skipCondition, StageWhenCondition when,
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     this.uuid = uuid;
     this.identifier = identifier;
     this.name = name;
@@ -100,5 +110,6 @@ public class StageElementConfig {
     this.stageType = stageType;
     this.skipCondition = skipCondition;
     this.when = when;
+    this.delegateSelectors = delegateSelectors;
   }
 }

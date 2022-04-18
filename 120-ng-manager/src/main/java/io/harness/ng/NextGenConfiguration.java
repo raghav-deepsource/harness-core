@@ -113,6 +113,7 @@ public class NextGenConfiguration extends Configuration {
   public static final String ACCOUNT_SETTING_PACKAGE = "io.harness.ng.core.accountsetting.resources";
   public static final String ENV_GROUP_RESOURCE = "io.harness.ng.core.envGroup.resource";
   public static final String NG_GLOBAL_KMS_RESOURCE_PACKAGE = "io.harness.ng.core.globalkms.resource";
+  public static final String AZURE_RESOURCES_PACKAGE = "io.harness.ng.core.resources.azure";
   public static final String NG_TRIAL_SIGNUP_PACKAGE = "io.harness.ng.trialsignup";
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
 
@@ -221,7 +222,7 @@ public class NextGenConfiguration extends Configuration {
                 SCHEMA_PACKAGE, DELEGATE_PACKAGE, ACCESS_CONTROL_PACKAGE, FEEDBACK_PACKAGE, INSTANCE_SYNC_PACKAGE,
                 INVITE_PACKAGE, USER_PACKAGE, INSTANCE_NG_PACKAGE, LICENSING_USAGE_PACKAGE, SMTP_NG_RESOURCE,
                 SERVICENOW_PACKAGE, SCIM_NG_RESOURCE, NG_GLOBAL_KMS_RESOURCE_PACKAGE, ACCOUNT_SETTING_PACKAGE,
-                ENV_GROUP_RESOURCE, NG_TRIAL_SIGNUP_PACKAGE))
+                ENV_GROUP_RESOURCE, AZURE_RESOURCES_PACKAGE, NG_TRIAL_SIGNUP_PACKAGE))
         .collect(Collectors.toSet());
   }
 

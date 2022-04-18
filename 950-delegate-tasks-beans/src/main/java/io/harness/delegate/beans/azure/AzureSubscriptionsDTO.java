@@ -5,9 +5,14 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.cdng.artifact.resources.acr.dtos;
+package io.harness.delegate.beans.azure;
+
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+
+import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -18,6 +23,8 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class AcrResponseDTO {
-  List<AcrBuildDetailsDTO> buildDetailsList;
+@OwnedBy(CDP)
+@Schema(name = "AzureSubscriptionsResponse", description = "Azure response for list of subscriptions")
+public class AzureSubscriptionsDTO {
+  List<AzureSubscriptionDTO> subscriptions;
 }

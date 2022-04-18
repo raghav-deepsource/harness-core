@@ -12,8 +12,10 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
-import io.harness.cdng.artifact.resources.acr.dtos.AcrResponseDTO;
 import io.harness.cdng.artifact.resources.acr.service.AcrResourceService;
+import io.harness.delegate.beans.azure.AcrRegistriesDTO;
+import io.harness.delegate.beans.azure.AcrRepositoriesDTO;
+import io.harness.delegate.beans.azure.AcrResponseDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -27,7 +29,6 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
@@ -60,12 +61,12 @@ public class AcrArtifactResource {
   @GET
   @Path("container-registries")
   @ApiOperation(value = "Gets ACR registries by subscription ", nickname = "getACRRegistriesBySubscription")
-  public ResponseDTO<List<String>> getRegistriesBySubscription(
+  public ResponseDTO<AcrRegistriesDTO> getRegistriesBySubscription(
       @NotNull @QueryParam("connectorRef") String azureConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @NotNull @QueryParam("subscription") String subscriptionId) {
+      @NotNull @QueryParam("subscriptionId") String subscriptionId) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(
@@ -76,12 +77,12 @@ public class AcrArtifactResource {
   @Path("container-registries/{registry}/repositories")
   @ApiOperation(
       value = "Gets ACR repositories by subscription and container registry name ", nickname = "getACRRepositories")
-  public ResponseDTO<List<String>>
+  public ResponseDTO<AcrRepositoriesDTO>
   getAzureRepositories(@NotNull @QueryParam("connectorRef") String azureConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @NotNull @QueryParam("subscription") String subscriptionId, @PathParam("registry") String registry) {
+      @NotNull @QueryParam("subscriptionId") String subscriptionId, @PathParam("registry") String registry) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(
@@ -91,7 +92,7 @@ public class AcrArtifactResource {
   @GET
   @Path("getBuildDetails")
   @ApiOperation(value = "Gets ACR repository build details", nickname = "getBuildDetailsForACRRepository")
-  public ResponseDTO<AcrResponseDTO> getBuildDetails(@QueryParam("subscription") String subscriptionId,
+  public ResponseDTO<AcrResponseDTO> getBuildDetails(@QueryParam("subscriptionId") String subscriptionId,
       @QueryParam("registry") String registry, @QueryParam("repository") String repository,
       @QueryParam("connectorRef") String azureConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
@@ -110,7 +111,7 @@ public class AcrArtifactResource {
   @ApiOperation(value = "Gets ACR build details with yaml input for expression resolution",
       nickname = "getBuildDetailsForAcrArtifactWithYaml")
   public ResponseDTO<AcrResponseDTO>
-  getBuildDetailsV2(@QueryParam("subscription") String subscriptionId, @QueryParam("registry") String registry,
+  getBuildDetailsV2(@QueryParam("subscriptionId") String subscriptionId, @QueryParam("registry") String registry,
       @QueryParam("repository") String repository, @QueryParam("connectorRef") String azureConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
