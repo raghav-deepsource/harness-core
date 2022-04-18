@@ -96,7 +96,7 @@ public class NotificationRuleResourceTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
-  public void testSaveNotificationRuleData_withIncorrectYAML() throws IOException {
+  public void testSaveNotificationRuleData_withIncorrectYAML_withoutSpec() throws IOException {
     String sloYaml = getYAML("notification/notification-rule-invalid.yaml");
     Response response = RESOURCES.client()
                             .target("http://localhost:9998/notification-rule/")
@@ -105,6 +105,21 @@ public class NotificationRuleResourceTest extends CvNextGenTestBase {
                             .post(Entity.json(convertToJson(sloYaml)));
     assertThat(response.getStatus()).isEqualTo(400);
     assertThat(response.readEntity(String.class)).contains("\"field\":\"spec\",\"message\":\"may not be null\"");
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testSaveNotificationRuleData_withIncorrectYAML_withoutNotificationMethod() throws IOException {
+    String sloYaml = getYAML("notification/notification-rule-invalid-2.yaml");
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/notification-rule/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(convertToJson(sloYaml)));
+    assertThat(response.getStatus()).isEqualTo(400);
+    assertThat(response.readEntity(String.class))
+        .contains("\"field\":\"notificationMethod\",\"message\":\"may not be null\"");
   }
 
   @Test
