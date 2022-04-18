@@ -8,7 +8,6 @@
 package io.harness.cdng.secrets.tasks;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.delegate.task.winrm.WinRmSessionConfig.WinRmSessionConfigBuilder;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateResponseData;
@@ -22,6 +21,7 @@ import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.winrm.AuthenticationScheme;
 import io.harness.delegate.task.winrm.WinRmSession;
 import io.harness.delegate.task.winrm.WinRmSessionConfig;
+import io.harness.delegate.task.winrm.WinRmSessionConfig.WinRmSessionConfigBuilder;
 import io.harness.logging.NoopExecutionCallback;
 import io.harness.ng.core.dto.secrets.KerberosWinRmConfigDTO;
 import io.harness.ng.core.dto.secrets.NTLMConfigDTO;
