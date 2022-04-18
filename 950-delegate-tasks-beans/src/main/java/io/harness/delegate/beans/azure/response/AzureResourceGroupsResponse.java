@@ -9,7 +9,7 @@ package io.harness.delegate.beans.azure.response;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.azure.AzureResourceGroupsDTO;
+import io.harness.azure.response.AzureResourceGroupsDTO;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

@@ -11,10 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.azure.response.AcrRegistriesDTO;
+import io.harness.azure.response.AcrRepositoriesDTO;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.acr.service.AcrResourceService;
-import io.harness.delegate.beans.azure.AcrRegistriesDTO;
-import io.harness.delegate.beans.azure.AcrRepositoriesDTO;
 import io.harness.delegate.beans.azure.AcrResponseDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;

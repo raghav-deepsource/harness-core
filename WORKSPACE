@@ -4340,6 +4340,7 @@ plain_artifacts = [
     "com.azure:azure-identity:1.1.2",
     "com.azure:azure-storage-blob:12.9.0",
     "com.azure:azure-storage-common:12.9.0",
+    "com.azure:azure-containers-containerregistry:1.0.0",
     "com.bertramlabs.plugins:hcl4j:0.1.7",
     "com.bettercloud:vault-java-driver:4.0.0",
     "com.rabbitmq:amqp-client:jar:4.8.0",

@@ -7,11 +7,15 @@
 
 package io.harness.azure.client;
 
+import software.wings.helpers.ext.azure.AcrRegistryListResult;
+
 import okhttp3.ResponseBody;
+import retrofit2.Call;
 import retrofit2.Response;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
 import retrofit2.http.Headers;
+import retrofit2.http.Path;
 import retrofit2.http.Query;
 import retrofit2.http.Url;
 import rx.Observable;
@@ -26,4 +30,8 @@ public interface AzureManagementRestClient {
   @GET
   Observable<Response<ResponseBody>> listNext(
       @Header("Authorization") String bearerAuthHeader, @Url String nextUrl, @Query("api-version") String appVersion);
+
+  @GET("subscriptions/{subscriptionId}/providers/Microsoft.ContainerRegistry/registries?api-version=2019-05-01")
+  Call<AcrRegistryListResult> listACRRegistries(
+      @Header("Authorization") String bearerAuthHeader, @Path("subscriptionId") String subscriptionId);
 }

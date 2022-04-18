@@ -5,20 +5,20 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.beans.azure.response;
+package software.wings.helpers.ext.azure;
 
-import io.harness.annotations.dev.HarnessTeam;
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.azure.response.AzureClustersDTO;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 
+@OwnedBy(CDP)
 @Data
-@SuperBuilder
-@NoArgsConstructor
-@OwnedBy(HarnessTeam.CDP)
-public class AzureClustersResponse extends AzureDelegateTaskResponse {
-  private AzureClustersDTO clusters;
+@JsonIgnoreProperties(ignoreUnknown = true)
+@Builder
+public class AcrRegistryProperties {
+  public String loginServer;
 }

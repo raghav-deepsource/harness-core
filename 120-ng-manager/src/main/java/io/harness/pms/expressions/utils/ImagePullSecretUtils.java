@@ -16,6 +16,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
@@ -29,6 +30,11 @@ import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthT
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsernamePasswordAuthDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureClientSecretKeyDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureCredentialType;
+import io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureSecretType;
 import io.harness.delegate.beans.connector.docker.DockerAuthType;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
@@ -92,6 +98,9 @@ public class ImagePullSecretUtils {
         break;
       case ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME:
         getImageDetailsFromArtifactory((ArtifactoryArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
+        break;
+      case ArtifactSourceConstants.ACR_NAME:
+        getImageDetailsFromAcr((AcrArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
         break;
       default:
         throw new UnsupportedOperationException(
@@ -228,6 +237,29 @@ public class ImagePullSecretUtils {
       } else {
         imageDetailsBuilder.registryUrl(connectorConfig.getArtifactoryServerUrl());
       }
+    }
+  }
+
+  private void getImageDetailsFromAcr(
+      AcrArtifactOutcome acrArtifactOutcome, ImageDetailsBuilder imageDetailsBuilder, Ambiance ambiance) {
+    String connectorRef = acrArtifactOutcome.getConnectorRef();
+    ConnectorInfoDTO connectorDTO = getConnector(connectorRef, ambiance);
+    AzureConnectorDTO connectorConfig = (AzureConnectorDTO) connectorDTO.getConnectorConfig();
+    imageDetailsBuilder.registryUrl(acrArtifactOutcome.getRegistry());
+    if (connectorConfig.getCredential() != null
+        && connectorConfig.getCredential().getAzureCredentialType() == AzureCredentialType.MANUAL_CREDENTIALS) {
+      AzureManualDetailsDTO config = (AzureManualDetailsDTO) connectorConfig.getCredential().getConfig();
+      imageDetailsBuilder.username(config.getClientId());
+      if (config.getAuthDTO().getAzureSecretType() == AzureSecretType.SECRET_KEY) {
+        imageDetailsBuilder.password(getPasswordExpression(
+            ((AzureClientSecretKeyDTO) config.getAuthDTO().getCredentials()).getSecretKey().toSecretRefStringValue(),
+            ambiance));
+      } else {
+        throw new InvalidRequestException(
+            "Currently unable to use SP with certificate for pulling docker images from ACR");
+      }
+    } else {
+      log.info("For Azure MSI there should not be necessary to provide credentials");
     }
   }
 

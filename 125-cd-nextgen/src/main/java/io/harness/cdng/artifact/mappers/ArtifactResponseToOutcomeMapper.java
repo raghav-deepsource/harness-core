@@ -12,12 +12,14 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
@@ -29,6 +31,7 @@ import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateResponse;
@@ -70,6 +73,11 @@ public class ArtifactResponseToOutcomeMapper {
             (ArtifactoryArtifactDelegateResponse) artifactDelegateResponse;
         return getArtifactoryArtifactOutcome(
             artifactoryRegistryArtifactConfig, artifactoryDelegateResponse, useDelegateResponse);
+      case ACR:
+        AcrArtifactConfig acrArtifactConfig = (AcrArtifactConfig) artifactConfig;
+        AcrArtifactDelegateResponse acrArtifactDelegateResponse =
+            (AcrArtifactDelegateResponse) artifactDelegateResponse;
+        return getAcrArtifactOutcome(acrArtifactConfig, acrArtifactDelegateResponse, useDelegateResponse);
       case CUSTOM_ARTIFACT:
         CustomArtifactConfig customArtifactConfig = (CustomArtifactConfig) artifactConfig;
         return getCustomArtifactOutcome(customArtifactConfig);
@@ -172,6 +180,24 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(artifactConfig.getIdentifier())
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
         .version(artifactConfig.getVersion().getValue())
+        .build();
+  }
+
+  private AcrArtifactOutcome getAcrArtifactOutcome(AcrArtifactConfig acrArtifactConfig,
+      AcrArtifactDelegateResponse acrArtifactDelegateResponse, boolean useDelegateResponse) {
+    return AcrArtifactOutcome.builder()
+        .subscription(acrArtifactConfig.getSubscriptionId().getValue())
+        .registry(getRegistryHostnameValue(acrArtifactDelegateResponse))
+        .repository(acrArtifactConfig.getRepository().getValue())
+        .image(getImageValue(acrArtifactDelegateResponse))
+        .connectorRef(acrArtifactConfig.getConnectorRef().getValue())
+        .tag(useDelegateResponse ? acrArtifactDelegateResponse.getTag()
+                                 : (acrArtifactConfig.getTag() != null ? acrArtifactConfig.getTag().getValue() : null))
+        .tagRegex(acrArtifactConfig.getTagRegex() != null ? acrArtifactConfig.getTagRegex().getValue() : null)
+        .identifier(acrArtifactConfig.getIdentifier())
+        .type(ArtifactSourceType.ACR.getDisplayName())
+        .primaryArtifact(acrArtifactConfig.isPrimaryArtifact())
+        .imagePullSecret(IMAGE_PULL_SECRET + ArtifactUtils.getArtifactKey(acrArtifactConfig) + ">")
         .build();
   }
 

@@ -5,14 +5,15 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.delegate.beans.azure;
+package io.harness.azure.response;
 
-import io.harness.annotations.dev.HarnessTeam;
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
-import javax.validation.constraints.NotNull;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
@@ -22,8 +23,8 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Schema(description = "This contains details regarding ACR registry")
-@OwnedBy(HarnessTeam.CDP)
-public class AcrRegistryDTO {
-  @NotNull @Schema(description = "This is the artifact registry name") String registry;
+@OwnedBy(CDP)
+@Schema(name = "AzureClustersResponse", description = "Azure response for clusters")
+public class AzureClustersDTO {
+  List<AzureClusterDTO> clusters;
 }

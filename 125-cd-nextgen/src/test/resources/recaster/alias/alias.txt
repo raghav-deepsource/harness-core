@@ -1,6 +1,7 @@
 io.harness.cdng.k8s.K8sCanaryStepParameters
 io.harness.cdng.provision.terraform.TerraformStepConfigurationParameters
 io.harness.cdng.infra.yaml.K8sGcpInfrastructure
+io.harness.cdng.infra.yaml.K8sAzureInfrastructure
 io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStepInfo
 io.harness.cdng.k8s.K8sApplyStepInfo
 io.harness.cdng.k8s.K8sBGSwapServicesStepParameters
@@ -75,6 +76,7 @@ io.harness.cdng.manifest.yaml.KustomizeManifestOutcome
 io.harness.cdng.manifest.yaml.GitLabStore
 io.harness.cdng.provision.terraform.TerraformPlanExecutionDataParameters
 io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome
+io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome
 io.harness.cdng.infra.beans.PdcInfrastructureOutcome
 io.harness.cdng.manifest.yaml.S3StoreConfig
 io.harness.cdng.infra.beans.InfraUseFromStage
@@ -101,6 +103,7 @@ io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome
 io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig
 io.harness.steps.shellscript.K8sInfraDelegateConfigOutput
 io.harness.cdng.infra.beans.K8sGcpInfraMapping
+io.harness.cdng.infra.beans.K8sAzureInfraMapping
 io.harness.cdng.infra.beans.PdcInfraMapping
 io.harness.steps.common.pipeline.PipelineSetupStepParameters
 io.harness.cdng.k8s.InstanceSelectionWrapper
@@ -253,6 +256,7 @@ io.harness.cdng.manifest.yaml.ArtifactoryStoreConfig
 io.harness.cdng.artifact.NexusArtifactSummary
 io.harness.cdng.artifact.outcome.NexusArtifactOutcome
 io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome
+io.harness.ngpipeline.artifact.bean.AcrArtifactOutcome
 io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig
 io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig
 io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig

@@ -9,11 +9,11 @@ package io.harness.cdng.k8s.resources.azure.service;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.azure.response.AzureClustersDTO;
+import io.harness.azure.response.AzureResourceGroupsDTO;
+import io.harness.azure.response.AzureSubscriptionsDTO;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.azure.AzureHelperService;
-import io.harness.delegate.beans.azure.AzureClustersDTO;
-import io.harness.delegate.beans.azure.AzureResourceGroupsDTO;
-import io.harness.delegate.beans.azure.AzureSubscriptionsDTO;
 import io.harness.delegate.beans.azure.response.AzureClustersResponse;
 import io.harness.delegate.beans.azure.response.AzureResourceGroupsResponse;
 import io.harness.delegate.beans.azure.response.AzureSubscriptionsResponse;

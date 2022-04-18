@@ -19,6 +19,7 @@ import java.util.Arrays;
 public enum InfrastructureType {
   @JsonProperty(InfrastructureKind.KUBERNETES_DIRECT) KUBERNETES_DIRECT(InfrastructureKind.KUBERNETES_DIRECT),
   @JsonProperty(InfrastructureKind.KUBERNETES_GCP) KUBERNETES_GCP(InfrastructureKind.KUBERNETES_GCP),
+  @JsonProperty(InfrastructureKind.KUBERNETES_AZURE) KUBERNETES_AZURE(InfrastructureKind.KUBERNETES_AZURE),
   @JsonProperty(InfrastructureKind.PDC) PDC(InfrastructureKind.PDC);
 
   private final String displayName;

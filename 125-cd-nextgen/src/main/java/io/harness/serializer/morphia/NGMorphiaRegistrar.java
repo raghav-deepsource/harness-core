@@ -21,6 +21,7 @@ import io.harness.cdng.artifact.steps.ArtifactStepParameters;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.InfraUseFromStage;
+import io.harness.cdng.infra.beans.K8sAzureInfraMapping;
 import io.harness.cdng.infra.beans.K8sDirectInfraMapping;
 import io.harness.cdng.infra.beans.K8sGcpInfraMapping;
 import io.harness.cdng.infra.beans.PdcInfraMapping;
@@ -47,6 +48,7 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     set.add(InfraMapping.class);
     set.add(K8sDirectInfraMapping.class);
     set.add(K8sGcpInfraMapping.class);
+    set.add(K8sAzureInfraMapping.class);
     set.add(PdcInfraMapping.class);
     set.add(DockerArtifactSource.class);
     set.add(ArtifactSource.class);

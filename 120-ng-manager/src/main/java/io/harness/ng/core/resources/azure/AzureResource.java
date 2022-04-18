@@ -11,11 +11,11 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.azure.response.AzureClustersDTO;
+import io.harness.azure.response.AzureResourceGroupsDTO;
+import io.harness.azure.response.AzureSubscriptionsDTO;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.k8s.resources.azure.service.AzureResourceService;
-import io.harness.delegate.beans.azure.AzureClustersDTO;
-import io.harness.delegate.beans.azure.AzureResourceGroupsDTO;
-import io.harness.delegate.beans.azure.AzureSubscriptionsDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;

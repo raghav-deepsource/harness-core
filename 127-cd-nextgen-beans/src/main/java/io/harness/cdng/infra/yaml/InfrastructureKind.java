@@ -15,4 +15,5 @@ public interface InfrastructureKind {
   String KUBERNETES_DIRECT = "KubernetesDirect";
   String KUBERNETES_GCP = "KubernetesGcp";
   String PDC = "Pdc";
+  String KUBERNETES_AZURE = "KubernetesAzure";
 }

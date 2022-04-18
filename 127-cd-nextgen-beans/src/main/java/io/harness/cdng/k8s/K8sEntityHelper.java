@@ -8,6 +8,7 @@
 package io.harness.cdng.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.cdng.infra.yaml.InfrastructureKind.KUBERNETES_AZURE;
 import static io.harness.cdng.infra.yaml.InfrastructureKind.KUBERNETES_DIRECT;
 import static io.harness.cdng.infra.yaml.InfrastructureKind.KUBERNETES_GCP;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
@@ -21,18 +22,21 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterDetailsDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
+import io.harness.delegate.task.k8s.AzureK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.GcpK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
@@ -98,6 +102,15 @@ public class K8sEntityHelper {
           return emptyList();
         }
 
+      case AZURE:
+        AzureConnectorDTO azureConnectorDTO = (AzureConnectorDTO) connectorDTO.getConnectorConfig();
+        List<DecryptableEntity> azureDecryptableEntities = azureConnectorDTO.getDecryptableEntities();
+        if (isNotEmpty(azureDecryptableEntities)) {
+          return secretManagerClientService.getEncryptionDetails(ngAccess, azureDecryptableEntities.get(0));
+        } else {
+          return emptyList();
+        }
+
       case APP_DYNAMICS:
       case SPLUNK:
       case GIT:
@@ -140,6 +153,22 @@ public class K8sEntityHelper {
             .namespace(k8sGcpInfrastructure.getNamespace())
             .cluster(k8sGcpInfrastructure.getCluster())
             .gcpConnectorDTO((GcpConnectorDTO) connectorDTO.getConnectorConfig())
+            .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
+            .build();
+
+      case KUBERNETES_AZURE:
+        K8sAzureInfrastructureOutcome k8sAzureInfrastructure = (K8sAzureInfrastructureOutcome) infrastructure;
+        KubernetesHelperService.validateNamespace(k8sAzureInfrastructure.getNamespace());
+        KubernetesHelperService.validateCluster(k8sAzureInfrastructure.getCluster());
+        KubernetesHelperService.validateCluster(k8sAzureInfrastructure.getSubscription());
+        KubernetesHelperService.validateCluster(k8sAzureInfrastructure.getResourceGroup());
+
+        return AzureK8sInfraDelegateConfig.builder()
+            .namespace(k8sAzureInfrastructure.getNamespace())
+            .cluster(k8sAzureInfrastructure.getCluster())
+            .subscription(k8sAzureInfrastructure.getSubscription())
+            .resourceGroup(k8sAzureInfrastructure.getResourceGroup())
+            .azureConnectorDTO((AzureConnectorDTO) connectorDTO.getConnectorConfig())
             .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
             .build();
 

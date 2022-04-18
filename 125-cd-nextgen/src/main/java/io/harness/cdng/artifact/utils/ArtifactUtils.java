@@ -13,6 +13,7 @@ import io.harness.NGConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
@@ -134,6 +135,12 @@ public class ArtifactUtils {
                 ? artifactoryRegistryArtifactConfig.getTagRegex().getValue()
                 : artifactoryRegistryArtifactConfig.getTag().getValue(),
             artifactoryRegistryArtifactConfig.getConnectorRef().getValue());
+      case ACR:
+        AcrArtifactConfig acrArtifactConfig = (AcrArtifactConfig) artifactConfig;
+        return String.format(placeholder, sourceType, acrArtifactConfig.getRepository().getValue(),
+            acrArtifactConfig.getTag().getValue() != null ? acrArtifactConfig.getTag().getValue()
+                                                          : acrArtifactConfig.getTagRegex().getValue(),
+            acrArtifactConfig.getConnectorRef().getValue());
       case CUSTOM_ARTIFACT:
         CustomArtifactConfig customArtifactConfig = (CustomArtifactConfig) artifactConfig;
         return String.format("type: %s, build: %s", sourceType, customArtifactConfig.getVersion().getValue());

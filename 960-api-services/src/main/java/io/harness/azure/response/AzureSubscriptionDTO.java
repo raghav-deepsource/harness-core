@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.delegate.beans.azure;
+package io.harness.azure.response;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
@@ -24,7 +24,8 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @OwnedBy(CDP)
-@Schema(name = "AzureResourceGroupsResponse", description = "Azure response for resource groups")
-public class AzureResourceGroupsDTO {
-  List<AzureResourceGroupDTO> resourceGroups;
+@Schema(name = "AzureSubscriptionResponse", description = "Azure response for subscription")
+public class AzureSubscriptionDTO {
+  @NotNull @Schema(description = "This is the subscription user friendly name") String subscriptionName;
+  @NotNull @Schema(description = "This is subscription id") String subscriptionId;
 }
