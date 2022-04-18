@@ -152,8 +152,8 @@ public class FileStoreServiceImpl implements FileStoreService {
           format("Root folder [%s] can not be deleted.", FileStoreConstants.ROOT_FOLDER_IDENTIFIER));
     }
 
-    IdentifierRef identifierRef =
-        IdentifierRefHelper.getIdentifierRef(identifier, accountIdentifier, orgIdentifier, projectIdentifier);
+    IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRefFromEntityIdentifiers(
+            identifier, accountIdentifier, orgIdentifier, projectIdentifier);
     NGFile file =
         fileStoreRepository
             .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
