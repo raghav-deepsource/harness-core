@@ -13,6 +13,7 @@ import static io.harness.accesscontrol.clients.AccessControlClientUtils.serviceC
 import static io.harness.accesscontrol.principals.PrincipalType.API_KEY;
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE;
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.accesscontrol.acl.ACLService;
 import io.harness.accesscontrol.acl.PermissionCheck;
@@ -32,6 +33,7 @@ import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -75,7 +77,12 @@ public class ACLResourceImpl implements ACLResource {
     io.harness.security.dto.Principal contextPrincipal = SecurityContextBuilder.getPrincipal();
     List<PermissionCheckDTO> permissionChecksDTOs = dto.getPermissions();
     Principal principalToCheckPermissionsFor = dto.getPrincipal();
-
+    if (isEmpty(permissionChecksDTOs)) {
+      return ResponseDTO.newResponse(AccessCheckResponseDTO.builder()
+                                         .principal(principalToCheckPermissionsFor)
+                                         .accessControlList(new ArrayList<>())
+                                         .build());
+    }
     boolean preconditionsValid = checkPreconditions(contextPrincipal, principalToCheckPermissionsFor);
 
     if (serviceContextAndNoPrincipalInBody(contextPrincipal, principalToCheckPermissionsFor)) {

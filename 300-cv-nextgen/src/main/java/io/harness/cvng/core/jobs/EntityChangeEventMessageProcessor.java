@@ -23,6 +23,7 @@ import io.harness.cvng.core.services.api.DeleteEntityByHandler;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.dashboard.entities.HeatMap;
+import io.harness.cvng.notification.entities.NotificationRule;
 import io.harness.cvng.servicelevelobjective.entities.SLOErrorBudgetReset;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
@@ -47,7 +48,7 @@ public abstract class EntityChangeEventMessageProcessor implements ConsumerMessa
         Arrays.asList(VerificationJob.class, Activity.class, ActivitySource.class, MetricPack.class, HeatMap.class,
             TimeSeriesThreshold.class, CVNGStepTask.class, ServiceLevelObjective.class, UserJourney.class,
             ServiceLevelIndicator.class, ChangeSource.class, Webhook.class, ServiceDependency.class,
-            SLOHealthIndicator.class, SLOErrorBudgetReset.class);
+            SLOHealthIndicator.class, SLOErrorBudgetReset.class, NotificationRule.class);
     ENTITIES_MAP = new HashMap<>();
     deleteEntitiesWithDefaultHandler.forEach(entity -> ENTITIES_MAP.put(entity, DeleteEntityByHandler.class));
 

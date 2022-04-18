@@ -16,8 +16,13 @@ import io.harness.exception.ArtifactoryRegistryException;
 import io.harness.exception.ArtifactoryServerException;
 import io.harness.exception.AuthenticationException;
 import io.harness.exception.AuthorizationException;
+import io.harness.exception.AzureAuthenticationException;
+import io.harness.exception.AzureConfigException;
+import io.harness.exception.AzureContainerRegistryException;
+import io.harness.exception.AzureServerException;
 import io.harness.exception.ConnectException;
 import io.harness.exception.ContextException;
+import io.harness.exception.DataProcessingException;
 import io.harness.exception.DelegateErrorHandlerException;
 import io.harness.exception.DelegateNotAvailableException;
 import io.harness.exception.EngineExpressionEvaluationException;
@@ -124,5 +129,10 @@ public class CommonsKryoRegistrar implements KryoRegistrar {
     kryo.register(TerraformCommandExecutionException.class, 980018);
     kryo.register(SimpleEncryption.class, 980019);
     kryo.register(KubernetesCliTaskRuntimeException.class, 980020);
+    kryo.register(AzureServerException.class, 980021);
+    kryo.register(AzureAuthenticationException.class, 980022);
+    kryo.register(AzureConfigException.class, 980023);
+    kryo.register(AzureContainerRegistryException.class, 980024);
+    kryo.register(DataProcessingException.class, 980025);
   }
 }

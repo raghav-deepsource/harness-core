@@ -206,7 +206,7 @@ public class PipelineOutboxEventHandlerTest extends CategoryTest {
     assertEquals(projectIdentifier, auditEntry.getResourceScope().getProjectIdentifier());
     assertEquals(auditEntry.getInsertId(), outboxEvent.getId());
     assertEquals(identifier, auditEntry.getResource().getIdentifier());
-    assertEquals(ModuleType.CORE, auditEntry.getModule());
+    assertEquals(ModuleType.PMS, auditEntry.getModule());
     assertEquals(outboxEvent.getCreatedAt().longValue(), auditEntry.getTimestamp());
   }
 }

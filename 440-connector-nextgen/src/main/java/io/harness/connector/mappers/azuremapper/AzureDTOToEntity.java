@@ -10,6 +10,7 @@ package io.harness.connector.mappers.azuremapper;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.entities.embedded.azureconnector.AzureConfig;
+import io.harness.connector.entities.embedded.azureconnector.AzureManagedIdentityCredential;
 import io.harness.connector.entities.embedded.azureconnector.AzureManualCredential;
 import io.harness.connector.mappers.ConnectorDTOToEntityMapper;
 import io.harness.delegate.beans.connector.azureconnector.AzureAuthDTO;
@@ -18,7 +19,12 @@ import io.harness.delegate.beans.connector.azureconnector.AzureClientSecretKeyDT
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureCredentialDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureCredentialType;
+import io.harness.delegate.beans.connector.azureconnector.AzureInheritFromDelegateDetailsDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthSADTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthUADTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureUserAssignedMSIAuthDTO;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.InvalidRequestException;
 
@@ -34,7 +40,7 @@ public class AzureDTOToEntity implements ConnectorDTOToEntityMapper<AzureConnect
     final AzureConfig azureConfig;
     switch (credentialType) {
       case INHERIT_FROM_DELEGATE:
-        azureConfig = buildInheritFromDelegate();
+        azureConfig = buildInheritFromDelegate(credential);
         break;
       case MANUAL_CREDENTIALS:
         azureConfig = buildManualCredential(credential);
@@ -47,8 +53,35 @@ public class AzureDTOToEntity implements ConnectorDTOToEntityMapper<AzureConnect
     return azureConfig;
   }
 
-  private AzureConfig buildInheritFromDelegate() {
-    return AzureConfig.builder().credentialType(AzureCredentialType.INHERIT_FROM_DELEGATE).credential(null).build();
+  private AzureConfig buildInheritFromDelegate(AzureCredentialDTO connector) {
+    final AzureInheritFromDelegateDetailsDTO config = (AzureInheritFromDelegateDetailsDTO) connector.getConfig();
+    final AzureMSIAuthDTO authDTO = config.getAuthDTO();
+
+    AzureManagedIdentityCredential azureManagedIdentityCredential;
+
+    if (authDTO instanceof AzureMSIAuthUADTO) {
+      AzureMSIAuthUADTO azureMSIAuthUADTO = (AzureMSIAuthUADTO) authDTO;
+
+      AzureUserAssignedMSIAuthDTO azureUserAssignedMSIAuthDTO =
+          (AzureUserAssignedMSIAuthDTO) azureMSIAuthUADTO.getCredentials();
+
+      azureManagedIdentityCredential = AzureManagedIdentityCredential.builder()
+                                           .azureManagedIdentityType(azureMSIAuthUADTO.getAzureManagedIdentityType())
+                                           .clientId(azureUserAssignedMSIAuthDTO.getClientId())
+                                           .build();
+    } else if (authDTO instanceof AzureMSIAuthSADTO) {
+      AzureMSIAuthSADTO azureMSIAuthSADTO = (AzureMSIAuthSADTO) authDTO;
+      azureManagedIdentityCredential = AzureManagedIdentityCredential.builder()
+                                           .azureManagedIdentityType(azureMSIAuthSADTO.getAzureManagedIdentityType())
+                                           .build();
+    } else {
+      throw new InvalidRequestException("Invalid ManagedIdentity credentials type.");
+    }
+
+    return AzureConfig.builder()
+        .credentialType(AzureCredentialType.INHERIT_FROM_DELEGATE)
+        .credential(azureManagedIdentityCredential)
+        .build();
   }
 
   private AzureConfig buildManualCredential(AzureCredentialDTO connector) {

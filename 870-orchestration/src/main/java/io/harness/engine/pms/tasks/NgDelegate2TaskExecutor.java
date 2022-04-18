@@ -74,7 +74,7 @@ public class NgDelegate2TaskExecutor implements TaskExecutor {
         PmsGrpcClientUtils.retryAndProcessException(delegateServiceBlockingStub::submitTask, submitTaskRequest);
     return delegateSyncService.waitForTask(submitTaskResponse.getTaskId().getId(),
         submitTaskRequest.getDetails().getType().getType(),
-        Duration.ofMillis(HTimestamps.toMillis(submitTaskResponse.getTotalExpiry()) - currentTimeMillis()));
+        Duration.ofMillis(HTimestamps.toMillis(submitTaskResponse.getTotalExpiry()) - currentTimeMillis()), null);
   }
 
   private TaskRequestValidityCheck validateTaskRequest(TaskRequest taskRequest, TaskMode validMode) {

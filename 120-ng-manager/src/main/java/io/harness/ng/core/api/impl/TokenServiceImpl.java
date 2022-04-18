@@ -103,7 +103,8 @@ public class TokenServiceImpl implements TokenService {
         outboxService.save(new TokenCreateEvent(TokenDTOMapper.getDTOFromToken(savedToken)));
         return savedToken;
       }));
-      return token.getApiKeyType().getValue() + deliminator + newToken.getUuid() + deliminator + randomString;
+      return token.getApiKeyType().getValue() + deliminator + newToken.getAccountIdentifier() + deliminator
+          + newToken.getUuid() + deliminator + randomString;
     } catch (DuplicateKeyException e) {
       throw new DuplicateFieldException(
           String.format("Try using different token name, [%s] already exists", tokenDTO.getIdentifier()));

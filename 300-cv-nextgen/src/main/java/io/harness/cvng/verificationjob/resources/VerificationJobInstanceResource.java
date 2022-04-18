@@ -7,6 +7,7 @@
 
 package io.harness.cvng.verificationjob.resources;
 
+import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.verificationjob.beans.TestVerificationBaselineExecutionDTO;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.rest.RestResponse;
@@ -18,7 +19,8 @@ import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import java.util.List;
-import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -36,10 +38,10 @@ public class VerificationJobInstanceResource {
   @Path("/baseline-executions")
   @ApiOperation(value = "list of last 5 successful baseline executions", nickname = "listBaselineExecutions")
   public RestResponse<List<TestVerificationBaselineExecutionDTO>> baselineExecutions(
-      @QueryParam("accountId") @Valid final String accountId, @QueryParam("orgIdentifier") String orgIdentifier,
-      @QueryParam("projectIdentifier") String projectIdentifier,
+      @NotNull @BeanParam ProjectParams projectParams,
       @QueryParam("verificationJobIdentifier") String verificationJobIdentifier) {
-    return new RestResponse<>(verificationJobInstanceService.getTestJobBaselineExecutions(
-        accountId, orgIdentifier, projectIdentifier, verificationJobIdentifier));
+    return new RestResponse<>(
+        verificationJobInstanceService.getTestJobBaselineExecutions(projectParams.getAccountIdentifier(),
+            projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), verificationJobIdentifier));
   }
 }

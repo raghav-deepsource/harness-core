@@ -469,7 +469,7 @@ public class User extends Base implements Principal {
    * @param accounts Value to set for property 'accounts'.
    */
   public void setAccounts(List<Account> accounts) {
-    this.accounts = accounts;
+    this.accounts = isNotEmpty(accounts) ? accounts.stream().distinct().collect(Collectors.toList()) : accounts;
   }
 
   /**

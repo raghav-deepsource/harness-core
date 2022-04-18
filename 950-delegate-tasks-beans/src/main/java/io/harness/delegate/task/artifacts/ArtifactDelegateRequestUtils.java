@@ -11,10 +11,12 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
@@ -104,6 +106,22 @@ public class ArtifactDelegateRequestUtils {
         .encryptedDataDetails(encryptedDataDetails)
         .sourceType(sourceType)
         .artifactRepositoryUrl(artifactRepositoryUrl)
+        .build();
+  }
+
+  public AcrArtifactDelegateRequest getAcrDelegateRequest(String subscription, String registry, String repository,
+      AzureConnectorDTO azureConnectorDTO, String tag, String tagRegex, List<String> tagsList,
+      List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType) {
+    return AcrArtifactDelegateRequest.builder()
+        .subscription(subscription)
+        .tag(trim(tag))
+        .tagRegex(trim(tagRegex))
+        .tagsList(tagsList)
+        .registry(registry)
+        .repository(repository)
+        .azureConnectorDTO(azureConnectorDTO)
+        .encryptedDataDetails(encryptedDataDetails)
+        .sourceType(sourceType)
         .build();
   }
   private String trim(String str) {

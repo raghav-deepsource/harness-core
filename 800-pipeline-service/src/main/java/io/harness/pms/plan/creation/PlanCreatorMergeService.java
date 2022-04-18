@@ -188,8 +188,8 @@ public class PlanCreatorMergeService {
         PlanCreationBlobResponseUtils.mergeContext(finalResponseBuilder, currIterationResponse.getContextMap());
         PlanCreationBlobResponseUtils.addDependenciesV2(finalResponseBuilder, currIterationResponse);
       }
-    } catch (Exception e) {
-      throw new UnexpectedException("Error merging plan responses from services", e);
+    } catch (IOException e) {
+      throw new UnexpectedException(e.getMessage(), e);
     }
 
     return finalResponseBuilder.build();

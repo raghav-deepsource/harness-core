@@ -85,4 +85,7 @@ public interface YamlTypes {
   String HOSTS = "hosts";
   String ATTRIBUTE_FILTERS = "attributeFilters";
   String HOST_FILTERS = "hostFilters";
+
+  String SUBSCRIPTION = "subscription";
+  String RESOURCE_GROUP = "resourceGroup";
 }

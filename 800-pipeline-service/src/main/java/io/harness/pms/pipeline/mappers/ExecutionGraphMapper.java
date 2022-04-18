@@ -54,7 +54,7 @@ public class ExecutionGraphMapper {
         .unitProgresses(graphVertex.getUnitProgresses())
         .progressData(graphVertex.getProgressData())
         .delegateInfoList(mapDelegateSelectionLogParamsToDelegateInfo(graphVertex.getGraphDelegateSelectionLogParams()))
-        .interruptHistories(graphVertex.getInterruptHistories())
+        .interruptHistories(InterruptConfigDTOMapper.toInterruptEffectDTOList(graphVertex.getInterruptHistories()))
         .stepDetails(graphVertex.getOrchestrationMapStepDetails())
         .build();
   }

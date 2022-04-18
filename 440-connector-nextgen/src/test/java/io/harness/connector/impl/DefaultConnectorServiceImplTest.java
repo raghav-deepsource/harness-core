@@ -535,4 +535,16 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     assertThat(connectorIdentifierList).contains(connectorIdentifier2);
     assertThat(connectorIdentifierList).contains(connectorIdentifier3);
   }
+
+  @Test
+  @Owner(developers = OwnerRule.MOHIT_GARG)
+  @Category({UnitTests.class})
+  public void testGetConnectorByRef() {
+    createConnector(identifier, name);
+    Optional<ConnectorResponseDTO> connectorResponseDTOOptional =
+        connectorService.getByRef(accountIdentifier, null, null, "account." + identifier);
+    assertThat(connectorResponseDTOOptional.isPresent()).isTrue();
+    assertThat(connectorResponseDTOOptional.get().getConnector().getName()).isEqualTo(name);
+    assertThat(connectorResponseDTOOptional.get().getConnector().getIdentifier()).isEqualTo(identifier);
+  }
 }

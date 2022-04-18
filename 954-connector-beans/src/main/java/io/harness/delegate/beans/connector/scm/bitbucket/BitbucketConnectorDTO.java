@@ -88,4 +88,9 @@ public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConn
   public ConnectorType getConnectorType() {
     return ConnectorType.BITBUCKET;
   }
+
+  @Override
+  public String getGitConnectionUrl(String repoName) {
+    return "";
+  }
 }

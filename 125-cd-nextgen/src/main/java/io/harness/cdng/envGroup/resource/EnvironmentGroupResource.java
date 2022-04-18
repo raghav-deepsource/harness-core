@@ -7,11 +7,9 @@
 
 package io.harness.cdng.envGroup.resource;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ng.core.utils.NGUtils.validate;
 import static io.harness.pms.rbac.NGResourceType.ENVIRONMENT;
 import static io.harness.utils.PageUtils.getNGPageResponse;
-import static io.harness.utils.PageUtils.getPageRequest;
 
 import static java.lang.Long.parseLong;
 import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
@@ -29,16 +27,16 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.SortOrder;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity.EnvironmentGroupKeys;
+import io.harness.cdng.envGroup.beans.EnvironmentGroupFilterPropertiesDTO;
 import io.harness.cdng.envGroup.mappers.EnvironmentGroupMapper;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.exception.InvalidRequestException;
+import io.harness.filter.dto.FilterPropertiesDTO;
 import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
-import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -52,8 +50,8 @@ import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.rbac.CDNGRbacPermissions;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.utils.PageUtils;
 
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -83,6 +81,8 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @NextGenManagerAuth
@@ -220,20 +220,25 @@ public class EnvironmentGroupResource {
           NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier,
       @Parameter(description = "The word to be searched and included in the list response") @QueryParam(
           NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
-      @BeanParam PageRequest pageRequest, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+      @Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
+      @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.SIZE) @DefaultValue("25") int size,
+      @QueryParam("sort") @Parameter(description = NGCommonEntityConstants.SORT_PARAM_MESSAGE) List<String> sort,
+      @Parameter(description = "Filter identifier") @QueryParam(
+          NGResourceFilterConstants.FILTER_KEY) String filterIdentifier,
+      @RequestBody(description = "This is the body for the filter properties for listing Environment Groups")
+      FilterPropertiesDTO filterProperties, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(NGResourceType.ENVIRONMENT_GROUP, null), CDNGRbacPermissions.ENVIRONMENT_GROUP_VIEW_PERMISSION);
-    Criteria criteria =
-        environmentGroupService.formCriteria(accountId, orgIdentifier, projectIdentifier, false, searchTerm);
+    Criteria criteria = environmentGroupService.formCriteria(accountId, orgIdentifier, projectIdentifier, false,
+        searchTerm, filterIdentifier, (EnvironmentGroupFilterPropertiesDTO) filterProperties);
 
-    if (isEmpty(pageRequest.getSortOrders())) {
-      SortOrder order = SortOrder.Builder.aSortOrder()
-                            .withField(EnvironmentGroupKeys.lastModifiedAt, SortOrder.OrderType.DESC)
-                            .build();
-      pageRequest.setSortOrders(ImmutableList.of(order));
-    }
-    Page<EnvironmentGroupEntity> envGroupEntities = environmentGroupService.list(
-        criteria, getPageRequest(pageRequest), projectIdentifier, orgIdentifier, accountId);
+    Pageable pageRequest =
+        PageUtils.getPageRequest(page, size, sort, Sort.by(Sort.Direction.DESC, EnvironmentGroupKeys.lastModifiedAt));
+
+    Page<EnvironmentGroupEntity> envGroupEntities =
+        environmentGroupService.list(criteria, pageRequest, projectIdentifier, orgIdentifier, accountId);
 
     return ResponseDTO.newResponse(getNGPageResponse(envGroupEntities.map(
         envGroup -> EnvironmentGroupMapper.toResponseWrapper(envGroup, getEnvironmentResponses(envGroup)))));

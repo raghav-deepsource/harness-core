@@ -194,8 +194,8 @@ public class ServiceNowApprovalHelperServiceImpl implements ServiceNowApprovalHe
 
     NGAccessWithEncryptionConsumer ngAccessWithEncryptionConsumer =
         NGAccessWithEncryptionConsumer.builder().ngAccess(baseNGAccess).decryptableEntity(serviceNowConnector).build();
-    List<EncryptedDataDetail> encryptionDataDetails =
-        NGRestUtils.getResponse(secretManagerClient.getEncryptionDetails(ngAccessWithEncryptionConsumer));
+    List<EncryptedDataDetail> encryptionDataDetails = NGRestUtils.getResponse(
+        secretManagerClient.getEncryptionDetails(accountIdentifier, ngAccessWithEncryptionConsumer));
 
     return ServiceNowTaskNGParameters.builder()
         .action(ServiceNowActionNG.GET_TICKET)

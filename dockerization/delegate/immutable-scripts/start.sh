@@ -35,7 +35,11 @@ fi
 
 # 2. Build config.yml
 echo "accountId: $ACCOUNT_ID" >> config.yml
-echo "accountSecret: $ACCOUNT_SECRET" >> config.yml
+if [ ! -e $ACCOUNT_SECRET ]; then
+  echo "delegateToken: $ACCOUNT_SECRET" >> config.yml
+else
+  echo "delegateToken: $DELEGATE_TOKEN" >> config.yml
+fi
 echo "managerUrl: $MANAGER_HOST_AND_PORT/api/" >> config.yml
 echo "verificationServiceUrl: $MANAGER_HOST_AND_PORT/verification/" >> config.yml
 echo "cvNextGenUrl: $MANAGER_HOST_AND_PORT/cv/api/" >> config.yml

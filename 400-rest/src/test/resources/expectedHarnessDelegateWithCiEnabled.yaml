@@ -106,7 +106,7 @@ spec:
           value: ""
         - name: DELEGATE_PROFILE
           value: ""
-        - name: ACCOUNT_SECRET
+        - name: DELEGATE_TOKEN
           value: ACCOUNT_KEY
         - name: WATCHER_STORAGE_URL
           value: http://localhost:8888

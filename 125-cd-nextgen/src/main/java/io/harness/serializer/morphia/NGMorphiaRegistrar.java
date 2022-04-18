@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.artifactsource.ArtifactSource;
 import io.harness.cdng.artifact.bean.artifactsource.DockerArtifactSource;
+import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
@@ -63,6 +64,7 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     h.put("cdng.artifact.bean.yaml.ArtifactListConfig", ArtifactListConfig.class);
     h.put("cdng.artifact.bean.yaml.DockerHubArtifactConfig", DockerHubArtifactConfig.class);
     h.put("cdng.artifact.bean.yaml.GcrArtifactConfig", GcrArtifactConfig.class);
+    h.put("cdng.artifact.bean.yaml.AcrArtifactConfig", AcrArtifactConfig.class);
     h.put("cdng.artifact.bean.yaml.SidecarArtifact", SidecarArtifact.class);
     h.put("cdng.service.beans.ServiceConfigOutcome", ServiceConfigOutcome.class);
     h.put("cdng.manifest.yaml.ManifestsOutcome", ManifestsOutcome.class);

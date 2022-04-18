@@ -242,6 +242,11 @@ import io.harness.cvng.dashboard.services.impl.ServiceDependencyGraphServiceImpl
 import io.harness.cvng.dashboard.services.impl.TimeSeriesDashboardServiceImpl;
 import io.harness.cvng.migration.impl.CVNGMigrationServiceImpl;
 import io.harness.cvng.migration.service.CVNGMigrationService;
+import io.harness.cvng.notification.beans.NotificationRuleType;
+import io.harness.cvng.notification.services.api.NotificationRuleService;
+import io.harness.cvng.notification.services.impl.NotificationRuleServiceImpl;
+import io.harness.cvng.notification.transformer.NotificationRuleSpecTransformer;
+import io.harness.cvng.notification.transformer.SLONotificationRuleSpecTransformer;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator.RatioServiceLevelIndicatorUpdatableEntity;
@@ -757,6 +762,14 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     sideKickExecutorMapBinder.addBinding(SideKick.Type.RETRY_CHANGE_SOURCE_HANDLE_DELETE)
         .to(RetryChangeSourceHandleDeleteSideKickExecutor.class)
+        .in(Scopes.SINGLETON);
+
+    bind(NotificationRuleService.class).to(NotificationRuleServiceImpl.class);
+    MapBinder<NotificationRuleType, NotificationRuleSpecTransformer>
+        notificationRuleTypeNotificationRuleSpecTransformerMapBinder =
+            MapBinder.newMapBinder(binder(), NotificationRuleType.class, NotificationRuleSpecTransformer.class);
+    notificationRuleTypeNotificationRuleSpecTransformerMapBinder.addBinding(NotificationRuleType.SLO)
+        .to(SLONotificationRuleSpecTransformer.class)
         .in(Scopes.SINGLETON);
     bindRetryOnExceptionInterceptor();
   }

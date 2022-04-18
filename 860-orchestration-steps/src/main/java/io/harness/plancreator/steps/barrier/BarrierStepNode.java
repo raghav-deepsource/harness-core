@@ -37,6 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.plancreator.steps.barrier.BarrierStepNode")
 public class BarrierStepNode extends PmsAbstractStepNode {
   @JsonProperty("type") @NotNull StepType type = StepType.Barrier;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   BarrierStepInfo barrierStepInfo;

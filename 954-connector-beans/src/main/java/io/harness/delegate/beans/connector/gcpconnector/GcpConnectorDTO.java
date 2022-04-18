@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -40,7 +41,7 @@ import lombok.experimental.FieldDefaults;
 @ApiModel("GcpConnector")
 @Schema(name = "GcpConnector", description = "This contains GCP connector details")
 public class GcpConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
-  @Valid GcpConnectorCredentialDTO credential;
+  @Valid @NotNull GcpConnectorCredentialDTO credential;
   Set<String> delegateSelectors;
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

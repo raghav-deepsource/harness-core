@@ -17,6 +17,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -43,7 +44,7 @@ public class PMSPipelineSummaryResponseDTO {
   long lastUpdatedAt;
   Set<String> modules;
   ExecutionSummaryInfoDTO executionSummaryInfo;
-  Map<String, org.bson.Document> filters;
+  Map<String, LinkedHashMap<String, Object>> filters;
   List<String> stageNames;
   EntityGitDetails gitDetails;
   EntityValidityDetails entityValidityDetails;

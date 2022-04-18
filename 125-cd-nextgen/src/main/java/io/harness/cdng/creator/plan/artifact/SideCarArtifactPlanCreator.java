@@ -41,7 +41,8 @@ public class SideCarArtifactPlanCreator implements PartialPlanCreator<SidecarArt
     return Collections.singletonMap(YamlTypes.SIDECAR_ARTIFACT_CONFIG,
         new HashSet<>(Arrays.asList(ArtifactSourceConstants.DOCKER_REGISTRY_NAME, ArtifactSourceConstants.ECR_NAME,
             ArtifactSourceConstants.GCR_NAME, ArtifactSourceConstants.NEXUS3_REGISTRY_NAME,
-            ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME, ArtifactSourceConstants.CUSTOM_ARTIFACT_NAME)));
+            ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME, ArtifactSourceConstants.ACR_NAME,
+            ArtifactSourceConstants.CUSTOM_ARTIFACT_NAME)));
   }
 
   @Override

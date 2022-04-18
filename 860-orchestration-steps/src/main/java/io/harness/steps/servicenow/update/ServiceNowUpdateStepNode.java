@@ -37,6 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.steps.servicenow.update.ServiceNowUpdateStepNode")
 public class ServiceNowUpdateStepNode extends PmsAbstractStepNode {
   @JsonProperty("type") @NotNull StepType type = StepType.ServiceNowUpdate;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   ServiceNowUpdateStepInfo serviceNowUpdateStepInfo;

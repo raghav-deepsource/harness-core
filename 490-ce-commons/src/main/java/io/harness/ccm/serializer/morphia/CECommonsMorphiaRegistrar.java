@@ -27,6 +27,8 @@ import io.harness.ccm.commons.entities.billing.CECluster;
 import io.harness.ccm.commons.entities.billing.CEGcpServiceAccount;
 import io.harness.ccm.commons.entities.billing.CloudBillingTransferRun;
 import io.harness.ccm.commons.entities.ecs.ECSService;
+import io.harness.ccm.commons.entities.ecs.recommendation.ECSPartialRecommendationHistogram;
+import io.harness.ccm.commons.entities.ecs.recommendation.ECSServiceRecommendation;
 import io.harness.ccm.commons.entities.events.CeExceptionRecord;
 import io.harness.ccm.commons.entities.events.PublishedMessage;
 import io.harness.ccm.commons.entities.k8s.K8sWorkload;
@@ -78,6 +80,8 @@ public class CECommonsMorphiaRegistrar implements MorphiaRegistrar {
 
     // ecs
     set.add(ECSService.class);
+    set.add(ECSPartialRecommendationHistogram.class);
+    set.add(ECSServiceRecommendation.class);
 
     // commons
     set.add(CCMNotificationSetting.class);

@@ -89,6 +89,7 @@ public class FullSyncAccumulatorServiceImplTest extends GitSyncTestBase {
   @Before
   public void setup() throws Exception {
     fullSyncServiceBlockingStubMap.put(Microservice.CD, fullSyncServiceBlockingStub);
+    fullSyncServiceBlockingStubMap.put(Microservice.POLICYMGMT, fullSyncServiceBlockingStub);
     FieldUtils.writeField(
         fullSyncAccumulatorService, "fullSyncServiceBlockingStubMap", fullSyncServiceBlockingStubMap, true);
   }
@@ -121,15 +122,8 @@ public class FullSyncAccumulatorServiceImplTest extends GitSyncTestBase {
     doNothing().when(gitBranchService).updateBranchSyncStatus(any(), any(), any(), any());
     doThrow(DuplicateKeyException.class).when(fullSyncJobService).save(any());
     fullSyncAccumulatorService.triggerFullSync(fullSyncEventRequest, messageId);
-    verify(fullSyncServiceBlockingStub).getEntitiesForFullSync(any());
+    verify(fullSyncServiceBlockingStub, times(2)).getEntitiesForFullSync(any());
     verify(fullSyncJobService).save(any());
-
-    fullSyncServiceBlockingStubMap.remove(Microservice.CD);
-    fullSyncServiceBlockingStubMap.put(Microservice.POLICYMGMT, fullSyncServiceBlockingStub);
-    FieldUtils.writeField(
-        fullSyncAccumulatorService, "fullSyncServiceBlockingStubMap", fullSyncServiceBlockingStubMap, true);
-    fullSyncAccumulatorService.triggerFullSync(fullSyncEventRequest, messageId);
-    verify(fullSyncJobService, times(1)).save(any());
   }
 
   @Test

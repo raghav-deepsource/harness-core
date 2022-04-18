@@ -7,6 +7,8 @@
 
 package software.wings.resources;
 
+import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
+
 import io.harness.jira.JiraCreateMetaResponse;
 import io.harness.rest.RestResponse;
 
@@ -89,6 +91,7 @@ public class JiraSettingResource {
   public RestResponse<JiraCreateMetaResponse> getCreateMetadata(@QueryParam("appId") String appId,
       @QueryParam("accountId") @NotEmpty String accountId, @PathParam("connectorId") String connectorId,
       @QueryParam("expand") String expand, @QueryParam("project") String project) {
-    return new RestResponse<>(jiraHelperService.getCreateMetadata(connectorId, expand, project, accountId, appId));
+    return new RestResponse<>(
+        jiraHelperService.getCreateMetadata(connectorId, expand, project, accountId, appId, DEFAULT_SYNC_CALL_TIMEOUT));
   }
 }

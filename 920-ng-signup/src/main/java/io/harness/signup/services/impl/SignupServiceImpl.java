@@ -108,6 +108,8 @@ public class SignupServiceImpl implements SignupService {
   private static final int SIGNUP_TOKEN_VALIDITY_IN_DAYS = 30;
   private static final String UNDEFINED_ACCOUNT_ID = "undefined";
   private static final String NG_AUTH_UI_PATH_PREFIX = "auth/";
+  private static final String VERIFY_URL_GENERATION_FAILED = "Failed to generate verify url";
+  private static final String EMAIL = "email";
 
   private static String deployVersion = System.getenv().get(DEPLOY_VERSION);
 
@@ -152,7 +154,7 @@ public class SignupServiceImpl implements SignupService {
         signupNotificationHelper.sendSignupNotification(
             user, EmailType.VERIFY, PredefinedTemplate.EMAIL_VERIFY.getIdentifier(), url);
       } catch (URISyntaxException e) {
-        log.error("Failed to generate verify url", e);
+        log.error(VERIFY_URL_GENERATION_FAILED, e);
       }
     });
     return user;
@@ -249,7 +251,7 @@ public class SignupServiceImpl implements SignupService {
             UserInfo.builder().email(dto.getEmail()).defaultAccountId(UNDEFINED_ACCOUNT_ID).build(), EmailType.VERIFY,
             PredefinedTemplate.EMAIL_VERIFY.getIdentifier(), url);
       } catch (URISyntaxException e) {
-        log.error("Failed to generate verify url", e);
+        log.error(VERIFY_URL_GENERATION_FAILED, e);
       }
     });
     log.info("Created NG signup invite for {}", dto.getEmail());
@@ -496,7 +498,7 @@ public class SignupServiceImpl implements SignupService {
           UserInfo.builder().email(email).defaultAccountId(UNDEFINED_ACCOUNT_ID).build(), EmailType.VERIFY,
           PredefinedTemplate.EMAIL_VERIFY.getIdentifier(), url);
     } catch (URISyntaxException e) {
-      throw new InvalidRequestException("Failed to generate verify url", e);
+      throw new InvalidRequestException(VERIFY_URL_GENERATION_FAILED, e);
     }
     log.info("Resend verification email for {}", email);
   }
@@ -533,20 +535,20 @@ public class SignupServiceImpl implements SignupService {
     properties.put("failedAt", failedAt);
     addUtmInfoToProperties(utmInfo, properties);
 
+    String accountIdentifier = accountDTO == null ? UNDEFINED_ACCOUNT_ID : accountDTO.getIdentifier();
     if (accountDTO != null) {
       properties.put("company", accountDTO.getCompanyName());
-      telemetryReporter.sendTrackEvent(FAILED_EVENT_NAME, email, accountDTO.getIdentifier(), properties,
-          ImmutableMap.<Destination, Boolean>builder().put(Destination.SALESFORCE, true).build(), Category.SIGN_UP);
-    } else {
-      telemetryReporter.sendTrackEvent(FAILED_EVENT_NAME, email, null, properties,
-          ImmutableMap.<Destination, Boolean>builder().put(Destination.SALESFORCE, true).build(), Category.SIGN_UP);
     }
+    telemetryReporter.sendTrackEvent(FAILED_EVENT_NAME, email, accountIdentifier, properties,
+        ImmutableMap.<Destination, Boolean>builder().put(Destination.SALESFORCE, true).build(), Category.SIGN_UP);
+    telemetryReporter.sendTrackEvent(FAILED_EVENT_NAME, email, accountIdentifier, properties,
+        ImmutableMap.<Destination, Boolean>builder().put(Destination.MARKETO, true).build(), Category.SIGN_UP);
   }
 
   private void sendSucceedTelemetryEvent(
       String email, UtmInfo utmInfo, String accountId, UserInfo userInfo, String source, String accountName) {
     HashMap<String, Object> properties = new HashMap<>();
-    properties.put("email", email);
+    properties.put(EMAIL, email);
     properties.put("name", userInfo.getName());
     properties.put("id", userInfo.getUuid());
     properties.put("startTime", String.valueOf(Instant.now().toEpochMilli()));
@@ -595,7 +597,7 @@ public class SignupServiceImpl implements SignupService {
 
   private void sendCommunitySucceedTelemetry(String email, String accountId, UserInfo userInfo, String source) {
     HashMap<String, Object> properties = new HashMap<>();
-    properties.put("email", userInfo.getEmail());
+    properties.put(EMAIL, userInfo.getEmail());
     properties.put("name", userInfo.getName());
     properties.put("id", userInfo.getUuid());
     properties.put("firstInstallTime", String.valueOf(Instant.now().toEpochMilli()));

@@ -49,7 +49,7 @@ public class PipelineExecutionSummaryDtoMapper {
         .name(pipelineExecutionSummaryEntity.getName())
         .createdAt(pipelineExecutionSummaryEntity.getCreatedAt())
         .layoutNodeMap(layoutNodeDTOMap)
-        .moduleInfo(pipelineExecutionSummaryEntity.getModuleInfo())
+        .moduleInfo(ModuleInfoMapper.getModuleInfo(pipelineExecutionSummaryEntity.getModuleInfo()))
         .startingNodeId(startingNodeId)
         .planExecutionId(pipelineExecutionSummaryEntity.getPlanExecutionId())
         .pipelineIdentifier(pipelineExecutionSummaryEntity.getPipelineIdentifier())

@@ -160,8 +160,8 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
 
     NGAccessWithEncryptionConsumer ngAccessWithEncryptionConsumer =
         NGAccessWithEncryptionConsumer.builder().ngAccess(baseNGAccess).decryptableEntity(jiraConnectorDTO).build();
-    List<EncryptedDataDetail> encryptionDataDetails =
-        NGRestUtils.getResponse(secretManagerClient.getEncryptionDetails(ngAccessWithEncryptionConsumer));
+    List<EncryptedDataDetail> encryptionDataDetails = NGRestUtils.getResponse(
+        secretManagerClient.getEncryptionDetails(accountIdentifier, ngAccessWithEncryptionConsumer));
 
     return JiraTaskNGParameters.builder()
         .action(JiraActionNG.GET_ISSUE)

@@ -20,6 +20,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.utils.NGVariablesUtils;
 
@@ -42,14 +43,14 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.pipeline.stepinfo.ShellScriptStepInfo")
 public class ShellScriptStepInfo
     extends ShellScriptBaseStepInfo implements PMSStepInfo, Visitable, WithDelegateSelector {
-  List<NGVariable> outputVariables;
+  @VariableExpression(skipVariableExpression = true) List<NGVariable> outputVariables;
   List<NGVariable> environmentVariables;
 
   @Builder(builderMethodName = "infoBuilder")
   public ShellScriptStepInfo(ShellType shell, ShellScriptSourceWrapper source, ExecutionTarget executionTarget,
       ParameterField<Boolean> onDelegate, List<NGVariable> outputVariables, List<NGVariable> environmentVariables,
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(shell, source, executionTarget, onDelegate, delegateSelectors);
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String uuid) {
+    super(uuid, shell, source, executionTarget, onDelegate, delegateSelectors);
     this.outputVariables = outputVariables;
     this.environmentVariables = environmentVariables;
   }

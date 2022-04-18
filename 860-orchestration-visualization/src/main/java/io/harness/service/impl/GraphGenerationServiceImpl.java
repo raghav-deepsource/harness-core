@@ -29,6 +29,7 @@ import io.harness.event.OrchestrationLogPublisher;
 import io.harness.event.PlanExecutionStatusUpdateEventHandler;
 import io.harness.event.StepDetailsUpdateEventHandler;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
 import io.harness.generator.OrchestrationAdjacencyListGenerator;
@@ -228,7 +229,12 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
     }
     String startingNodeId =
         obtainStartingIdFromSetupNodeId(orchestrationGraph.getAdjacencyList().getGraphVertexMap(), startingSetupNodeId);
-    return generatePartialGraph(startingNodeId, orchestrationGraph);
+    try {
+      return generatePartialGraph(startingNodeId, orchestrationGraph);
+    } catch (Exception ex) {
+      orchestrationGraph = buildOrchestrationGraph(planExecutionId);
+      return generatePartialGraph(startingNodeId, orchestrationGraph);
+    }
   }
 
   private void sendUpdateEventIfAny(OrchestrationGraph orchestrationGraph) {
@@ -242,6 +248,12 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
     log.warn(String.format(
         "[GRAPH_ERROR]: Trying to build orchestration graph from scratch for planExecutionId [%s]", planExecutionId));
     PlanExecution planExecution = planExecutionService.get(planExecutionId);
+    if (planExecution == null) {
+      throw NestedExceptionUtils.hintWithExplanationException("Pipeline Execution with given plan execution id: ["
+              + planExecutionId + "] not found or unable to generate a graph for it",
+          "Try to open an execution which is not 6 months old. If issue persists, please contact harness support",
+          new InvalidRequestException("Graph could not be generated for planExecutionId [" + planExecutionId + "]."));
+    }
     List<NodeExecution> nodeExecutions = nodeExecutionService.fetchNodeExecutionsWithoutOldRetries(planExecutionId);
     if (isEmpty(nodeExecutions)) {
       throw new InvalidRequestException("No nodes found for planExecutionId [" + planExecutionId + "]");

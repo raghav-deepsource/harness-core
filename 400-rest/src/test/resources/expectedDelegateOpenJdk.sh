@@ -208,9 +208,11 @@ fi
 
 if [ ! -e config-delegate.yml ]; then
   echo "accountId: ACCOUNT_ID" > config-delegate.yml
-  echo "delegateToken: ACCOUNT_KEY" >> config-delegate.yml
 fi
 test "$(tail -c 1 config-delegate.yml)" && `echo "" >> config-delegate.yml`
+if ! `grep delegateToken config-delegate.yml > /dev/null`; then
+  echo "delegateToken: ACCOUNT_KEY" >> config-delegate.yml
+fi
 if ! `grep dynamicHandlingOfRequestEnabled config-delegate.yml > /dev/null`; then
   echo "dynamicHandlingOfRequestEnabled: false" >> config-delegate.yml
 fi

@@ -7,10 +7,19 @@
   ],
   "properties": {
     "delegateSelectors": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "string",
+          "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+          "minLength": 1
+        }
+      ]
     },
     "description": {
       "type": "string"
@@ -1988,10 +1997,19 @@
       ],
       "properties": {
         "delegateSelectors": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "minLength": 1
+            }
+          ]
         },
         "description": {
           "type": "string"
@@ -5502,10 +5520,19 @@
       ],
       "properties": {
         "delegateSelectors": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "minLength": 1
+            }
+          ]
         },
         "failureStrategies": {
           "type": "array",

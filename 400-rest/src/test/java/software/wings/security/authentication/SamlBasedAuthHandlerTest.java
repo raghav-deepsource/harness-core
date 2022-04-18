@@ -7,6 +7,7 @@
 
 package software.wings.security.authentication;
 
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.RUSHABH;
 
@@ -259,6 +260,63 @@ public class SamlBasedAuthHandlerTest extends WingsBaseTest {
     when(samlClient.decodeAndValidateSamlResponse(anyString())).thenReturn(samlResponse);
 
     User returnedUser = authHandler.authenticate(azureIdpUrl2, samlResponseString, null).getUser();
+    assertThat(returnedUser).isEqualTo(user);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testAzureNonDefaultAccountSaml() throws IOException, SamlException {
+    String accountId1 = "kmpySmUISimoRrJL6NL73w";
+    String accountId2 = "TestAzureAccount1";
+    User user = new User();
+    user.setDefaultAccountId(accountId2);
+    user.setUuid("kmpySmUISimoRrJL6NL73w");
+    Account account1 = new Account();
+    account1.setUuid(accountId1);
+    Account account2 = new Account();
+    account2.setUuid(accountId2);
+    user.setAccounts(Arrays.asList(account1, account2));
+
+    String samlResponseString =
+        IOUtils.toString(getClass().getResourceAsStream("/SamlResponse.txt"), Charset.defaultCharset());
+    account1.setAuthenticationMechanism(io.harness.ng.core.account.AuthenticationMechanism.SAML);
+    when(authenticationUtils.getAccount(accountId1)).thenReturn(account1);
+    when(authenticationUtils.getUser(anyString())).thenReturn(user);
+    when(authenticationUtils.getDefaultAccount(any(User.class))).thenReturn(account2);
+    SamlResponse samlResponse = mock(SamlResponse.class);
+    when(samlResponse.getNameID()).thenReturn("rushabh@harness.io");
+    SamlClient samlClient = mock(SamlClient.class);
+
+    String xml = IOUtils.toString(getClass().getResourceAsStream("/Azure-1-metadata.xml"), Charset.defaultCharset());
+
+    SamlSettings azureSetting1 =
+        SamlSettings.builder()
+            .metaDataFile(xml)
+            .url("https://login.microsoftonline.com/b229b2bb-5f33-4d22-bce0-730f6474e906/saml2")
+            .accountId("TestAzureAccount1")
+            .displayName("Azure 1")
+            .origin("login.microsoftonline.com")
+            .build();
+
+    SamlSettings azureSetting2 = SamlSettings.builder()
+                                     .metaDataFile(xml)
+                                     .url("https://login.microsoftonline.com/b229b2bb-5f33-4d22-bce0-fakedata/saml2")
+                                     .accountId("TestAzureAccount2")
+                                     .displayName("Azure 2")
+                                     .origin("login.microsoftonline.com")
+                                     .build();
+
+    azureSetting1 = spy(azureSetting1);
+    azureSetting2 = spy(azureSetting2);
+
+    when(ssoSettingService.getSamlSettingsIteratorByOrigin("login.microsoftonline.com", accountId1))
+        .thenReturn(Arrays.asList(azureSetting1, azureSetting2).iterator());
+
+    doReturn(samlClient).when(samlClientService).getSamlClient(any(SamlSettings.class));
+    when(samlClient.decodeAndValidateSamlResponse(anyString())).thenReturn(samlResponse);
+
+    User returnedUser = authHandler.authenticate(azureIdpUrl2, samlResponseString, accountId1).getUser();
     assertThat(returnedUser).isEqualTo(user);
   }
 

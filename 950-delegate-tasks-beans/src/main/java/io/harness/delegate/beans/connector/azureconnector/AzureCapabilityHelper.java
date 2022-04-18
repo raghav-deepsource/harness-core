@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper;
+import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
 import io.harness.expression.ExpressionEvaluator;
@@ -26,10 +27,10 @@ public class AzureCapabilityHelper extends ConnectorCapabilityBaseHelper {
   private static final String AZURE_US_GOV_URL = "https://usgovcloudapi.microsoft.com/";
 
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(
-      AzureConnectorDTO azureConnectorDTO, ExpressionEvaluator maskingEvaluator) {
+      ConnectorConfigDTO connectorConfigDTO, ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> executionCapabilities = new ArrayList<>();
-    if (azureConnectorDTO != null
-        && azureConnectorDTO.getCredential().getAzureCredentialType() == AzureCredentialType.MANUAL_CREDENTIALS) {
+    AzureConnectorDTO azureConnectorDTO = (AzureConnectorDTO) connectorConfigDTO;
+    if (azureConnectorDTO != null) {
       String encryptionServiceUrl;
       if (azureConnectorDTO.getAzureEnvironmentType() == null) {
         encryptionServiceUrl = AZURE_URL;

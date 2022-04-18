@@ -114,9 +114,7 @@ import io.harness.connector.validator.AlwaysTrueConnectorValidator;
 import io.harness.connector.validator.ArtifactoryConnectionValidator;
 import io.harness.connector.validator.AwsConnectorValidator;
 import io.harness.connector.validator.AzureConnectorValidator;
-import io.harness.connector.validator.CEAwsConnectorValidator;
-import io.harness.connector.validator.CEAzureConnectorValidator;
-import io.harness.connector.validator.CEGcpConnectorValidator;
+import io.harness.connector.validator.CCMConnectorValidator;
 import io.harness.connector.validator.CEKubernetesConnectionValidator;
 import io.harness.connector.validator.CVConnectorValidator;
 import io.harness.connector.validator.ConnectionValidator;
@@ -226,7 +224,7 @@ public class ConnectorRegistryFactory {
             AzureValidationParamsProvider.class, AzureDTOToEntity.class, AzureEntityToDTO.class,
             NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.CE_AWS,
-        new ConnectorRegistrar(ConnectorCategory.CLOUD_COST, CEAwsConnectorValidator.class,
+        new ConnectorRegistrar(ConnectorCategory.CLOUD_COST, CCMConnectorValidator.class,
             NoOpConnectorValidationParamsProvider.class, CEAwsDTOToEntity.class, CEAwsEntityToDTO.class,
             NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.ARTIFACTORY,
@@ -258,11 +256,11 @@ public class ConnectorRegistryFactory {
             NoOpConnectorValidationParamsProvider.class, AwsCodeCommitDTOToEntity.class, AwsCodeCommitEntityToDTO.class,
             NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.CE_AZURE,
-        new ConnectorRegistrar(ConnectorCategory.CLOUD_COST, CEAzureConnectorValidator.class,
+        new ConnectorRegistrar(ConnectorCategory.CLOUD_COST, CCMConnectorValidator.class,
             NoOpConnectorValidationParamsProvider.class, CEAzureDTOToEntity.class, CEAzureEntityToDTO.class,
             NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.GCP_CLOUD_COST,
-        new ConnectorRegistrar(ConnectorCategory.CLOUD_COST, CEGcpConnectorValidator.class,
+        new ConnectorRegistrar(ConnectorCategory.CLOUD_COST, CCMConnectorValidator.class,
             NoOpConnectorValidationParamsProvider.class, GcpCloudCostDTOToEntity.class, GcpCloudCostEntityToDTO.class,
             NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.HTTP_HELM_REPO,

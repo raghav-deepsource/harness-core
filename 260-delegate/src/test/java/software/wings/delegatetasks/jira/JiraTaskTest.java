@@ -8,6 +8,7 @@
 package software.wings.delegatetasks.jira;
 
 import static io.harness.rule.OwnerRule.AGORODETKI;
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
@@ -70,6 +71,7 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.http.Header;
+import org.apache.http.HttpStatus;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -457,6 +459,27 @@ public class JiraTaskTest extends CategoryTest {
     JiraExecutionData jiraExecutionData =
         JiraExecutionData.builder().executionStatus(ExecutionStatus.FAILED).errorMessage("INVALID_REQUEST").build();
 
+    runTaskAndAssertResponse(taskParameters, jiraExecutionData);
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldParseEmptyBodyFromJiraIssueWhenFailing() throws JiraException {
+    JiraException exception =
+        new JiraException("error", new RestException("error", HttpStatus.SC_METHOD_NOT_ALLOWED, "{}", new Header['a']));
+    JiraTaskParameters taskParameters = getTaskParams(JiraAction.FETCH_ISSUE);
+    when(encryptionService.decrypt(taskParameters.getJiraConfig(), taskParameters.getEncryptionDetails(), false))
+        .thenReturn(null);
+    Mockito.doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
+    when(jiraClient.getIssue(JIRA_ISSUE_ID)).thenThrow(exception);
+
+    JiraExecutionData jiraExecutionData =
+        JiraExecutionData.builder()
+            .executionStatus(ExecutionStatus.FAILED)
+            .errorMessage(
+                "Unable to fetch Jira Issue for Id: JIRA_ISSUE_ID  Failed to parse json response from Jira: RestException: 405 error: {}")
+            .build();
     runTaskAndAssertResponse(taskParameters, jiraExecutionData);
   }
 

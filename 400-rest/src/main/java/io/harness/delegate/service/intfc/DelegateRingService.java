@@ -7,8 +7,14 @@
 
 package io.harness.delegate.service.intfc;
 
+import java.util.List;
+
 public interface DelegateRingService {
   String getDelegateImageTag(String accountId);
 
   String getUpgraderImageTag(String accountId);
+
+  List<String> getDelegateVersions(String accountId);
+
+  List<String> getWatcherVersions(String accountId);
 }

@@ -136,7 +136,7 @@ public class CVNGStepResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get radar chart logs list for given verify step",
-      nickname = "getVerifyStepDeploymentLogAnalysisRadarChartReslut")
+      nickname = "getVerifyStepDeploymentLogAnalysisRadarChartResult")
   public RestResponse<LogAnalysisRadarChartListWithCountDTO>
   getDeploymentLogAnalysisRadarChartResult(@NotEmpty @NotNull @QueryParam("accountId") String accountId,
       @PathParam("verifyStepExecutionId") String callBackId,
@@ -186,7 +186,7 @@ public class CVNGStepResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get all the Node names", nickname = "getVerifyStepNodeNames")
-  public RestResponse<List<String>> getNodeNames(@NotEmpty @NotNull @QueryParam("accountId") String accountId,
+  public RestResponse<Set<String>> getNodeNames(@NotEmpty @NotNull @QueryParam("accountId") String accountId,
       @NotEmpty @NotNull @PathParam("verifyStepExecutionId") String callBackId) {
     return new RestResponse(stepTaskService.getNodeNames(accountId, callBackId));
   }

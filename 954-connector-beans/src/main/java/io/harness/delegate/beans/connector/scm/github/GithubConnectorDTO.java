@@ -93,4 +93,9 @@ public class GithubConnectorDTO
   public ConnectorType getConnectorType() {
     return ConnectorType.GITHUB;
   }
+
+  @Override
+  public String getGitConnectionUrl(String repoName) {
+    return "";
+  }
 }

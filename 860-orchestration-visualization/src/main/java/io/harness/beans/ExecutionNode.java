@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dto.FailureInfoDTO;
-import io.harness.interrupts.InterruptEffect;
+import io.harness.interrupts.InterruptEffectDTO;
 import io.harness.logging.UnitProgress;
 import io.harness.pms.contracts.execution.ExecutableResponse;
 import io.harness.pms.contracts.execution.run.NodeRunInfo;
@@ -46,6 +46,6 @@ public class ExecutionNode {
   List<UnitProgress> unitProgresses;
   OrchestrationMap progressData;
   List<DelegateInfo> delegateInfoList;
-  List<InterruptEffect> interruptHistories;
+  List<InterruptEffectDTO> interruptHistories;
   Map<String, OrchestrationMap> stepDetails;
 }

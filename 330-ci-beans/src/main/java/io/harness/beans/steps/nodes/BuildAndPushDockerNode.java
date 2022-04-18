@@ -40,6 +40,7 @@ public class BuildAndPushDockerNode extends CIAbstractStepNode {
   @JsonProperty("type")
   @NotNull
   BuildAndPushDockerNode.StepType type = BuildAndPushDockerNode.StepType.BuildAndPushDockerRegistry;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   DockerStepInfo dockerStepInfo;

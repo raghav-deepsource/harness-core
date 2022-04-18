@@ -42,6 +42,11 @@ public abstract class AbstractChangeDataHandler implements ChangeHandler {
       log.info(String.format("Not able to parse this event %s", changeEvent));
     }
 
+    if (!tableName.equals("pipeline_execution_summary_ci") && columnValueMapping != null) {
+      columnValueMapping.remove("moduleinfo_is_private");
+      columnValueMapping.remove("pr");
+    }
+
     switch (changeEvent.getChangeType()) {
       case INSERT:
         if (columnValueMapping != null) {

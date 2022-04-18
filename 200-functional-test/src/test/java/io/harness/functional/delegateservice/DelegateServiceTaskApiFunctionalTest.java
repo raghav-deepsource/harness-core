@@ -139,7 +139,7 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
             .getTaskId();
 
     DelegateResponseData responseData =
-        delegateSyncService.waitForTask(taskId.getId(), "Http Execution", Duration.ofSeconds(60));
+        delegateSyncService.waitForTask(taskId.getId(), "Http Execution", Duration.ofSeconds(60), null);
 
     assertThat(responseData).isNotNull();
     HttpStateExecutionResponse executionData = (HttpStateExecutionResponse) responseData;
@@ -193,7 +193,7 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
             .getTaskId();
 
     DelegateResponseData responseData =
-        delegateSyncService.waitForTask(taskId.getId(), "Http Execution", Duration.ofSeconds(60));
+        delegateSyncService.waitForTask(taskId.getId(), "Http Execution", Duration.ofSeconds(60), null);
 
     assertThat(responseData).isNotNull();
     RemoteMethodReturnValueData returnValueData = (RemoteMethodReturnValueData) responseData;

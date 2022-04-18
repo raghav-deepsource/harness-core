@@ -37,6 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.steps.servicenow.approval.ServiceNowApprovalStepNode")
 public class ServiceNowApprovalStepNode extends PmsAbstractStepNode {
   @JsonProperty("type") @NotNull StepType type = StepType.ServiceNowApproval;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   ServiceNowApprovalStepInfo serviceNowApprovalStepInfo;

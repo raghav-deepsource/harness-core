@@ -8,6 +8,7 @@
 package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.jira.JiraAction.CHECK_APPROVAL;
 import static io.harness.jira.JiraAction.FETCH_ISSUE;
@@ -171,7 +172,8 @@ public class JiraHelperService {
     JiraTaskParameters jiraTaskParameters =
         JiraTaskParameters.builder().accountId(accountId).jiraAction(JiraAction.GET_PROJECTS).build();
 
-    JiraExecutionData jiraExecutionData = runTask(accountId, appId, connectorId, jiraTaskParameters);
+    JiraExecutionData jiraExecutionData =
+        runTask(accountId, appId, connectorId, jiraTaskParameters, DEFAULT_SYNC_CALL_TIMEOUT);
 
     if (jiraExecutionData.getExecutionStatus() != ExecutionStatus.SUCCESS) {
       throw new InvalidRequestException(jiraExecutionData.getErrorMessage(), USER);
@@ -189,7 +191,8 @@ public class JiraHelperService {
                                                 .jiraAction(FETCH_ISSUE)
                                                 .issueId(jiraApprovalParams.getIssueId())
                                                 .build();
-    return runTask(accountId, appId, jiraApprovalParams.getJiraConnectorId(), jiraTaskParameters);
+    return runTask(
+        accountId, appId, jiraApprovalParams.getJiraConnectorId(), jiraTaskParameters, DEFAULT_SYNC_CALL_TIMEOUT);
   }
 
   /**
@@ -208,7 +211,8 @@ public class JiraHelperService {
                                                 .project(project)
                                                 .build();
 
-    JiraExecutionData jiraExecutionData = runTask(accountId, appId, connectorId, jiraTaskParameters);
+    JiraExecutionData jiraExecutionData =
+        runTask(accountId, appId, connectorId, jiraTaskParameters, DEFAULT_SYNC_CALL_TIMEOUT);
     if (jiraExecutionData.getExecutionStatus() != ExecutionStatus.SUCCESS) {
       throw new HarnessJiraException("Failed to fetch IssueType and Priorities", WingsException.USER);
     }
@@ -220,7 +224,8 @@ public class JiraHelperService {
     JiraTaskParameters jiraTaskParameters =
         JiraTaskParameters.builder().accountId(accountId).jiraAction(JiraAction.GET_STATUSES).project(project).build();
 
-    JiraExecutionData jiraExecutionData = runTask(accountId, appId, connectorId, jiraTaskParameters);
+    JiraExecutionData jiraExecutionData =
+        runTask(accountId, appId, connectorId, jiraTaskParameters, DEFAULT_SYNC_CALL_TIMEOUT);
     if (jiraExecutionData.getExecutionStatus() != ExecutionStatus.SUCCESS) {
       throw new HarnessJiraException("Failed to fetch Status for this project", WingsException.USER);
     }
@@ -228,7 +233,7 @@ public class JiraHelperService {
   }
 
   private JiraExecutionData runTask(
-      String accountId, String appId, String connectorId, JiraTaskParameters jiraTaskParameters) {
+      String accountId, String appId, String connectorId, JiraTaskParameters jiraTaskParameters, long timeoutMillis) {
     SettingAttribute settingAttribute = settingService.getByAccountAndId(accountId, connectorId);
     notNullCheck("Jira connector may be deleted.", settingAttribute, USER);
     JiraConfig jiraConfig = (JiraConfig) settingAttribute.getValue();
@@ -240,11 +245,12 @@ public class JiraHelperService {
       DelegateTask delegateTask = DelegateTask.builder()
                                       .accountId(accountId)
                                       .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, appId)
+                                      .tags(jiraConfig.getDelegateSelectors())
                                       .data(TaskData.builder()
                                                 .async(false)
                                                 .taskType(TaskType.JIRA.name())
                                                 .parameters(new Object[] {jiraTaskParameters})
-                                                .timeout(JIRA_DELEGATE_TIMEOUT_MILLIS)
+                                                .timeout(Long.max(timeoutMillis, JIRA_DELEGATE_TIMEOUT_MILLIS))
                                                 .build())
                                       .build();
       DelegateResponseData responseData = delegateService.executeTask(delegateTask);
@@ -264,7 +270,7 @@ public class JiraHelperService {
   }
 
   public JiraCreateMetaResponse getCreateMetadata(
-      String connectorId, String expand, String project, String accountId, String appId) {
+      String connectorId, String expand, String project, String accountId, String appId, long timeoutMillis) {
     JiraTaskParameters jiraTaskParameters = JiraTaskParameters.builder()
                                                 .accountId(accountId)
                                                 .jiraAction(JiraAction.GET_CREATE_METADATA)
@@ -272,7 +278,7 @@ public class JiraHelperService {
                                                 .project(project)
                                                 .build();
 
-    JiraExecutionData jiraExecutionData = runTask(accountId, appId, connectorId, jiraTaskParameters);
+    JiraExecutionData jiraExecutionData = runTask(accountId, appId, connectorId, jiraTaskParameters, timeoutMillis);
     if (jiraExecutionData.getExecutionStatus() != ExecutionStatus.SUCCESS) {
       throw new HarnessJiraException("Failed to fetch Issue Metadata", WingsException.USER);
     }
@@ -290,7 +296,8 @@ public class JiraHelperService {
                                                 .rejectionField(rejectionField)
                                                 .rejectionValue(rejectionValue)
                                                 .build();
-    JiraExecutionData jiraExecutionData = runTask(accountId, appId, connectorId, jiraTaskParameters);
+    JiraExecutionData jiraExecutionData =
+        runTask(accountId, appId, connectorId, jiraTaskParameters, DEFAULT_SYNC_CALL_TIMEOUT);
     log.info("Polling Approval for IssueId = {}", issueId);
     return jiraExecutionData;
   }
@@ -298,7 +305,7 @@ public class JiraHelperService {
   public JiraExecutionData createJira(
       String accountId, String appId, String jiraConfigId, JiraTaskParameters jiraTaskParameters) {
     jiraTaskParameters.setJiraAction(JiraAction.CREATE_TICKET);
-    return runTask(accountId, appId, jiraConfigId, jiraTaskParameters);
+    return runTask(accountId, appId, jiraConfigId, jiraTaskParameters, DEFAULT_SYNC_CALL_TIMEOUT);
   }
 
   public JiraExecutionData getApprovalStatus(ApprovalPollingJobEntity approvalPollingJobEntity) {
@@ -311,8 +318,9 @@ public class JiraHelperService {
                                                 .rejectionField(approvalPollingJobEntity.getRejectionField())
                                                 .rejectionValue(approvalPollingJobEntity.getRejectionValue())
                                                 .build();
-    JiraExecutionData jiraExecutionData = runTask(approvalPollingJobEntity.getAccountId(),
-        approvalPollingJobEntity.getAppId(), approvalPollingJobEntity.getConnectorId(), jiraTaskParameters);
+    JiraExecutionData jiraExecutionData =
+        runTask(approvalPollingJobEntity.getAccountId(), approvalPollingJobEntity.getAppId(),
+            approvalPollingJobEntity.getConnectorId(), jiraTaskParameters, DEFAULT_SYNC_CALL_TIMEOUT);
     log.info("Polling Approval for IssueId = {}", approvalPollingJobEntity.getIssueId());
     return jiraExecutionData;
   }

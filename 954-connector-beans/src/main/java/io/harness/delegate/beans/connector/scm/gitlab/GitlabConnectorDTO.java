@@ -87,4 +87,9 @@ public class GitlabConnectorDTO extends ConnectorConfigDTO implements ScmConnect
   public ConnectorType getConnectorType() {
     return ConnectorType.GITLAB;
   }
+
+  @Override
+  public String getGitConnectionUrl(String repoName) {
+    return "";
+  }
 }

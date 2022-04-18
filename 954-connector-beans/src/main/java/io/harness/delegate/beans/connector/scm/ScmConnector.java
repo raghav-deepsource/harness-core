@@ -21,4 +21,11 @@ public interface ScmConnector {
   void setUrl(String url);
   String getUrl();
   ConnectorType getConnectorType();
+
+  /**
+   * This method is used to fetch final git connnection url to the repo
+   * If its a REPO level connector, it should return its url directly
+   * If its an ACCOUNT level connector, it should construct corresponding connection url for input repo
+   */
+  String getGitConnectionUrl(String repoName);
 }

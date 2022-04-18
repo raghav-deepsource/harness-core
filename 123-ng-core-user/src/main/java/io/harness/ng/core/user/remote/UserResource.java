@@ -18,7 +18,6 @@ import static io.harness.ng.accesscontrol.PlatformResourceTypes.USER;
 import static io.harness.ng.core.invites.mapper.RoleBindingMapper.validateRoleBindings;
 import static io.harness.utils.PageUtils.getPageRequest;
 
-import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -481,7 +480,7 @@ public class UserResource {
       log.info("User is externally managed, cannot update user - userId: {}", userInfo.getUuid());
       throw new InvalidRequestException("Cannot update user as it is externally managed.");
     } else {
-      return ResponseDTO.newResponse(userInfoService.update(userInfo));
+      return ResponseDTO.newResponse(userInfoService.update(userInfo, accountIdentifier));
     }
   }
 
@@ -553,8 +552,8 @@ public class UserResource {
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
     if (isUserExternallyManaged(userId)) {
-      log.info("User is externally managed, cannot delete user - userId: {}", userId);
-      return ResponseDTO.newResponse(FALSE);
+      log.error("User is externally managed, cannot delete user - userId: {}", userId);
+      throw new InvalidRequestException("User is externally managed, cannot delete user");
     } else {
       return removeUserInternal(
           userId, accountIdentifier, orgIdentifier, projectIdentifier, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);

@@ -37,6 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.steps.jira.create.JiraCreateStepNode")
 public class JiraCreateStepNode extends PmsAbstractStepNode {
   @JsonProperty("type") @NotNull StepType type = StepType.JiraCreate;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   JiraCreateStepInfo jiraCreateStepInfo;

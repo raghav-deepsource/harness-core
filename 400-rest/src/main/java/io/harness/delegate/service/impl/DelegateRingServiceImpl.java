@@ -15,30 +15,37 @@ import io.harness.persistence.HPersistence;
 import software.wings.service.intfc.AccountService;
 
 import com.google.inject.Inject;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class DelegateRingServiceImpl implements DelegateRingService {
   private final HPersistence persistence;
   private final AccountService accountService;
 
-  @Inject
-  public DelegateRingServiceImpl(HPersistence persistence, AccountService accountService) {
-    this.persistence = persistence;
-    this.accountService = accountService;
+  @Override
+  public String getDelegateImageTag(final String accountId) {
+    return getDelegateRing(accountId).getDelegateImageTag();
   }
 
   @Override
-  public String getDelegateImageTag(String accountId) {
-    return (persistence.createQuery(DelegateRing.class)
-                .filter(DelegateRingKeys.ringName, accountService.get(accountId).getRingName())
-                .get())
-        .getDelegateImageTag();
+  public String getUpgraderImageTag(final String accountId) {
+    return getDelegateRing(accountId).getUpgraderImageTag();
   }
 
   @Override
-  public String getUpgraderImageTag(String accountId) {
-    return (persistence.createQuery(DelegateRing.class)
-                .filter(DelegateRingKeys.ringName, accountService.get(accountId).getRingName())
-                .get())
-        .getUpgraderImageTag();
+  public List<String> getDelegateVersions(final String accountId) {
+    return getDelegateRing(accountId).getDelegateVersions();
+  }
+
+  @Override
+  public List<String> getWatcherVersions(final String accountId) {
+    return getDelegateRing(accountId).getWatcherVersions();
+  }
+
+  private DelegateRing getDelegateRing(String accountId) {
+    return persistence.createQuery(DelegateRing.class)
+        .filter(DelegateRingKeys.ringName, accountService.get(accountId).getRingName())
+        .get();
   }
 }

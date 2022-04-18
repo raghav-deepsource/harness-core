@@ -41,6 +41,8 @@ java_library(
         "@maven//:org_awaitility_awaitility",
         "@maven//:org_mockito_mockito_core",
         "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_powermock_powermock_api_mockito",
+        "@maven//:org_powermock_powermock_module_junit4",
     ],
 )
 

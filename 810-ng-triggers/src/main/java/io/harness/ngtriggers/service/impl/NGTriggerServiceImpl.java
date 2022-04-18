@@ -134,7 +134,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   private static final String TRIGGER = "trigger";
   private static final String INPUT_YAML = "inputYaml";
 
-  private static final String DUP_KEY_EXP_FORMAT_STRING = "Trigger [%s] already exists";
+  private static final String DUP_KEY_EXP_FORMAT_STRING = "Trigger [%s] already exists or is soft deleted";
 
   @Override
   public NGTriggerEntity create(NGTriggerEntity ngTriggerEntity) {

@@ -42,11 +42,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.bson.Document;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -118,8 +118,8 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
       }
       String moduleName = nodeTypeLookupService.findNodeTypeServiceName(entry.getValue().getNodeType());
       graphLayoutNodeDTO.setModule(moduleName);
-      Map<String, Document> moduleInfo = new HashMap<>();
-      moduleInfo.put(moduleName, new Document());
+      Map<String, LinkedHashMap<String, Object>> moduleInfo = new HashMap<>();
+      moduleInfo.put(moduleName, new LinkedHashMap<>());
       graphLayoutNodeDTO.setModuleInfo(moduleInfo);
       layoutNodeDTOMap.put(entry.getKey(), graphLayoutNodeDTO);
       modules.add(moduleName);
