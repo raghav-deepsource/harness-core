@@ -60,7 +60,7 @@ public class ECSServiceDaoImpl implements ECSServiceDao {
                    .set(ECSServiceKeys.serviceArn, ecsService.getServiceArn())
                    .set(ECSServiceKeys.serviceName, ecsService.getServiceName())
                    .set(ECSServiceKeys.resource, ecsService.getResource())
-                   .set(ECSServiceKeys.labels, ecsService.getLabels().isEmpty() ? null : ecsService.getLabels()),
+                   .set(ECSServiceKeys.labels, ecsService.getLabels()),
                HPersistence.upsertReturnNewOptions))
             != null);
   }
