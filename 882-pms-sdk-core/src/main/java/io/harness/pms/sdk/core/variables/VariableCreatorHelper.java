@@ -339,20 +339,6 @@ public class VariableCreatorHelper {
       ParameterField<?> parameterFieldValue = (ParameterField) fieldValue;
       addYamlPropertyToCustomObject(parameterFieldValue.getValue(), field, parentFieldUuid, parentObject,
           yamlPropertiesMap, yamlExtraPropertiesMap, fqnPrefix, localNamePrefix, aliasNamePrefix);
-      //      if (List.class.isAssignableFrom(parameterFieldValue.getValue().getClass())) {
-      //        List valueList = (List) parameterFieldValue.getValue();
-      //        addYamlPropertyToListObject(valueList, field, parentFieldUuid, parentObject, yamlPropertiesMap,
-      //            yamlExtraPropertiesMap, fqnPrefix, localNamePrefix, aliasNamePrefix);
-      //
-      //      } else if (Map.class.isAssignableFrom(parameterFieldValue.getValue().getClass())) {
-      //        Map objectMap = (Map) parameterFieldValue.getValue();
-      //        addYamlPropertyToMapObject(objectMap, field, parentFieldUuid, parentObject, yamlPropertiesMap,
-      //            yamlExtraPropertiesMap, fqnPrefix, localNamePrefix, aliasNamePrefix);
-      //      } else {
-      //        collectVariableExpressions(parameterFieldValue.getValue(), yamlPropertiesMap, yamlExtraPropertiesMap,
-      //            getMergedFqn(fqnPrefix, fieldName), getMergedFqn(localNamePrefix, fieldName),
-      //            getMergedFqn(aliasNamePrefix, fieldAliasName));
-      //      }
     }
     // else its a custom complex object
     else {
