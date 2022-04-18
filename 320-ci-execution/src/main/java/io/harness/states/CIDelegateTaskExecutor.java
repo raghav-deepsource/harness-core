@@ -22,6 +22,7 @@ import io.harness.grpc.DelegateServiceGrpcClient;
 
 import com.google.inject.Inject;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +43,7 @@ public class CIDelegateTaskExecutor {
     this.delegateCallbackTokenSupplier = delegateCallbackTokenSupplier;
   }
 
-  public String queueTask(Map<String, String> setupAbstractions, HDelegateTask task) {
+  public String queueTask(Map<String, String> setupAbstractions, HDelegateTask task, List<String> taskSelectors) {
     String accountId = task.getAccountId();
     TaskData taskData = task.getData();
     final DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.builder()
@@ -53,6 +54,7 @@ public class CIDelegateTaskExecutor {
                                                         .executionTimeout(Duration.ofHours(12))
                                                         .taskSetupAbstractions(setupAbstractions)
                                                         .expressionFunctorToken(taskData.getExpressionFunctorToken())
+                                                        .taskSelectors(taskSelectors)
                                                         .build();
     RetryPolicy<Object> retryPolicy =
         getRetryPolicy(format("[Retrying failed call to submit delegate task attempt: {}"),

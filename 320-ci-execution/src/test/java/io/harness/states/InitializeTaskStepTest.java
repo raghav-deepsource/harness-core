@@ -88,7 +88,7 @@ public class InitializeTaskStepTest extends CIExecutionTestBase {
   @Owner(developers = ALEKSANDAR)
   @Category(UnitTests.class)
   public void shouldObtainTask() {
-    when(ciDelegateTaskExecutor.queueTask(eq(ambiance.getSetupAbstractionsMap()), any())).thenReturn("taskId");
+    when(ciDelegateTaskExecutor.queueTask(eq(ambiance.getSetupAbstractionsMap()), any(), any())).thenReturn("taskId");
 
     //    when(buildSetupUtils.getBuildSetupTaskParams(eq(liteEngineTaskStepInfo), eq(ambiance)))
     //        .thenReturn(CIK8BuildTaskParams.builder().build());

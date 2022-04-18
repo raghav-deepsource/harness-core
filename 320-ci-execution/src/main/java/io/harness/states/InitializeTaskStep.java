@@ -16,6 +16,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 
+import io.harness.DelegateInfoHelper;
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
@@ -37,6 +38,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.ci.integrationstage.BuildJobEnvInfoBuilder;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.DelegateSelectionLogParams;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.CITaskExecutionResponse;
@@ -80,6 +82,7 @@ import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.inject.Inject;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -90,6 +93,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 
 /**
  * This state will setup the build infra e.g. pod or VM.
@@ -111,6 +116,10 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   private static final String DEPENDENCY_OUTCOME = "dependencies";
   public static final StepType STEP_TYPE = InitializeStepInfo.STEP_TYPE;
   @Inject private BuildJobEnvInfoBuilder buildJobEnvInfoBuilder;
+  @Inject private DelegateInfoHelper delegateInfoHelper;
+
+  private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(1);
+  private final int MAX_ATTEMPTS = 3;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -273,12 +282,11 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
       return StepResponse.builder()
           .status(Status.SUCCEEDED)
           .stepOutcome(stepOutcome)
-          .stepOutcome(
-              StepResponse.StepOutcome.builder()
-                  .name(VM_DETAILS_OUTCOME)
-                  .group(StepOutcomeGroup.STAGE.name())
-                  .outcome(VmDetailsOutcome.builder().ipAddress(vmTaskExecutionResponse.getIpAddress()).build())
-                  .build())
+          .stepOutcome(StepResponse.StepOutcome.builder()
+                           .name(VM_DETAILS_OUTCOME)
+                           .group(StepOutcomeGroup.STAGE.name())
+                           .outcome(getVmDetailsOutcome(ambiance, vmTaskExecutionResponse))
+                           .build())
           .build();
     } else {
       log.error("VM initialize step execution finished with status [{}] and response [{}]",
@@ -290,6 +298,18 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
       }
       return stepResponseBuilder.build();
     }
+  }
+
+  private VmDetailsOutcome getVmDetailsOutcome(Ambiance ambiance, VmTaskExecutionResponse vmTaskExecutionResponse) {
+    VmDetailsOutcome.VmDetailsOutcomeBuilder builder =
+        VmDetailsOutcome.builder().ipAddress(vmTaskExecutionResponse.getIpAddress());
+    if (isEmpty(vmTaskExecutionResponse.getTaskId())) {
+      return builder.build();
+    }
+
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String delegateId = getDelegateId(accountId, vmTaskExecutionResponse.getTaskId());
+    return builder.delegateId(delegateId).build();
   }
 
   private LiteEnginePodDetailsOutcome getPodDetailsOutcome(CiK8sTaskResponse ciK8sTaskResponse) {
@@ -500,5 +520,23 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(connectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier);
     return EntityDetail.builder().entityRef(connectorRef).type(EntityType.CONNECTORS).build();
+  }
+
+  private String getDelegateId(String accountId, String delegateTaskId) {
+    RetryPolicy<Object> retryPolicy = getRetryPolicy(format("[Retrying failed call to fetch delegate task Id: {}"),
+        format("Failed to fetch delegate task Id after retrying {} times"));
+
+    return Failsafe.with(retryPolicy).get(() -> {
+      return delegateInfoHelper.getDelegateSelectionLogParams(accountId, delegateTaskId).getDelegateId();
+    });
+  }
+
+  private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
+    return new RetryPolicy<>()
+        .handle(Exception.class)
+        .withDelay(RETRY_SLEEP_DURATION)
+        .withMaxAttempts(MAX_ATTEMPTS)
+        .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
+        .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
   }
 }

@@ -76,6 +76,7 @@ public class CIVmInitializeTaskHandler implements CIInitializeTaskHandler {
       }
     }
     response.setServiceStatuses(serviceStatuses);
+    response.setTaskId(taskId);
     return response;
   }
 

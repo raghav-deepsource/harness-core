@@ -25,6 +25,7 @@ public class VmTaskExecutionResponse implements CITaskExecutionResponse {
   private Map<String, String> outputVars;
   private CommandExecutionStatus commandExecutionStatus;
   private List<VmServiceStatus> serviceStatuses;
+  private String taskId;
   @Builder.Default private static final CITaskExecutionResponse.Type type = Type.VM;
 
   @Override
