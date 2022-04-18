@@ -58,6 +58,8 @@ public interface EntityTypeConstants {
   String SAVE_CACHE_GCS = "SaveCacheGCS";
   String SAVE_CACHE_S3 = "SaveCacheS3";
   String SECURITY = "Security";
+  String SECURITY_STAGE = "SecurityStage";
+  String SECURITY_STEPS = "SecuritySteps";
   String ARTIFACTORY_UPLOAD = "ArtifactoryUpload";
   String GCS_UPLOAD = "GCSUpload";
   String S3_UPLOAD = "S3Upload";

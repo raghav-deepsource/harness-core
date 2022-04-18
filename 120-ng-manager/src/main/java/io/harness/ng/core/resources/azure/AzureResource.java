@@ -13,6 +13,9 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.k8s.resources.azure.service.AzureResourceService;
+import io.harness.delegate.beans.azure.AzureClustersDTO;
+import io.harness.delegate.beans.azure.AzureResourceGroupsDTO;
+import io.harness.delegate.beans.azure.AzureSubscriptionsDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -23,8 +26,6 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import java.util.List;
-import java.util.Map;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -54,7 +55,7 @@ public class AzureResource {
   @GET
   @Path("subscriptions")
   @ApiOperation(value = "Gets azure subscriptions ", nickname = "getAzureSubscriptions")
-  public ResponseDTO<Map<String, String>> getAzureSubscriptions(
+  public ResponseDTO<AzureSubscriptionsDTO> getAzureSubscriptions(
       @NotNull @QueryParam("connectorRef") String azureConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
@@ -66,15 +67,15 @@ public class AzureResource {
   }
 
   @GET
-  @Path("subscriptions/{subscription}/resourceGroups")
+  @Path("subscriptions/{subscriptionId}/resourceGroups")
   @ApiOperation(
       value = "Gets azure resource groups by subscription ", nickname = "getAzureResourceGroupsBySubscription")
-  public ResponseDTO<List<String>>
+  public ResponseDTO<AzureResourceGroupsDTO>
   getResourceGroupsBySubscription(@NotNull @QueryParam("connectorRef") String azureConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @PathParam("subscription") String subscriptionId) {
+      @PathParam("subscriptionId") String subscriptionId) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(
@@ -82,13 +83,13 @@ public class AzureResource {
   }
 
   @GET
-  @Path("subscriptions/{subscription}/resourceGroups/{resourceGroup}/clusters")
+  @Path("subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/clusters")
   @ApiOperation(value = "Gets azure k8s clusters by subscription ", nickname = "getAzureClusters")
-  public ResponseDTO<List<String>> getClusters(@NotNull @QueryParam("connectorRef") String azureConnectorIdentifier,
+  public ResponseDTO<AzureClustersDTO> getClusters(@NotNull @QueryParam("connectorRef") String azureConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @PathParam("subscription") String subscriptionId, @PathParam("resourceGroup") String resourceGroup) {
+      @PathParam("subscriptionId") String subscriptionId, @PathParam("resourceGroup") String resourceGroup) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(azureResourceService.getClusters(

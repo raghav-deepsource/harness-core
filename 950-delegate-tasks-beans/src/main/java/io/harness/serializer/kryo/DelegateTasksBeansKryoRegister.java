@@ -60,6 +60,12 @@ import io.harness.delegate.beans.azure.appservicesettings.AzureAppServiceConnect
 import io.harness.delegate.beans.azure.appservicesettings.AzureAppServiceSettingConstants;
 import io.harness.delegate.beans.azure.appservicesettings.AzureAppServiceSettingDTO;
 import io.harness.delegate.beans.azure.registry.AzureRegistryType;
+import io.harness.delegate.beans.azure.response.AzureClustersResponse;
+import io.harness.delegate.beans.azure.response.AzureRegistriesResponse;
+import io.harness.delegate.beans.azure.response.AzureRepositoriesResponse;
+import io.harness.delegate.beans.azure.response.AzureResourceGroupsResponse;
+import io.harness.delegate.beans.azure.response.AzureSubscriptionsResponse;
+import io.harness.delegate.beans.azure.response.AzureValidateTaskResponse;
 import io.harness.delegate.beans.ccm.K8sClusterInfo;
 import io.harness.delegate.beans.ci.CIClusterType;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
@@ -135,12 +141,6 @@ import io.harness.delegate.beans.connector.azureconnector.AzureContainerRegistry
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskType;
 import io.harness.delegate.beans.connector.azureconnector.AzureValidationParams;
-import io.harness.delegate.beans.connector.azureconnector.response.AzureClustersResponse;
-import io.harness.delegate.beans.connector.azureconnector.response.AzureRegistriesResponse;
-import io.harness.delegate.beans.connector.azureconnector.response.AzureRepositoriesResponse;
-import io.harness.delegate.beans.connector.azureconnector.response.AzureResourceGroupsResponse;
-import io.harness.delegate.beans.connector.azureconnector.response.AzureSubscriptionsResponse;
-import io.harness.delegate.beans.connector.azureconnector.response.AzureValidateTaskResponse;
 import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultValidationParams;
 import io.harness.delegate.beans.connector.cvconnector.CVConnectorTaskParams;
 import io.harness.delegate.beans.connector.cvconnector.CVConnectorTaskResponse;

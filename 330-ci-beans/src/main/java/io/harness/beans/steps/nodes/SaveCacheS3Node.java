@@ -38,6 +38,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.beans.steps.nodes.SaveCacheS3Node")
 public class SaveCacheS3Node extends CIAbstractStepNode {
   @JsonProperty("type") @NotNull SaveCacheS3Node.StepType type = StepType.SaveCacheS3;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   SaveCacheS3StepInfo saveCacheS3StepInfo;

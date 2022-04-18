@@ -10,16 +10,16 @@ package io.harness.cdng.artifact.resources.acr.service;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
-import io.harness.cdng.artifact.resources.acr.dtos.AcrResponseDTO;
-
-import java.util.List;
+import io.harness.delegate.beans.azure.AcrRegistriesDTO;
+import io.harness.delegate.beans.azure.AcrRepositoriesDTO;
+import io.harness.delegate.beans.azure.AcrResponseDTO;
 
 @OwnedBy(HarnessTeam.CDP)
 public interface AcrResourceService {
-  List<String> getRegistries(
+  AcrRegistriesDTO getRegistries(
       IdentifierRef connectorRef, String orgIdentifier, String projectIdentifier, String subscriptionId);
 
-  List<String> getRepositories(IdentifierRef connectorRef, String orgIdentifier, String projectIdentifier,
+  AcrRepositoriesDTO getRepositories(IdentifierRef connectorRef, String orgIdentifier, String projectIdentifier,
       String subscriptionId, String registry);
 
   AcrResponseDTO getBuildDetails(IdentifierRef connectorRef, String subscription, String registry, String repository,

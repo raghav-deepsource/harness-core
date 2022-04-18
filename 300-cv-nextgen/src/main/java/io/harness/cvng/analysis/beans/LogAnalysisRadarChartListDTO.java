@@ -7,6 +7,8 @@
 
 package io.harness.cvng.analysis.beans;
 
+import static io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterType.clusterTypeRiskComparator;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
@@ -21,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class LogAnalysisRadarChartListDTO implements Comparable<LogAnalysisRadarChartListDTO> {
   String message;
+  String clusterId;
   int label;
   Risk risk;
   @JsonIgnore Double radius;
@@ -40,7 +43,10 @@ public class LogAnalysisRadarChartListDTO implements Comparable<LogAnalysisRadar
 
   @Override
   public int compareTo(@NotNull LogAnalysisRadarChartListDTO o) {
-    if (o.getRisk().equals(this.getRisk())) {
+    int clusterTypeComparision = clusterTypeRiskComparator.compare(this.getClusterType(), o.getClusterType());
+    if (clusterTypeComparision != 0) {
+      return clusterTypeComparision;
+    } else if (o.getRisk().equals(this.getRisk())) {
       return o.getMessage().compareTo(this.getMessage());
     } else if (o.getRisk().isGreaterThan(this.getRisk())) {
       return 1;

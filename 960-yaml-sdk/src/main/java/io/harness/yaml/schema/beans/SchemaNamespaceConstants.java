@@ -14,4 +14,5 @@ public class SchemaNamespaceConstants {
   public static final String CVNG = "cvng";
   public static final String CI = "ci";
   public static final String CF = "cf";
+  public static final String STO = "security";
 }

@@ -38,7 +38,6 @@ import static io.harness.persistence.HQuery.excludeAuthority;
 import static software.wings.app.ManagerCacheRegistrar.SECRET_TOKEN_CACHE;
 import static software.wings.service.impl.DelegateSelectionLogsServiceImpl.NO_ELIGIBLE_DELEGATES;
 
-import static java.lang.String.join;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
@@ -191,6 +190,7 @@ import javax.cache.Cache;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.atmosphere.cpr.BroadcasterFactory;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -403,8 +403,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Override
   public <T extends DelegateResponseData> T executeTask(DelegateTask task) {
     scheduleSyncTask(task);
-    return delegateSyncService.waitForTask(
-        task.getUuid(), task.calcDescription(), Duration.ofMillis(task.getData().getTimeout()));
+    return delegateSyncService.waitForTask(task.getUuid(), task.calcDescription(),
+        Duration.ofMillis(task.getData().getTimeout()), task.getExecutionCapabilities());
   }
 
   @VisibleForTesting
@@ -1147,7 +1147,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     }
 
     log.debug("Dispatched delegateTaskIds: {}",
-        join(",", delegateTaskEvents.stream().map(DelegateTaskEvent::getDelegateTaskId).collect(toList())));
+        StringUtils.join(
+            ",", delegateTaskEvents.stream().map(DelegateTaskEvent::getDelegateTaskId).collect(Collectors.toList())));
 
     return delegateTaskEvents;
   }

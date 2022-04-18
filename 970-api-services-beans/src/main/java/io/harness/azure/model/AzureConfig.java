@@ -15,10 +15,11 @@ import lombok.ToString;
 
 @Data
 @Builder
-@ToString(exclude = "key")
+@ToString(exclude = {"key", "cert"})
 public class AzureConfig {
   String tenantId;
   String clientId;
   char[] key;
+  byte[] cert;
   private AzureEnvironmentType azureEnvironmentType;
 }

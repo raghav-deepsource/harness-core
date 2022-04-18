@@ -54,8 +54,15 @@ import io.harness.delegate.beans.connector.azureconnector.AzureConstants;
 import io.harness.delegate.beans.connector.azureconnector.AzureCredentialDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureCredentialSpecDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureCredentialType;
+import io.harness.delegate.beans.connector.azureconnector.AzureInheritFromDelegateDetailsDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthSADTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthUADTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureManagedIdentityType;
 import io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureSecretType;
+import io.harness.delegate.beans.connector.azureconnector.AzureSystemAssignedMSIAuthDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureUserAssignedMSIAuthDTO;
 import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultConnectorDTO;
 import io.harness.delegate.beans.connector.ceawsconnector.AwsCurAttributesDTO;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
@@ -366,5 +373,12 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(AzureRepoCredentialsDTO.class, 19802);
     kryo.register(AzureRepoUsernameTokenDTO.class, 19803);
     kryo.register(AzureRepoHttpCredentialsSpecDTO.class, 19804);
+    kryo.register(AzureInheritFromDelegateDetailsDTO.class, 19805);
+    kryo.register(AzureManagedIdentityType.class, 19806);
+    kryo.register(AzureUserAssignedMSIAuthDTO.class, 19807);
+    kryo.register(AzureMSIAuthDTO.class, 19808);
+    kryo.register(AzureSystemAssignedMSIAuthDTO.class, 19809);
+    kryo.register(AzureMSIAuthUADTO.class, 19810);
+    kryo.register(AzureMSIAuthSADTO.class, 19811);
   }
 }

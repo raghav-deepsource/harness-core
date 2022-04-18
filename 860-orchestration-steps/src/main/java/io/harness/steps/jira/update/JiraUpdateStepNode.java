@@ -37,6 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.steps.jira.update.JiraUpdateStepNode")
 public class JiraUpdateStepNode extends PmsAbstractStepNode {
   @JsonProperty("type") @NotNull StepType type = StepType.JiraUpdate;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   JiraUpdateStepInfo jiraUpdateStepInfo;

@@ -37,6 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.steps.shellscript.ShellScriptStepNode")
 public class ShellScriptStepNode extends PmsAbstractStepNode {
   @JsonProperty("type") @NotNull StepType type = StepType.ShellScript;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   ShellScriptStepInfo shellScriptStepInfo;

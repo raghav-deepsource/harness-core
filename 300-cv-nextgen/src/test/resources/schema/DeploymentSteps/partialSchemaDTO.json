@@ -4,6 +4,7 @@
     "required": [
       "identifier",
       "name",
+      "spec",
       "type"
     ],
     "properties": {
@@ -153,6 +154,7 @@
           "required": [
             "identifier",
             "name",
+            "spec",
             "type"
           ],
           "properties": {

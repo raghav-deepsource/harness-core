@@ -88,19 +88,19 @@ public class NgMigrationResource {
   }
 
   @POST
-  @Path("/files")
+  @Path("/save")
   @Timed
   @ExceptionMetered
   public RestResponse<List<NGYamlFile>> getMigratedFiles(@HeaderParam("Authorization") String auth,
       @QueryParam("entityId") String entityId, @QueryParam("appId") String appId,
       @QueryParam("accountId") String accountId, @QueryParam("entityType") NGMigrationEntityType entityType,
-      @QueryParam("dryRun") boolean dryRun, MigrationInputDTO inputDTO) {
+      MigrationInputDTO inputDTO) {
     DiscoveryResult result = discoveryService.discover(accountId, appId, entityId, entityType, null);
-    return new RestResponse<>(discoveryService.migrateEntity(auth, inputDTO, result, dryRun));
+    return new RestResponse<>(discoveryService.migrateEntity(auth, inputDTO, result, false));
   }
 
   @POST
-  @Path("/export")
+  @Path("/export-yaml")
   @Timed
   @ExceptionMetered
   public Response exportZippedYamlFiles(@HeaderParam("Authorization") String auth,

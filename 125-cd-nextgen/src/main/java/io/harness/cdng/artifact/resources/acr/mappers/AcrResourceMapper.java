@@ -9,8 +9,8 @@ package io.harness.cdng.artifact.resources.acr.mappers;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.artifact.resources.acr.dtos.AcrBuildDetailsDTO;
-import io.harness.cdng.artifact.resources.acr.dtos.AcrResponseDTO;
+import io.harness.delegate.beans.azure.AcrBuildDetailsDTO;
+import io.harness.delegate.beans.azure.AcrResponseDTO;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 

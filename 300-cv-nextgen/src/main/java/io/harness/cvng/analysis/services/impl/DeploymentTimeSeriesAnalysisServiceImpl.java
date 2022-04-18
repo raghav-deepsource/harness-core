@@ -198,7 +198,7 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
   }
 
   @Override
-  public List<String> getNodeNames(String accountId, String verificationJobInstanceId) {
+  public Set<String> getNodeNames(String accountId, String verificationJobInstanceId) {
     Set<String> nodeNameSet = new HashSet<>();
     DeploymentTimeSeriesAnalysisFilter deploymentTimeSeriesAnalysisFilter =
         DeploymentTimeSeriesAnalysisFilter.builder().build();
@@ -210,7 +210,7 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
               hostData -> nodeNameSet.add(hostData.getHostName().get())));
     }
 
-    return new ArrayList<>(nodeNameSet);
+    return new HashSet<>(nodeNameSet);
   }
 
   @Override

@@ -12,6 +12,7 @@ import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateGroupDTO;
 import io.harness.delegate.beans.DelegateGroupListing;
 import io.harness.delegate.beans.DelegateGroupTags;
+import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateTokenDetails;
 import io.harness.delegate.beans.DelegateTokenStatus;
 import io.harness.rest.RestResponse;
@@ -62,6 +63,13 @@ public interface DelegateNgManagerCgManagerClient {
       @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Query("delegateTokenName") String delegateTokenName);
 
+  @GET(DELEGATE_TOKEN_NG_API + "/delegate-token-value")
+  Call<RestResponse<String>> getDelegateTokenValue(
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Query("delegateTokenName") String delegateTokenName);
+
   //------------------------Delegate Group Tags, Deprecated Apis-----------------------------------
 
   @PUT(DELEGATE_GROUP_TAGS_API + "/tags")
@@ -95,4 +103,11 @@ public interface DelegateNgManagerCgManagerClient {
       @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Query(NGCommonEntityConstants.GROUP_IDENTIFIER_KEY) @NotNull String groupIdentifier,
       @Body @NotNull DelegateGroupTags tags);
+
+  //------------------------Delegate Group Upsert -----------------------------------
+
+  @PUT(DELEGATE_TOKEN_NG_API + "/upsert")
+  Call<RestResponse<DelegateGroup>> upsert(@Query(NGCommonEntityConstants.NAME_KEY) @NotNull String delegateName,
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @Body DelegateSetupDetails delegateSetupDetails);
 }

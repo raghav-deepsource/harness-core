@@ -5,20 +5,15 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.beans.connector.azureconnector.response;
+package io.harness.filestore;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import java.util.List;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
-
-@Data
-@SuperBuilder
-@NoArgsConstructor
 @OwnedBy(HarnessTeam.CDP)
-public class AzureClustersResponse extends AzureDelegateTaskResponse {
-  private List<String> clusters;
+public final class FileStoreConstants {
+  public static final String ROOT_FOLDER_NAME = "Root";
+  public static final String ROOT_FOLDER_IDENTIFIER = "Root";
+
+  private FileStoreConstants(){};
 }

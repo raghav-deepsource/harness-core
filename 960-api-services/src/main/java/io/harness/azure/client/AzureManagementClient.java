@@ -201,4 +201,14 @@ public interface AzureManagementClient {
    */
   void validateAzureConnectionWithCert(
       String clientId, String tenantId, byte[] cert, AzureEnvironmentType azureEnvironmentType);
+
+  /**
+   * Validate azure connection with a managed identity. Will throw exception if
+   * connection can't be made
+   * @param isUserAssignedMangedIdentity
+   * @param clientId
+   * @param azureEnvironmentType
+   */
+  void validateAzureConnection(
+      boolean isUserAssignedMangedIdentity, String clientId, AzureEnvironmentType azureEnvironmentType);
 }

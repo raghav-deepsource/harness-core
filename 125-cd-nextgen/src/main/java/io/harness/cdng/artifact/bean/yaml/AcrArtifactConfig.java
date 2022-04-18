@@ -59,7 +59,10 @@ public class AcrArtifactConfig implements ArtifactConfig, Visitable, WithConnect
   /**
    * Subscriptions in Azure
    */
-  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> subscription;
+  @NotNull
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @Wither
+  ParameterField<String> subscriptionId;
   /**
    * Registries in ACR
    */
@@ -97,7 +100,7 @@ public class AcrArtifactConfig implements ArtifactConfig, Visitable, WithConnect
   @Override
   public String getUniqueHash() {
     List<String> valuesList =
-        Arrays.asList(connectorRef.getValue(), subscription.getValue(), registry.getValue(), repository.getValue());
+        Arrays.asList(connectorRef.getValue(), subscriptionId.getValue(), registry.getValue(), repository.getValue());
     return ArtifactUtils.generateUniqueHashFromStringList(valuesList);
   }
 
@@ -108,8 +111,8 @@ public class AcrArtifactConfig implements ArtifactConfig, Visitable, WithConnect
     if (!ParameterField.isNull(acrArtifactSpecConfig.getConnectorRef())) {
       resultantConfig = resultantConfig.withConnectorRef(acrArtifactSpecConfig.getConnectorRef());
     }
-    if (!ParameterField.isNull(acrArtifactSpecConfig.getSubscription())) {
-      resultantConfig = resultantConfig.withSubscription(acrArtifactSpecConfig.getSubscription());
+    if (!ParameterField.isNull(acrArtifactSpecConfig.getSubscriptionId())) {
+      resultantConfig = resultantConfig.withSubscriptionId(acrArtifactSpecConfig.getSubscriptionId());
     }
     if (!ParameterField.isNull(acrArtifactSpecConfig.getRegistry())) {
       resultantConfig = resultantConfig.withRegistry(acrArtifactSpecConfig.getRegistry());

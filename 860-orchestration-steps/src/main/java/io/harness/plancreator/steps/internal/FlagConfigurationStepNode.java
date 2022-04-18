@@ -37,6 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.plancreator.steps.internal.FlagConfigurationStepNode")
 public class FlagConfigurationStepNode extends PmsAbstractStepNode {
   @JsonProperty("type") @NotNull StepType type = StepType.FlagConfiguration;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   FlagConfigurationStepInfo flagConfigurationStepInfo;
