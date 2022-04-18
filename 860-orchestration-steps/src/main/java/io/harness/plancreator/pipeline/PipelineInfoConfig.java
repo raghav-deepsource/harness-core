@@ -56,8 +56,10 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @TypeAlias("pipelineInfoConfig")
-@OneOfSet(fields = {"flowControl, properties, notificationRules, allowStageExecutions, timeout, stages, variables",
-              "template"},
+@OneOfSet(
+    fields =
+        {"flowControl, properties, notificationRules, allowStageExecutions, timeout, stages, variables, delegateSelectors",
+            "template"},
     requiredFieldNames = {"stages", "template"})
 public class PipelineInfoConfig {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
@@ -93,7 +95,7 @@ public class PipelineInfoConfig {
   @VariableExpression(skipVariableExpression = true)
   ParameterField<Timeout> timeout;
 
-  TemplateLinkConfig template;
+  @VariableExpression(skipVariableExpression = true) TemplateLinkConfig template;
 
   @VariableExpression(skipVariableExpression = true) boolean allowStageExecutions;
 
