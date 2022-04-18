@@ -8,6 +8,7 @@
 package io.harness.cdng.secrets.tasks;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.delegate.task.winrm.WinRmSessionConfig.WinRmSessionConfigBuilder;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateResponseData;
@@ -58,12 +59,12 @@ public class WinRmConfigValidationDelegateTask extends AbstractDelegateRunnableT
     WinRmAuthDTO authDTO = winRmCredentialsSpecDTO.getAuth();
     List<EncryptedDataDetail> encryptionDetails = params.getEncryptionDetails();
 
-    WinRmSessionConfig.WinRmSessionConfigBuilder builder = WinRmSessionConfig.builder()
-                                                               .workingDirectory(HOME_DIR)
-                                                               .hostname(params.getHost())
-                                                               .port(winRmCredentialsSpecDTO.getPort())
-                                                               .environment(Collections.EMPTY_MAP)
-                                                               .timeout(1800000);
+    WinRmSessionConfigBuilder builder = WinRmSessionConfig.builder()
+                                            .workingDirectory(HOME_DIR)
+                                            .hostname(params.getHost())
+                                            .port(winRmCredentialsSpecDTO.getPort())
+                                            .environment(Collections.EMPTY_MAP)
+                                            .timeout(1800000);
 
     switch (authDTO.getAuthScheme()) {
       case NTLM:
@@ -77,8 +78,8 @@ public class WinRmConfigValidationDelegateTask extends AbstractDelegateRunnableT
     }
   }
 
-  private WinRmSessionConfig generateWinRmSessionConfigForNTLM(NTLMConfigDTO ntlmConfigDTO,
-      WinRmSessionConfig.WinRmSessionConfigBuilder builder, List<EncryptedDataDetail> encryptionDetails) {
+  private WinRmSessionConfig generateWinRmSessionConfigForNTLM(
+      NTLMConfigDTO ntlmConfigDTO, WinRmSessionConfigBuilder builder, List<EncryptedDataDetail> encryptionDetails) {
     NTLMConfigDTO decryptedNTLMConfigDTO =
         (NTLMConfigDTO) secretDecryptionService.decrypt(ntlmConfigDTO, encryptionDetails);
 
@@ -94,7 +95,7 @@ public class WinRmConfigValidationDelegateTask extends AbstractDelegateRunnableT
   }
 
   private WinRmSessionConfig generateWinRmSessionConfigForKerberos(KerberosWinRmConfigDTO kerberosWinRmConfigDTO,
-      WinRmSessionConfig.WinRmSessionConfigBuilder builder, List<EncryptedDataDetail> encryptionDetails) {
+      WinRmSessionConfigBuilder builder, List<EncryptedDataDetail> encryptionDetails) {
     boolean isUseKeyTab = false;
     String password = StringUtils.EMPTY;
     String keyTabFilePath = StringUtils.EMPTY;
