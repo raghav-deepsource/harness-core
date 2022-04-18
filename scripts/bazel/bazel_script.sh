@@ -85,16 +85,16 @@ BAZEL_MODULES="\
   //800-pipeline-service:module \
   //810-ng-triggers:module \
   //815-cg-triggers:module \
-  //820-platform-service:module \
-  //820-platform-service:module_deploy.jar \
-  //820-platform-service/contracts/audit-service:module \
-  //820-platform-service/contracts/notification-service/notification-beans:module \
-  //820-platform-service/contracts/notification-service/notification-beans/src/main/proto:all \
-  //820-platform-service/contracts/notification-service/notification-senders:module \
-  //820-platform-service/contracts/resource-group-service:module \
-  //820-platform-service/libs/audit-service:module \
-  //820-platform-service/libs/notification-service:module \
-  //820-platform-service/libs/resource-group-service:module \
+  //platform-service/service:module \
+  //platform-service/service:module_deploy.jar \
+  //platform-service/modules/audit-service/contracts:module \
+  //platform-service/modules/notification-service/contracts:module \
+  //platform-service/modules/notification-service/contracts/src/main/proto:all \
+  //platform-service/modules/notification-service/delegate-tasks:module \
+  //platform-service/modules/resource-group-service/contracts:module \
+  //platform-service/modules/audit-service:module \
+  //platform-service/modules/notification-service:module \
+  //platform-service/modules/resource-group-service:module \
   //840-template-service:module \
   //860-orchestration-steps:module \
   //860-orchestration-visualization:module \
@@ -127,14 +127,14 @@ BAZEL_MODULES="\
   //935-analyser-service:module \
   //937-persistence-tracer:module \
   //940-feature-flag:module \
-  //940-notification-client:module \
-  //940-notification-client:module_deploy.jar \
+  //clients/notification:module \
+  //clients/notification:module_deploy.jar \
   //940-secret-manager-client:module \
   //942-enforcement-sdk:module \
   //943-enforcement-beans:module \
   //945-account-mgmt:module \
   //945-license-usage-sdk:module \
-  //945-ng-audit-client:module \
+  //clients/audit:module \
   //947-scim-core:module \
   //950-command-library-common:module \
   //959-common-entities:module \
@@ -290,9 +290,6 @@ build_protocol_info(){
   rm module-deps.sh /tmp/ProtoDeps.text /tmp/KryoDeps.text
 }
 
-build_bazel_application 940-notification-client
-build_bazel_application 820-platform-service
-
 build_bazel_module 100-migrator
 build_bazel_module 320-ci-execution
 build_bazel_module 330-ci-beans
@@ -336,7 +333,6 @@ build_bazel_module 930-ng-core-clients
 build_bazel_module 932-connector-task
 build_bazel_module 940-feature-flag
 build_bazel_module 940-secret-manager-client
-build_bazel_module 945-ng-audit-client
 build_bazel_module 947-scim-core
 build_bazel_module 950-command-library-common
 build_bazel_module 959-common-entities

@@ -310,6 +310,49 @@ public class YamlServiceImplTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = DEEPAK)
+  @Category(UnitTests.class)
+  public void getFilesWhichAreSuccessfullyProcessedTest() throws Exception {
+    GitFileChange change1 = getGitFileChange("TestAccountID", "Setup/Applications/app1/Index1.yaml", "inputEntityId1");
+    GitFileChange change2 = getGitFileChange("TestAccountID", "Setup/Applications/app1/Index2.yaml", "inputEntityId1");
+    GitFileChange change3 = getGitFileChange("TestAccountID", "Setup/Applications/app1/Index3.yaml", "inputEntityId1");
+    GitFileChange change4 = getGitFileChange("TestAccountID", "Setup/Applications/app1/Index4.yaml", "inputEntityId1");
+    GitFileChange change5 = getGitFileChange("TestAccountID", "Setup/Applications/app1/Index5.yaml", "inputEntityId1");
+
+    ChangeContext changeContext1 = ChangeContext.Builder.aChangeContext().withChange(change1).build();
+    ChangeContext changeContext2 = ChangeContext.Builder.aChangeContext().withChange(change2).build();
+    ChangeContext changeContext3 = ChangeContext.Builder.aChangeContext().withChange(change3).build();
+    ChangeContext changeContext4 = ChangeContext.Builder.aChangeContext().withChange(change4).build();
+    ChangeContext changeContext5 = ChangeContext.Builder.aChangeContext().withChange(change5).build();
+
+    List<ChangeContext> allChangeContexts =
+        Arrays.asList(changeContext1, changeContext2, changeContext3, changeContext4, changeContext5);
+
+    // Case where no files failed
+    List<Change> filesWhichAreSuccessfullyProcessed =
+        yamlService.getFilesWhichAreSuccessfullyProcessed(allChangeContexts, new ArrayList<>());
+    assertThat(filesWhichAreSuccessfullyProcessed.size()).isEqualTo(5);
+
+    List<Change> filesWhichAreSuccessfullyProcessed1 =
+        yamlService.getFilesWhichAreSuccessfullyProcessed(allChangeContexts, Arrays.asList(change1, change2, change3));
+    assertThat(filesWhichAreSuccessfullyProcessed1.size()).isEqualTo(2);
+
+    List<Change> filesWhichAreSuccessfullyProcessed2 =
+        yamlService.getFilesWhichAreSuccessfullyProcessed(allChangeContexts, Arrays.asList(change4, change5));
+    assertThat(filesWhichAreSuccessfullyProcessed2.size()).isEqualTo(3);
+  }
+
+  private GitFileChange getGitFileChange(String accountId, String filePath, String entityId) {
+    return aGitFileChange()
+        .withChangeType(ChangeType.MODIFY)
+        .withFileContent("")
+        .withFilePath(filePath)
+        .withAccountId(accountId)
+        .withEntityId(entityId)
+        .build();
+  }
+
+  @Test
   @Owner(developers = VARDAN_BANSAL)
   @Category(UnitTests.class)
   public void testUpsertFromYamlForAccountDefaults() throws Exception {

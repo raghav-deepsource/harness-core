@@ -14,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,14 +31,15 @@ public class DeploymentLogAnalysisDTO {
   List<HostSummary> hostSummaries;
 
   public enum ClusterType {
-    BASELINE("Baseline"),
-    KNOWN_EVENT("Known"),
-    UNKNOWN_EVENT("Unknown"),
-    UNEXPECTED_FREQUENCY("Unexpected Frequency");
+    BASELINE("Baseline", 3),
+    KNOWN_EVENT("Known", 2),
+    UNEXPECTED_FREQUENCY("Unexpected Frequency", 1),
+    UNKNOWN_EVENT("Unknown", 0);
     private final String displayName;
-
-    ClusterType(String displayName) {
+    private final int sortOrder;
+    ClusterType(String displayName, int sortOrder) {
       this.displayName = displayName;
+      this.sortOrder = sortOrder;
     }
 
     public String getDisplayName() {
@@ -49,6 +51,12 @@ public class DeploymentLogAnalysisDTO {
           .filter(key -> key != ClusterType.BASELINE)
           .collect(Collectors.toList());
     }
+
+    private int getSortOrder() {
+      return sortOrder;
+    }
+    public static Comparator<ClusterType> clusterTypeRiskComparator =
+        Comparator.comparingInt(ClusterType::getSortOrder);
   }
 
   public List<Cluster> getClusters() {

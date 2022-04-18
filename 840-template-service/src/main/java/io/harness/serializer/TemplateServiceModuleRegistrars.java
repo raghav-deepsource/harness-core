@@ -33,7 +33,6 @@ public class TemplateServiceModuleRegistrars {
           .addAll(ConnectorBeansRegistrars.kryoRegistrars)
           .addAll(PrimaryVersionManagerRegistrars.kryoRegistrars)
           .addAll(FiltersRegistrars.kryoRegistrars)
-          .addAll(NGAuditCommonsRegistrars.kryoRegistrars)
           .addAll(FiltersRegistrars.kryoRegistrars)
           .addAll(GitSyncSdkRegistrar.kryoRegistrars)
           .addAll(PersistenceRegistrars.kryoRegistrars)

@@ -480,7 +480,7 @@ public class UserResource {
       log.info("User is externally managed, cannot update user - userId: {}", userInfo.getUuid());
       throw new InvalidRequestException("Cannot update user as it is externally managed.");
     } else {
-      return ResponseDTO.newResponse(userInfoService.update(userInfo));
+      return ResponseDTO.newResponse(userInfoService.update(userInfo, accountIdentifier));
     }
   }
 

@@ -98,4 +98,9 @@ public class AzureRepoConnectorDTO extends ConnectorConfigDTO implements ScmConn
   public ConnectorType getConnectorType() {
     return ConnectorType.AZURE_REPO;
   }
+
+  @Override
+  public String getGitConnectionUrl(String repoName) {
+    return "";
+  }
 }

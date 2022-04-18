@@ -16,8 +16,9 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.serializer.kryo.PmsContractsKryoRegistrar;
 import io.harness.serializer.kryo.CVNGKryoRegistrar;
+import io.harness.serializer.kryo.NotificationBeansKryoRegistrar;
 import io.harness.serializer.morphia.CVNextGenMorphiaRegister;
-import io.harness.serializer.morphia.NotificationClientRegistrars;
+import io.harness.serializer.morphia.NotificationBeansMorphiaRegistrar;
 import io.harness.yaml.schema.beans.SchemaNamespaceConstants;
 import io.harness.yaml.schema.beans.YamlGroup;
 import io.harness.yaml.schema.beans.YamlSchemaMetadata;
@@ -38,7 +39,7 @@ public class CvNextGenRegistrars {
           .addAll(ConnectorNextGenRegistrars.kryoRegistrars)
           .add(CVNGKryoRegistrar.class)
           .add(PmsContractsKryoRegistrar.class)
-          .addAll(NotificationClientRegistrars.kryoRegistrars)
+          .add(NotificationBeansKryoRegistrar.class)
           .addAll(OrchestrationBeansRegistrars.kryoRegistrars)
           .addAll(OrchestrationStepsModuleRegistrars.kryoRegistrars)
           .addAll(AccessControlClientRegistrars.kryoRegistrars)
@@ -50,7 +51,7 @@ public class CvNextGenRegistrars {
       ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
           .addAll(CvNextGenCommonsRegistrars.morphiaRegistrars)
           .add(CVNextGenMorphiaRegister.class)
-          .addAll(NotificationClientRegistrars.morphiaRegistrars)
+          .add(NotificationBeansMorphiaRegistrar.class)
           .addAll(ConnectorBeansRegistrars.morphiaRegistrars)
           .addAll(OrchestrationBeansRegistrars.morphiaRegistrars)
           .addAll(OrchestrationStepsModuleRegistrars.morphiaRegistrars)

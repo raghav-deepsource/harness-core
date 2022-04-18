@@ -193,7 +193,6 @@ public class WatcherServiceImpl implements WatcherService {
   private final SecureRandom random = new SecureRandom();
 
   private static final boolean multiVersion;
-  private static boolean accountVersion;
 
   private final Map<String, Process> delegateProcessMap = new ConcurrentHashMap<>();
 
@@ -234,6 +233,8 @@ public class WatcherServiceImpl implements WatcherService {
     WatcherStackdriverLogAppender.setTimeLimiter(timeLimiter);
     WatcherStackdriverLogAppender.setManagerClient(managerClient);
     log.info("Watcher will start running on JRE {}", watcherJreVersion);
+
+    performRecencyCheck();
 
     try {
       log.info(upgrade ? "[New] Upgraded watcher process started. Sending confirmation" : "Watcher process started");
@@ -982,9 +983,6 @@ public class WatcherServiceImpl implements WatcherService {
         if (config != null && config.getAction() == SELF_DESTRUCT) {
           selfDestruct();
         }
-        if (config != null && config.isAccountVersion()) {
-          accountVersion = true;
-        }
 
         return config != null ? config.getDelegateVersions() : null;
       } else {
@@ -1025,9 +1023,8 @@ public class WatcherServiceImpl implements WatcherService {
     }
 
     // Get patched version
-    final String patchVersion = !accountVersion ? substringAfter(version, "-") : "";
-    final String updatedVersion =
-        !accountVersion ? (version.contains("-") ? substringBefore(version, "-") : version) : "";
+    final String patchVersion = substringAfter(version, "-");
+    final String updatedVersion = version.contains("-") ? substringBefore(version, "-") : version;
     RestResponse<DelegateScripts> restResponse = null;
     if (!delegateNg) {
       log.info(format("Calling getDelegateScripts with version %s and patch %s", updatedVersion, patchVersion));
@@ -1586,6 +1583,16 @@ public class WatcherServiceImpl implements WatcherService {
   private void restartWatcher() {
     working.set(true);
     upgradeWatcher(getVersion(), getVersion());
+  }
+
+  private void performRecencyCheck() {
+    log.info("Performing recency check !!");
+    final String storageUrl = System.getenv().get("WATCHER_STORAGE_URL");
+    final String checkLocation = System.getenv().get("WATCHER_CHECK_LOCATION");
+    if ((isNotEmpty(storageUrl) && storageUrl.contains("storage"))
+        || (isNotEmpty(checkLocation) && checkLocation.contains("watcherprod.txt"))) {
+      log.warn("Delegate is running with older yaml, please update the delegate.yaml");
+    }
   }
 
   private void selfDestruct() {

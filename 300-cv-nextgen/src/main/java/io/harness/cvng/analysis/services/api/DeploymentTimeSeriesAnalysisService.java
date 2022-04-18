@@ -19,6 +19,7 @@ import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface DeploymentTimeSeriesAnalysisService {
   void save(DeploymentTimeSeriesAnalysis deploymentTimeSeriesAnalysis);
@@ -42,5 +43,5 @@ public interface DeploymentTimeSeriesAnalysisService {
       VerificationJobInstance verificationJobInstance, String demoTemplatePath);
 
   List<String> getTransactionNames(String accountId, String verificationJobInstanceId);
-  List<String> getNodeNames(String accountId, String verificationJobInstanceId);
+  Set<String> getNodeNames(String accountId, String verificationJobInstanceId);
 }

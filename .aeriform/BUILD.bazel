@@ -296,8 +296,6 @@ aeriform("//940-feature-flag:module")
 
 aeriform("//940-feature-flag:tests")
 
-aeriform("//940-notification-client:module")
-
 aeriform("//940-primary-version-manager:module")
 
 aeriform("//940-primary-version-manager:tests")
@@ -311,10 +309,6 @@ aeriform("//943-enforcement-beans:module")
 aeriform("//945-account-mgmt:module")
 
 aeriform("//945-license-usage-sdk:module")
-
-aeriform("//945-ng-audit-client:module")
-
-aeriform("//945-ng-audit-client:tests")
 
 aeriform("//947-scim-core:module")
 

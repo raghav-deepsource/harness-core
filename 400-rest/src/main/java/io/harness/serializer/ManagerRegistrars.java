@@ -21,6 +21,8 @@ import io.harness.serializer.kryo.DelegateServiceKryoRegister;
 import io.harness.serializer.kryo.EventEntitiesKryoRegistrar;
 import io.harness.serializer.kryo.ManagerKryoRegistrar;
 import io.harness.serializer.kryo.NgAuthenticationServiceKryoRegistrar;
+import io.harness.serializer.kryo.NotificationBeansKryoRegistrar;
+import io.harness.serializer.kryo.NotificationDelegateTasksKryoRegistrar;
 import io.harness.serializer.kryo.ProjectAndOrgKryoRegistrar;
 import io.harness.serializer.kryo.WatcherBeansKryoRegister;
 import io.harness.serializer.morphia.CommonEntitiesMorphiaRegister;
@@ -30,6 +32,7 @@ import io.harness.serializer.morphia.EventEntitiesMorphiaRegister;
 import io.harness.serializer.morphia.EventMorphiaRegistrar;
 import io.harness.serializer.morphia.LimitsMorphiaRegistrar;
 import io.harness.serializer.morphia.ManagerMorphiaRegistrar;
+import io.harness.serializer.morphia.NotificationBeansMorphiaRegistrar;
 import io.harness.serializer.morphia.ProjectAndOrgMorphiaRegistrar;
 
 import com.google.common.collect.ImmutableList;
@@ -56,15 +59,15 @@ public class ManagerRegistrars {
           .addAll(RbacCoreRegistrars.kryoRegistrars)
           .addAll(SMCoreRegistrars.kryoRegistrars)
           .addAll(FileServiceCommonsRegistrars.kryoRegistrars)
-          .addAll(NotificationSenderRegistrars.kryoRegistrars)
+          .add(NotificationBeansKryoRegistrar.class)
           .add(CvNextGenCommonsBeansKryoRegistrar.class)
           .addAll(LicenseBeanRegistrar.kryoRegistrars)
           // temporary:
+          .add(NotificationDelegateTasksKryoRegistrar.class)
           .add(DelegateAgentKryoRegister.class)
           .add(DelegateAgentBeansKryoRegister.class)
           .add(WatcherBeansKryoRegister.class)
           .add(DelegateServiceKryoRegister.class)
-          .addAll(NGAuditCommonsRegistrars.kryoRegistrars)
           .addAll(OutboxEventRegistrars.kryoRegistrars)
           .addAll(AccessControlClientRegistrars.kryoRegistrars)
           .add(EventEntitiesKryoRegistrar.class)
@@ -95,7 +98,7 @@ public class ManagerRegistrars {
           .add(ProjectAndOrgMorphiaRegistrar.class)
           .addAll(ViewsModuleRegistrars.morphiaRegistrars)
           .add(CgOrchestrationBeansMorphiaRegistrar.class)
-          .addAll(NotificationSenderRegistrars.morphiaRegistrars)
+          .add(NotificationBeansMorphiaRegistrar.class)
           .addAll(ConnectorBeansRegistrars.morphiaRegistrars)
           .addAll(NGAuditCommonsRegistrars.morphiaRegistrars)
           .addAll(OutboxEventRegistrars.morphiaRegistrars)

@@ -177,7 +177,10 @@ public class ImageSecretBuilder {
     String[] imageParts = imageName.split(PATH_SEPARATOR);
     if (imageParts.length == 0 || !imageParts[0].endsWith(BASE_GCR_HOSTNAME)) {
       throw new InvalidArgumentsException(
-          format("Invalid image: %s for GCR connector", imageName), WingsException.USER);
+          format("Invalid image: %s for GCR connector. Please provide a fully qualified name in the format "
+                  + "HOSTNAME/PROJECT-ID/IMAGE:TAG or HOSTNAME/PROJECT-ID/IMAGE@IMAGE_DIGEST",
+              imageName),
+          WingsException.USER);
     }
 
     String registryUrl = imageParts[0];

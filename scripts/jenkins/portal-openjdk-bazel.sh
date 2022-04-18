@@ -204,11 +204,11 @@ cd ../..
 mkdir -p dist/platform-service
 cd dist/platform-service
 
-cp ${HOME}/.bazel-dirs/bin/820-platform-service/module_deploy.jar platform-service-capsule.jar
-cp ../../820-platform-service/config.yml .
-cp ../../820-platform-service/keystore.jks .
-cp ../../820-platform-service/key.pem .
-cp ../../820-platform-service/cert.pem .
+cp ${HOME}/.bazel-dirs/bin/platform-service/service/module_deploy.jar platform-service-capsule.jar
+cp ../../platform-service/config.yml .
+cp ../../platform-service/keystore.jks .
+cp ../../platform-service/key.pem .
+cp ../../platform-service/cert.pem .
 cp ../../alpn-boot-8.1.13.v20181017.jar .
 cp ../../dockerization/platform-service/Dockerfile-platform-service-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/platform-service/Dockerfile-platform-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr

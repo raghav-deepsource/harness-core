@@ -70,4 +70,9 @@ public class AwsCodeCommitConnectorDTO extends ConnectorConfigDTO implements Scm
   public ConnectorType getConnectorType() {
     return ConnectorType.CODECOMMIT;
   }
+
+  @Override
+  public String getGitConnectionUrl(String repoName) {
+    return "";
+  }
 }

@@ -108,6 +108,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.repositories.ConnectorRepository;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -164,6 +165,14 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     Optional<Connector> connector =
         getInternal(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
     return connector.map(x -> getResponse(accountIdentifier, orgIdentifier, projectIdentifier, x));
+  }
+
+  @Override
+  public Optional<ConnectorResponseDTO> getByRef(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef) {
+    IdentifierRef identifierRef =
+        IdentifierRefHelper.getIdentifierRef(connectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
+    return get(accountIdentifier, orgIdentifier, projectIdentifier, identifierRef.getIdentifier());
   }
 
   @Override

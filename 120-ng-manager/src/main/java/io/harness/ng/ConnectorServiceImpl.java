@@ -137,6 +137,12 @@ public class ConnectorServiceImpl implements ConnectorService {
   }
 
   @Override
+  public Optional<ConnectorResponseDTO> getByRef(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef) {
+    return defaultConnectorService.getByRef(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);
+  }
+
+  @Override
   public ConnectorResponseDTO create(@NotNull ConnectorDTO connector, String accountIdentifier) {
     return createInternal(connector, accountIdentifier, ChangeType.ADD);
   }

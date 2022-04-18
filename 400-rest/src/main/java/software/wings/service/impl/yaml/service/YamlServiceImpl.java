@@ -200,11 +200,13 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -1219,11 +1221,30 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
     final List<FileOperationStatus> fileOperationStatusList = prepareFileOperationStatusList(processingFailures);
     final List<Change> failedChangeList =
         new LinkedList<>(processingFailures.values()).stream().map(value -> value.getChange()).collect(toList());
-    final List<Change> processedChangeList =
-        processedChangesWithContext.stream().map(changeContext -> changeContext.getChange()).collect(toList());
-    fileOperationStatusList.addAll(
-        prepareFileOperationStatusListFromChangeList(failedChangeList, processedChangeList, originalChangeList));
+    final List<Change> successfullyProcessedChanges =
+        getFilesWhichAreSuccessfullyProcessed(processedChangesWithContext, failedChangeList);
+    fileOperationStatusList.addAll(prepareFileOperationStatusListFromChangeList(
+        failedChangeList, successfullyProcessedChanges, originalChangeList));
     return yamlOperationResponseBuilder.filesStatus(fileOperationStatusList).build();
+  }
+
+  @VisibleForTesting
+  List<Change> getFilesWhichAreSuccessfullyProcessed(
+      List<ChangeContext> processedChangesWithContext, List<Change> failedChangeList) {
+    if (isEmpty(processedChangesWithContext)) {
+      return Collections.emptyList();
+    }
+    if (isEmpty(failedChangeList)) {
+      return processedChangesWithContext.stream().map(changeContext -> changeContext.getChange()).collect(toList());
+    }
+
+    Set<String> failedFilePathSet =
+        failedChangeList.stream().map(change -> change.getFilePath()).collect(Collectors.toSet());
+    return ListUtils.emptyIfNull(processedChangesWithContext)
+        .stream()
+        .filter(changeContext -> !failedFilePathSet.contains(changeContext.getChange().getFilePath()))
+        .map(changeContext -> changeContext.getChange())
+        .collect(toList());
   }
 
   private YamlOperationResponse prepareSuccessfulYAMLOperationResponse(

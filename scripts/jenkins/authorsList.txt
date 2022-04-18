@@ -260,3 +260,4 @@ Hen Amar hen.amar@harness.io
 Utkarsh Choubey utkarsh.choubey@harness.io
 Sahildeep Singh sahildeep.singh@harness.io
 Dhruv dhruv@harness.io
+Raghav raghav.gupta@harness.io
