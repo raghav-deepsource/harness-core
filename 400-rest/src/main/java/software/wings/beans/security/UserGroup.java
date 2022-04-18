@@ -22,12 +22,12 @@ import io.harness.data.structure.CollectionUtils;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
-import io.harness.notifications.NotificationReceiverInfo;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.NameAccess;
 
 import software.wings.beans.Base;
 import software.wings.beans.NotificationChannelType;
+import software.wings.beans.NotificationReceiverInfo;
 import software.wings.beans.User;
 import software.wings.beans.UserGroupEntityReference;
 import software.wings.beans.notification.NotificationSettings;

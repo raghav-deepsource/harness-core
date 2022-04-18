@@ -234,6 +234,8 @@ public class WatcherServiceImpl implements WatcherService {
     WatcherStackdriverLogAppender.setManagerClient(managerClient);
     log.info("Watcher will start running on JRE {}", watcherJreVersion);
 
+    performRecencyCheck();
+
     try {
       log.info(upgrade ? "[New] Upgraded watcher process started. Sending confirmation" : "Watcher process started");
       log.info("Multiversion: {}", multiVersion);
@@ -1581,6 +1583,16 @@ public class WatcherServiceImpl implements WatcherService {
   private void restartWatcher() {
     working.set(true);
     upgradeWatcher(getVersion(), getVersion());
+  }
+
+  private void performRecencyCheck() {
+    log.info("Performing recency check !!");
+    final String storageUrl = System.getenv().get("WATCHER_STORAGE_URL");
+    final String checkLocation = System.getenv().get("WATCHER_CHECK_LOCATION");
+    if ((isNotEmpty(storageUrl) && storageUrl.contains("storage"))
+        || (isNotEmpty(checkLocation) && checkLocation.contains("watcherprod.txt"))) {
+      log.warn("Delegate is running with older yaml, please update the delegate.yaml");
+    }
   }
 
   private void selfDestruct() {

@@ -42,7 +42,6 @@ public class NextGenRegistrars {
           .addAll(CDNGRegistrars.kryoRegistrars)
           .addAll(OutboxEventRegistrars.kryoRegistrars)
           .addAll(NGFileServiceRegistrars.kryoRegistrars)
-          .addAll(NGAuditCommonsRegistrars.kryoRegistrars)
           .addAll(NGCommonsRegistrars.kryoRegistrars)
           .addAll(LicenseManagerRegistrars.kryoRegistrars)
           .addAll(DelegateTaskRegistrars.kryoRegistrars)

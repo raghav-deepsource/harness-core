@@ -56,8 +56,8 @@ public class EnvironmentGroupServiceHelper {
       filterCriteria.and(EnvironmentGroupEntity.EnvironmentGroupKeys.description).is(envGroupFilter.getDescription());
     }
 
-    if (EmptyPredicate.isNotEmpty(envGroupFilter.getTags())) {
-      filterCriteria.and(EnvironmentGroupEntity.EnvironmentGroupKeys.tags).in(envGroupFilter.getTags());
+    if (EmptyPredicate.isNotEmpty(envGroupFilter.getEnvGroupTags())) {
+      filterCriteria.and(EnvironmentGroupEntity.EnvironmentGroupKeys.tags).in(envGroupFilter.getEnvGroupTags());
     }
 
     // Environment Identifier. Filter those environment groups whose environment list contains subset of env identifier

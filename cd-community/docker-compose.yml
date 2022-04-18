@@ -86,7 +86,7 @@ services:
       harness-network:
 
   platform-service:
-    image: bazel/820-platform-service/container:platform_service
+    image: bazel/platform-service/container:platform_service
     deploy:
       resources:
         limits:

@@ -18,6 +18,7 @@ shared_dependencies = [
 ] + [
     "//:lombok",
     "//122-ng-authentication-settings:module",
+    "//clients/resource-group:module",
     "//123-ng-core-user:module",
     "//125-cd-nextgen:module",
     "//126-instance:module",

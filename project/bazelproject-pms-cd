@@ -19,7 +19,7 @@ directories:
   490-ce-commons
   800-pipeline-service
   810-ng-triggers
-  820-platform-service
+  platform-service
   860-orchestration-steps
   860-orchestration-visualization
   865-cg-events
@@ -49,11 +49,9 @@ directories:
   937-persistence-tracer
   940-cg-audit-service
   940-feature-flag
-  940-notification-client
   940-primary-version-manager
   940-secret-manager-client
   945-account-mgmt
-  945-ng-audit-client
   948-access-control-admin-client
   948-access-control-sdk
   949-access-control-commons

@@ -11,6 +11,7 @@ import static io.harness.filter.FilterConstants.ENVIRONMENT_GROUP_FILTER;
 
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterPropertiesDTO;
+import io.harness.ng.core.common.beans.NGTag;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -37,6 +38,7 @@ public class EnvironmentGroupFilterPropertiesDTO extends FilterPropertiesDTO {
   private String description;
   private String envGroupName;
   private List<String> envIdentifiers;
+  private List<NGTag> envGroupTags;
 
   @Override
   public FilterType getFilterType() {

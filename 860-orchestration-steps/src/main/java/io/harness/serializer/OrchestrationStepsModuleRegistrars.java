@@ -24,9 +24,10 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.serializer.kryo.CommonEntitiesKryoRegistrar;
 import io.harness.serializer.kryo.DelegateServiceBeansKryoRegistrar;
 import io.harness.serializer.kryo.NGCoreBeansKryoRegistrar;
+import io.harness.serializer.kryo.NotificationBeansKryoRegistrar;
 import io.harness.serializer.kryo.OrchestrationStepsKryoRegistrar;
 import io.harness.serializer.kryo.YamlKryoRegistrar;
-import io.harness.serializer.morphia.NotificationClientRegistrars;
+import io.harness.serializer.morphia.NotificationBeansMorphiaRegistrar;
 import io.harness.serializer.morphia.OrchestrationStepsMorphiaRegistrar;
 import io.harness.steps.approval.stage.ApprovalStageNode;
 import io.harness.steps.approval.step.harness.HarnessApprovalStepNode;
@@ -65,7 +66,7 @@ public class OrchestrationStepsModuleRegistrars {
           .add(CommonEntitiesKryoRegistrar.class)
           .addAll(PmsCommonsModuleRegistrars.kryoRegistrars)
           .addAll(YamlBeansModuleRegistrars.kryoRegistrars)
-          .addAll(NotificationClientRegistrars.kryoRegistrars)
+          .add(NotificationBeansKryoRegistrar.class)
           .addAll(RbacCoreRegistrars.kryoRegistrars)
           .addAll(NGCoreClientRegistrars.kryoRegistrars)
           .addAll(DelegateTaskRegistrars.kryoRegistrars)
@@ -77,7 +78,7 @@ public class OrchestrationStepsModuleRegistrars {
           .addAll(OrchestrationRegistrars.morphiaRegistrars)
           .add(OrchestrationStepsMorphiaRegistrar.class)
           .addAll(YamlBeansModuleRegistrars.morphiaRegistrars)
-          .addAll(NotificationClientRegistrars.morphiaRegistrars)
+          .add(NotificationBeansMorphiaRegistrar.class)
           .addAll(RbacCoreRegistrars.morphiaRegistrars)
           .addAll(NGCoreClientRegistrars.morphiaRegistrars)
           .addAll(DelegateTaskRegistrars.morphiaRegistrars)

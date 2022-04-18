@@ -202,7 +202,7 @@ public class EnvironmentGroupResource {
     return ResponseDTO.newResponse(EnvironmentGroupMapper.toResponseWrapper(savedEntity, envResponseList));
   }
 
-  @GET
+  @POST
   @Path("/list")
   @ApiOperation(value = "Gets Environment Group list", nickname = "getEnvironmentGroupList")
   @Operation(operationId = "getEnvironmentGroupList", summary = "Gets Environment Group list for a Project",

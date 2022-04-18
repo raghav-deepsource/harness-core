@@ -26,11 +26,9 @@ directories:
   930-ng-core-clients
   937-persistence-tracer
   940-feature-flag
-  940-notification-client
   940-primary-version-manager
   940-secret-manager-client
   945-account-mgmt
-  945-ng-audit-client
   948-access-control-sdk
   949-access-control-commons
   950-delegate-tasks-beans
