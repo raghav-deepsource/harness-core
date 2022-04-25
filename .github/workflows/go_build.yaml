@@ -28,39 +28,18 @@ jobs:
           echo "OPTIMIZED_PACKAGE_TESTS=0" >> test-util.bzl
           
           echo "Building golang expression service protobuf using bazel..."
-          bazel build //960-expression-service/src/main/proto/... --javacopt=' -XepDisableAllChecks'
+          bazel build //960-expression-service/... --javacopt=' -XepDisableAllChecks'
 
       - name: Building commons code
         run: |
           echo "Building golang commons code using bazel..."
-          bazel build //commons/...
+          bazel build //870-orchestration/...
 
       - name: Building product code
         run: |
           echo "Building golang product code using bazel..."
-          bazel build //product/... --javacopt=' -XepDisableAllChecks'
-
-      - name: Building gopath
-        run: |
-          echo "Building gopath"
-          bazel build :gopath --javacopt=' -XepDisableAllChecks'
-
-      - name: Testing commons
-        run: |
-          echo "Testing golang commons code using bazel..."
-          bazel test --test_output=all //commons/...
-
-      - name: Testing product
-        run: |
-          echo "Testing golang product code using bazel..."
-          bazel test --test_output=all //product/... --javacopt=' -XepDisableAllChecks'
+          bazel test //870-orchestration/...
 
       - name: Coverage
         run: |
-          export GOPATH=$(go env GOPATH)
-          export PATH=$PATH:$GOPATH/bin
-          echo $PATH
-          echo $GOPATH
-          echo "Adding gocovmerge package... "
-          go get -u github.com/wadey/gocovmerge
-          tools/go/generate_coverage.sh func
+          bazel coverage --combined-report=lcov //870-orchestration/...
