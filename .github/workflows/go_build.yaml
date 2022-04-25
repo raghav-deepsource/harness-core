@@ -33,6 +33,7 @@ jobs:
       - name: Building product code
         run: |
           echo "Building golang product code using bazel..."
+          chmod --recursive ugo+rw /home/runner/
           bazel test //870-orchestration/...
       - name: Coverage
         run: |
