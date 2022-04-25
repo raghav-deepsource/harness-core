@@ -7,6 +7,7 @@ on:
 
 env:
   BUILD_PURPOSE: RELEASE
+  DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
 
 jobs:
   gobuild:
@@ -38,7 +39,10 @@ jobs:
         run: |
           echo "Building golang product code using bazel..."
           bazel test //870-orchestration/...
-
       - name: Coverage
         run: |
           bazel coverage --combined-report=lcov //870-orchestration/...
+      - name: Upload
+        run: |
+          curl https://deepsource.io/cli | sh
+          ./bin/deepsource report --analyzer test-coverage --key java --value-file $(bazel info output_path)/_coverage/_coverage_report.dat
