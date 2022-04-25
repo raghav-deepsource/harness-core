@@ -18,18 +18,18 @@ jobs:
         uses: actions/checkout@v2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-#       - name: Building expression service code
-#         run: |
-#           touch bazel-credentials.bzl
-#           touch test-util.bzl
-#           echo "JFROG_USERNAME=\"foo\"" >> bazel-credentials.bzl
-#           echo "JFROG_PASSWORD=\"bar\"" >> bazel-credentials.bzl
-#           echo "DISTRIBUTE_TESTING_WORKER=0" >> test-util.bzl
-#           echo "DISTRIBUTE_TESTING_WORKERS=1" >> test-util.bzl
-#           echo "OPTIMIZED_PACKAGE_TESTS=0" >> test-util.bzl
+      - name: Building expression service code
+        run: |
+          touch bazel-credentials.bzl
+          touch test-util.bzl
+          echo "JFROG_USERNAME=\"foo\"" >> bazel-credentials.bzl
+          echo "JFROG_PASSWORD=\"bar\"" >> bazel-credentials.bzl
+          echo "DISTRIBUTE_TESTING_WORKER=0" >> test-util.bzl
+          echo "DISTRIBUTE_TESTING_WORKERS=1" >> test-util.bzl
+          echo "OPTIMIZED_PACKAGE_TESTS=0" >> test-util.bzl
           
-#           echo "Building golang expression service protobuf using bazel..."
-#           bazel build //870-orchestration/...
+          echo "Building golang expression service protobuf using bazel..."
+          bazel build //870-orchestration/...
       - name: Building product code
         run: |
           echo "Building golang product code using bazel..."
